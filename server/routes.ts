@@ -13,7 +13,7 @@ const anthropic = new Anthropic();
 // Helper: call Claude for text tasks
 async function callClaude(systemPrompt: string, userContent: string): Promise<string> {
   const msg = await anthropic.messages.create({
-    model: "claude_sonnet_4_6",
+    model: "claude-sonnet-4-5",
     max_tokens: 8192,
     messages: [{ role: "user", content: userContent }],
     system: systemPrompt,
@@ -268,7 +268,7 @@ Canvas-specific rules:
 
       // Use Claude vision to generate alt text
       const msg = await anthropic.messages.create({
-        model: "claude_sonnet_4_6",
+        model: "claude-sonnet-4-5",
         max_tokens: 500,
         messages: [{
           role: "user",
