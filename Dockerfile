@@ -1,0 +1,33 @@
+# ── Stage 1: Build the frontend ──────────────────────────────────────────────
+FROM node:20-slim AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────
+FROM node:20-slim
+WORKDIR /app
+
+# Install Python + pip
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv ffmpeg --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir -r requirements.txt --break-system-packages
+
+# Node deps (production only)
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Copy built app + server files
+COPY --from=builder /app/dist ./dist
+COPY transcribe_service.py transcribe_audio.py ./
+
+# Start both services via a shell script
+COPY start.sh ./
+RUN chmod +x start.sh
+
+EXPOSE 5000
+CMD ["./start.sh"]

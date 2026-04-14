@@ -93,6 +93,9 @@ function formatTime(seconds: number): string {
 
 export function registerRoutes(httpServer: Server, app: Express) {
 
+  // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
+  app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
+
   // ── DOCUMENT ACCESSIBILITY ──────────────────────────────────────────────────
   app.post("/api/document/fix", upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });

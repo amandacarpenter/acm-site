@@ -41,8 +41,8 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId }: {
         </>
       ) : (
         <>
-          <div className="w-14 h-14 rounded-2xl bg-[hsl(45,96%,53%)]/10 flex items-center justify-center">
-            <Icon className="w-6 h-6 text-[hsl(45,96%,53%)]" />
+          <div className="w-14 h-14 rounded-2xl bg-[#4338ca]/10 flex items-center justify-center">
+            <Icon className="w-6 h-6 text-[#4338ca]" />
           </div>
           <div><p className="font-semibold">{label}</p><p className="text-sm text-muted-foreground">{sublabel}</p></div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground"><Upload className="w-3 h-3" />Drop file here or click to browse</div>
@@ -118,7 +118,7 @@ function DocumentTab() {
   return (
     <div className="space-y-5">
       <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" />
-      <Button className="w-full bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
+      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="AI is analyzing your document for accessibility issues…" />}
@@ -137,7 +137,7 @@ function DocumentTab() {
                   <div key={i} className="p-3 rounded-lg bg-card border text-sm space-y-1">
                     <div className="flex items-center gap-2"><IssueBadge type={issue.type} /><span className="font-medium">{issue.type}</span></div>
                     <p className="text-muted-foreground">{issue.description}</p>
-                    {issue.recommendation && <p className="text-xs text-[hsl(45,96%,53%)] flex items-center gap-1"><ChevronRight className="w-3 h-3" />{issue.recommendation}</p>}
+                    {issue.recommendation && <p className="text-xs text-[#4338ca] flex items-center gap-1"><ChevronRight className="w-3 h-3" />{issue.recommendation}</p>}
                   </div>
                 ))}
               </div>
@@ -177,7 +177,7 @@ function VideoTab() {
   return (
     <div className="space-y-5">
       <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" />
-      <Button className="w-full bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
+      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Extracting audio and transcribing with AI — this may take a minute…" />}
@@ -237,7 +237,7 @@ function CanvasTab() {
           {html && <Button variant="ghost" size="sm" onClick={() => { setHtml(""); setResult(null); }}><X className="w-3.5 h-3.5 mr-1" />Clear</Button>}
         </div>
       </div>
-      <Button className="w-full bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
+      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="AI is fixing your Canvas HTML for accessibility…" />}
@@ -262,7 +262,7 @@ function CanvasTab() {
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {result.changes.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-2 text-sm p-2 rounded-lg bg-muted">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[hsl(45,96%,53%)] shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#4338ca] shrink-0" />
                     <div><span className="font-medium">{c.issue}</span>{c.fix && <span className="text-muted-foreground"> → {c.fix}</span>}</div>
                   </div>
                 ))}
@@ -311,13 +311,13 @@ function AltTextTab() {
       {previewUrl && <div className="rounded-xl overflow-hidden border max-h-48"><img src={previewUrl} alt="Preview of uploaded image" className="w-full h-full object-contain bg-muted" /></div>}
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="img-url">Or enter image URL</label>
-        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[hsl(45,96%,53%)]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
+        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#4338ca]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
       </div>
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="alt-context">Context <span className="text-muted-foreground font-normal">(optional — describe the page this image is for)</span></label>
         <Textarea id="alt-context" placeholder="e.g. This is a chart showing student enrollment trends…" className="text-sm min-h-[80px] resize-y" value={context} onChange={(e) => setContext(e.target.value)} data-testid="input-context" />
       </div>
-      <Button className="w-full bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
+      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
       {error && <ErrorAlert message={error} />}
@@ -344,7 +344,7 @@ function AltTextTab() {
                   <div className="p-3 rounded-lg bg-muted border text-sm">{result.longDescription}</div>
                 </div>
               )}
-              {result.reasoning && <div className="p-3 rounded-lg bg-[hsl(45,96%,53%)]/5 border border-[hsl(45,96%,53%)]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
+              {result.reasoning && <div className="p-3 rounded-lg bg-[#4338ca]/5 border border-[#4338ca]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
             </>
           )}
         </div>
@@ -382,7 +382,7 @@ export default function ToolsPage() {
         {/* Page heading */}
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-            Accessibility <span className="text-[hsl(45,96%,53%)]">Tools</span>
+            Accessibility <span className="text-[#4338ca]">Tools</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — AI handles the accessibility fixes.</p>
         </div>
@@ -408,7 +408,7 @@ export default function ToolsPage() {
         </Tabs>
 
         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-4">
-          <Shield className="w-3.5 h-3.5 text-[hsl(45,96%,53%)]" aria-hidden="true" />
+          <Shield className="w-3.5 h-3.5 text-[#4338ca]" aria-hidden="true" />
           WCAG 2.1 AA Compliant — All processing is AI-powered
         </div>
       </div>

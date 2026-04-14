@@ -54,25 +54,25 @@ export default function Home() {
       <section className="hero-dark text-white" aria-labelledby="hero-heading">
         <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-24 sm:pt-28 sm:pb-32">
           {/* Tagline pill */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/10 text-sm font-medium text-white/80 mb-8">
-            <Shield className="w-3.5 h-3.5 text-[hsl(45,96%,53%)]" aria-hidden="true" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-8">
+            <Shield className="w-3.5 h-3.5 text-white" aria-hidden="true" />
             Not Accessible, Not Acceptable™
           </div>
 
           <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold max-w-3xl mb-6" style={{ fontFamily: "'Clash Display', sans-serif" }}>
             Make Every Course Material{" "}
-            <span className="text-[hsl(45,96%,53%)]">Accessible</span>
+            <span className="text-[#5eead4]">Accessible</span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-white/70 max-w-2xl mb-10 leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/90 max-w-2xl mb-10 leading-relaxed">
             AI-powered tools that fix documents, transcribe videos, clean Canvas HTML, and generate alt text — so every student can learn.
           </p>
 
           <div className="flex flex-wrap gap-3">
             <Link href="/tools">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] font-semibold text-sm hover:brightness-110 transition cursor-pointer" data-testid="hero-cta">
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#4338ca] text-white font-semibold text-sm hover:brightness-110 transition cursor-pointer" data-testid="hero-cta">
                 <Zap className="w-4 h-4" aria-hidden="true" />
-                Try the Tools — Free
+                Use the Tools
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </span>
             </Link>
@@ -90,8 +90,8 @@ export default function Home() {
             {STATS.map((stat) => (
               <div key={stat.label}>
                 <div className="stat-number mb-1">{stat.value}</div>
-                <div className="text-sm text-white/60">{stat.label}</div>
-                <div className="text-xs text-white/30 mt-0.5">{stat.source}</div>
+                <div className="text-sm text-white/90">{stat.label}</div>
+                <div className="text-xs text-white/70 mt-0.5">{stat.source}</div>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export default function Home() {
               AI-Powered
             </div>
             <h2 id="tools-heading" className="text-3xl sm:text-4xl font-bold mb-4">
-              Four Tools. <span className="text-[hsl(45,96%,53%)]">Zero Excuses.</span>
+              Four Tools. <span className="text-[#4338ca]">Zero Excuses.</span>
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Each tool is designed for educators who need to fix accessibility issues quickly — no training required.
@@ -119,8 +119,8 @@ export default function Home() {
               <Link key={tool.tab} href={`/tools/${tool.tab}`}>
                 <div className="tool-card group cursor-pointer h-full" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[hsl(45,96%,53%)]/10 flex items-center justify-center shrink-0 group-hover:bg-[hsl(45,96%,53%)]/20 transition">
-                      <tool.icon className="w-5 h-5 text-[hsl(45,96%,53%)]" aria-hidden="true" />
+                    <div className="w-12 h-12 rounded-xl bg-[#4338ca]/10 flex items-center justify-center shrink-0 group-hover:bg-[#4338ca]/20 transition">
+                      <tool.icon className="w-5 h-5 text-[#4338ca]" aria-hidden="true" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
@@ -129,7 +129,7 @@ export default function Home() {
                       </div>
                       <p className="text-sm text-muted-foreground leading-relaxed">{tool.desc}</p>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-[hsl(45,96%,53%)] transition shrink-0 mt-1" aria-hidden="true" />
+                    <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-[#4338ca] transition shrink-0 mt-1" aria-hidden="true" />
                   </div>
                 </div>
               </Link>
@@ -147,7 +147,7 @@ export default function Home() {
               Quick-Check Framework
             </div>
             <h2 id="access-heading" className="text-3xl sm:text-4xl font-bold mb-4">
-              The <span className="text-[hsl(45,96%,53%)]">ACCESS</span> Framework
+              The <span className="text-[#4338ca]">ACCESS</span> Framework
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
               Six checkpoints to quickly evaluate any course material. Memorize the acronym, check every document.
@@ -173,7 +173,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h2 id="why-heading" className="text-3xl sm:text-4xl font-bold mb-6">
-              Why This <span className="text-[hsl(45,96%,53%)]">Matters</span>
+              Why This <span className="text-[#4338ca]">Matters</span>
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-12">
               When course materials aren't accessible, students using assistive technology can't complete their work.
@@ -183,17 +183,17 @@ export default function Home() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
               <div className="p-5 rounded-xl bg-card border">
-                <GraduationCap className="w-8 h-8 text-[hsl(45,96%,53%)] mb-3" aria-hidden="true" />
+                <GraduationCap className="w-8 h-8 text-[#4338ca] mb-3" aria-hidden="true" />
                 <h3 className="font-bold mb-1 text-sm">For Educators</h3>
                 <p className="text-sm text-muted-foreground">Create materials that every student can use — without hours of manual remediation.</p>
               </div>
               <div className="p-5 rounded-xl bg-card border">
-                <Users className="w-8 h-8 text-[hsl(45,96%,53%)] mb-3" aria-hidden="true" />
+                <Users className="w-8 h-8 text-[#4338ca] mb-3" aria-hidden="true" />
                 <h3 className="font-bold mb-1 text-sm">For Students</h3>
                 <p className="text-sm text-muted-foreground">Access course content on equal footing — with screen readers, captions, and properly structured documents.</p>
               </div>
               <div className="p-5 rounded-xl bg-card border">
-                <Shield className="w-8 h-8 text-[hsl(45,96%,53%)] mb-3" aria-hidden="true" />
+                <Shield className="w-8 h-8 text-[#4338ca] mb-3" aria-hidden="true" />
                 <h3 className="font-bold mb-1 text-sm">For Institutions</h3>
                 <p className="text-sm text-muted-foreground">Meet ADA, Section 508, and WCAG 2.1 AA requirements — reduce legal risk proactively.</p>
               </div>
@@ -206,15 +206,15 @@ export default function Home() {
       <section className="hero-dark text-white py-20" aria-labelledby="cta-heading">
         <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 id="cta-heading" className="text-3xl sm:text-4xl font-bold mb-4" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-            Ready to Make Your Content <span className="text-[hsl(45,96%,53%)]">Accessible?</span>
+            Ready to Make Your Content <span className="text-[#5eead4]">Accessible?</span>
           </h2>
-          <p className="text-white/60 mb-8">
+          <p className="text-white/90 mb-8">
             Upload a document, paste some HTML, or drop in a video — the AI handles the rest. Free to use.
           </p>
           <Link href="/tools">
-            <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] font-semibold text-sm hover:brightness-110 transition cursor-pointer">
+            <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#4338ca] text-white font-semibold text-sm hover:brightness-110 transition cursor-pointer">
               <Zap className="w-4 h-4" aria-hidden="true" />
-              Open the Tools
+              Use the Tools
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </span>
           </Link>
@@ -226,14 +226,14 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4 text-[hsl(45,96%,53%)]" aria-hidden="true" />
-              <span className="text-sm text-muted-foreground">
+              <Shield className="w-4 h-4 text-[#4338ca]" aria-hidden="true" />
+              <span className="text-sm text-foreground">
                 © 2026 AccessibleCourseMaterials.com — Built by Amanda Carpenter
               </span>
             </div>
             <div className="flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" aria-hidden="true" />
-              <span className="text-xs text-muted-foreground">WCAG 2.1 AA Compliant</span>
+              <span className="text-xs text-foreground">WCAG 2.1 AA Compliant</span>
             </div>
           </div>
         </div>

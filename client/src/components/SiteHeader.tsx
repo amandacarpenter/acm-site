@@ -1,22 +1,22 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X, Accessibility } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import logoUrl from "@/assets/logo.png";
 
 function Logo() {
   return (
-    <svg width="36" height="36" viewBox="0 0 40 40" fill="none" aria-label="Accessible Course Materials logo" role="img">
-      <rect width="40" height="40" rx="10" fill="hsl(45 96% 53%)" />
-      <circle cx="20" cy="11" r="3.5" fill="hsl(222 47% 11%)" />
-      <path d="M11 20c0-5 4-9 9-9s9 4 9 9" stroke="hsl(222 47% 11%)" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M15.5 20v9M24.5 20v9" stroke="hsl(222 47% 11%)" strokeWidth="2.5" strokeLinecap="round" />
-      <path d="M15.5 25h9" stroke="hsl(222 47% 11%)" strokeWidth="2" strokeLinecap="round" />
-    </svg>
+    <img
+      src={logoUrl}
+      alt="Accessible Course Materials logo"
+      width={36}
+      height={36}
+      style={{ borderRadius: '50%', flexShrink: 0 }}
+    />
   );
 }
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/tools", label: "Tools" },
 ];
 
 export default function SiteHeader() {
@@ -28,7 +28,7 @@ export default function SiteHeader() {
     <header
       className={`sticky top-0 z-50 transition-colors ${
         isHero
-          ? "bg-[hsl(222,47%,11%)]/90 backdrop-blur-md border-b border-white/10"
+          ? "bg-[#1e1b4b]/90 backdrop-blur-md border-b border-white/10"
           : "bg-card/90 backdrop-blur-md border-b"
       }`}
       role="banner"
@@ -63,8 +63,8 @@ export default function SiteHeader() {
             </Link>
           ))}
           <Link href="/tools">
-            <span className="ml-2 px-4 py-1.5 rounded-lg text-sm font-semibold bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] hover:brightness-110 transition cursor-pointer">
-              Get Started
+            <span className="ml-2 px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#4338ca] text-white hover:brightness-110 transition cursor-pointer">
+  Use the Tools
             </span>
           </Link>
         </nav>
@@ -82,7 +82,7 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className={`sm:hidden border-t ${isHero ? "bg-[hsl(222,47%,11%)] border-white/10" : "bg-card"}`}>
+        <div className={`sm:hidden border-t ${isHero ? "bg-[#1e1b4b] border-white/10" : "bg-card"}`}>
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href}>
@@ -99,9 +99,9 @@ export default function SiteHeader() {
             <Link href="/tools">
               <span
                 onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[hsl(45,96%,53%)] text-[hsl(222,47%,11%)] text-center cursor-pointer"
+                className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#4338ca] text-white text-center cursor-pointer"
               >
-                Get Started
+    Use the Tools
               </span>
             </Link>
           </nav>
