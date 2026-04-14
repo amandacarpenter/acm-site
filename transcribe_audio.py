@@ -1,30 +1,12 @@
-"""Async audio transcription via LLM API. Copy into your project and call from FastAPI handlers.
-
-Usage:
-    from transcribe_audio import transcribe_audio
-
-    result = await transcribe_audio(audio_bytes, media_type="audio/mpeg")
-    print(result["text"])
-
-    result = await transcribe_audio(audio_bytes, media_type="audio/mpeg", diarize=True, timestamps="word")
-    for word in result["words"]:
-        print(f"[Speaker {word['speaker_id']}] {word['text']} ({word['start']}-{word['end']})")
 """
-
+Audio transcription via ElevenLabs Speech-to-Text API.
+Requires ELEVENLABS_API_KEY environment variable (falls back to PPLX_API_KEY).
+"""
+import os
 import base64
+import httpx
 
-from pplx.python.sdks.llm_api import (
-    AudioBlock,
-    AudioSource,
-    Client,
-    Conversation,
-    Identity,
-    LLMAPIClient,
-    MediaGenParams,
-    SamplingParams,
-    SpeechToTextParams,
-)
-
+ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY") or os.environ.get("PPLX_API_KEY", "")
 
 async def transcribe_audio(
     audio_bytes: bytes,
@@ -34,37 +16,56 @@ async def transcribe_audio(
     diarize: bool = False,
     num_speakers: int | None = None,
     language: str | None = None,
-    model: str = "elevenlabs_scribe_v2",
+    model: str = "scribe_v1",
 ) -> dict:
-    client = LLMAPIClient()
-    b64 = base64.b64encode(audio_bytes).decode()
-    convo = Conversation()
-    convo.add_user(AudioBlock(source=AudioSource(media_type=media_type, data=b64)))
+    """Transcribe audio using ElevenLabs Speech-to-Text API."""
+    ext_map = {
+        "audio/mpeg": "mp3",
+        "audio/mp3": "mp3",
+        "audio/mp4": "mp4",
+        "audio/wav": "wav",
+        "audio/wave": "wav",
+        "audio/webm": "webm",
+        "audio/ogg": "ogg",
+        "video/mp4": "mp4",
+        "video/webm": "webm",
+    }
+    ext = ext_map.get(media_type, "mp3")
+    filename = f"audio.{ext}"
 
-    result = await client.messages.create(
-        model=model,
-        convo=convo,
-        identity=Identity(client=Client.ASI, use_case="webserver_transcription"),
-        sampling_params=SamplingParams(max_tokens=1),
-        media_gen_params=MediaGenParams(
-            speech_to_text=SpeechToTextParams(
-                diarize=diarize,
-                num_speakers=num_speakers,
-                timestamps_granularity=timestamps,
-                language_code=language,
-            ),
-        ),
-    )
+    data = {"model_id": model}
+    if diarize:
+        data["diarize"] = "true"
+    if timestamps != "none":
+        data["timestamps_granularity"] = timestamps
+    if num_speakers:
+        data["num_speakers"] = str(num_speakers)
+    if language:
+        data["language_code"] = language
 
-    if not result.transcriptions:
-        raise RuntimeError("No transcription generated")
+    async with httpx.AsyncClient(timeout=120) as client:
+        response = await client.post(
+            "https://api.elevenlabs.io/v1/speech-to-text",
+            headers={"xi-api-key": ELEVENLABS_API_KEY},
+            data=data,
+            files={"file": (filename, audio_bytes, media_type)},
+        )
+        if response.status_code != 200:
+            raise RuntimeError(f"ElevenLabs API error {response.status_code}: {response.text}")
 
-    t = result.transcriptions[0]
+        result = response.json()
+
+    words = []
+    for w in result.get("words", []):
+        words.append({
+            "text": w.get("text", ""),
+            "start": w.get("start", 0),
+            "end": w.get("end", 0),
+            "speaker_id": w.get("speaker_id"),
+        })
+
     return {
-        "text": t.text,
-        "language_code": t.language_code,
-        "words": [
-            {"text": w.text, "start": w.start, "end": w.end, "speaker_id": w.speaker_id}
-            for w in t.words
-        ],
+        "text": result.get("text", ""),
+        "language_code": result.get("language_code", ""),
+        "words": words,
     }
