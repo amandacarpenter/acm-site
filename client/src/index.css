@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Accessible Course Materials — Bold dark palette with gold accent
+   Inspired by the agentic AI site: deep navy + electric gold, authoritative & modern */
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 222 30% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 30% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 30% 12%;
+
+    /* Primary — deep navy */
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary */
+    --secondary: 220 14% 93%;
+    --secondary-foreground: 222 30% 20%;
+
+    /* Muted */
+    --muted: 220 14% 93%;
+    --muted-foreground: 220 10% 46%;
+
+    /* Accent — electric gold */
+    --accent: 45 96% 53%;
+    --accent-foreground: 222 47% 11%;
+
+    /* Destructive */
+    --destructive: 0 72% 44%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 45 96% 53%;
+    --radius: 0.625rem;
+  }
+
+  .dark {
+    --background: 222 33% 7%;
+    --foreground: 220 14% 90%;
+    --card: 222 30% 10%;
+    --card-foreground: 220 14% 90%;
+    --popover: 222 30% 10%;
+    --popover-foreground: 220 14% 90%;
+    --primary: 45 96% 53%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 20% 15%;
+    --secondary-foreground: 220 14% 82%;
+    --muted: 222 20% 14%;
+    --muted-foreground: 220 10% 54%;
+    --accent: 45 96% 53%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 68% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 20% 18%;
+    --input: 222 20% 18%;
+    --ring: 45 96% 53%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'General Sans', 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Clash Display', 'General Sans', sans-serif;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 99px; }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+
+/* Hero dark section */
+.hero-dark {
+  background: linear-gradient(135deg, hsl(222 47% 8%) 0%, hsl(222 33% 14%) 50%, hsl(222 47% 8%) 100%);
+  position: relative;
+  overflow: hidden;
+}
+.hero-dark::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 30% 40%, hsl(45 96% 53% / 0.06) 0%, transparent 50%),
+              radial-gradient(circle at 70% 60%, hsl(222 60% 40% / 0.08) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Gold accent underline for headings */
+.gold-underline {
+  position: relative;
+  display: inline-block;
+}
+.gold-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: hsl(45 96% 53%);
+  border-radius: 2px;
+}
+
+/* Upload zone */
+.upload-zone {
+  border: 2px dashed hsl(var(--border));
+  border-radius: var(--radius);
+  transition: all 200ms ease;
+  cursor: pointer;
+}
+.upload-zone:hover, .upload-zone.drag-over {
+  border-color: hsl(var(--accent));
+  background: hsl(var(--accent) / 0.05);
+}
+
+/* Result panel */
+.result-panel {
+  background: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow: auto;
+  padding: 1rem;
+  max-height: 400px;
+}
+
+/* Tool card */
+.tool-card {
+  @apply rounded-xl border bg-card p-5 transition-all duration-200;
+}
+.tool-card:hover {
+  @apply border-accent/40 shadow-lg;
+  transform: translateY(-2px);
+}
+
+/* ACCESS letter */
+.access-letter {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-family: 'Clash Display', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: hsl(222 47% 11%);
+  background: hsl(45 96% 53%);
+  flex-shrink: 0;
+}
+
+/* Score badge */
+.score-badge {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Stat counter */
+.stat-number {
+  font-family: 'Clash Display', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(135deg, hsl(45 96% 53%), hsl(45 96% 70%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Section separator */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, hsl(var(--border)), transparent);
+}
+
+/* Subtle grid pattern for sections */
+.grid-pattern {
+  background-image:
+    linear-gradient(hsl(var(--border) / 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
