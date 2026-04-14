@@ -111,7 +111,24 @@ function DocumentTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error); setResult(data);
+      if (!resp.ok) { const data = await resp.json(); throw new Error(data.error); }
+      const contentType = resp.headers.get("content-type") || "";
+      if (contentType.includes("wordprocessingml")) {
+        // Server returned a .docx file — trigger download
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const disposition = resp.headers.get("content-disposition") || "";
+        const nameMatch = disposition.match(/filename="?([^"]+)"?/);
+        a.download = nameMatch ? nameMatch[1] : file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
+        a.href = url; a.click(); URL.revokeObjectURL(url);
+        const summary = resp.headers.get("x-summary") || "Document fixed and downloaded successfully.";
+        const issues = JSON.parse(resp.headers.get("x-issues") || "[]");
+        setResult({ downloaded: true, filename: a.download, summary, issues });
+      } else {
+        const data = await resp.json();
+        setResult(data);
+      }
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -143,12 +160,22 @@ function DocumentTab() {
               </div>
             </div>
           )}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible HTML</h3>
-              <div className="flex gap-2"><CopyBtn text={result.accessibleHtml} testId="copy-doc" /><DownloadBtn content={result.accessibleHtml} filename={`accessible-${result.filename || "doc"}.html`} /></div>
+          {result.downloaded ? (
+            <div className="p-4 rounded-xl bg-[#4338ca]/10 border border-[#4338ca]/30 flex items-center gap-3">
+              <Download className="w-5 h-5 text-[#4338ca] shrink-0" />
+              <div>
+                <p className="font-semibold text-sm text-[#4338ca]">Download started</p>
+                <p className="text-xs text-muted-foreground">{result.filename}</p>
+              </div>
             </div>
-            <pre className="result-panel">{result.accessibleHtml}</pre>
-          </div>
+          ) : result.accessibleHtml && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible HTML</h3>
+                <div className="flex gap-2"><CopyBtn text={result.accessibleHtml} testId="copy-doc" /><DownloadBtn content={result.accessibleHtml} filename={`accessible-${result.filename || "doc"}.html`} /></div>
+              </div>
+              <pre className="result-panel">{result.accessibleHtml}</pre>
+            </div>
+          )}
         </div>
       )}
     </div>
