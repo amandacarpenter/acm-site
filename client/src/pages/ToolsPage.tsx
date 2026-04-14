@@ -160,18 +160,42 @@ function DocumentTab() {
               </div>
             </div>
           )}
-          {result.downloaded ? (
-            <div className="p-4 rounded-xl bg-[#4338ca]/10 border border-[#4338ca]/30 flex items-center gap-3">
-              <Download className="w-5 h-5 text-[#4338ca] shrink-0" />
-              <div>
-                <p className="font-semibold text-sm text-[#4338ca]">Download started</p>
-                <p className="text-xs text-muted-foreground">{result.filename}</p>
-              </div>
-            </div>
-          ) : result.accessibleHtml && (
+          {result.accessibleHtml && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible HTML</h3>
-                <div className="flex gap-2"><CopyBtn text={result.accessibleHtml} testId="copy-doc" /><DownloadBtn content={result.accessibleHtml} filename={`accessible-${result.filename || "doc"}.html`} /></div>
+              <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible Document</h3>
+                <div className="flex gap-2">
+                  <CopyBtn text={result.accessibleHtml} testId="copy-doc" />
+                  <Button variant="outline" size="sm" onClick={async () => {
+                    const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
+                    const html = result.accessibleHtml || "";
+                    const stripped = html
+                      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "\n§H1§$1\n")
+                      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n§H2§$1\n")
+                      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n§H3§$1\n")
+                      .replace(/<li[^>]*>(.*?)<\/li>/gi, "• $1\n")
+                      .replace(/<br\s*\/?>/gi, "\n")
+                      .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n")
+                      .replace(/<[^>]+>/g, "")
+                      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+                      .replace(/&nbsp;/g, " ").replace(/&#[0-9]+;/g, " ");
+                    const lines = stripped.split("\n").filter((l: string) => l.trim());
+                    const children = lines.map((line: string) => {
+                      const t = line.trim();
+                      if (t.startsWith("§H1§")) return new Paragraph({ text: t.replace("§H1§", ""), heading: HeadingLevel.HEADING_1 });
+                      if (t.startsWith("§H2§")) return new Paragraph({ text: t.replace("§H2§", ""), heading: HeadingLevel.HEADING_2 });
+                      if (t.startsWith("§H3§")) return new Paragraph({ text: t.replace("§H3§", ""), heading: HeadingLevel.HEADING_3 });
+                      return new Paragraph({ children: [new TextRun(t)] });
+                    });
+                    const doc = new Document({ sections: [{ children }] });
+                    const buf = await Packer.toBlob(doc);
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(buf);
+                    a.download = (result.filename || "document").replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
+                    a.click();
+                  }}>
+                    <Download className="w-3.5 h-3.5 mr-1" />Download .docx
+                  </Button>
+                </div>
               </div>
               <pre className="result-panel">{result.accessibleHtml}</pre>
             </div>
