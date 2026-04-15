@@ -80,11 +80,45 @@ function IssueBadge({ type }: { type: string }) {
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold uppercase">Info</span>;
 }
 
-function LoadingState({ text }: { text: string }) {
+function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
+  const [progress, setProgress] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+  const defaultSteps = steps || [text];
+
+  useState(() => {
+    // Animate progress from 0 to 90 over ~30s, slowing near the end
+    const intervals: ReturnType<typeof setInterval>[] = [];
+    let p = 0;
+    const tick = setInterval(() => {
+      p = p < 60 ? p + 2.5 : p < 80 ? p + 0.8 : p < 90 ? p + 0.2 : p;
+      setProgress(Math.min(p, 90));
+    }, 800);
+    intervals.push(tick);
+    // Cycle through steps
+    if (defaultSteps.length > 1) {
+      let i = 0;
+      const stepTick = setInterval(() => {
+        i = (i + 1) % defaultSteps.length;
+        setStepIndex(i);
+      }, 4000);
+      intervals.push(stepTick);
+    }
+    return () => intervals.forEach(clearInterval);
+  });
+
   return (
-    <div className="space-y-2">
-      <div className="text-sm text-muted-foreground text-center">{text}</div>
-      <Progress value={undefined} className="animate-pulse" />
+    <div className="space-y-3 p-4 rounded-xl bg-[#4338ca]/5 border border-[#4338ca]/20">
+      <div className="flex items-center gap-2">
+        <Loader2 className="w-4 h-4 text-[#4338ca] animate-spin shrink-0" />
+        <span className="text-sm text-[#4338ca] font-medium">{defaultSteps[stepIndex]}</span>
+      </div>
+      <div className="relative w-full h-2 bg-[#4338ca]/15 rounded-full overflow-hidden">
+        <div
+          className="absolute left-0 top-0 h-full bg-[#4338ca] rounded-full transition-all duration-700 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <p className="text-xs text-muted-foreground">{Math.round(progress)}% — this may take up to a minute</p>
     </div>
   );
 }
@@ -138,7 +172,7 @@ function DocumentTab() {
       <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
-      {loading && <LoadingState text="AI is analyzing your document for accessibility issues…" />}
+      {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Identifying accessibility issues…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="doc-result">
@@ -268,7 +302,7 @@ function VideoTab() {
       <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (mode === "file" ? !file : !youtubeUrl.trim())} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
-      {loading && <LoadingState text="Extracting audio and transcribing with AI — this may take a minute…" />}
+      {loading && <LoadingState text="Transcribing…" steps={["Downloading audio…", "Extracting audio track…", "Sending to transcription AI…", "Generating timecoded transcript…"]} />}
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="video-result">
@@ -328,7 +362,7 @@ function CanvasTab() {
       <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
-      {loading && <LoadingState text="AI is fixing your Canvas HTML for accessibility…" />}
+      {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="canvas-result">
