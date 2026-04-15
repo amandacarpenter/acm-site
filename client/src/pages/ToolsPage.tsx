@@ -145,8 +145,20 @@ function DocumentTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error);
-      setResult(data);
+      if (!resp.ok) { const data = await resp.json(); throw new Error(data.error); }
+      const contentType = resp.headers.get("content-type") || "";
+      if (contentType.includes("wordprocessingml")) {
+        const blob = await resp.blob();
+        const disposition = resp.headers.get("content-disposition") || "";
+        const nameMatch = disposition.match(/filename="?([^"]+)"?/);
+        const filename = nameMatch ? decodeURIComponent(nameMatch[1]) : (file.name.replace(/\.docx$/i, "").replace(/\.pdf$/i, "") + "-accessible.docx");
+        const summary = decodeURIComponent(resp.headers.get("x-summary") || "");
+        const issues = JSON.parse(resp.headers.get("x-issues") || "[]");
+        setResult({ isDocx: true, blob, filename, summary, issues });
+      } else {
+        const data = await resp.json();
+        setResult(data);
+      }
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -170,6 +182,16 @@ function DocumentTab() {
               ))}
             </ul>
           </div>
+          {result.isDocx && (
+            <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={() => {
+              const a = document.createElement("a");
+              a.href = URL.createObjectURL(result.blob);
+              a.download = result.filename;
+              a.click();
+            }}>
+              <Download className="w-4 h-4 mr-2" />Download {result.filename}
+            </Button>
+          )}
           {result.issues?.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 text-amber-500" />Issues ({result.issues.length})</h3>

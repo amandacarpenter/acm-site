@@ -120,41 +120,81 @@ export function registerRoutes(httpServer: Server, app: Express) {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
       }
 
-      const systemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA). 
-Your job is to analyze document content and return an accessibility report plus improved HTML.
-
-Return a JSON object with these fields:
+      const systemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA).
+Analyze this document and return a JSON object with these fields:
 {
   "issues": [{ "type": string, "description": string, "recommendation": string }],
-  "accessibleHtml": string,
-  "summary": string
+  "summary": string (2-3 sentences max describing what was fixed),
+  "sections": [
+    { "type": "h1" | "h2" | "h3" | "h4" | "p" | "li" | "bullet", "text": string }
+  ]
 }
 
-Rules for accessibleHtml:
-- Use proper heading hierarchy (h1, h2, h3)
-- Add descriptive alt attributes to any images (use [IMAGE: describe what should go here])
-- Ensure lists use <ul>/<ol>/<li>
-- Add <lang> attribute suggestions
-- Add aria-label where needed
-- Ensure tables have <th> with scope attributes
-- Ensure links have descriptive text (not "click here")
-- Add role attributes where appropriate
-- Preserve all content — do not summarize or truncate`;
+Rules for sections:
+- Reconstruct the FULL document content as an ordered array of typed blocks
+- Use "h1" for the document title, "h2" for major sections, "h3" for subsections
+- Use "p" for regular paragraphs
+- Use "li" for list items (one entry per item)
+- Preserve ALL content — do not summarize, skip, or truncate any text
+- Fix heading hierarchy issues (e.g. jumping from h1 to h3)
+- The sections array must contain every paragraph, heading, and list item from the original document`;
 
       const response = await callClaude(
         systemPrompt,
         `Analyze this document and make it accessible. File: ${req.file.originalname}\n\nHTML Content:\n${htmlContent}\n\nRaw Text:\n${rawText}`
       );
 
-      let parsed;
+      let parsed: any;
       try {
         const jsonMatch = response.match(/\{[\s\S]*\}/);
         parsed = JSON.parse(jsonMatch ? jsonMatch[0] : response);
       } catch {
-        parsed = { issues: [], accessibleHtml: htmlContent, summary: response };
+        parsed = { issues: [], sections: [], summary: response };
       }
 
-      return res.json({ success: true, filename: req.file.originalname, ...parsed });
+      // Build a proper .docx from the structured sections
+      try {
+        const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType } = await import("docx");
+        const sections = parsed.sections || [];
+        const children = sections.map((block: { type: string; text: string }) => {
+          const t = (block.text || "").trim();
+          switch (block.type) {
+            case "h1": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_1, spacing: { before: 240, after: 120 } });
+            case "h2": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_2, spacing: { before: 200, after: 80 } });
+            case "h3": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_3, spacing: { before: 160, after: 60 } });
+            case "h4": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_4, spacing: { before: 120, after: 40 } });
+            case "li":
+            case "bullet": return new Paragraph({ text: t, bullet: { level: 0 } });
+            default: return new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 100 } });
+          }
+        }).filter((p: any) => p);
+
+        if (children.length === 0) {
+          // fallback: plain text paragraphs from rawText
+          rawText.split("\n").filter((l: string) => l.trim()).forEach((l: string) => {
+            children.push(new Paragraph({ children: [new TextRun(l.trim())], spacing: { after: 100 } }));
+          });
+        }
+
+        const doc = new Document({
+          styles: {
+            default: {
+              document: { run: { font: "Calibri", size: 24 } },
+            },
+          },
+          sections: [{ children }]
+        });
+        const buf = await Packer.toBuffer(doc);
+        const outName = req.file.originalname.replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(outName)}"`);
+        res.setHeader("X-Issues", JSON.stringify(parsed.issues || []));
+        res.setHeader("X-Summary", encodeURIComponent(parsed.summary || ""));
+        return res.send(buf);
+      } catch (docErr: any) {
+        // fallback to JSON
+        return res.json({ success: true, filename: req.file.originalname, ...parsed });
+      }
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
