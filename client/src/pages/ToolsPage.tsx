@@ -145,26 +145,109 @@ function DocumentTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
-      if (!resp.ok) { const data = await resp.json(); throw new Error(data.error); }
-      const contentType = resp.headers.get("content-type") || "";
-      if (contentType.includes("wordprocessingml")) {
-        const blob = await resp.blob();
-        const disposition = resp.headers.get("content-disposition") || "";
-        const nameMatch = disposition.match(/filename="?([^"]+)"?/);
-        const filename = nameMatch ? decodeURIComponent(nameMatch[1]) : (file.name.replace(/\.docx$/i, "").replace(/\.pdf$/i, "") + "-accessible.docx");
-        // X-Summary is now a JSON-encoded array of bullet strings
-        let fixesMade: string[] = [];
-        try {
-          const rawSummary = decodeURIComponent(resp.headers.get("x-summary") || "[]");
-          fixesMade = JSON.parse(rawSummary);
-          if (!Array.isArray(fixesMade)) fixesMade = [String(fixesMade)];
-        } catch { fixesMade = []; }
-        const issues = JSON.parse(resp.headers.get("x-issues") || "[]");
-        setResult({ isDocx: true, blob, filename, fixesMade, issues });
-      } else {
-        const data = await resp.json();
-        setResult(data);
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
+
+      // Build the .docx right here in the browser — no server-side bundling issues
+      const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat } = await import("docx");
+      const fixesMade: string[] = data.fixesMade || [];
+      const issues: any[] = data.issues || [];
+      const rawText: string = data.rawText || "";
+      const baseName = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
+      const filename = baseName + "-accessible.docx";
+
+      const children: any[] = [];
+
+      // ── Report header ──────────────────────────────────────────────────────
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        children: [new TextRun({ text: "Accessibility Report", bold: true, color: "1e1b4b" })],
+        spacing: { before: 0, after: 160 },
+      }));
+      children.push(new Paragraph({
+        children: [new TextRun({ text: `File: ${file.name}`, color: "555555", size: 20 })],
+        spacing: { after: 60 },
+      }));
+      children.push(new Paragraph({
+        children: [new TextRun({ text: `Processed: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, color: "555555", size: 20 })],
+        spacing: { after: 240 },
+      }));
+
+      // ── What Was Fixed ─────────────────────────────────────────────────────
+      children.push(new Paragraph({
+        heading: HeadingLevel.HEADING_2,
+        children: [new TextRun({ text: "What Was Fixed", bold: true })],
+        spacing: { before: 200, after: 120 },
+      }));
+      fixesMade.forEach((fix: string) => {
+        children.push(new Paragraph({
+          numbering: { reference: "bullets", level: 0 },
+          children: [new TextRun({ text: fix.trim() })],
+          spacing: { after: 60 },
+        }));
+      });
+
+      // ── Issues Found ───────────────────────────────────────────────────────
+      if (issues.length > 0) {
+        children.push(new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          children: [new TextRun({ text: "Issues Found", bold: true })],
+          spacing: { before: 280, after: 120 },
+        }));
+        issues.forEach((issue: any) => {
+          children.push(new Paragraph({
+            numbering: { reference: "steps", level: 0 },
+            children: [new TextRun({ text: issue.type || "Issue", bold: true })],
+            spacing: { after: 40 },
+          }));
+          if (issue.description) children.push(new Paragraph({
+            children: [new TextRun({ text: issue.description, color: "444444" })],
+            indent: { left: 720 }, spacing: { after: 40 },
+          }));
+          if (issue.recommendation) children.push(new Paragraph({
+            children: [new TextRun({ text: `Fix: ${issue.recommendation}`, color: "4338ca", italics: true })],
+            indent: { left: 720 }, spacing: { after: 100 },
+          }));
+        });
       }
+
+      // ── Original document content ──────────────────────────────────────────
+      children.push(new Paragraph({
+        pageBreakBefore: true,
+        heading: HeadingLevel.HEADING_1,
+        children: [new TextRun({ text: "Document Content (Accessibility-Reviewed)", bold: true, color: "1e1b4b" })],
+        spacing: { before: 0, after: 200 },
+      }));
+      rawText.split("\n").forEach((line: string) => {
+        const t = line.trim();
+        if (!t) { children.push(new Paragraph({ children: [new TextRun("")], spacing: { after: 60 } })); return; }
+        const isHeading = t.length < 80 && (t === t.toUpperCase() || /^(chapter|section|unit|module|part|week|\d+\.)/i.test(t));
+        if (isHeading && t.length > 3) {
+          children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: t })], spacing: { before: 200, after: 80 } }));
+        } else {
+          children.push(new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 80 } }));
+        }
+      });
+
+      const doc = new Document({
+        numbering: {
+          config: [
+            { reference: "bullets", levels: [{ level: 0, format: LevelFormat.BULLET, text: "\u2022", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+            { reference: "steps", levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.LEFT, style: { paragraph: { indent: { left: 720, hanging: 360 } } } }] },
+          ],
+        },
+        styles: {
+          default: { document: { run: { font: "Calibri", size: 24 } } },
+          paragraphStyles: [
+            { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 280, after: 140 }, outlineLevel: 0 } },
+            { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 28, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 220, after: 110 }, outlineLevel: 1 } },
+          ],
+        },
+        sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children }],
+      });
+
+      const blob = await Packer.toBlob(doc);
+      setResult({ fixesMade, issues, blob, filename });
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -180,14 +263,11 @@ function DocumentTab() {
         <div className="space-y-4" data-testid="doc-result">
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
-            {(result.fixesMade?.length > 0 || result.summary) ? (
+            {result.fixesMade?.length > 0 ? (
               <ul className="space-y-1">
-                {(result.fixesMade && result.fixesMade.length > 0
-                  ? result.fixesMade
-                  : (result.summary || "").split(/\n/).filter((s: string) => s.trim().length > 8)
-                ).slice(0, 8).map((s: string, i: number) => (
+                {result.fixesMade.slice(0, 8).map((s: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim().replace(/\.\s*$/, "")}
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
                   </li>
                 ))}
               </ul>
@@ -195,7 +275,7 @@ function DocumentTab() {
               <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied.</p>
             )}
           </div>
-          {result.isDocx && (
+          {result.blob && (
             <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={() => {
               const a = document.createElement("a");
               a.href = URL.createObjectURL(result.blob);
