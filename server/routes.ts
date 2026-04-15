@@ -122,7 +122,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
       // Trim content to avoid hitting token limits
       const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
-      const htmlForClaude = htmlContent.length > 14000 ? htmlContent.slice(0, 14000) + "<!-- truncated -->" : htmlContent;
+      const htmlForClaude = htmlContent.length > 20000 ? htmlContent.slice(0, 20000) + "<!-- truncated -->" : htmlContent;
 
       // ── Two parallel Claude calls ──────────────────────────────────────────
       // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
@@ -163,7 +163,7 @@ Rules:
       // Run both calls in parallel
       const [auditResponse, structuredHtml] = await Promise.all([
         callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`),
-        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`, 8192),
+        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`),
       ]);
 
       let parsed: any;
