@@ -210,25 +210,62 @@ function DocumentTab() {
 function VideoTab() {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [mode, setMode] = useState<"file" | "url">("file");
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
   const [view, setView] = useState<"timecoded" | "plain">("timecoded");
   const { toast } = useToast();
 
   const run = async () => {
-    if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
+    if (mode === "file" && !file) { toast({ title: "No file", variant: "destructive" }); return; }
+    if (mode === "url" && !youtubeUrl.trim()) { toast({ title: "No URL", variant: "destructive" }); return; }
     setLoading(true); setError(""); setResult(null);
     try {
-      const fd = new FormData(); fd.append("file", file);
-      const resp = await fetch("/api/video/transcribe", { method: "POST", body: fd });
+      let resp: Response;
+      if (mode === "file" && file) {
+        const fd = new FormData(); fd.append("file", file);
+        resp = await fetch("/api/video/transcribe", { method: "POST", body: fd });
+      } else {
+        resp = await fetch("/api/video/transcribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: youtubeUrl }),
+        });
+      }
       const data = await resp.json(); if (!resp.ok) throw new Error(data.error); setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" />
-      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
+      {/* Mode toggle */}
+      <div className="flex gap-2">
+        <Button size="sm" variant={mode === "file" ? "default" : "outline"} onClick={() => setMode("file")}>
+          <Upload className="w-3.5 h-3.5 mr-1" />Upload File
+        </Button>
+        <Button size="sm" variant={mode === "url" ? "default" : "outline"} onClick={() => setMode("url")}>
+          <Video className="w-3.5 h-3.5 mr-1" />YouTube Link
+        </Button>
+      </div>
+
+      {mode === "file" ? (
+        <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" />
+      ) : (
+        <div className="space-y-2">
+          <label className="text-sm font-medium" htmlFor="yt-url">YouTube URL</label>
+          <input
+            id="yt-url" type="url"
+            placeholder="https://www.youtube.com/watch?v=..."
+            className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#4338ca]"
+            value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)}
+            data-testid="input-yt-url"
+          />
+          <p className="text-xs text-muted-foreground">Paste any YouTube video link — we'll extract the audio and transcribe it.</p>
+        </div>
+      )}
+
+      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (mode === "file" ? !file : !youtubeUrl.trim())} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Extracting audio and transcribing with AI — this may take a minute…" />}

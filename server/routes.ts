@@ -197,7 +197,8 @@ Rules for accessibleHtml:
 
   // ── VIDEO TRANSCRIPTION ─────────────────────────────────────────────────────
   app.post("/api/video/transcribe", upload.single("file"), async (req, res) => {
-    if (!req.file && !req.body.url) return res.status(400).json({ error: "No file or URL provided" });
+    const bodyUrl = req.body?.url;
+    if (!req.file && !bodyUrl) return res.status(400).json({ error: "No file or URL provided" });
 
     try {
       let audioBuffer: Buffer;
@@ -213,8 +214,44 @@ Rules for accessibleHtml:
         } else {
           return res.status(400).json({ error: "Unsupported file type" });
         }
+      } else if (bodyUrl) {
+        // YouTube / URL transcription via yt-dlp
+        const url = bodyUrl;
+        const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
+        await new Promise<void>((resolve, reject) => {
+          child_process.exec(
+            `yt-dlp -x --audio-format mp3 --audio-quality 5 -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
+            { timeout: 120000 },
+            (err) => {
+              if (err) reject(new Error("Could not download audio from that URL. Make sure it's a valid YouTube link."));
+              else resolve();
+            }
+          );
+        });
+        // yt-dlp may output with different extension, find the file
+        const tmpDir = '/tmp';
+        const prefix = path.basename(tmpOut).replace('.mp3', '');
+        const files = fs.readdirSync(tmpDir).filter(f => f.startsWith(prefix));
+        if (files.length === 0) throw new Error("Audio extraction failed");
+        const audioFile = path.join(tmpDir, files[0]);
+        // Convert to mp3 with ffmpeg for consistent format
+        const finalMp3 = `/tmp/final_${Date.now()}.mp3`;
+        await new Promise<void>((resolve, reject) => {
+          child_process.exec(
+            `ffmpeg -y -i "${audioFile}" -vn -acodec mp3 -ar 16000 -ac 1 "${finalMp3}"`,
+            (err) => {
+              if (err) reject(err);
+              else resolve();
+            }
+          );
+        });
+        audioBuffer = fs.readFileSync(finalMp3);
+        filename = url;
+        // cleanup temp files
+        try { fs.unlinkSync(audioFile); } catch {}
+        try { fs.unlinkSync(finalMp3); } catch {}
       } else {
-        return res.status(400).json({ error: "URL transcription not yet supported — please upload a file" });
+        return res.status(400).json({ error: "No file or URL provided" });
       }
 
       const transcription = await callTranscribe(audioBuffer, "audio/mpeg");
