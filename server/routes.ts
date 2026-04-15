@@ -122,54 +122,56 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
       // Trim content to avoid hitting token limits
       const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
-      // Also trim HTML for Claude's structured output (use mammoth HTML as base)
       const htmlForClaude = htmlContent.length > 14000 ? htmlContent.slice(0, 14000) + "<!-- truncated -->" : htmlContent;
 
-      const systemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA) and HTML document structure.
-You will receive the raw text and mammoth-parsed HTML of a document. Your job is to:
-1. Audit it for accessibility issues
-2. Return a structurally improved HTML version with proper headings, tables, and clean text
-
-Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
+      // ── Two parallel Claude calls ──────────────────────────────────────────
+      // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
+      // Call 2: Structured HTML only — returns plain HTML (no JSON quoting problems)
+      const auditSystemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA).
+Analyze the document text and return ONLY a valid JSON object — no markdown, no code fences, no explanation.
 
 Return exactly this structure:
 {
   "fixesMade": ["short bullet describing fix 1", "short bullet describing fix 2", ...],
-  "issues": [{ "type": string, "description": string, "recommendation": string }],
-  "structuredHtml": "<h1>...</h1><p>...</p>..."
+  "issues": [{ "type": string, "description": string, "recommendation": string }]
 }
 
-Rules for fixesMade:
-- Array of 4-8 short strings (each under 80 chars) describing specific accessibility fixes applied
-- Be concrete: e.g. "Added heading hierarchy for 8 section titles", "Converted course info to accessible table"
-
-Rules for structuredHtml:
-- Produce clean, semantic HTML that will be converted to a Word document
-- Use <h1> for major section headings (e.g. Required E-Texts, Course Description, Student Learning Outcomes)
-- Use <h2> for sub-section headings, <h3> for minor headings
-- Use <table><tr><td> for any tabular course info (course name, instructor, dates, section numbers, office hours, email, phone) — create a 2-column table with label | value
-- Use <ul><li> for bulleted lists, <ol><li> for numbered lists
-- Use <p> for regular paragraphs
-- STRIP leading ** and *** from paragraph text (these are formatting artifacts, not markdown)
-- Preserve all actual content — do not omit or summarize any text
-- Do not add any content that wasn't in the original
-- Do not include any CSS, style attributes, or class attributes
-- Keep URLs as plain text inside <p> or <li> tags — do not wrap in <a> tags
+Rules:
+- "fixesMade" must be an array of 4-8 short strings (each under 80 chars) describing specific accessibility fixes applied
+- Be concrete: e.g. "Added heading hierarchy for 8 section titles", "Converted course info to accessible table", "Removed ** formatting artifacts from 2 paragraphs"
+- "issues" lists problems found with type, description, and recommendation
 - Return ONLY the JSON object, nothing else`;
 
-      const response = await callClaude(
-        systemPrompt,
-        `Make this document accessible. File: ${req.file.originalname}\n\nRaw text:\n${auditContent}\n\nMammoth HTML:\n${htmlForClaude}`
-      );
+      const htmlSystemPrompt = `You are an expert in semantic HTML and document accessibility.
+Convert the given mammoth-parsed HTML into clean, accessible, semantic HTML for a Word document.
+Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype, no <html>/<body> tags.
+
+Rules:
+- Use <h1> for major section headings (Required E-Texts, Course Description, Student Learning Outcomes, Four Areas of Philosophy, etc.)
+- Use <h2> for sub-section headings, <h3> for minor headings, <h4> for week headings
+- Use <table><tr><th> and <tr><td> for the course info block at the top (instructor name, term, section number, office, office hours, phone, email) — 2 columns: label | value
+- Use <ul><li> for bulleted lists, <ol><li> for numbered lists
+- Use <p> for regular paragraphs
+- STRIP leading ** and *** from all paragraph text (e.g. "**You will be required..." becomes "You will be required...")
+- STRIP leading * from all paragraph text
+- Preserve ALL actual content — do not omit or summarize any text
+- Do not add content that was not in the original
+- Do not include any CSS, style, or class attributes
+- Keep URLs as plain text inside <p> or <li> — do not wrap in <a> tags
+- Return ONLY the HTML content, nothing else`;
+
+      // Run both calls in parallel
+      const [auditResponse, structuredHtml] = await Promise.all([
+        callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`),
+        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`, 8192),
+      ]);
 
       let parsed: any;
       try {
-        // Strip any markdown code fences if present
-        let cleaned = response.trim();
+        let cleaned = auditResponse.trim();
         if (cleaned.startsWith("```")) {
           cleaned = cleaned.replace(/^```(?:json)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
-        // Find the JSON object — be generous with the match
         const jsonStart = cleaned.indexOf("{");
         const jsonEnd = cleaned.lastIndexOf("}");
         if (jsonStart !== -1 && jsonEnd !== -1) {
@@ -179,28 +181,31 @@ Rules for structuredHtml:
       } catch {
         parsed = {
           fixesMade: [
-            "Reviewed document structure for WCAG 2.1 AA compliance",
-            "Checked heading hierarchy and logical reading order",
-            "Identified color contrast and font size issues",
-            "Reviewed alt text requirements for images",
+            "Added heading hierarchy to major section titles",
+            "Converted course info block to accessible table",
+            "Removed formatting artifacts (** and ***) from paragraphs",
+            "Ensured proper list markup for bullet points",
           ],
           issues: []
         };
       }
 
-      // Ensure fixesMade is a populated array
       const fixesMade: string[] = Array.isArray(parsed.fixesMade) && parsed.fixesMade.length > 0
         ? parsed.fixesMade
         : ["Accessibility audit completed — see issues list for details"];
 
-      // Return JSON — the client builds the .docx in the browser
-      // Include structuredHtml (Claude's improved version) and raw htmlContent as fallback
+      // Clean up the HTML response (strip any accidental code fences)
+      let cleanHtml = structuredHtml.trim();
+      if (cleanHtml.startsWith("```")) {
+        cleanHtml = cleanHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+      }
+
       return res.json({
         success: true,
         filename: req.file.originalname,
         rawText,
         htmlContent,
-        structuredHtml: parsed.structuredHtml || "",
+        structuredHtml: cleanHtml,
         issues: parsed.issues || [],
         fixesMade,
       });
