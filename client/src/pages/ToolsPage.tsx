@@ -152,9 +152,15 @@ function DocumentTab() {
         const disposition = resp.headers.get("content-disposition") || "";
         const nameMatch = disposition.match(/filename="?([^"]+)"?/);
         const filename = nameMatch ? decodeURIComponent(nameMatch[1]) : (file.name.replace(/\.docx$/i, "").replace(/\.pdf$/i, "") + "-accessible.docx");
-        const summary = decodeURIComponent(resp.headers.get("x-summary") || "");
+        // X-Summary is now a JSON-encoded array of bullet strings
+        let fixesMade: string[] = [];
+        try {
+          const rawSummary = decodeURIComponent(resp.headers.get("x-summary") || "[]");
+          fixesMade = JSON.parse(rawSummary);
+          if (!Array.isArray(fixesMade)) fixesMade = [String(fixesMade)];
+        } catch { fixesMade = []; }
         const issues = JSON.parse(resp.headers.get("x-issues") || "[]");
-        setResult({ isDocx: true, blob, filename, summary, issues });
+        setResult({ isDocx: true, blob, filename, fixesMade, issues });
       } else {
         const data = await resp.json();
         setResult(data);
@@ -174,9 +180,12 @@ function DocumentTab() {
         <div className="space-y-4" data-testid="doc-result">
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
-            {result.summary ? (
+            {(result.fixesMade?.length > 0 || result.summary) ? (
               <ul className="space-y-1">
-                {(result.summary || "").split(/(?<=[.!])\.?\s+(?=[A-Z])|\n/).filter((s: string) => s.trim().length > 8).slice(0, 6).map((s: string, i: number) => (
+                {(result.fixesMade && result.fixesMade.length > 0
+                  ? result.fixesMade
+                  : (result.summary || "").split(/\n/).filter((s: string) => s.trim().length > 8)
+                ).slice(0, 8).map((s: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                     <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim().replace(/\.\s*$/, "")}
                   </li>
