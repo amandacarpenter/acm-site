@@ -6,6 +6,15 @@ import { storage } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
 import * as child_process from "child_process";
+import {
+  Document,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  Packer,
+  AlignmentType,
+  LevelFormat,
+} from "docx";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 const anthropic = new Anthropic();
@@ -177,8 +186,6 @@ Rules:
 
       // Build a clean .docx: accessibility report header + original document content
       try {
-        const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat, BorderStyle, UnderlineType } = await import("docx");
-
         const reportChildren: any[] = [];
 
         // ── Accessibility Report Header ──────────────────────────────────────
