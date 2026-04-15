@@ -118,7 +118,7 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
           style={{ width: `${progress}%` }}
         />
       </div>
-      <p className="text-xs text-muted-foreground">{Math.round(progress)}% — this may take up to a minute</p>
+      <p className="text-xs text-muted-foreground">{Math.round(progress)}% complete</p>
     </div>
   );
 }
@@ -161,8 +161,14 @@ function DocumentTab() {
       {result && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-1"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">Summary</span></div>
-            <p className="text-sm text-emerald-700 dark:text-emerald-400">{result.summary}</p>
+            <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
+            <ul className="space-y-1">
+              {(result.summary || "").split(/[.\n]/).filter((s: string) => s.trim().length > 10).slice(0, 6).map((s: string, i: number) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                  <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
+                </li>
+              ))}
+            </ul>
           </div>
           {result.issues?.length > 0 && (
             <div className="space-y-2">
@@ -184,28 +190,32 @@ function DocumentTab() {
                 <div className="flex gap-2">
                   <CopyBtn text={result.accessibleHtml} testId="copy-doc" />
                   <Button variant="outline" size="sm" onClick={async () => {
-                    const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
+                    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer } = await import("docx");
                     const html = result.accessibleHtml || "";
-                    const stripped = html
-                      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "\n§H1§$1\n")
-                      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n§H2§$1\n")
-                      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n§H3§$1\n")
-                      .replace(/<li[^>]*>(.*?)<\/li>/gi, "• $1\n")
-                      .replace(/<br\s*\/?>/gi, "\n")
-                      .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n")
-                      .replace(/<[^>]+>/g, "")
-                      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-                      .replace(/&nbsp;/g, " ").replace(/&#[0-9]+;/g, " ");
-                    const lines = stripped.split("\n").filter((l: string) => l.trim());
-                    const children = lines.map((line: string) => {
-                      const t = line.trim();
-                      if (t.startsWith("§H1§")) return new Paragraph({ text: t.replace("§H1§", ""), heading: HeadingLevel.HEADING_1 });
-                      if (t.startsWith("§H2§")) return new Paragraph({ text: t.replace("§H2§", ""), heading: HeadingLevel.HEADING_2 });
-                      if (t.startsWith("§H3§")) return new Paragraph({ text: t.replace("§H3§", ""), heading: HeadingLevel.HEADING_3 });
-                      return new Paragraph({ children: [new TextRun(t)] });
-                    });
-                    const doc = new Document({ sections: [{ children }] });
-                    const buf = await Packer.toBlob(doc);
+                    // Use DOMParser to properly parse the HTML structure
+                    const parser = new DOMParser();
+                    const doc2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
+                    const children: any[] = [];
+                    const processNode = (node: Element) => {
+                      const tag = node.tagName?.toLowerCase();
+                      const text = node.textContent?.trim() || "";
+                      if (!text && !tag) return;
+                      if (tag === "h1") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_1 }));
+                      else if (tag === "h2") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
+                      else if (tag === "h3") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_3 }));
+                      else if (tag === "h4" || tag === "h5" || tag === "h6") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_4 }));
+                      else if (tag === "li") children.push(new Paragraph({ text: `• ${text}`, indent: { left: 360 } }));
+                      else if (tag === "p") { if (text) children.push(new Paragraph({ children: [new TextRun(text)] })); }
+                      else if (tag === "ul" || tag === "ol" || tag === "section" || tag === "div" || tag === "body") {
+                        Array.from(node.children).forEach(processNode);
+                      } else if (text) {
+                        children.push(new Paragraph({ children: [new TextRun(text)] }));
+                      }
+                    };
+                    Array.from(doc2.body.children).forEach(processNode);
+                    if (children.length === 0) children.push(new Paragraph({ children: [new TextRun(html.replace(/<[^>]+>/g, ""))] }));
+                    const docx = new Document({ sections: [{ children }] });
+                    const buf = await Packer.toBlob(docx);
                     const a = document.createElement("a");
                     a.href = URL.createObjectURL(buf);
                     a.download = (result.filename || "document").replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
