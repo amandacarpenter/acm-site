@@ -149,25 +149,72 @@ function DocumentTab() {
       if (!resp.ok) throw new Error(data.error);
 
       // Build the .docx right here in the browser — no server-side bundling issues
-      const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat } = await import("docx");
+      const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
+              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import("docx");
       const fixesMade: string[] = data.fixesMade || [];
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
       const baseName = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
       const filename = baseName + "-accessible.docx";
 
-      // ── Parse HTML from mammoth to get proper structure ──────────────────
-      // This preserves headings, lists, paragraphs exactly as they were in the original
-      const html: string = data.htmlContent || "";
+      // ── Use Claude’s structured HTML if available, fall back to mammoth HTML ────────────
+      const html: string = data.structuredHtml || data.htmlContent || "";
       const parser = new DOMParser();
       const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
 
       const docChildren: any[] = [];
 
+      // Strip leading ** and *** markdown artifacts from text
+      const cleanText = (raw: string) => raw.replace(/^\*{2,3}\s*/, "").trim();
+
+      // Build a proper docx Table from an HTML <table> element
+      const buildTable = (tableNode: Element) => {
+        const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: "B0B0B0" };
+        const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
+        const rows = Array.from(tableNode.querySelectorAll("tr"));
+        if (rows.length === 0) return;
+        const maxCols = rows.reduce((m: number, r: Element) => Math.max(m, r.querySelectorAll("td,th").length), 0);
+        if (maxCols === 0) return;
+        // Full printable width for US Letter with 1" margins
+        const tableWidth = 9360;
+        const colWidth = Math.floor(tableWidth / maxCols);
+        const docxRows = rows.map((row: Element) => {
+          const cells = Array.from(row.querySelectorAll("td,th"));
+          const isHeader = cells.some((c: Element) => c.tagName.toLowerCase() === "th");
+          const docxCells = cells.map((cell: Element) => {
+            const cellText = (cell.textContent || "").trim();
+            return new TableCell({
+              borders: allBorders,
+              width: { size: colWidth, type: WidthType.DXA },
+              shading: isHeader ? { fill: "EDF2F7", type: ShadingType.CLEAR } : undefined,
+              margins: { top: 60, bottom: 60, left: 100, right: 100 },
+              children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader })] })],
+            });
+          });
+          // Pad to maxCols if needed
+          while (docxCells.length < maxCols) {
+            docxCells.push(new TableCell({
+              borders: allBorders,
+              width: { size: colWidth, type: WidthType.DXA },
+              margins: { top: 60, bottom: 60, left: 100, right: 100 },
+              children: [new Paragraph({ children: [new TextRun({ text: "" })] })],
+            }));
+          }
+          return new TableRow({ children: docxCells });
+        });
+        docChildren.push(new Table({
+          width: { size: tableWidth, type: WidthType.DXA },
+          columnWidths: Array(maxCols).fill(colWidth),
+          rows: docxRows,
+        }));
+        // Spacing after table
+        docChildren.push(new Paragraph({ children: [new TextRun({ text: "" })], spacing: { after: 100 } }));
+      };
+
       const processNode = (node: Element) => {
         const tag = node.tagName?.toLowerCase();
-        const text = (node.textContent || "").trim();
-        if (!text && tag !== "br") return;
+        const text = cleanText((node.textContent || "").trim());
+        if (!text && tag !== "br" && tag !== "table") return;
 
         if (tag === "h1") {
           docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text })] }));
@@ -187,14 +234,7 @@ function DocumentTab() {
         } else if (tag === "p") {
           if (text) docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 100 } }));
         } else if (tag === "table") {
-          // Flatten table rows into labelled paragraphs — tables in docx are complex,
-          // but the content must not be lost
-          Array.from(node.querySelectorAll("tr")).forEach(row => {
-            const cells = Array.from(row.querySelectorAll("td,th")).map(c => (c.textContent || "").trim()).filter(Boolean);
-            if (cells.length > 0) {
-              docChildren.push(new Paragraph({ children: [new TextRun({ text: cells.join("  |  ") })], spacing: { after: 60 } }));
-            }
-          });
+          buildTable(node);
         } else if (["ul", "ol", "div", "section", "body"].includes(tag)) {
           Array.from(node.children).forEach(child => processNode(child as Element));
         } else if (text) {
@@ -202,12 +242,12 @@ function DocumentTab() {
         }
       };
 
-      // Fall back to raw text if HTML wasn't available (e.g. PDF)
+      // Use structured HTML (Claude’s improved version) if available; fall back to raw text
       if (html && parsed2.body.children.length > 0) {
         Array.from(parsed2.body.children).forEach(child => processNode(child as Element));
       } else {
         rawText.split("\n").forEach((line: string) => {
-          const t = line.trim();
+          const t = cleanText(line.trim());
           if (t) docChildren.push(new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 80 } }));
         });
       }

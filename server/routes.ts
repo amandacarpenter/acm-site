@@ -120,28 +120,46 @@ export function registerRoutes(httpServer: Server, app: Express) {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
       }
 
-      // Trim content to avoid hitting token limits — Claude only needs to audit, not rewrite
-      const auditContent = rawText.length > 12000 ? rawText.slice(0, 12000) + "\n...[document continues]" : rawText;
+      // Trim content to avoid hitting token limits
+      const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
+      // Also trim HTML for Claude's structured output (use mammoth HTML as base)
+      const htmlForClaude = htmlContent.length > 14000 ? htmlContent.slice(0, 14000) + "<!-- truncated -->" : htmlContent;
 
-      const systemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA).
-Analyze the document text and return ONLY a valid JSON object — no markdown, no code fences, no explanation.
+      const systemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA) and HTML document structure.
+You will receive the raw text and mammoth-parsed HTML of a document. Your job is to:
+1. Audit it for accessibility issues
+2. Return a structurally improved HTML version with proper headings, tables, and clean text
+
+Return ONLY a valid JSON object — no markdown, no code fences, no explanation.
 
 Return exactly this structure:
 {
   "fixesMade": ["short bullet describing fix 1", "short bullet describing fix 2", ...],
-  "issues": [{ "type": string, "description": string, "recommendation": string }]
+  "issues": [{ "type": string, "description": string, "recommendation": string }],
+  "structuredHtml": "<h1>...</h1><p>...</p>..."
 }
 
-Rules:
-- "fixesMade" must be an array of 4-8 short strings (each under 80 chars) describing the specific accessibility fixes applied
-- Each fix should be concrete and specific, e.g. "Added alt text placeholders to 3 images", "Fixed heading hierarchy from H1→H3 to H1→H2→H3"
-- "issues" lists problems found with type, description, and recommendation
-- Do NOT reconstruct the document — only audit it
+Rules for fixesMade:
+- Array of 4-8 short strings (each under 80 chars) describing specific accessibility fixes applied
+- Be concrete: e.g. "Added heading hierarchy for 8 section titles", "Converted course info to accessible table"
+
+Rules for structuredHtml:
+- Produce clean, semantic HTML that will be converted to a Word document
+- Use <h1> for major section headings (e.g. Required E-Texts, Course Description, Student Learning Outcomes)
+- Use <h2> for sub-section headings, <h3> for minor headings
+- Use <table><tr><td> for any tabular course info (course name, instructor, dates, section numbers, office hours, email, phone) — create a 2-column table with label | value
+- Use <ul><li> for bulleted lists, <ol><li> for numbered lists
+- Use <p> for regular paragraphs
+- STRIP leading ** and *** from paragraph text (these are formatting artifacts, not markdown)
+- Preserve all actual content — do not omit or summarize any text
+- Do not add any content that wasn't in the original
+- Do not include any CSS, style attributes, or class attributes
+- Keep URLs as plain text inside <p> or <li> tags — do not wrap in <a> tags
 - Return ONLY the JSON object, nothing else`;
 
       const response = await callClaude(
         systemPrompt,
-        `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`
+        `Make this document accessible. File: ${req.file.originalname}\n\nRaw text:\n${auditContent}\n\nMammoth HTML:\n${htmlForClaude}`
       );
 
       let parsed: any;
@@ -176,12 +194,13 @@ Rules:
         : ["Accessibility audit completed — see issues list for details"];
 
       // Return JSON — the client builds the .docx in the browser
-      // Include htmlContent so the browser can reconstruct proper heading/list structure
+      // Include structuredHtml (Claude's improved version) and raw htmlContent as fallback
       return res.json({
         success: true,
         filename: req.file.originalname,
         rawText,
         htmlContent,
+        structuredHtml: parsed.structuredHtml || "",
         issues: parsed.issues || [],
         fixesMade,
       });
