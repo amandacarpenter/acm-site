@@ -154,42 +154,7 @@ Rules for accessibleHtml:
         parsed = { issues: [], accessibleHtml: htmlContent, summary: response };
       }
 
-      // Generate a .docx from the accessible HTML
-      try {
-        const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
-        // Strip HTML tags to plain text paragraphs for now
-        const stripped = (parsed.accessibleHtml || rawText)
-          .replace(/<h1[^>]*>(.*?)<\/h1>/gi, "\n§H1§$1\n")
-          .replace(/<h2[^>]*>(.*?)<\/h2>/gi, "\n§H2§$1\n")
-          .replace(/<h3[^>]*>(.*?)<\/h3>/gi, "\n§H3§$1\n")
-          .replace(/<li[^>]*>(.*?)<\/li>/gi, "• $1\n")
-          .replace(/<br\s*\/?>/gi, "\n")
-          .replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n")
-          .replace(/<[^>]+>/g, "")
-          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-          .replace(/&nbsp;/g, " ").replace(/&#[0-9]+;/g, " ");
-
-        const lines = stripped.split("\n").filter(l => l.trim());
-        const children = lines.map(line => {
-          const trimmed = line.trim();
-          if (trimmed.startsWith("§H1§")) return new Paragraph({ text: trimmed.replace("§H1§", ""), heading: HeadingLevel.HEADING_1 });
-          if (trimmed.startsWith("§H2§")) return new Paragraph({ text: trimmed.replace("§H2§", ""), heading: HeadingLevel.HEADING_2 });
-          if (trimmed.startsWith("§H3§")) return new Paragraph({ text: trimmed.replace("§H3§", ""), heading: HeadingLevel.HEADING_3 });
-          return new Paragraph({ children: [new TextRun(trimmed)] });
-        });
-
-        const doc = new Document({ sections: [{ children }] });
-        const buf = await Packer.toBuffer(doc);
-        const outName = req.file.originalname.replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
-        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
-        res.setHeader("Content-Disposition", `attachment; filename="${outName}"`);
-        res.setHeader("X-Issues", JSON.stringify(parsed.issues || []));
-        res.setHeader("X-Summary", parsed.summary || "");
-        return res.send(buf);
-      } catch (docErr: any) {
-        // fallback to JSON if docx generation fails
-        return res.json({ success: true, filename: req.file.originalname, ...parsed });
-      }
+      return res.json({ success: true, filename: req.file.originalname, ...parsed });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
