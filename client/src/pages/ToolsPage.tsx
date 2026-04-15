@@ -156,78 +156,65 @@ function DocumentTab() {
       const baseName = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
       const filename = baseName + "-accessible.docx";
 
-      const children: any[] = [];
+      // ── Parse HTML from mammoth to get proper structure ──────────────────
+      // This preserves headings, lists, paragraphs exactly as they were in the original
+      const html: string = data.htmlContent || "";
+      const parser = new DOMParser();
+      const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
 
-      // ── Report header ──────────────────────────────────────────────────────
-      children.push(new Paragraph({
-        heading: HeadingLevel.HEADING_1,
-        children: [new TextRun({ text: "Accessibility Report", bold: true, color: "1e1b4b" })],
-        spacing: { before: 0, after: 160 },
-      }));
-      children.push(new Paragraph({
-        children: [new TextRun({ text: `File: ${file.name}`, color: "555555", size: 20 })],
-        spacing: { after: 60 },
-      }));
-      children.push(new Paragraph({
-        children: [new TextRun({ text: `Processed: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, color: "555555", size: 20 })],
-        spacing: { after: 240 },
-      }));
+      const docChildren: any[] = [];
 
-      // ── What Was Fixed ─────────────────────────────────────────────────────
-      children.push(new Paragraph({
-        heading: HeadingLevel.HEADING_2,
-        children: [new TextRun({ text: "What Was Fixed", bold: true })],
-        spacing: { before: 200, after: 120 },
-      }));
-      fixesMade.forEach((fix: string) => {
-        children.push(new Paragraph({
-          numbering: { reference: "bullets", level: 0 },
-          children: [new TextRun({ text: fix.trim() })],
-          spacing: { after: 60 },
-        }));
-      });
+      const processNode = (node: Element) => {
+        const tag = node.tagName?.toLowerCase();
+        const text = (node.textContent || "").trim();
+        if (!text && tag !== "br") return;
 
-      // ── Issues Found ───────────────────────────────────────────────────────
-      if (issues.length > 0) {
-        children.push(new Paragraph({
-          heading: HeadingLevel.HEADING_2,
-          children: [new TextRun({ text: "Issues Found", bold: true })],
-          spacing: { before: 280, after: 120 },
-        }));
-        issues.forEach((issue: any) => {
-          children.push(new Paragraph({
-            numbering: { reference: "steps", level: 0 },
-            children: [new TextRun({ text: issue.type || "Issue", bold: true })],
-            spacing: { after: 40 },
-          }));
-          if (issue.description) children.push(new Paragraph({
-            children: [new TextRun({ text: issue.description, color: "444444" })],
-            indent: { left: 720 }, spacing: { after: 40 },
-          }));
-          if (issue.recommendation) children.push(new Paragraph({
-            children: [new TextRun({ text: `Fix: ${issue.recommendation}`, color: "4338ca", italics: true })],
-            indent: { left: 720 }, spacing: { after: 100 },
-          }));
+        if (tag === "h1") {
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text })] }));
+        } else if (tag === "h2") {
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text })] }));
+        } else if (tag === "h3") {
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun({ text })] }));
+        } else if (tag === "h4" || tag === "h5" || tag === "h6") {
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_4, children: [new TextRun({ text })] }));
+        } else if (tag === "li") {
+          const parentTag = node.parentElement?.tagName?.toLowerCase();
+          if (parentTag === "ol") {
+            docChildren.push(new Paragraph({ numbering: { reference: "steps", level: 0 }, children: [new TextRun({ text })] }));
+          } else {
+            docChildren.push(new Paragraph({ numbering: { reference: "bullets", level: 0 }, children: [new TextRun({ text })] }));
+          }
+        } else if (tag === "p") {
+          if (text) docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 100 } }));
+        } else if (tag === "table") {
+          // Flatten table rows into labelled paragraphs — tables in docx are complex,
+          // but the content must not be lost
+          Array.from(node.querySelectorAll("tr")).forEach(row => {
+            const cells = Array.from(row.querySelectorAll("td,th")).map(c => (c.textContent || "").trim()).filter(Boolean);
+            if (cells.length > 0) {
+              docChildren.push(new Paragraph({ children: [new TextRun({ text: cells.join("  |  ") })], spacing: { after: 60 } }));
+            }
+          });
+        } else if (["ul", "ol", "div", "section", "body"].includes(tag)) {
+          Array.from(node.children).forEach(child => processNode(child as Element));
+        } else if (text) {
+          docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 80 } }));
+        }
+      };
+
+      // Fall back to raw text if HTML wasn't available (e.g. PDF)
+      if (html && parsed2.body.children.length > 0) {
+        Array.from(parsed2.body.children).forEach(child => processNode(child as Element));
+      } else {
+        rawText.split("\n").forEach((line: string) => {
+          const t = line.trim();
+          if (t) docChildren.push(new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 80 } }));
         });
       }
 
-      // ── Original document content ──────────────────────────────────────────
-      children.push(new Paragraph({
-        pageBreakBefore: true,
-        heading: HeadingLevel.HEADING_1,
-        children: [new TextRun({ text: "Document Content (Accessibility-Reviewed)", bold: true, color: "1e1b4b" })],
-        spacing: { before: 0, after: 200 },
-      }));
-      rawText.split("\n").forEach((line: string) => {
-        const t = line.trim();
-        if (!t) { children.push(new Paragraph({ children: [new TextRun("")], spacing: { after: 60 } })); return; }
-        const isHeading = t.length < 80 && (t === t.toUpperCase() || /^(chapter|section|unit|module|part|week|\d+\.)/i.test(t));
-        if (isHeading && t.length > 3) {
-          children.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text: t })], spacing: { before: 200, after: 80 } }));
-        } else {
-          children.push(new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 80 } }));
-        }
-      });
+      if (docChildren.length === 0) {
+        docChildren.push(new Paragraph({ children: [new TextRun({ text: rawText })] }));
+      }
 
       const doc = new Document({
         numbering: {
@@ -241,9 +228,11 @@ function DocumentTab() {
           paragraphStyles: [
             { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 280, after: 140 }, outlineLevel: 0 } },
             { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 28, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 220, after: 110 }, outlineLevel: 1 } },
+            { id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 180, after: 80 }, outlineLevel: 2 } },
+            { id: "Heading4", name: "Heading 4", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, italics: true, font: "Calibri", color: "333333" }, paragraph: { spacing: { before: 140, after: 60 }, outlineLevel: 3 } },
           ],
         },
-        sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children }],
+        sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children: docChildren }],
       });
 
       const blob = await Packer.toBlob(doc);

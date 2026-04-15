@@ -176,10 +176,12 @@ Rules:
         : ["Accessibility audit completed — see issues list for details"];
 
       // Return JSON — the client builds the .docx in the browser
+      // Include htmlContent so the browser can reconstruct proper heading/list structure
       return res.json({
         success: true,
         filename: req.file.originalname,
         rawText,
+        htmlContent,
         issues: parsed.issues || [],
         fixesMade,
       });
