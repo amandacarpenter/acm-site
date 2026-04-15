@@ -314,20 +314,7 @@ function DocumentTab() {
               <Download className="w-4 h-4 mr-2" />Download {result.filename}
             </Button>
           )}
-          {result.issues?.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="font-semibold text-sm flex items-center gap-2"><AlertCircle className="w-4 h-4 text-amber-500" />Issues ({result.issues.length})</h3>
-              <div className="space-y-2 max-h-48 overflow-y-auto">
-                {result.issues.map((issue: any, i: number) => (
-                  <div key={i} className="p-3 rounded-lg bg-card border text-sm space-y-1">
-                    <div className="flex items-center gap-2"><IssueBadge type={issue.type} /><span className="font-medium">{issue.type}</span></div>
-                    <p className="text-muted-foreground">{issue.description}</p>
-                    {issue.recommendation && <p className="text-xs text-[#4338ca] flex items-center gap-1"><ChevronRight className="w-3 h-3" />{issue.recommendation}</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
           {result.accessibleHtml && (
             <div className="space-y-2">
               <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible Document</h3>
