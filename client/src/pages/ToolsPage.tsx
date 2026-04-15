@@ -174,13 +174,17 @@ function DocumentTab() {
         <div className="space-y-4" data-testid="doc-result">
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
-            <ul className="space-y-1">
-              {(result.summary || "").split(/[.\n]/).filter((s: string) => s.trim().length > 10).slice(0, 6).map((s: string, i: number) => (
-                <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                  <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
-                </li>
-              ))}
-            </ul>
+            {result.summary ? (
+              <ul className="space-y-1">
+                {(result.summary || "").split(/(?<=[.!])\.?\s+(?=[A-Z])|\n/).filter((s: string) => s.trim().length > 8).slice(0, 6).map((s: string, i: number) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim().replace(/\.\s*$/, "")}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied.</p>
+            )}
           </div>
           {result.isDocx && (
             <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={() => {

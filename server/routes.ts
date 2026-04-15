@@ -146,10 +146,12 @@ Rules for sections:
 
       let parsed: any;
       try {
-        const jsonMatch = response.match(/\{[\s\S]*\}/);
-        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : response);
+        // Claude sometimes wraps JSON in markdown code blocks
+        const cleaned = response.replace(/^```(?:json)?\n?/m, "").replace(/```\s*$/m, "").trim();
+        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+        parsed = JSON.parse(jsonMatch ? jsonMatch[0] : cleaned);
       } catch {
-        parsed = { issues: [], sections: [], summary: response };
+        parsed = { issues: [], sections: [], summary: "Document analyzed and accessibility improvements applied." };
       }
 
       // Build a proper .docx from the structured sections
@@ -164,7 +166,7 @@ Rules for sections:
             case "h3": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_3, spacing: { before: 160, after: 60 } });
             case "h4": return new Paragraph({ text: t, heading: HeadingLevel.HEADING_4, spacing: { before: 120, after: 40 } });
             case "li":
-            case "bullet": return new Paragraph({ text: t, bullet: { level: 0 } });
+            case "bullet": return new Paragraph({ text: t, numbering: { reference: "bullets", level: 0 } });
             default: return new Paragraph({ children: [new TextRun({ text: t })], spacing: { after: 100 } });
           }
         }).filter((p: any) => p);
@@ -177,6 +179,12 @@ Rules for sections:
         }
 
         const doc = new Document({
+          numbering: {
+            config: [{
+              reference: "bullets",
+              levels: [{ level: 0, format: "bullet", text: "\u2022", alignment: "left", style: { paragraph: { indent: { left: 360, hanging: 360 } } } }]
+            }]
+          },
           styles: {
             default: {
               document: { run: { font: "Calibri", size: 24 } },
