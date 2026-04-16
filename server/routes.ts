@@ -124,14 +124,14 @@ export function registerRoutes(httpServer: Server, app: Express) {
           "doc = fitz.open(sys.argv[1])",
           "text = ''",
           "for page in doc:",
-          // Use 'blocks' mode which groups text into paragraphs and handles multi-column
           "    blocks = page.get_text('blocks')",
-          "    page_text = ''",
+          "    lines = []",
           "    for b in sorted(blocks, key=lambda b: (round(b[1]/20)*20, b[0])):",
           "        line = b[4].strip().replace('\\n', ' ')",
-          "        if line:",
-          "            page_text += line + '\\n'",
-          "    if len(page_text.strip()) < 50:",  // scanned page — use OCR
+          "        if line and (not lines or line != lines[-1]):",  // deduplicate consecutive identical lines
+          "            lines.append(line)",
+          "    page_text = '\\n'.join(lines)",
+          "    if len(page_text.strip()) < 50:",
           "        tp = page.get_textpage_ocr(language='eng', dpi=300)",
           "        page_text = page.get_text(textpage=tp).strip()",
           "    text += page_text + '\\n'",
@@ -199,6 +199,8 @@ Rules:
 - Do not add content that was not in the original
 - Do not include any CSS, style, or class attributes
 - Keep URLs as plain text inside <p> or <li> — do not wrap in <a> tags
+- If you see repeated legend items or map labels (short fragments repeated), skip them — these are figure captions from image pages
+- For any figure/image reference (e.g. "Figure 1.", "Figure 2.") add a <p> like: [Figure X: image not extractable — add alt text manually]
 - Return ONLY the HTML content, nothing else`;
 
       // Run both calls in parallel
