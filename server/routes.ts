@@ -236,8 +236,15 @@ Rules:
       }
 
       // Append the remainder (raw mammoth HTML) for long documents
+      // Convert <br> separators to proper <p> tags so the browser can render them
       if (htmlRemainder) {
-        cleanHtml = cleanHtml + "\n" + htmlRemainder;
+        const remainderAsParas = htmlRemainder
+          .split(/<br\s*\/?>/gi)
+          .map(chunk => chunk.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())
+          .filter(chunk => chunk.length > 2)
+          .map(chunk => `<p>${chunk}</p>`)
+          .join("\n");
+        cleanHtml = cleanHtml + "\n" + remainderAsParas;
       }
 
       return res.json({
