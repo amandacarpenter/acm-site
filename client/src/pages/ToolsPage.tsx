@@ -235,7 +235,18 @@ function DocumentTab() {
           if (text) docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 100 } }));
         } else if (tag === "table") {
           buildTable(node);
-        } else if (["ul", "ol", "div", "section", "body"].includes(tag)) {
+        } else if (tag === "div" || tag === "article" || tag === "header" || tag === "section") {
+          const elementChildren = Array.from(node.children).filter((c: Element) => (c as Element).tagName?.toLowerCase() !== "br");
+          if (elementChildren.length > 0) {
+            // Has real element children — recurse
+            Array.from(node.children).forEach(child => processNode(child as Element));
+          } else if (text) {
+            // Only text + <br> nodes — split on <br> into separate paragraphs
+            const innerHTML = node.innerHTML || "";
+            const lines = innerHTML.split(/<br\s*\/?>/i).map((l: string) => cleanText(l.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())).filter((l: string) => l.length > 0);
+            lines.forEach((line: string) => docChildren.push(new Paragraph({ children: [new TextRun({ text: line })], spacing: { after: 60 } })));
+          }
+        } else if (tag === "body" || tag === "ul" || tag === "ol") {
           Array.from(node.children).forEach(child => processNode(child as Element));
         } else if (text) {
           docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 80 } }));
