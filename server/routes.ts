@@ -112,7 +112,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const htmlResult = await mammoth.convertToHtml({ buffer: req.file.buffer });
         htmlContent = htmlResult.value;
       } else if (ext === ".pdf") {
-        const pdfParse = (await import("pdf-parse")).default;
+        const pdfMod = await import("pdf-parse");
+        const pdfParse = (pdfMod.default && typeof pdfMod.default === "function") ? pdfMod.default : (pdfMod as any);
         const data = await pdfParse(req.file.buffer);
         rawText = data.text;
         htmlContent = `<div>${rawText.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</div>`;
