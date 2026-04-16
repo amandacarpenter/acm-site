@@ -124,11 +124,17 @@ export function registerRoutes(httpServer: Server, app: Express) {
           "doc = fitz.open(sys.argv[1])",
           "text = ''",
           "for page in doc:",
-          "    t = page.get_text().strip()",
-          "    if len(t) < 50:",  // scanned page — use OCR
+          // Use 'blocks' mode which groups text into paragraphs and handles multi-column
+          "    blocks = page.get_text('blocks')",
+          "    page_text = ''",
+          "    for b in sorted(blocks, key=lambda b: (round(b[1]/20)*20, b[0])):",
+          "        line = b[4].strip().replace('\\n', ' ')",
+          "        if line:",
+          "            page_text += line + '\\n'",
+          "    if len(page_text.strip()) < 50:",  // scanned page — use OCR
           "        tp = page.get_textpage_ocr(language='eng', dpi=300)",
-          "        t = page.get_text(textpage=tp).strip()",
-          "    text += t + '\\n'",
+          "        page_text = page.get_text(textpage=tp).strip()",
+          "    text += page_text + '\\n'",
           "print(text)",
         ].join("\n");
         // Use venv python3 if available (Railway), fall back to system python3
