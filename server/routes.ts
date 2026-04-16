@@ -112,11 +112,19 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const htmlResult = await mammoth.convertToHtml({ buffer: req.file.buffer });
         htmlContent = htmlResult.value;
       } else if (ext === ".pdf") {
-        const pdfMod = await import("pdf-parse");
-        const { PDFParse } = pdfMod as any;
-        const parser = new PDFParse();
-        const data = await parser.parse(req.file.buffer);
-        rawText = data.text;
+        // Use pdftotext (poppler) — reliable, pre-installed, no npm issues
+        const { execFile } = await import("child_process");
+        const { writeFile, unlink } = await import("fs/promises");
+        const { tmpdir } = await import("os");
+        const { join } = await import("path");
+        const tmpIn = join(tmpdir(), `pdf-${Date.now()}.pdf`);
+        await writeFile(tmpIn, req.file.buffer);
+        rawText = await new Promise<string>((resolve, reject) => {
+          execFile("pdftotext", ["-layout", tmpIn, "-"], (err, stdout) => {
+            if (err) reject(err); else resolve(stdout);
+          });
+        });
+        await unlink(tmpIn).catch(() => {});
         htmlContent = `<div>${rawText.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</div>`;
       } else {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
