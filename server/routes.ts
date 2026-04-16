@@ -154,6 +154,9 @@ Rules:
 - Use <p> for regular paragraphs
 - STRIP leading ** and *** from all paragraph text (e.g. "**You will be required..." becomes "You will be required...")
 - STRIP leading * from all paragraph text
+- STRIP dot leaders: remove sequences of 3 or more dots (e.g. "Participation......200 pts" becomes "Participation" | "200 pts" in a table cell)
+- Convert any grading/scoring section that uses dot leaders into a proper <table> with 2 columns: item | points. Include a "Total" row if present.
+- The KEY/grading scale line (e.g. "KEY: 325 - 292.5 = A...") should be kept as a <p> after the grading table
 - Preserve ALL actual content — do not omit or summarize any text
 - Do not add content that was not in the original
 - Do not include any CSS, style, or class attributes
