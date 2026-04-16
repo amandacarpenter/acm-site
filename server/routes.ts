@@ -146,7 +146,15 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
       // Trim content to avoid hitting token limits
       const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
-      const htmlForClaude = htmlContent.length > 20000 ? htmlContent.slice(0, 20000) + "<!-- truncated -->" : htmlContent;
+      // Claude restructures only the first 10k chars of HTML — enough for heading/table fixes
+      // The remainder is passed through as-is and appended after Claude's output
+      const HTML_CLAUDE_LIMIT = 10000;
+      const htmlForClaude = htmlContent.length > HTML_CLAUDE_LIMIT
+        ? htmlContent.slice(0, HTML_CLAUDE_LIMIT) + "<!-- END_OF_CLAUDE_SECTION -->"
+        : htmlContent;
+      const htmlRemainder = htmlContent.length > HTML_CLAUDE_LIMIT
+        ? htmlContent.slice(HTML_CLAUDE_LIMIT)
+        : "";
 
       // ── Two parallel Claude calls ──────────────────────────────────────────
       // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
@@ -225,6 +233,11 @@ Rules:
       let cleanHtml = structuredHtml.trim();
       if (cleanHtml.startsWith("```")) {
         cleanHtml = cleanHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+      }
+
+      // Append the remainder (raw mammoth HTML) for long documents
+      if (htmlRemainder) {
+        cleanHtml = cleanHtml + "\n" + htmlRemainder;
       }
 
       return res.json({
