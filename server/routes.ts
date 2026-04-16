@@ -120,15 +120,20 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const tmpIn = join(tmpdir(), `pdf-${Date.now()}.pdf`);
         await writeFile(tmpIn, req.file.buffer);
         const pyScript = [
-          "import fitz, sys",
+          "import fitz, sys, re",
           "doc = fitz.open(sys.argv[1])",
           "text = ''",
           "for page in doc:",
           "    blocks = page.get_text('blocks')",
+          "    seen = set()",
           "    lines = []",
           "    for b in sorted(blocks, key=lambda b: (round(b[1]/20)*20, b[0])):",
-          "        line = b[4].strip().replace('\\n', ' ')",
-          "        if line and (not lines or line != lines[-1]):",  // deduplicate consecutive identical lines
+          "        key = (round(b[0]), round(b[1]), b[4])",  // dedupe by position+content
+          "        if key in seen: continue",
+          "        seen.add(key)",
+          "        line = re.sub(r'[\\x00-\\x08\\x0e-\\x1f]', '', b[4])",  // strip null bytes
+          "        line = ' '.join(line.split())",  // normalize whitespace
+          "        if line:",
           "            lines.append(line)",
           "    page_text = '\\n'.join(lines)",
           "    if len(page_text.strip()) < 50:",
