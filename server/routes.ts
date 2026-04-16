@@ -299,7 +299,7 @@ Rules:
         const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
         await new Promise<void>((resolve, reject) => {
           child_process.exec(
-            `yt-dlp -x --audio-format mp3 --audio-quality 5 -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
+            `yt-dlp --extractor-args "youtube:player_client=android,web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
             { timeout: 120000 },
             (err) => {
               if (err) reject(new Error("Could not download audio from that URL. Make sure it's a valid YouTube link."));
