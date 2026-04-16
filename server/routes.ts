@@ -112,15 +112,16 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const htmlResult = await mammoth.convertToHtml({ buffer: req.file.buffer });
         htmlContent = htmlResult.value;
       } else if (ext === ".pdf") {
-        // Use pdftotext (poppler) — reliable, pre-installed, no npm issues
+        // Use Python pdfminer — reliable, available in Railway Docker image
         const { execFile } = await import("child_process");
         const { writeFile, unlink } = await import("fs/promises");
         const { tmpdir } = await import("os");
         const { join } = await import("path");
         const tmpIn = join(tmpdir(), `pdf-${Date.now()}.pdf`);
         await writeFile(tmpIn, req.file.buffer);
+        const pyScript = `from pdfminer.high_level import extract_text; import sys; print(extract_text(sys.argv[1]))`;
         rawText = await new Promise<string>((resolve, reject) => {
-          execFile("pdftotext", ["-layout", tmpIn, "-"], (err, stdout) => {
+          execFile("python3", ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
             if (err) reject(err); else resolve(stdout);
           });
         });
