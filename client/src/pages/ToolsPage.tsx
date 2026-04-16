@@ -283,6 +283,11 @@ function DocumentTab() {
   return (
     <div className="space-y-5">
       <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" />
+      <div className="text-xs text-muted-foreground space-y-0.5 px-1">
+        <p>✓ Word (.docx) and PDF files supported</p>
+        <p>✓ Digital PDFs process in seconds — scanned PDFs use OCR and may take longer</p>
+        <p>✓ Best for syllabi, course documents, and handouts (up to ~50 pages)</p>
+      </div>
       <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
