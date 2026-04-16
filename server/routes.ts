@@ -113,8 +113,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
         htmlContent = htmlResult.value;
       } else if (ext === ".pdf") {
         const pdfMod = await import("pdf-parse");
-        const pdfParse = (pdfMod.default && typeof pdfMod.default === "function") ? pdfMod.default : (pdfMod as any);
-        const data = await pdfParse(req.file.buffer);
+        const { PDFParse } = pdfMod as any;
+        const parser = new PDFParse();
+        const data = await parser.parse(req.file.buffer);
         rawText = data.text;
         htmlContent = `<div>${rawText.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</div>`;
       } else {
