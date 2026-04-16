@@ -4,3 +4,4 @@ pydantic>=2.0
 httpx
 elevenlabs>=1.54.0
 pdfminer.six>=20221105
+PyMuPDF>=1.23.0

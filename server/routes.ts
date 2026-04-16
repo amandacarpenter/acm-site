@@ -119,7 +119,18 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const { join } = await import("path");
         const tmpIn = join(tmpdir(), `pdf-${Date.now()}.pdf`);
         await writeFile(tmpIn, req.file.buffer);
-        const pyScript = `from pdfminer.high_level import extract_text; import sys; print(extract_text(sys.argv[1]))`;
+        const pyScript = [
+          "import fitz, sys",
+          "doc = fitz.open(sys.argv[1])",
+          "text = ''",
+          "for page in doc:",
+          "    t = page.get_text().strip()",
+          "    if len(t) < 50:",  // scanned page — use OCR
+          "        tp = page.get_textpage_ocr(language='eng', dpi=300)",
+          "        t = page.get_text(textpage=tp).strip()",
+          "    text += t + '\\n'",
+          "print(text)",
+        ].join("\n");
         // Use venv python3 if available (Railway), fall back to system python3
         const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
         rawText = await new Promise<string>((resolve, reject) => {
