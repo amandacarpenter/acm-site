@@ -301,8 +301,8 @@ Rules:
           child_process.exec(
             `yt-dlp --extractor-args "youtube:player_client=android,web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
             { timeout: 120000 },
-            (err) => {
-              if (err) reject(new Error("Could not download audio from that URL. Make sure it's a valid YouTube link."));
+            (err, stdout, stderr) => {
+              if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-300) || err.message}`));
               else resolve();
             }
           );
