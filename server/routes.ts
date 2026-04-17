@@ -55,8 +55,8 @@ async function callTranscribe(audioBytes: Buffer, _mediaType: string) {
 
   const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
   await new Promise<void>((resolve, reject) => {
-    execFile(python3, [tmpScript, tmpAudio, tmpOut], { timeout: 300000 }, (err, _stdout, stderr) => {
-      if (err) reject(new Error("Whisper transcription failed: " + (stderr?.slice(-300) || err.message)));
+    execFile(python3, [tmpScript, tmpAudio, tmpOut], { timeout: 300000 }, (err, stdout, stderr) => {
+      if (err) reject(new Error("Whisper transcription failed: " + (stderr?.slice(-1000) || stdout?.slice(-500) || err.message)));
       else resolve();
     });
   });
@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "d9633f91" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "17ebceb8" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { execFile } = await import("child_process");
     execFile("yt-dlp", ["--version"], (err, stdout) => {
