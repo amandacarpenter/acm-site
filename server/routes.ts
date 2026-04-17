@@ -49,9 +49,13 @@ async function callTranscribe(audioBytes: Buffer, _mediaType: string) {
     "    json.dump({'segments': segments, 'text': ' '.join(full_text)}, f)",
   ].join("\n");
 
+  // Write script to a temp file — passing via -c strips newlines and breaks Python syntax
+  const tmpScript = join(tmpdir(), `whisper_script_${Date.now()}.py`);
+  await writeFile(tmpScript, pyScript, "utf8");
+
   const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
   await new Promise<void>((resolve, reject) => {
-    execFile(python3, ["-c", pyScript, tmpAudio, tmpOut], { timeout: 300000 }, (err, _stdout, stderr) => {
+    execFile(python3, [tmpScript, tmpAudio, tmpOut], { timeout: 300000 }, (err, _stdout, stderr) => {
       if (err) reject(new Error("Whisper transcription failed: " + (stderr?.slice(-300) || err.message)));
       else resolve();
     });
@@ -60,6 +64,7 @@ async function callTranscribe(audioBytes: Buffer, _mediaType: string) {
   const result = JSON.parse(await readFile(tmpOut, "utf8"));
   await unlink(tmpAudio).catch(() => {});
   await unlink(tmpOut).catch(() => {});
+  await unlink(tmpScript).catch(() => {});
   return result;
 }
 
