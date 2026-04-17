@@ -337,7 +337,7 @@ Rules:
         const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
         await new Promise<void>((resolve, reject) => {
           child_process.exec(
-            `yt-dlp --extractor-args "youtube:player_client=tv_embedded,mweb" --user-agent "Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/538.1 (KHTML, like Gecko) Version/6.0 TV Safari/538.1" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
+            `yt-dlp --js-runtimes node --remote-components ejs:github --extractor-args "youtube:player_client=web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
             { timeout: 120000 },
             (err, stdout, stderr) => {
               if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-300) || err.message}`));
