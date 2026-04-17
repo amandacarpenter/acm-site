@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "48533d10" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "b62c28c0" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { execFile } = await import("child_process");
     execFile("yt-dlp", ["--version"], (err, stdout) => {
