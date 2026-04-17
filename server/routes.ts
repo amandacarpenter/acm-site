@@ -126,11 +126,14 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "6d4d5a1a" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "e9209191" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
-    const { execFile } = await import("child_process");
-    execFile("yt-dlp", ["--version"], (err, stdout) => {
-      res.json({ version: stdout?.trim(), err: err?.message });
+    const { exec } = await import("child_process");
+    // Check node path and run a real yt-dlp title fetch to expose the actual error
+    const nodeExists = require("fs").existsSync("/usr/local/bin/node");
+    const cmd = `yt-dlp --js-runtimes "node:/usr/local/bin/node" --extractor-args "youtube:player_client=web" --get-title "https://www.youtube.com/watch?v=jNQXAC9IVRw" 2>&1`;
+    exec(cmd, { timeout: 30000 }, (err, stdout) => {
+      res.json({ nodeExists, cmd, stdout: stdout?.slice(-1000), err: err?.message });
     });
   });
 
