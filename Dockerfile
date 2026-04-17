@@ -16,10 +16,13 @@ RUN apt-get update && apt-get install -y python3 python3-pip python3-venv ffmpeg
     && chmod a+rx /usr/local/bin/yt-dlp
 
 # Python deps via venv
+# Pre-download Whisper base model at build time so first transcription is fast
 COPY requirements.txt ./
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
+# Pre-download Whisper base model so first transcription doesn't time out
+RUN python3 -c "import whisper; whisper.load_model('base')"
 
 # Node deps (production only)
 COPY package*.json ./

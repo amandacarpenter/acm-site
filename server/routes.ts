@@ -21,19 +21,44 @@ async function callClaude(systemPrompt: string, userContent: string, maxTokens =
   return (msg.content[0] as any).text;
 }
 
-// Helper: call transcription microservice
-async function callTranscribe(audioBytes: Buffer, mediaType: string) {
-  const b64 = audioBytes.toString("base64");
-  const resp = await fetch("http://127.0.0.1:5001/transcribe", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ audio_b64: b64, media_type: mediaType }),
+// Helper: transcribe audio using local Whisper (no API key needed)
+async function callTranscribe(audioBytes: Buffer, _mediaType: string) {
+  const { writeFile, unlink, readFile } = await import("fs/promises");
+  const { execFile } = await import("child_process");
+  const { tmpdir } = await import("os");
+  const { join } = await import("path");
+
+  const tmpAudio = join(tmpdir(), `whisper_in_${Date.now()}.mp3`);
+  const tmpOut = join(tmpdir(), `whisper_out_${Date.now()}.json`);
+  await writeFile(tmpAudio, audioBytes);
+
+  const pyScript = [
+    "import whisper, json, sys",
+    "model = whisper.load_model('base')",
+    "result = model.transcribe(sys.argv[1], task='transcribe', word_timestamps=True)",
+    // Build timecoded segments
+    "segments = []",
+    "for s in result['segments']:",
+    "    minutes = int(s['start']) // 60",
+    "    seconds = int(s['start']) % 60",
+    "    timestamp = f'{minutes:02d}:{seconds:02d}'",
+    "    segments.append({'timestamp': timestamp, 'start': s['start'], 'text': s['text'].strip()})",
+    "with open(sys.argv[2], 'w') as f:",
+    "    json.dump({'segments': segments, 'text': result['text']}, f)",
+  ].join("\n");
+
+  const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+  await new Promise<void>((resolve, reject) => {
+    execFile(python3, ["-c", pyScript, tmpAudio, tmpOut], { timeout: 300000 }, (err, _stdout, stderr) => {
+      if (err) reject(new Error("Whisper transcription failed: " + (stderr?.slice(-300) || err.message)));
+      else resolve();
+    });
   });
-  if (!resp.ok) {
-    const err = await resp.text();
-    throw new Error("Transcription failed: " + err);
-  }
-  return resp.json();
+
+  const result = JSON.parse(await readFile(tmpOut, "utf8"));
+  await unlink(tmpAudio).catch(() => {});
+  await unlink(tmpOut).catch(() => {});
+  return result;
 }
 
 // Helper: extract audio from video using ffmpeg
@@ -340,14 +365,17 @@ Rules:
       }
 
       const transcription = await callTranscribe(audioBuffer, "audio/mpeg");
-      const timecoded = formatTimecodeTranscript(transcription.words || []);
+      // Whisper returns segments with timestamp strings; build timecoded text
+      const timecodedLines = (transcription.segments || []).map(
+        (s: any) => `[${s.timestamp}] ${s.text}`
+      ).join("\n");
 
       res.json({
         success: true,
         filename,
         plainText: transcription.text,
-        timecodedTranscript: timecoded || transcription.text,
-        language: transcription.language_code,
+        timecodedTranscript: timecodedLines || transcription.text,
+        language: "en",
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
