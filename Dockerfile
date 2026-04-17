@@ -21,8 +21,8 @@ COPY requirements.txt ./
 RUN python3 -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 RUN pip install --no-cache-dir -r requirements.txt
-# Pre-download Whisper base model so first transcription doesn't time out
-RUN python3 -c "import whisper; whisper.load_model('base')"
+# Pre-download faster-whisper base model at build time
+RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')"
 
 # Node deps (production only)
 COPY package*.json ./

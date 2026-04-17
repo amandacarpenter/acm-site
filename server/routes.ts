@@ -33,18 +33,20 @@ async function callTranscribe(audioBytes: Buffer, _mediaType: string) {
   await writeFile(tmpAudio, audioBytes);
 
   const pyScript = [
-    "import whisper, json, sys",
-    "model = whisper.load_model('base')",
-    "result = model.transcribe(sys.argv[1], task='transcribe', word_timestamps=True)",
-    // Build timecoded segments
+    "from faster_whisper import WhisperModel",
+    "import json, sys",
+    "model = WhisperModel('base', device='cpu', compute_type='int8')",
+    "segs, info = model.transcribe(sys.argv[1], beam_size=5)",
     "segments = []",
-    "for s in result['segments']:",
-    "    minutes = int(s['start']) // 60",
-    "    seconds = int(s['start']) % 60",
+    "full_text = []",
+    "for s in segs:",
+    "    minutes = int(s.start) // 60",
+    "    seconds = int(s.start) % 60",
     "    timestamp = f'{minutes:02d}:{seconds:02d}'",
-    "    segments.append({'timestamp': timestamp, 'start': s['start'], 'text': s['text'].strip()})",
+    "    segments.append({'timestamp': timestamp, 'start': s.start, 'text': s.text.strip()})",
+    "    full_text.append(s.text.strip())",
     "with open(sys.argv[2], 'w') as f:",
-    "    json.dump({'segments': segments, 'text': result['text']}, f)",
+    "    json.dump({'segments': segments, 'text': ' '.join(full_text)}, f)",
   ].join("\n");
 
   const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
