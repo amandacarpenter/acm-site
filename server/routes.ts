@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "e9209191" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "cca97e19" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -338,12 +338,21 @@ Rules:
         // YouTube / URL transcription via yt-dlp
         const url = bodyUrl;
         const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
+
+        // Write YouTube cookies from env var to a temp file if available
+        let cookiesArg = "";
+        if (process.env.YOUTUBE_COOKIES) {
+          const cookieFile = `/tmp/yt_cookies_${Date.now()}.txt`;
+          fs.writeFileSync(cookieFile, process.env.YOUTUBE_COOKIES);
+          cookiesArg = `--cookies "${cookieFile}"`;
+        }
+
         await new Promise<void>((resolve, reject) => {
           child_process.exec(
-            `yt-dlp --js-runtimes "node:/usr/local/bin/node" --extractor-args "youtube:player_client=web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
+            `yt-dlp ${cookiesArg} -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
             { timeout: 120000 },
             (err, stdout, stderr) => {
-              if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-300) || err.message}`));
+              if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-500) || err.message}`));
               else resolve();
             }
           );
