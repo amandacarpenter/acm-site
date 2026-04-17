@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "17ebceb8" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "6d4d5a1a" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { execFile } = await import("child_process");
     execFile("yt-dlp", ["--version"], (err, stdout) => {
@@ -337,7 +337,7 @@ Rules:
         const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
         await new Promise<void>((resolve, reject) => {
           child_process.exec(
-            `yt-dlp --js-runtimes node --extractor-args "youtube:player_client=web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
+            `yt-dlp --js-runtimes "node:/usr/local/bin/node" --extractor-args "youtube:player_client=web" -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
             { timeout: 120000 },
             (err, stdout, stderr) => {
               if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-300) || err.message}`));
