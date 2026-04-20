@@ -127,7 +127,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-transcript" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -344,9 +344,16 @@ Rules:
         // Write Python transcript script to temp file
         const pyLines = [
           "from youtube_transcript_api import YouTubeTranscriptApi",
-          "import json, sys",
+          "import json, sys, os",
           "video_id = sys.argv[1]",
-          "ytt = YouTubeTranscriptApi()",
+          "proxy_user = os.environ.get('WEBSHARE_PROXY_USERNAME')",
+          "proxy_pass = os.environ.get('WEBSHARE_PROXY_PASSWORD')",
+          "if proxy_user and proxy_pass:",
+          "    from youtube_transcript_api.proxies import WebshareProxyConfig",
+          "    proxy = WebshareProxyConfig(proxy_username=proxy_user, proxy_password=proxy_pass)",
+          "    ytt = YouTubeTranscriptApi(proxies=proxy)",
+          "else:",
+          "    ytt = YouTubeTranscriptApi()",
           "transcript = ytt.fetch(video_id)",
           "segments = []",
           "for s in transcript:",
