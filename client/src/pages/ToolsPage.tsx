@@ -428,7 +428,6 @@ function VideoTab() {
               <h3 className="font-semibold text-sm">{view === "timecoded" ? "Timecoded Transcript" : "Plain Text"}</h3>
               <div className="flex gap-2">
                 <CopyBtn text={view === "timecoded" ? result.timecodedTranscript : result.plainText} />
-                <DownloadBtn content={view === "timecoded" ? result.timecodedTranscript : result.plainText} filename={`${result.filename}-transcript.${view === "timecoded" ? "vtt" : "txt"}`} />
                 <Button size="sm" variant="outline" onClick={async () => {
                   const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
                   const baseName = result.filename?.replace(/\.[^.]+$/, "") || "transcript";
