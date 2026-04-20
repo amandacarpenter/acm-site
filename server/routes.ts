@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "full-doc-fix" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-transcript" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -332,50 +332,57 @@ Rules:
           return res.status(400).json({ error: "Unsupported file type" });
         }
       } else if (bodyUrl) {
-        // YouTube / URL transcription via yt-dlp
+        // YouTube URL — fetch transcript directly (no download, no bot detection)
         const url = bodyUrl;
-        const tmpOut = `/tmp/ytdl_${Date.now()}.mp3`;
 
-        // Write YouTube cookies from env var to a temp file if available
-        let cookiesArg = "";
-        if (process.env.YOUTUBE_COOKIES) {
-          const cookieFile = `/tmp/yt_cookies_${Date.now()}.txt`;
-          fs.writeFileSync(cookieFile, process.env.YOUTUBE_COOKIES);
-          cookiesArg = `--cookies "${cookieFile}"`;
-        }
+        // Extract video ID from URL
+        const videoIdMatch = url.match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+        if (!videoIdMatch) throw new Error("Could not extract YouTube video ID from URL");
+        const videoId = videoIdMatch[1];
 
-        await new Promise<void>((resolve, reject) => {
-          child_process.exec(
-            `yt-dlp ${cookiesArg} -x --audio-format mp3 --audio-quality 5 --no-playlist -o "${tmpOut.replace('.mp3', '.%(ext)s')}" "${url.replace(/"/g, '')}"`,
-            { timeout: 120000 },
-            (err, stdout, stderr) => {
-              if (err) reject(new Error(`yt-dlp failed: ${stderr?.slice(-500) || err.message}`));
-              else resolve();
-            }
-          );
+        // Write Python transcript script to temp file
+        const pyLines = [
+          "from youtube_transcript_api import YouTubeTranscriptApi",
+          "import json, sys",
+          "video_id = sys.argv[1]",
+          "ytt = YouTubeTranscriptApi()",
+          "transcript = ytt.fetch(video_id)",
+          "segments = []",
+          "for s in transcript:",
+          "    start = float(s.start)",
+          "    minutes = int(start) // 60",
+          "    seconds = int(start) % 60",
+          "    timestamp = f'{minutes:02d}:{seconds:02d}'",
+          "    segments.append({'timestamp': timestamp, 'start': start, 'text': s.text.strip()})",
+          "print(json.dumps({'segments': segments}))",
+        ].join("\n");
+
+        const { writeFile: wf, readFile: rf, unlink: ul } = await import("fs/promises");
+        const { execFile: ef } = await import("child_process");
+        const { join: pj, tmpdir: td } = await import("path");
+        const tmpPy = pj(td(), `yt_transcript_${Date.now()}.py`);
+        await wf(tmpPy, pyLines, "utf8");
+
+        const python3 = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+        const rawJson = await new Promise<string>((resolve, reject) => {
+          ef(python3, [tmpPy, videoId], { timeout: 30000 }, (err, stdout, stderr) => {
+            ul(tmpPy).catch(() => {});
+            if (err) reject(new Error(`Transcript fetch failed: ${stderr?.slice(-500) || err.message}`));
+            else resolve(stdout.trim());
+          });
         });
-        // yt-dlp may output with different extension, find the file
-        const tmpDir = '/tmp';
-        const prefix = path.basename(tmpOut).replace('.mp3', '');
-        const files = fs.readdirSync(tmpDir).filter(f => f.startsWith(prefix));
-        if (files.length === 0) throw new Error("Audio extraction failed");
-        const audioFile = path.join(tmpDir, files[0]);
-        // Convert to mp3 with ffmpeg for consistent format
-        const finalMp3 = `/tmp/final_${Date.now()}.mp3`;
-        await new Promise<void>((resolve, reject) => {
-          child_process.exec(
-            `ffmpeg -y -i "${audioFile}" -vn -acodec mp3 -ar 16000 -ac 1 "${finalMp3}"`,
-            (err) => {
-              if (err) reject(err);
-              else resolve();
-            }
-          );
+
+        const transcriptData = JSON.parse(rawJson);
+        const timecodedLines = (transcriptData.segments || []).map(
+          (s: any) => `[${s.timestamp}] ${s.text}`
+        ).join("\n");
+
+        return res.json({
+          success: true,
+          transcript: timecodedLines,
+          source: "youtube-transcript",
         });
-        audioBuffer = fs.readFileSync(finalMp3);
-        filename = url;
-        // cleanup temp files
-        try { fs.unlinkSync(audioFile); } catch {}
-        try { fs.unlinkSync(finalMp3); } catch {}
+
       } else {
         return res.status(400).json({ error: "No file or URL provided" });
       }
