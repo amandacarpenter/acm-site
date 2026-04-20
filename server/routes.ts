@@ -126,7 +126,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "cca97e19" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "full-doc-fix" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -196,17 +196,14 @@ export function registerRoutes(httpServer: Server, app: Express) {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
       }
 
-      // Trim content to avoid hitting token limits
+      // Send full document to Claude — 16384 max_tokens handles full syllabi
+      // Trim only if extremely large (>40k chars raw HTML)
       const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
-      // Claude restructures only the first 10k chars of HTML — enough for heading/table fixes
-      // The remainder is passed through as-is and appended after Claude's output
-      const HTML_CLAUDE_LIMIT = 10000;
+      const HTML_CLAUDE_LIMIT = 40000;
       const htmlForClaude = htmlContent.length > HTML_CLAUDE_LIMIT
-        ? htmlContent.slice(0, HTML_CLAUDE_LIMIT) + "<!-- END_OF_CLAUDE_SECTION -->"
+        ? htmlContent.slice(0, HTML_CLAUDE_LIMIT)
         : htmlContent;
-      const htmlRemainder = htmlContent.length > HTML_CLAUDE_LIMIT
-        ? htmlContent.slice(HTML_CLAUDE_LIMIT)
-        : "";
+      const htmlRemainder = ""; // No remainder — Claude handles the full document
 
       // ── Two parallel Claude calls ──────────────────────────────────────────
       // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
