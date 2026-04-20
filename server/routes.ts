@@ -6,6 +6,7 @@ import { storage } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
 import * as child_process from "child_process";
+import * as os from "os";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 const anthropic = new Anthropic();
@@ -357,16 +358,13 @@ Rules:
           "print(json.dumps({'segments': segments}))",
         ].join("\n");
 
-        const { writeFile: wf, readFile: rf, unlink: ul } = await import("fs/promises");
-        const { execFile: ef } = await import("child_process");
-        const { join: pj, tmpdir: td } = await import("path");
-        const tmpPy = pj(td(), `yt_transcript_${Date.now()}.py`);
-        await wf(tmpPy, pyLines, "utf8");
+        const tmpPy = path.join(os.tmpdir(), `yt_transcript_${Date.now()}.py`);
+        fs.writeFileSync(tmpPy, pyLines, "utf8");
 
         const python3 = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
         const rawJson = await new Promise<string>((resolve, reject) => {
-          ef(python3, [tmpPy, videoId], { timeout: 30000 }, (err, stdout, stderr) => {
-            ul(tmpPy).catch(() => {});
+          child_process.execFile(python3, [tmpPy, videoId], { timeout: 30000 }, (err, stdout, stderr) => {
+            try { fs.unlinkSync(tmpPy); } catch {}
             if (err) reject(new Error(`Transcript fetch failed: ${stderr?.slice(-500) || err.message}`));
             else resolve(stdout.trim());
           });
