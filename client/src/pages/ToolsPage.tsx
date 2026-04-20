@@ -408,7 +408,15 @@ function VideoTab() {
           body: JSON.stringify({ url: youtubeUrl }),
         });
       }
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error); setResult(data);
+      const data = await resp.json(); if (!resp.ok) throw new Error(data.error);
+      // Normalize response: youtube-transcript API returns { transcript }, whisper returns { timecodedTranscript }
+      if (data.transcript && !data.timecodedTranscript) {
+        const plain = data.transcript.replace(/\[\d{2}:\d{2}\] /g, "");
+        data.timecodedTranscript = data.transcript;
+        data.plainText = plain;
+        data.filename = data.filename || youtubeUrl;
+      }
+      setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -436,7 +444,7 @@ function VideoTab() {
             value={youtubeUrl} onChange={(e) => setYoutubeUrl(e.target.value)}
             data-testid="input-yt-url"
           />
-          <p className="text-xs text-muted-foreground">Paste any YouTube video link — we'll extract the audio and transcribe it.</p>
+          <p className="text-xs text-muted-foreground">Paste any YouTube video link — we'll fetch the captions and generate a timecoded transcript.</p>
         </div>
       )}
 
