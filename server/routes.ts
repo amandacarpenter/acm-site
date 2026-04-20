@@ -127,7 +127,7 @@ function formatTime(seconds: number): string {
 export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -351,7 +351,7 @@ Rules:
           "if proxy_user and proxy_pass:",
           "    from youtube_transcript_api.proxies import WebshareProxyConfig",
           "    proxy = WebshareProxyConfig(proxy_username=proxy_user, proxy_password=proxy_pass)",
-          "    ytt = YouTubeTranscriptApi(proxies=proxy)",
+          "    ytt = YouTubeTranscriptApi(proxy_config=proxy)",
           "else:",
           "    ytt = YouTubeTranscriptApi()",
           "transcript = ytt.fetch(video_id)",
