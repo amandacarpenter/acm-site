@@ -429,6 +429,25 @@ function VideoTab() {
               <div className="flex gap-2">
                 <CopyBtn text={view === "timecoded" ? result.timecodedTranscript : result.plainText} />
                 <DownloadBtn content={view === "timecoded" ? result.timecodedTranscript : result.plainText} filename={`${result.filename}-transcript.${view === "timecoded" ? "vtt" : "txt"}`} />
+                <Button size="sm" variant="outline" onClick={async () => {
+                  const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
+                  const baseName = result.filename?.replace(/\.[^.]+$/, "") || "transcript";
+                  const content = view === "timecoded" ? result.timecodedTranscript : result.plainText;
+                  const lines = (content || "").split("\n").filter((l: string) => l.trim());
+                  const children = [
+                    new Paragraph({ text: baseName + " — Transcript", heading: HeadingLevel.HEADING_1 }),
+                    ...lines.map((line: string) => new Paragraph({
+                      children: [new TextRun({ text: line, font: "Calibri", size: 24 })],
+                      spacing: { after: 80 },
+                    }))
+                  ];
+                  const doc = new Document({ sections: [{ children }] });
+                  const blob = await Packer.toBlob(doc);
+                  const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+                  a.download = baseName + "-transcript.docx"; a.click();
+                }}>
+                  <Download className="w-3.5 h-3.5 mr-1" />Word Doc
+                </Button>
               </div>
             </div>
             <pre className="result-panel">{view === "timecoded" ? result.timecodedTranscript : result.plainText}</pre>
