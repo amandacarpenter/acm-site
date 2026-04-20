@@ -445,7 +445,7 @@ function VideoTab() {
                   const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
                   a.download = baseName + "-transcript.docx"; a.click();
                 }}>
-                  <Download className="w-3.5 h-3.5 mr-1" />Word Doc
+                  <Download className="w-3.5 h-3.5 mr-1" />Download
                 </Button>
               </div>
             </div>
