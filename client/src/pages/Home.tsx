@@ -150,13 +150,13 @@ export default function Home() {
             Ready to make your content accessible?
           </h2>
           <p className="text-white/70 mb-8">
-            Start free — 3 documents and 1 video included. Credit card required, charged only after your trial is used.
+            Individual or institution — straightforward pricing built for higher education.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/signup">
               <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm">
                 <Zap className="w-4 h-4" aria-hidden="true" />
-                Create Free Account
+                Get Started
               </span>
             </Link>
             <Link href="/pricing">

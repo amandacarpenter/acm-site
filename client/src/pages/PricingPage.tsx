@@ -1,14 +1,6 @@
 import SiteHeader from "@/components/SiteHeader";
 import { Link } from "wouter";
-import { CheckCircle2, Zap, Shield, Users, ArrowRight } from "lucide-react";
-
-const FREE_FEATURES = [
-  "3 document fixes (Word or PDF)",
-  "1 video transcription",
-  "Canvas HTML fixer",
-  "Alt text generator",
-  "Credit card required — charged only after trial is used",
-];
+import { CheckCircle2, Zap, Shield, Users } from "lucide-react";
 
 const INDIVIDUAL_FEATURES = [
   "Unlimited document fixes",
@@ -42,10 +34,10 @@ export default function PricingPage() {
             Simple, transparent pricing
           </div>
           <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-[#3a485b] mb-4">
-            Start free. Scale when ready.
+            Simple, straightforward pricing.
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
-            Try Remedy508 at no cost. Upgrade when you need more — or bring your whole institution.
+            For individual educators or entire institutions — pick the plan that fits.
           </p>
         </div>
       </section>
@@ -53,33 +45,8 @@ export default function PricingPage() {
       {/* Pricing cards */}
       <section className="py-16 sm:py-24 bg-[#3a485b]" aria-labelledby="plans-heading">
         <h2 id="plans-heading" className="sr-only">Pricing plans</h2>
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-
-            {/* Free Trial */}
-            <div className="bg-white rounded-2xl border border-white/20 p-8">
-              <div className="mb-6">
-                <p className="text-sm font-semibold text-[#3a485b] uppercase tracking-wide mb-2">Free Trial</p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-bold text-[#3a485b]">$0</span>
-                </div>
-                <p className="text-sm text-gray-400">Charged after trial is used</p>
-              </div>
-              <Link href="/signup">
-                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#3a485b]/20 text-[#3a485b] font-semibold text-sm hover:border-[#0d9488] hover:text-[#0d9488] transition cursor-pointer mb-8">
-                  Create Free Account
-                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                </span>
-              </Link>
-              <ul className="space-y-3">
-                {FREE_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
-                    <CheckCircle2 className="w-4 h-4 text-[#0d9488] shrink-0 mt-0.5" aria-hidden="true" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
 
             {/* Individual — featured */}
             <div className="bg-[#0d9488] rounded-2xl p-8 shadow-2xl relative">
@@ -145,7 +112,7 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8">Common questions</h2>
           <div className="space-y-6 text-left">
             {[
-              { q: "Do I need a credit card to try it?", a: "Yes — a credit card is required to create your account, but you won't be charged until after you've used your 3 free document fixes and 1 free video transcription." },
+              { q: "Is there a free trial?", a: "We don't offer a free tier, but Individual plans can be cancelled anytime. Institution plans include a dedicated onboarding session so your team gets value from day one." },
               { q: "How is Institution pricing determined?", a: "Institution plans are priced based on FTE (full-time equivalent enrollment). We keep it affordable — designed to stay under the $3,000 procurement threshold at most community colleges." },
               { q: "Can I upgrade from Individual to Institution later?", a: "Yes. Contact us at any time and we'll transition your account and apply any remaining Individual subscription credit." },
               { q: "Is student data protected under FERPA?", a: "Yes. Remedy508 processes documents server-side and does not retain student data after processing. No PII is stored." },

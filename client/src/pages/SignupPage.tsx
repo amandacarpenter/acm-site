@@ -12,22 +12,21 @@ export default function SignupPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3a485b]/10 border border-[#3a485b]/20 text-sm font-medium text-[#3a485b] mb-6">
             <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-            Start your free trial
+            Get started today
           </div>
           <h1 className="text-3xl font-bold text-[#3a485b] mb-2">Create your account</h1>
           <p className="text-gray-500 text-sm leading-relaxed">
-            Get 3 free document fixes and 1 free video transcription.<br />
-            Your card won't be charged until your trial is complete.
+            Get started with Remedy508 — accessible content tools built for educators.
           </p>
         </div>
 
-        {/* Trial value props */}
+        {/* Value props */}
         <div className="flex flex-col gap-2 mb-8">
           {[
-            "3 document fixes (Word or PDF)",
-            "1 video transcription",
+            "Unlimited document fixes (Word or PDF)",
+            "Unlimited video transcriptions",
             "Canvas HTML fixer & Alt text generator",
-            "No charge until trial is used",
+            "Cancel Individual plan anytime",
           ].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
               <CheckCircle2 className="w-4 h-4 text-[#0d9488] shrink-0" aria-hidden="true" />
@@ -95,7 +94,7 @@ export default function SignupPage() {
               </span>
             </div>
             <p className="text-xs text-gray-400 mb-4 leading-relaxed">
-              Your card is required to activate your account. You will not be charged until after you've used your 3 free documents and 1 free video. After that, you'll be prompted to choose a plan.
+              Your card is required to activate your account. You will be charged based on your selected plan.
             </p>
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -136,7 +135,7 @@ export default function SignupPage() {
             type="submit"
             className="w-full py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition shadow-sm"
           >
-            Create Account &amp; Start Free Trial
+            Create Account
           </button>
 
           <p className="text-center text-xs text-gray-400 leading-relaxed">
