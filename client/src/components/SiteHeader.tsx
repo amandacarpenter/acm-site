@@ -8,7 +8,7 @@ function Logo() {
     <img
       src={logoUrl}
       alt="Remedy508 logo"
-      style={{ height: 56, width: "auto", flexShrink: 0 }}
+      style={{ height: 44, width: "auto", maxWidth: 220, flexShrink: 0 }}
     />
   );
 }
