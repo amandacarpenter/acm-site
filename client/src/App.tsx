@@ -5,6 +5,8 @@ import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/Home";
 import ToolsPage from "@/pages/ToolsPage";
+import PricingPage from "@/pages/PricingPage";
+import LoginPage from "@/pages/LoginPage";
 
 export default function App() {
   return (
@@ -14,6 +16,8 @@ export default function App() {
           <Route path="/" component={Home} />
           <Route path="/tools" component={ToolsPage} />
           <Route path="/tools/:tab" component={ToolsPage} />
+          <Route path="/pricing" component={PricingPage} />
+          <Route path="/login" component={LoginPage} />
         </Switch>
       </Router>
       <Toaster />
