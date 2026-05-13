@@ -8,9 +8,7 @@ function Logo() {
     <img
       src={logoUrl}
       alt="Remedy508 logo"
-      width={120}
-      height={36}
-      style={{ height: 36, width: "auto", flexShrink: 0 }}
+      style={{ height: 48, width: "auto", flexShrink: 0 }}
     />
   );
 }
@@ -25,8 +23,8 @@ export default function SiteHeader() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100" role="banner">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3 no-underline">
           <Logo />
@@ -52,8 +50,8 @@ export default function SiteHeader() {
               Log in
             </span>
           </Link>
-          <Link href="/tools">
-            <span className="ml-2 px-4 py-1.5 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+          <Link href="/signup">
+            <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
               Try for Free
             </span>
           </Link>
@@ -89,7 +87,7 @@ export default function SiteHeader() {
                 Log in
               </span>
             </Link>
-            <Link href="/tools">
+            <Link href="/signup">
               <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
                 Try for Free
               </span>

@@ -41,8 +41,8 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId }: {
         </>
       ) : (
         <>
-          <div className="w-14 h-14 rounded-2xl bg-[#4338ca]/10 flex items-center justify-center">
-            <Icon className="w-6 h-6 text-[#4338ca]" />
+          <div className="w-14 h-14 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
+            <Icon className="w-6 h-6 text-[#0d9488]" />
           </div>
           <div><p className="font-semibold">{label}</p><p className="text-sm text-muted-foreground">{sublabel}</p></div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground"><Upload className="w-3 h-3" />Drop file here or click to browse</div>
@@ -107,14 +107,14 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
   });
 
   return (
-    <div className="space-y-3 p-4 rounded-xl bg-[#4338ca]/5 border border-[#4338ca]/20">
+    <div className="space-y-3 p-4 rounded-xl bg-[#3a485b]/5 border border-[#0d9488]/20">
       <div className="flex items-center gap-2">
-        <Loader2 className="w-4 h-4 text-[#4338ca] animate-spin shrink-0" />
-        <span className="text-sm text-[#4338ca] font-medium">{defaultSteps[stepIndex]}</span>
+        <Loader2 className="w-4 h-4 text-[#0d9488] animate-spin shrink-0" />
+        <span className="text-sm text-[#0d9488] font-medium">{defaultSteps[stepIndex]}</span>
       </div>
-      <div className="relative w-full h-2 bg-[#4338ca]/15 rounded-full overflow-hidden">
+      <div className="relative w-full h-2 bg-[#0d9488]/15 rounded-full overflow-hidden">
         <div
-          className="absolute left-0 top-0 h-full bg-[#4338ca] rounded-full transition-all duration-700 ease-out"
+          className="absolute left-0 top-0 h-full bg-[#0d9488] rounded-full transition-all duration-700 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -299,7 +299,7 @@ function DocumentTab() {
         <p>✓ Digital PDFs process in seconds — scanned PDFs use OCR and may take longer</p>
         <p>✓ Best for syllabi, course documents, and handouts (up to ~50 pages)</p>
       </div>
-      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
+      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Identifying accessibility issues…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
@@ -321,7 +321,7 @@ function DocumentTab() {
             )}
           </div>
           {result.blob && (
-            <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={() => {
+            <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={() => {
               const a = document.createElement("a");
               a.href = URL.createObjectURL(result.blob);
               a.download = result.filename;
@@ -407,7 +407,7 @@ function VideoTab() {
     <div className="space-y-5">
       <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" />
 
-      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
+      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Transcribing…" steps={["Uploading file…", "Extracting audio track…", "Running AI transcription…", "Generating timecoded transcript…"]} />}
@@ -485,7 +485,7 @@ function CanvasTab() {
           {html && <Button variant="ghost" size="sm" onClick={() => { setHtml(""); setResult(null); }}><X className="w-3.5 h-3.5 mr-1" />Clear</Button>}
         </div>
       </div>
-      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
+      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
@@ -510,7 +510,7 @@ function CanvasTab() {
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {result.changes.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-2 text-sm p-2 rounded-lg bg-muted">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#4338ca] shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#0d9488] shrink-0" />
                     <div><span className="font-medium">{c.issue}</span>{c.fix && <span className="text-muted-foreground"> → {c.fix}</span>}</div>
                   </div>
                 ))}
@@ -559,13 +559,13 @@ function AltTextTab() {
       {previewUrl && <div className="rounded-xl overflow-hidden border max-h-48"><img src={previewUrl} alt="Preview of uploaded image" className="w-full h-full object-contain bg-muted" /></div>}
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="img-url">Or enter image URL</label>
-        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#4338ca]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
+        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
       </div>
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="alt-context">Context <span className="text-muted-foreground font-normal">(optional — describe the page this image is for)</span></label>
         <Textarea id="alt-context" placeholder="e.g. This is a chart showing student enrollment trends…" className="text-sm min-h-[80px] resize-y" value={context} onChange={(e) => setContext(e.target.value)} data-testid="input-context" />
       </div>
-      <Button className="w-full bg-[#4338ca] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
+      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
       {error && <ErrorAlert message={error} />}
@@ -592,7 +592,7 @@ function AltTextTab() {
                   <div className="p-3 rounded-lg bg-muted border text-sm">{result.longDescription}</div>
                 </div>
               )}
-              {result.reasoning && <div className="p-3 rounded-lg bg-[#4338ca]/5 border border-[#4338ca]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
+              {result.reasoning && <div className="p-3 rounded-lg bg-[#3a485b]/5 border border-[#0d9488]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
             </>
           )}
         </div>
@@ -614,7 +614,7 @@ export default function ToolsPage() {
   const initialTab = params?.tab || "document";
 
   return (
-    <div className="min-h-screen bg-background" data-testid="tools-page">
+    <div className="min-h-screen bg-gray-50" data-testid="tools-page">
       <SiteHeader />
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
@@ -629,8 +629,8 @@ export default function ToolsPage() {
 
         {/* Page heading */}
         <div>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: "'Clash Display', sans-serif" }}>
-            Accessibility <span className="text-[#4338ca]">Tools</span>
+          <h1 className="text-2xl font-bold text-[#3a485b]">
+            Accessibility <span className="text-[#0d9488]">Tools</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — AI handles the accessibility fixes.</p>
         </div>
@@ -647,7 +647,7 @@ export default function ToolsPage() {
             ))}
           </TabsList>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <TabsContent value="document" tabIndex={-1}><DocumentTab /></TabsContent>
             <TabsContent value="video" tabIndex={-1}><VideoTab /></TabsContent>
             <TabsContent value="canvas" tabIndex={-1}><CanvasTab /></TabsContent>
@@ -655,8 +655,8 @@ export default function ToolsPage() {
           </div>
         </Tabs>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground py-4">
-          <Shield className="w-3.5 h-3.5 text-[#4338ca]" aria-hidden="true" />
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 py-4">
+          <Shield className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
           WCAG 2.1 AA Compliant — All processing is AI-powered
         </div>
       </div>

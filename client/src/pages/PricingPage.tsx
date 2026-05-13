@@ -7,7 +7,7 @@ const FREE_FEATURES = [
   "1 video transcription",
   "Canvas HTML fixer",
   "Alt text generator",
-  "No credit card required",
+  "Credit card required — charged only after trial is used",
 ];
 
 const INDIVIDUAL_FEATURES = [
@@ -37,11 +37,11 @@ export default function PricingPage() {
       {/* Header */}
       <section className="bg-white border-b py-20 sm:py-24" aria-labelledby="pricing-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0d9488] mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3a485b]/10 border border-[#3a485b]/20 text-sm font-medium text-[#3a485b] mb-8">
             <Shield className="w-3.5 h-3.5" aria-hidden="true" />
             Simple, transparent pricing
           </div>
-          <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">
+          <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-[#3a485b] mb-4">
             Start free. Scale when ready.
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
@@ -51,23 +51,23 @@ export default function PricingPage() {
       </section>
 
       {/* Pricing cards */}
-      <section className="py-16 sm:py-24 bg-gray-50" aria-labelledby="plans-heading">
+      <section className="py-16 sm:py-24 bg-[#3a485b]" aria-labelledby="plans-heading">
         <h2 id="plans-heading" className="sr-only">Pricing plans</h2>
         <div className="max-w-5xl mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
 
             {/* Free Trial */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8">
+            <div className="bg-white rounded-2xl border border-white/20 p-8">
               <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Free Trial</p>
+                <p className="text-sm font-semibold text-[#3a485b] uppercase tracking-wide mb-2">Free Trial</p>
                 <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-bold text-gray-900">$0</span>
+                  <span className="text-4xl font-bold text-[#3a485b]">$0</span>
                 </div>
-                <p className="text-sm text-gray-400">No credit card required</p>
+                <p className="text-sm text-gray-400">Charged after trial is used</p>
               </div>
-              <Link href="/tools">
-                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold text-sm hover:border-[#0d9488] hover:text-[#0d9488] transition cursor-pointer mb-8">
-                  Get Started Free
+              <Link href="/signup">
+                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-[#3a485b]/20 text-[#3a485b] font-semibold text-sm hover:border-[#0d9488] hover:text-[#0d9488] transition cursor-pointer mb-8">
+                  Create Free Account
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </span>
               </Link>
@@ -82,7 +82,7 @@ export default function PricingPage() {
             </div>
 
             {/* Individual — featured */}
-            <div className="bg-[#0d9488] rounded-2xl p-8 shadow-xl relative">
+            <div className="bg-[#0d9488] rounded-2xl p-8 shadow-2xl relative">
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="bg-gray-900 text-white text-xs font-bold px-3 py-1 rounded-full">Most Popular</span>
               </div>
@@ -111,16 +111,16 @@ export default function PricingPage() {
             </div>
 
             {/* Institution */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-8">
+            <div className="bg-white rounded-2xl border border-white/20 p-8">
               <div className="mb-6">
-                <p className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Institution</p>
+                <p className="text-sm font-semibold text-[#3a485b] uppercase tracking-wide mb-2">Institution</p>
                 <div className="flex items-end gap-1 mb-1">
-                  <span className="text-4xl font-bold text-gray-900">Custom</span>
+                  <span className="text-4xl font-bold text-[#3a485b]">Custom</span>
                 </div>
                 <p className="text-sm text-gray-400">Priced by FTE — contact us</p>
               </div>
               <a href="mailto:hello@remedy508.ai">
-                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white font-semibold text-sm hover:bg-gray-800 transition cursor-pointer mb-8">
+                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#3a485b] text-white font-semibold text-sm hover:bg-[#2e3a4a] transition cursor-pointer mb-8">
                   <Users className="w-4 h-4" aria-hidden="true" />
                   Contact Us
                 </span>
@@ -142,10 +142,10 @@ export default function PricingPage() {
       {/* FAQ / Trust */}
       <section className="py-16 sm:py-20 bg-white" aria-labelledby="faq-heading">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
-          <h2 id="faq-heading" className="text-2xl font-bold text-gray-900 mb-8">Common questions</h2>
+          <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8">Common questions</h2>
           <div className="space-y-6 text-left">
             {[
-              { q: "Do I need a credit card to try it?", a: "No. The free trial gives you 3 document fixes and 1 video transcription with no credit card required." },
+              { q: "Do I need a credit card to try it?", a: "Yes — a credit card is required to create your account, but you won't be charged until after you've used your 3 free document fixes and 1 free video transcription." },
               { q: "How is Institution pricing determined?", a: "Institution plans are priced based on FTE (full-time equivalent enrollment). We keep it affordable — designed to stay under the $3,000 procurement threshold at most community colleges." },
               { q: "Can I upgrade from Individual to Institution later?", a: "Yes. Contact us at any time and we'll transition your account and apply any remaining Individual subscription credit." },
               { q: "Is student data protected under FERPA?", a: "Yes. Remedy508 processes documents server-side and does not retain student data after processing. No PII is stored." },

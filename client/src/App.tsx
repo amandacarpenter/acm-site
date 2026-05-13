@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import ToolsPage from "@/pages/ToolsPage";
 import PricingPage from "@/pages/PricingPage";
 import LoginPage from "@/pages/LoginPage";
+import SignupPage from "@/pages/SignupPage";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/tools/:tab" component={ToolsPage} />
           <Route path="/pricing" component={PricingPage} />
           <Route path="/login" component={LoginPage} />
+          <Route path="/signup" component={SignupPage} />
         </Switch>
       </Router>
       <Toaster />
