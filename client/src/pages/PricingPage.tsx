@@ -18,7 +18,7 @@ const INSTITUTION_FEATURES = [
   "Usage reporting & analytics",
   "Dedicated onboarding support",
   "Invoice & PO billing available",
-  "Priced by FTE — scales with you",
+  "Per seat pricing — pay for users, not enrollment",
 ];
 
 export default function PricingPage() {
@@ -84,7 +84,7 @@ export default function PricingPage() {
                 <div className="flex items-end gap-1 mb-1">
                   <span className="text-4xl font-bold text-[#3a485b]">Custom</span>
                 </div>
-                <p className="text-sm text-gray-400">Priced by FTE — contact us</p>
+                <p className="text-sm text-gray-400">Per seat — contact us for a quote</p>
               </div>
               <a href="mailto:hello@remedy508.ai">
                 <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#3a485b] text-white font-semibold text-sm hover:bg-[#2e3a4a] transition cursor-pointer mb-8">
@@ -113,7 +113,7 @@ export default function PricingPage() {
           <div className="space-y-6 text-left">
             {[
               { q: "Is there a free trial?", a: "We don't offer a free tier, but Individual plans can be cancelled anytime. Institution plans include a dedicated onboarding session so your team gets value from day one." },
-              { q: "How is Institution pricing determined?", a: "Institution plans are priced based on FTE (full-time equivalent enrollment). We keep it affordable — designed to stay under the $3,000 procurement threshold at most community colleges." },
+              { q: "How is Institution pricing determined?", a: "Institution plans are priced per user seat — you pay for the faculty and staff who actually use the tool, not your student enrollment. Volume discounts apply the more seats you add." },
               { q: "Can I upgrade from Individual to Institution later?", a: "Yes. Contact us at any time and we'll transition your account and apply any remaining Individual subscription credit." },
               { q: "Is student data protected under FERPA?", a: "Yes. Remedy508 processes documents server-side and does not retain student data after processing. No PII is stored." },
             ].map(({ q, a }) => (
