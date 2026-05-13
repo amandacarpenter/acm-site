@@ -4,6 +4,7 @@ import {
   FileText, Video, Code2, ImageIcon, ArrowRight, CheckCircle2,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight
 } from "lucide-react";
+// Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
   { icon: FileText, title: "Document Fixer", desc: "Upload a Word doc or PDF — AI identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
@@ -91,23 +92,20 @@ export default function Home() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {TOOLS.map((tool) => (
-              <Link key={tool.tab} href={`/tools/${tool.tab}`}>
-                <div className="bg-gray-50 rounded-2xl border border-gray-200 p-6 group cursor-pointer h-full hover:border-[#0d9488] hover:shadow-md transition-all" data-testid={`tool-card-${tool.tab}`}>
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0 group-hover:bg-[#0d9488] transition">
-                      <tool.icon className="w-5 h-5 text-white" aria-hidden="true" />
+              <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-6 h-full" data-testid={`tool-card-${tool.tab}`}>
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
+                    <tool.icon className="w-5 h-5 text-white" aria-hidden="true" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-[#3a485b]">{tool.title}</h3>
+                      <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-[#3a485b]">{tool.title}</h3>
-                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-[#0d9488] transition shrink-0 mt-1" aria-hidden="true" />
+                    <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
                   </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>
