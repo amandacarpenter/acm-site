@@ -555,21 +555,36 @@ os.makedirs(work_dir, exist_ok=True)
 
 import hashlib
 
-# ── Pre-scan: count how many pages each image hash appears on ──
-# Images that appear on 2+ pages are headers/watermarks and should be skipped
-hash_page_count = {}
-for page in doc:
-    seen_on_page = set()
-    for img_info in page.get_images(full=True):
-        xref = img_info[0]
-        try:
-            base_image = doc.extract_image(xref)
-            h = hashlib.md5(base_image['image']).hexdigest()
-            if h not in seen_on_page:
-                seen_on_page.add(h)
-                hash_page_count[h] = hash_page_count.get(h, 0) + 1
-        except Exception:
-            pass
+# ── Pre-scan: find images that appear at the SAME y-position on EVERY page
+# Those are headers/footers/watermarks — skip them.
+# Strategy: use rendered image blocks (get_text dict) which reflect what is
+# actually visible per page, not the global xref table.
+page_count = len(doc)
+
+# Collect (hash, y_bucket) pairs per page to detect repeated header/footer images
+# y_bucket = round y-position to nearest 5% of page height (tolerates minor shifts)
+from collections import defaultdict
+hash_positions = defaultdict(set)  # hash -> set of (page_idx, y_bucket)
+for page_idx, page in enumerate(doc):
+    page_h = page.rect.height or 792
+    for block in page.get_text('dict')['blocks']:
+        if block['type'] != 1 or not block.get('image'):
+            continue
+        img_bytes = block['image']
+        if len(img_bytes) < 5120:
+            continue
+        h = hashlib.md5(img_bytes).hexdigest()
+        y_pct = round(block['bbox'][1] / page_h * 20)  # bucket to 5% increments
+        hash_positions[h].add((page_idx, y_pct))
+
+# An image is a header/footer if it appears at roughly the same y on 3+ pages
+header_hashes = set()
+for h, positions in hash_positions.items():
+    page_indices = set(p for p, _ in positions)
+    y_buckets = set(y for _, y in positions)
+    # Same image at same y-position on 3+ different pages = header/footer/watermark
+    if len(page_indices) >= 3 and len(y_buckets) <= 2:
+        header_hashes.add(h)
 
 result = []
 for page_idx, page in enumerate(doc):
@@ -581,34 +596,42 @@ for page_idx, page in enumerate(doc):
     screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
     pix.save(screenshot_path)
 
-    # Extract embedded raster images from this page
-    img_list = page.get_images(full=True)
+    # Extract images using rendered blocks (get_text dict) — this gives only
+    # images actually visible on this page, at their correct positions
     page_images = []
-    for img_idx, img_info in enumerate(img_list):
-        xref = img_info[0]
-        try:
-            base_image = doc.extract_image(xref)
-            img_bytes = base_image['image']
-            img_ext = base_image['ext']  # png, jpeg, etc.
-            img_w = base_image.get('width', 0)
-            img_h = base_image.get('height', 0)
-            # Skip tiny images (icons, bullets) < 5KB
-            if len(img_bytes) < 5120:
-                continue
-            # Skip tall narrow images (decorative dividers, vertical rules)
-            if img_w > 0 and (img_h / img_w) > 5.0:
-                continue
-            # Skip images that appear on 2+ pages — those are headers/watermarks/footers
-            img_hash = hashlib.md5(img_bytes).hexdigest()
-            if hash_page_count.get(img_hash, 0) >= 2:
-                continue
-            img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
-            img_path = os.path.join(work_dir, img_filename)
-            with open(img_path, 'wb') as f:
-                f.write(img_bytes)
-            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
-        except Exception:
+    seen_on_page = set()
+    for block_idx, block in enumerate(page.get_text('dict')['blocks']):
+        if block['type'] != 1 or not block.get('image'):
             continue
+        img_bytes = block['image']
+        img_w = int(block.get('width', 0))
+        img_h = int(block.get('height', 0))
+        # Skip tiny images (icons, bullets)
+        if len(img_bytes) < 5120:
+            continue
+        # Skip tall narrow decorative dividers
+        if img_w > 0 and (img_h / img_w) > 5.0:
+            continue
+        img_hash = hashlib.md5(img_bytes).hexdigest()
+        # Skip header/footer images
+        if img_hash in header_hashes:
+            continue
+        # Skip duplicates within same page
+        if img_hash in seen_on_page:
+            continue
+        seen_on_page.add(img_hash)
+        # Determine file extension from magic bytes
+        if img_bytes[:3] == b'\xff\xd8\xff':
+            img_ext = 'jpg'
+        elif img_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+            img_ext = 'png'
+        else:
+            img_ext = 'png'
+        img_filename = 'page_%03d_img_%02d.%s' % (page_num, block_idx, img_ext)
+        img_path = os.path.join(work_dir, img_filename)
+        with open(img_path, 'wb') as f:
+            f.write(img_bytes)
+        page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
 
     result.append({
         'page': page_num,
