@@ -183,6 +183,9 @@ export default function Home() {
                 <span className="text-xs text-gray-400">WCAG 2.1 AA Compliant</span>
               </div>
               <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
+              <Link href="/tools">
+                <span className="text-xs text-gray-600 hover:text-gray-400 transition cursor-pointer">©</span>
+              </Link>
             </div>
           </div>
         </div>
