@@ -141,7 +141,7 @@ export default function Home() {
             <AccordionItem value="perceivable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Perceivable</div>
                     <div className="text-xs text-gray-400 font-normal">Information must be presentable in ways users can perceive</div>
@@ -175,7 +175,7 @@ export default function Home() {
             <AccordionItem value="operable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Operable</div>
                     <div className="text-xs text-gray-400 font-normal">Interface components must be operable by all users</div>
@@ -210,7 +210,7 @@ export default function Home() {
             <AccordionItem value="understandable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Understandable</div>
                     <div className="text-xs text-gray-400 font-normal">Content and operation must be understandable</div>
@@ -244,7 +244,7 @@ export default function Home() {
             <AccordionItem value="robust" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Robust</div>
                     <div className="text-xs text-gray-400 font-normal">Content must be interpreted by assistive technologies</div>
