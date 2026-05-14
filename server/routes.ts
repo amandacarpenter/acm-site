@@ -685,19 +685,29 @@ DEJAVU_PATHS = [
     '/usr/share/fonts/dejavu',
     '/usr/local/share/fonts/dejavu',
 ]
-font_dir = next((d for d in DEJAVU_PATHS if os.path.isdir(d)), None)
-if font_dir:
-    pdfmetrics.registerFont(TTFont('DejaVu', os.path.join(font_dir, 'DejaVuSans.ttf')))
-    pdfmetrics.registerFont(TTFont('DejaVu-Bold', os.path.join(font_dir, 'DejaVuSans-Bold.ttf')))
-    pdfmetrics.registerFont(TTFont('DejaVu-Oblique', os.path.join(font_dir, 'DejaVuSans-Oblique.ttf')))
-    pdfmetrics.registerFont(TTFont('DejaVu-BoldOblique', os.path.join(font_dir, 'DejaVuSans-BoldOblique.ttf')))
-    FONT = 'DejaVu'
-    FONT_BOLD = 'DejaVu-Bold'
-    FONT_ITALIC = 'DejaVu-Oblique'
-else:
-    FONT = 'Helvetica'
-    FONT_BOLD = 'Helvetica-Bold'
-    FONT_ITALIC = 'Helvetica-Oblique'
+FONT = 'Helvetica'
+FONT_BOLD = 'Helvetica-Bold'
+FONT_ITALIC = 'Helvetica-Oblique'
+
+for dv_dir in DEJAVU_PATHS:
+    regular  = os.path.join(dv_dir, 'DejaVuSans.ttf')
+    bold     = os.path.join(dv_dir, 'DejaVuSans-Bold.ttf')
+    oblique  = os.path.join(dv_dir, 'DejaVuSans-Oblique.ttf')
+    if os.path.exists(regular):
+        try:
+            pdfmetrics.registerFont(TTFont('DejaVu', regular))
+            FONT = 'DejaVu'
+            if os.path.exists(bold):
+                pdfmetrics.registerFont(TTFont('DejaVu-Bold', bold))
+                FONT_BOLD = 'DejaVu-Bold'
+            if os.path.exists(oblique):
+                pdfmetrics.registerFont(TTFont('DejaVu-Oblique', oblique))
+                FONT_ITALIC = 'DejaVu-Oblique'
+        except Exception:
+            FONT = 'Helvetica'
+            FONT_BOLD = 'Helvetica-Bold'
+            FONT_ITALIC = 'Helvetica-Oblique'
+        break
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
