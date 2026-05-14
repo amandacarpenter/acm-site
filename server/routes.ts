@@ -698,6 +698,7 @@ CRITICAL RULES:
 import sys, json, os
 from fpdf import FPDF
 from fpdf.enums import Align
+from fpdf.fonts import FontFace
 from bs4 import BeautifulSoup
 
 # ── Font setup: DejaVu for full Unicode (chemical symbols, arrows, math) ──
@@ -855,32 +856,33 @@ class AccessiblePDF(FPDF):
         caption = tag.find('caption')
         rows = tag.find_all('tr')
         if not rows: return
-        usable = self.w - 2 * MARGIN
-        cells_per_row = max(len(r.find_all(['th','td'])) for r in rows) or 1
-        col_w = usable / cells_per_row
         if caption:
             self.set_body(bold=True, size=10)
             self.set_text_color(*NAVY)
             self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
-        for ridx, row in enumerate(rows):
-            cells = row.find_all(['th','td'])
-            is_header = ridx == 0 or all(c.name == 'th' for c in cells)
-            if is_header:
-                self.set_fill_color(*LIGHT_TEAL)
-                self.set_text_color(*NAVY)
-                self.set_body(bold=True, size=10)
-            else:
-                fill = WHITE if ridx % 2 == 1 else ROW_ALT
-                self.set_fill_color(*fill)
-                self.set_text_color(0, 0, 0)
-                self.set_body(size=10)
-            self.set_draw_color(*LIGHT_GRAY)
-            self.set_line_width(0.2)
-            for cell in cells:
-                txt = cell.get_text(separator=' ').strip()
-                self.multi_cell(col_w, 6, txt, border=1, fill=True, new_x='RIGHT', new_y='TOP', max_line_height=6)
-            self.ln()
+            self.ln(1)
+        # Determine column count
+        n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
+        heading_style = FontFace(family=self._fn, emphasis='B', color=NAVY, fill_color=LIGHT_TEAL)
+        self.set_font(self._fn, size=10)
+        with self.table(
+            borders_layout='ALL',
+            cell_fill_color=ROW_ALT,
+            cell_fill_mode='ROWS',
+            line_height=6,
+            text_align='LEFT',
+        ) as tbl:
+            for ridx, row in enumerate(rows):
+                cells = row.find_all(['th','td'])
+                is_header = ridx == 0 or all(c.name == 'th' for c in cells)
+                tbl_row = tbl.row()
+                for cell in cells:
+                    txt = cell.get_text(separator=' ').strip()
+                    if is_header:
+                        tbl_row.cell(txt, style=heading_style)
+                    else:
+                        tbl_row.cell(txt)
         self.ln(3)
         self.set_text_color(0, 0, 0)
 
