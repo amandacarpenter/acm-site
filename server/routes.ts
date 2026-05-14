@@ -209,43 +209,108 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // ── Two parallel Claude calls ──────────────────────────────────────────
       // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
       // Call 2: Structured HTML only — returns plain HTML (no JSON quoting problems)
-      const auditSystemPrompt = `You are an expert in digital accessibility (WCAG 2.1 AA).
+      const auditSystemPrompt = `You are a WCAG 2.1 AA accessibility expert auditing a document.
 Analyze the document text and return ONLY a valid JSON object — no markdown, no code fences, no explanation.
 
 Return exactly this structure:
 {
   "fixesMade": ["short bullet describing fix 1", "short bullet describing fix 2", ...],
-  "issues": [{ "type": string, "description": string, "recommendation": string }]
+  "issues": [{ "criterion": string, "type": string, "description": string, "recommendation": string }]
 }
 
+Evaluate against every applicable WCAG 2.1 AA success criterion for documents:
+- 1.1.1 Non-text Content: Are all images, figures, and charts identified with alt text or flagged for manual alt text?
+- 1.3.1 Info and Relationships: Is semantic structure used? Headings, lists, tables — not bold text or manual formatting to imply structure.
+- 1.3.2 Meaningful Sequence: Does the reading order of the content make logical sense?
+- 1.3.3 Sensory Characteristics: Are there instructions like "see the box above", "click the green button", or "refer to the bold text"? Flag these.
+- 1.4.1 Use of Color: Is color used as the ONLY way to convey meaning (e.g. "items in red are required")? Flag these.
+- 1.4.3 Contrast: Are there any inline color styles that may fail 4.5:1 contrast ratio?
+- 2.4.2 Page Titled: Does the document have a clear title identifiable as an <h1>?
+- 2.4.6 Headings and Labels: Do all headings describe their section? Are any headings vague (e.g. "Section 1", "Info")?
+- 3.1.1 Language of Page: Is lang="en" (or correct language) set on the document?
+- 3.1.2 Language of Parts: Are there foreign-language phrases that need lang attributes?
+- 4.1.1 Parsing: Is the markup valid — no duplicate IDs, properly nested elements, complete tags?
+- 4.1.2 Name, Role, Value: Do all tables have proper <th> headers with scope attributes? Do all form elements have labels?
+
 Rules:
-- "fixesMade" must be an array of 4-8 short strings (each under 80 chars) describing specific accessibility fixes applied
-- Be concrete: e.g. "Added heading hierarchy for 8 section titles", "Converted course info to accessible table", "Removed ** formatting artifacts from 2 paragraphs"
-- "issues" lists problems found with type, description, and recommendation
+- "fixesMade" must be an array of 4-10 short strings (each under 100 chars) describing specific WCAG fixes applied — be concrete and cite the criterion number: e.g. "1.3.1 — Added heading hierarchy for 6 section titles", "1.1.1 — Flagged 2 figures for manual alt text"
+- "issues" lists remaining problems that could NOT be auto-fixed (e.g. images needing human-written alt text, color-only instructions that need content changes)
+- Each issue must include the criterion number in the "criterion" field (e.g. "1.1.1")
 - Return ONLY the JSON object, nothing else`;
 
-      const htmlSystemPrompt = `You are an expert in semantic HTML and document accessibility.
-Convert the given mammoth-parsed HTML into clean, accessible, semantic HTML for a Word document.
+      const htmlSystemPrompt = `You are a WCAG 2.1 AA accessibility expert. Convert the given document HTML into fully accessible, semantic HTML that meets every applicable WCAG 2.1 Level A and AA success criterion for documents.
 Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype, no <html>/<body> tags.
 
-Rules:
-- Use <h1> for major section headings (Required E-Texts, Course Description, Student Learning Outcomes, Four Areas of Philosophy, etc.)
-- Use <h2> for sub-section headings, <h3> for minor headings, <h4> for week headings
-- Use <table><tr><th> and <tr><td> for the course info block at the top (instructor name, term, section number, office, office hours, phone, email) — 2 columns: label | value
-- Use <ul><li> for bulleted lists, <ol><li> for numbered lists
+== WCAG 2.1 AA RULES TO APPLY ==
+
+[1.1.1 Non-text Content]
+- For any figure/image reference (e.g. "Figure 1.", "Figure 2.", chart, diagram, map) add: <p role="note"><strong>Figure X:</strong> [Image — add descriptive alt text manually before publishing]</p>
+- Never leave an image without alt text handling
+
+[1.3.1 Info and Relationships — Semantic Structure]
+- Use <h1> for the document title (first and only h1)
+- Use <h2> for major section headings
+- Use <h3> for sub-section headings, <h4> for minor headings
+- NEVER use bold <p><strong>Heading</strong></p> to fake a heading — convert to the correct <h> level
+- Use <ul><li> for unordered/bulleted lists
+- Use <ol><li> for numbered/sequential lists
 - Use <p> for regular paragraphs
-- STRIP leading ** and *** from all paragraph text (e.g. "**You will be required..." becomes "You will be required...")
-- STRIP leading * from all paragraph text
-- STRIP dot leaders: remove sequences of 3 or more dots (e.g. "Participation......200 pts" becomes "Participation" | "200 pts" in a table cell)
-- Convert any grading/scoring section that uses dot leaders into a proper <table> with 2 columns: item | points. Include a "Total" row if present.
-- The KEY/grading scale line (e.g. "KEY: 325 - 292.5 = A...") should be kept as a <p> after the grading table
-- Preserve ALL actual content — do not omit or summarize any text
-- Do not add content that was not in the original
+- Use <table> for any tabular data including course info blocks, grading tables, schedules, and comparison data
+- All tables MUST have <caption> describing the table purpose
+- All table header cells MUST use <th scope="col"> or <th scope="row"> — never use <td> for headers
+- Do not use tables for layout — only for actual data relationships
+
+[1.3.2 Meaningful Sequence]
+- Preserve the logical reading order of the original document
+- Do not reorder content
+- Multi-column layouts should read left-to-right, top-to-bottom in source order
+
+[1.3.3 Sensory Characteristics]
+- If the document contains phrases like "see the section above", "refer to the bold text", "click the blue link", "the items listed below in red" — wrap them in a <span> with a comment: <!-- WCAG 1.3.3: Revise to not rely on sensory/positional reference -->
+
+[1.4.1 Use of Color]
+- If any content uses color as the ONLY means of conveying information (e.g. "required items are shown in red"), add a visible text label or symbol to supplement it
+- Strip any inline color styles that convey meaning through color alone
+
+[1.4.3 Contrast]
+- Remove all inline color or background-color styles that could create low-contrast text
+- Do not include any CSS that sets text color below 4.5:1 against its background
+
+[2.4.2 Page Titled]
+- The document MUST have exactly one <h1> that serves as the document title
+- If no clear title exists, use the most prominent heading as <h1>
+
+[2.4.6 Headings and Labels]
+- Every heading must describe the content of its section
+- Do not use vague headings like "Section 1", "Info", "Details" — preserve the actual section name
+- All <label> elements must be associated with their form control via for/id
+
+[3.1.1 Language of Page]
+- Wrap the entire output in: <div lang="en"> ... </div>
+
+[3.1.2 Language of Parts]
+- If any phrase is in a different language (Spanish, French, etc.), wrap it: <span lang="es">...</span>
+
+[4.1.1 Parsing]
+- All elements must have complete opening and closing tags
+- Elements must be properly nested — never overlap
+- No duplicate id attributes
+- All id values must be unique and use kebab-case
+
+[4.1.2 Name, Role, Value]
+- All tables must have <caption>
+- All <th> must have scope="col" or scope="row"
+- Any abbreviation on first use must be wrapped: <abbr title="Full Term">ABBR</abbr>
+
+== CONTENT RULES ==
+- STRIP leading ** and *** from all paragraph text
+- STRIP leading * from all paragraph text  
+- STRIP dot leaders: convert "Item......200 pts" into a proper <table> row: <tr><td>Item</td><td>200 pts</td></tr>
+- Convert any grading/scoring section with dot leaders into a <table> with <caption>Grading</caption>, columns: Assignment | Points, with a Total row
+- Preserve ALL original content — do not omit, summarize, or add content not in the original
+- Keep URLs as plain text in <p> or <li> — do not wrap in <a> tags unless the original has hyperlink text
 - Do not include any CSS, style, or class attributes
-- Keep URLs as plain text inside <p> or <li> — do not wrap in <a> tags
-- If you see repeated legend items or map labels (short fragments repeated), skip them — these are figure captions from image pages
-- For any figure/image reference (e.g. "Figure 1.", "Figure 2.") add a <p> like: [Figure X: image not extractable — add alt text manually]
-- Return ONLY the HTML content, nothing else`;
+- Return ONLY the HTML content inside the <div lang="en"> wrapper, nothing else`;
 
       // Run both calls in parallel
       const [auditResponse, structuredHtml] = await Promise.all([
