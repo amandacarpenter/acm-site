@@ -621,9 +621,9 @@ for page_idx, page in enumerate(doc):
             continue
         seen_on_page.add(img_hash)
         # Determine file extension from magic bytes
-        if img_bytes[:3] == b'\xff\xd8\xff':
+        if img_bytes[:2] == bytes([0xFF, 0xD8]):
             img_ext = 'jpg'
-        elif img_bytes[:8] == b'\x89PNG\r\n\x1a\n':
+        elif img_bytes[:4] == bytes([0x89, 0x50, 0x4E, 0x47]):
             img_ext = 'png'
         else:
             img_ext = 'png'
