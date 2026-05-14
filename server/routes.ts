@@ -760,17 +760,20 @@ Rules:
       const pdfBuffer = fs.readFileSync(tmpPdfOut);
       await unlink(tmpPdfOut).catch(() => {});
 
-      const baseName = req.file.originalname.replace(/\.pdf$/i, "");
+      const baseName = req.file.originalname.replace(/\.pdf$/i, "").replace(/[^\x20-\x7E]/g, "");
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${baseName}-accessible.pdf"`);
-      res.setHeader("X-Fixes-Made", JSON.stringify([
-        `1.1.1 — All figures described with detailed alt text`,
-        `1.3.1 — Semantic headings, tables with captions and scoped headers`,
-        `1.3.2 — Content in logical reading order across ${totalPages} pages`,
-        `2.4.2 — Document title as H1`,
-        `3.1.1 — Language declared`,
+      const fixesMadeArr = [
+        `1.1.1 - All figures described with detailed alt text`,
+        `1.3.1 - Semantic headings, tables with captions and scoped headers`,
+        `1.3.2 - Content in logical reading order across ${totalPages} pages`,
+        `2.4.2 - Document title as H1`,
+        `3.1.1 - Language declared`,
         `Math/equations rendered as readable Unicode text`,
-      ]));
+      ];
+      // HTTP headers must be ASCII-only
+      const fixesMadeHeader = JSON.stringify(fixesMadeArr).replace(/[^\x20-\x7E]/g, "");
+      res.setHeader("X-Fixes-Made", fixesMadeHeader);
       res.setHeader("X-Total-Pages", String(totalPages));
       return res.send(pdfBuffer);
 
