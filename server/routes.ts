@@ -553,8 +553,25 @@ doc = fitz.open(sys.argv[1])
 work_dir = sys.argv[2]
 os.makedirs(work_dir, exist_ok=True)
 
+import hashlib
+
+# ── Pre-scan: count how many pages each image hash appears on ──
+# Images that appear on 2+ pages are headers/watermarks and should be skipped
+hash_page_count = {}
+for page in doc:
+    seen_on_page = set()
+    for img_info in page.get_images(full=True):
+        xref = img_info[0]
+        try:
+            base_image = doc.extract_image(xref)
+            h = hashlib.md5(base_image['image']).hexdigest()
+            if h not in seen_on_page:
+                seen_on_page.add(h)
+                hash_page_count[h] = hash_page_count.get(h, 0) + 1
+        except Exception:
+            pass
+
 result = []
-seen_hashes = set()  # track image hashes across all pages to filter repeated watermarks
 for page_idx, page in enumerate(doc):
     page_num = page_idx + 1
 
@@ -578,19 +595,13 @@ for page_idx, page in enumerate(doc):
             # Skip tiny images (icons, bullets) < 5KB
             if len(img_bytes) < 5120:
                 continue
-            # Skip banner/logo images: aspect ratio wider than 3:1 (logos, watermarks)
-            if img_h > 0 and (img_w / img_h) > 3.0:
-                continue
-            # Skip tall narrow images (decorative dividers)
+            # Skip tall narrow images (decorative dividers, vertical rules)
             if img_w > 0 and (img_h / img_w) > 5.0:
                 continue
-            # Skip images that appear identically on multiple pages (watermarks)
-            # Use a simple hash of the bytes
-            import hashlib
+            # Skip images that appear on 2+ pages — those are headers/watermarks/footers
             img_hash = hashlib.md5(img_bytes).hexdigest()
-            if img_hash in seen_hashes:
+            if hash_page_count.get(img_hash, 0) >= 2:
                 continue
-            seen_hashes.add(img_hash)
             img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
