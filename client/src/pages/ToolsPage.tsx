@@ -601,9 +601,123 @@ function AltTextTab() {
   );
 }
 
+// ── Complex PDF Tab ──────────────────────────────────────────────────────────
+function ComplexPdfTab() {
+  const [loading, setLoading] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
+  const [error, setError] = useState("");
+  const { toast } = useToast();
+
+  const run = async () => {
+    if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }
+    setLoading(true); setError(""); setResult(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const resp = await fetch("/api/complexpdf/fix", { method: "POST", body: fd });
+      if (!resp.ok) {
+        const errData = await resp.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errData.error || `Server error ${resp.status}`);
+      }
+      // Response is binary PDF
+      const blob = await resp.blob();
+      const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
+      let fixes: string[] = [];
+      try { fixes = JSON.parse(resp.headers.get("X-Fixes-Made") || "[]"); } catch { fixes = []; }
+      const baseName = file.name.replace(/\.pdf$/i, "");
+      setResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
+    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="p-3 rounded-lg bg-[#3a485b]/5 border border-[#3a485b]/20 text-sm text-[#3a485b]">
+        <strong>Complex PDF</strong> uses AI vision to read each page — ideal for chemistry diagrams, math equations, charts, and mixed layouts. Processing takes 30–90 seconds per document.
+      </div>
+      <FileDropZone
+        accept=".pdf"
+        onFile={setFile}
+        label="Upload PDF"
+        sublabel="PDFs with diagrams, equations, or complex layouts"
+        icon={FileText}
+        testId="complexpdf-upload"
+      />
+      <div className="text-xs text-muted-foreground space-y-0.5 px-1">
+        <p>✓ Best for science, math, or diagram-heavy PDFs</p>
+        <p>✓ AI reads each page as an image — handles equations and charts</p>
+        <p>✓ Output is a fully tagged accessible PDF (WCAG 2.1 AA)</p>
+        <p>⏱ Allow 30–90 seconds for a typical document</p>
+      </div>
+      <Button
+        className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold"
+        onClick={run}
+        disabled={loading || !file}
+        data-testid="btn-fix-complexpdf"
+      >
+        {loading
+          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing pages…</>
+          : <><Zap className="w-4 h-4 mr-2" />Make Accessible PDF</>}
+      </Button>
+      {loading && (
+        <LoadingState
+          text="Processing your PDF…"
+          steps={[
+            "Rendering pages as images…",
+            "Analyzing page 1 with AI vision…",
+            "Analyzing page 2 with AI vision…",
+            "Analyzing page 3 with AI vision…",
+            "Interpreting diagrams and equations…",
+            "Generating accessible structure…",
+            "Building tagged PDF…",
+          ]}
+        />
+      )}
+      {error && <ErrorAlert message={error} />}
+      {result && (
+        <div className="space-y-4" data-testid="complexpdf-result">
+          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
+                {result.pages > 0 ? `${result.pages}-page` : ""} accessible PDF ready
+              </span>
+            </div>
+            {result.fixes.length > 0 ? (
+              <ul className="space-y-1">
+                {result.fixes.slice(0, 8).map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied to all pages.</p>
+            )}
+          </div>
+          <Button
+            className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold"
+            onClick={() => {
+              const url = URL.createObjectURL(result.blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = result.filename;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />Download {result.filename}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 const TAB_META = [
   { id: "document", label: "Documents", icon: FileText, desc: "Fix .docx & .pdf" },
+  { id: "complexpdf", label: "Complex PDF", icon: FileText, desc: "Science & diagrams" },
   { id: "video", label: "Video", icon: Video, desc: "Timecoded transcripts" },
   { id: "canvas", label: "Canvas", icon: Code2, desc: "LMS page fixer" },
   { id: "alttext", label: "Alt Text", icon: ImageIcon, desc: "Image descriptions" },
@@ -637,7 +751,7 @@ export default function ToolsPage() {
 
         {/* Tab interface */}
         <Tabs defaultValue={initialTab} className="space-y-4" data-testid="tool-tabs">
-          <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1">
+          <TabsList className="grid grid-cols-5 w-full h-auto p-1 gap-1">
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col gap-0.5 py-2 px-1 h-auto text-xs" data-testid={`tab-${tab.id}`}>
                 <tab.icon className="w-4 h-4" aria-hidden="true" />
@@ -649,6 +763,7 @@ export default function ToolsPage() {
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <TabsContent value="document" tabIndex={-1}><DocumentTab /></TabsContent>
+            <TabsContent value="complexpdf" tabIndex={-1}><ComplexPdfTab /></TabsContent>
             <TabsContent value="video" tabIndex={-1}><VideoTab /></TabsContent>
             <TabsContent value="canvas" tabIndex={-1}><CanvasTab /></TabsContent>
             <TabsContent value="alttext" tabIndex={-1}><AltTextTab /></TabsContent>
