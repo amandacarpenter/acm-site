@@ -554,6 +554,7 @@ work_dir = sys.argv[2]
 os.makedirs(work_dir, exist_ok=True)
 
 result = []
+seen_hashes = set()  # track image hashes across all pages to filter repeated watermarks
 for page_idx, page in enumerate(doc):
     page_num = page_idx + 1
 
@@ -572,9 +573,24 @@ for page_idx, page in enumerate(doc):
             base_image = doc.extract_image(xref)
             img_bytes = base_image['image']
             img_ext = base_image['ext']  # png, jpeg, etc.
-            # Only save images large enough to matter (skip tiny icons < 2KB)
-            if len(img_bytes) < 2048:
+            img_w = base_image.get('width', 0)
+            img_h = base_image.get('height', 0)
+            # Skip tiny images (icons, bullets) < 5KB
+            if len(img_bytes) < 5120:
                 continue
+            # Skip banner/logo images: aspect ratio wider than 3:1 (logos, watermarks)
+            if img_h > 0 and (img_w / img_h) > 3.0:
+                continue
+            # Skip tall narrow images (decorative dividers)
+            if img_w > 0 and (img_h / img_w) > 5.0:
+                continue
+            # Skip images that appear identically on multiple pages (watermarks)
+            # Use a simple hash of the bytes
+            import hashlib
+            img_hash = hashlib.md5(img_bytes).hexdigest()
+            if img_hash in seen_hashes:
+                continue
+            seen_hashes.add(img_hash)
             img_filename = f'page_{page_num:03d}_img_{img_idx:02d}.{img_ext}'
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
@@ -680,34 +696,40 @@ from reportlab.pdfbase.ttfonts import TTFont
 from bs4 import BeautifulSoup
 
 # ── Register DejaVu fonts for full Unicode support (chemical symbols, arrows, math) ──
-DEJAVU_PATHS = [
-    '/usr/share/fonts/truetype/dejavu',
-    '/usr/share/fonts/dejavu',
-    '/usr/local/share/fonts/dejavu',
-]
+import glob as _glob
+
 FONT = 'Helvetica'
 FONT_BOLD = 'Helvetica-Bold'
 FONT_ITALIC = 'Helvetica-Oblique'
 
-for dv_dir in DEJAVU_PATHS:
-    regular  = os.path.join(dv_dir, 'DejaVuSans.ttf')
-    bold     = os.path.join(dv_dir, 'DejaVuSans-Bold.ttf')
-    oblique  = os.path.join(dv_dir, 'DejaVuSans-Oblique.ttf')
-    if os.path.exists(regular):
-        try:
-            pdfmetrics.registerFont(TTFont('DejaVu', regular))
-            FONT = 'DejaVu'
-            if os.path.exists(bold):
-                pdfmetrics.registerFont(TTFont('DejaVu-Bold', bold))
-                FONT_BOLD = 'DejaVu-Bold'
-            if os.path.exists(oblique):
-                pdfmetrics.registerFont(TTFont('DejaVu-Oblique', oblique))
-                FONT_ITALIC = 'DejaVu-Oblique'
-        except Exception:
-            FONT = 'Helvetica'
-            FONT_BOLD = 'Helvetica-Bold'
-            FONT_ITALIC = 'Helvetica-Oblique'
-        break
+# Search all known font locations
+_font_search = (
+    _glob.glob('/usr/share/fonts/**/*DejaVuSans.ttf', recursive=True) +
+    _glob.glob('/usr/share/fonts/**/*DejaVuSans-Regular.ttf', recursive=True) +
+    _glob.glob('/usr/local/share/fonts/**/*DejaVuSans.ttf', recursive=True)
+)
+
+if _font_search:
+    _regular = _font_search[0]
+    _font_dir = os.path.dirname(_regular)
+    _bold    = os.path.join(_font_dir, 'DejaVuSans-Bold.ttf')
+    _oblique = os.path.join(_font_dir, 'DejaVuSans-Oblique.ttf')
+    try:
+        pdfmetrics.registerFont(TTFont('DejaVu', _regular))
+        FONT = 'DejaVu'
+        if os.path.exists(_bold):
+            pdfmetrics.registerFont(TTFont('DejaVu-Bold', _bold))
+            FONT_BOLD = 'DejaVu-Bold'
+        if os.path.exists(_oblique):
+            pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _oblique))
+            FONT_ITALIC = 'DejaVu-Oblique'
+    except Exception as _e:
+        sys.stderr.write(f'DejaVu font load failed: {_e}, falling back to Helvetica\n')
+        FONT = 'Helvetica'
+        FONT_BOLD = 'Helvetica-Bold'
+        FONT_ITALIC = 'Helvetica-Oblique'
+else:
+    sys.stderr.write('DejaVu fonts not found, using Helvetica (Unicode symbols may appear as boxes)\n')
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
