@@ -29,6 +29,8 @@ RUN npm ci --omit=dev
 # Copy built app + server files
 COPY --from=builder /app/dist ./dist
 COPY transcribe_service.py transcribe_audio.py ./
+# Copy bundled fonts for PDF generation (DejaVu for Unicode support)
+COPY fonts/ ./fonts/
 
 # Start both services via a shell script
 COPY start.sh ./
