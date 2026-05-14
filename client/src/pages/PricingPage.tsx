@@ -115,7 +115,7 @@ export default function PricingPage() {
               { q: "Is there a free trial?", a: "We don't offer a free tier, but Individual plans can be cancelled anytime. Institution plans include a dedicated onboarding session so your team gets value from day one." },
               { q: "How is Institution pricing determined?", a: "Institution pricing is custom — contact us and we'll put together a quote based on your institution's size and needs." },
               { q: "Can I upgrade from Individual to Institution later?", a: "Yes. Contact us at any time and we'll transition your account and apply any remaining Individual subscription credit." },
-              { q: "Is student data protected under FERPA?", a: "Yes. Remedy508 processes documents server-side and does not retain student data after processing. No PII is stored." },
+              { q: "Is my data secure?", a: "Yes. Documents are processed server-side and are not stored or retained after your results are returned. No personal data is saved." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-100 pb-6">
                 <h3 className="font-semibold text-gray-900 mb-2">{q}</h3>

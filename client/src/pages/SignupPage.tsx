@@ -143,7 +143,6 @@ export default function SignupPage() {
             <a href="#" className="underline hover:text-[#0d9488]">Terms of Service</a>{" "}
             and{" "}
             <a href="#" className="underline hover:text-[#0d9488]">Privacy Policy</a>.
-            FERPA-compliant — we do not store student data.
           </p>
         </div>
 
