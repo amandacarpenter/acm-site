@@ -561,7 +561,7 @@ for page_idx, page in enumerate(doc):
     # Full-page screenshot at 2x zoom for Vision
     mat = fitz.Matrix(2.0, 2.0)
     pix = page.get_pixmap(matrix=mat)
-    screenshot_path = os.path.join(work_dir, f'page_{page_num:03d}_screen.png')
+    screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
     pix.save(screenshot_path)
 
     # Extract embedded raster images from this page
@@ -591,7 +591,7 @@ for page_idx, page in enumerate(doc):
             if img_hash in seen_hashes:
                 continue
             seen_hashes.add(img_hash)
-            img_filename = f'page_{page_num:03d}_img_{img_idx:02d}.{img_ext}'
+            img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
                 f.write(img_bytes)
@@ -724,7 +724,7 @@ if _font_search:
             pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _oblique))
             FONT_ITALIC = 'DejaVu-Oblique'
     except Exception as _e:
-        sys.stderr.write(f'DejaVu font load failed: {_e}, falling back to Helvetica\n')
+        sys.stderr.write('DejaVu font load failed: ' + str(_e) + ', falling back to Helvetica\n')
         FONT = 'Helvetica'
         FONT_BOLD = 'Helvetica-Bold'
         FONT_ITALIC = 'Helvetica-Oblique'
@@ -790,7 +790,7 @@ def embed_image(img_path, alt_text):
         items.append(Spacer(1, 8))
         items.append(Image(img_path, width=disp_w, height=disp_h))
     except Exception as e:
-        items.append(Paragraph(f'[Image could not be embedded: {e}]', fig_style))
+        items.append(Paragraph('[Image could not be embedded: ' + str(e) + ']', fig_style))
     # Alt text caption below image
     if alt_text:
         items.append(Paragraph('Figure: ' + alt_text, fig_style))
