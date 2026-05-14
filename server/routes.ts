@@ -696,40 +696,33 @@ from reportlab.pdfbase.ttfonts import TTFont
 from bs4 import BeautifulSoup
 
 # ── Register DejaVu fonts for full Unicode support (chemical symbols, arrows, math) ──
-import glob as _glob
-
 FONT = 'Helvetica'
 FONT_BOLD = 'Helvetica-Bold'
 FONT_ITALIC = 'Helvetica-Oblique'
 
-# Search all known font locations
-_font_search = (
-    _glob.glob('/usr/share/fonts/**/*DejaVuSans.ttf', recursive=True) +
-    _glob.glob('/usr/share/fonts/**/*DejaVuSans-Regular.ttf', recursive=True) +
-    _glob.glob('/usr/local/share/fonts/**/*DejaVuSans.ttf', recursive=True)
-)
+# Use bundled fonts first (in /app/fonts/), then fall back to system fonts
+_bundled = os.path.join('/app', 'fonts')
+_font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
 
-if _font_search:
-    _regular = _font_search[0]
-    _font_dir = os.path.dirname(_regular)
-    _bold    = os.path.join(_font_dir, 'DejaVuSans-Bold.ttf')
-    _oblique = os.path.join(_font_dir, 'DejaVuSans-Oblique.ttf')
-    try:
-        pdfmetrics.registerFont(TTFont('DejaVu', _regular))
-        FONT = 'DejaVu'
-        if os.path.exists(_bold):
-            pdfmetrics.registerFont(TTFont('DejaVu-Bold', _bold))
-            FONT_BOLD = 'DejaVu-Bold'
-        if os.path.exists(_oblique):
-            pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _oblique))
-            FONT_ITALIC = 'DejaVu-Oblique'
-    except Exception as _e:
-        sys.stderr.write('DejaVu font load failed, falling back to Helvetica')
-        FONT = 'Helvetica'
-        FONT_BOLD = 'Helvetica-Bold'
-        FONT_ITALIC = 'Helvetica-Oblique'
-else:
-    sys.stderr.write('DejaVu fonts not found, using Helvetica')
+for _fd in _font_dirs:
+    _r = os.path.join(_fd, 'DejaVuSans.ttf')
+    _b = os.path.join(_fd, 'DejaVuSans-Bold.ttf')
+    _o = os.path.join(_fd, 'DejaVuSans-Oblique.ttf')
+    if os.path.exists(_r):
+        try:
+            pdfmetrics.registerFont(TTFont('DejaVu', _r))
+            FONT = 'DejaVu'
+            if os.path.exists(_b):
+                pdfmetrics.registerFont(TTFont('DejaVu-Bold', _b))
+                FONT_BOLD = 'DejaVu-Bold'
+            if os.path.exists(_o):
+                pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _o))
+                FONT_ITALIC = 'DejaVu-Oblique'
+            break
+        except Exception:
+            FONT = 'Helvetica'
+            FONT_BOLD = 'Helvetica-Bold'
+            FONT_ITALIC = 'Helvetica-Oblique'
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
@@ -772,32 +765,35 @@ def safe_text(tag):
     return (tag.get_text(separator=' ') if tag else '').strip()
 
 def embed_image(img_info, alt_text):
-    """Return a KeepTogether block: the image + its alt text caption."""
+    """Return a KeepTogether block: the image + its WCAG alt text caption."""
     items = []
     img_path = img_info['path'] if isinstance(img_info, dict) else img_info
     orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
     orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
     try:
-        max_w = 5.5 * inch  # usable width (letter - 2in margins)
-        # Convert pixels to points (72 DPI assumption for embedded images)
-        pt_w = orig_w * 0.75
-        pt_h = orig_h * 0.75
+        # Cap at 3.5 inches wide to match reference document style
+        max_w = 3.5 * inch
+        # Convert pixels to points at 96dpi (standard screen resolution)
+        pt_w = orig_w * (72.0 / 96.0)
+        pt_h = orig_h * (72.0 / 96.0)
         scale = min(1.0, max_w / pt_w) if pt_w > 0 else 1.0
         disp_w = pt_w * scale
         disp_h = pt_h * scale
-        # Cap height to 4.5 inches
-        if disp_h > 4.5 * inch:
-            scale = (4.5 * inch) / disp_h
+        # Also cap height to 3.5 inches
+        if disp_h > 3.5 * inch:
+            scale = (3.5 * inch) / disp_h
             disp_w = disp_w * scale
             disp_h = disp_h * scale
+        img_flowable = Image(img_path, width=disp_w, height=disp_h, hAlign='CENTER')
         items.append(Spacer(1, 8))
-        items.append(Image(img_path, width=disp_w, height=disp_h))
+        items.append(img_flowable)
     except Exception as e:
-        items.append(Paragraph('[Image could not be embedded: ' + str(e) + ']', fig_style))
-    # Alt text caption below image
+        items.append(Paragraph('[Image: ' + alt_text + ']', fig_style))
+    # WCAG 1.1.1: text alternative immediately below image
     if alt_text:
-        items.append(Paragraph('Figure: ' + alt_text, fig_style))
-    items.append(Spacer(1, 8))
+        alt_style = ParagraphStyle('AltText', parent=fig_style, alignment=1)  # centered
+        items.append(Paragraph('Alt text: ' + alt_text, alt_style))
+    items.append(Spacer(1, 12))
     return KeepTogether(items)
 
 def build_table(tag):
