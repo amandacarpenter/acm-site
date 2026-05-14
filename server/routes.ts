@@ -724,12 +724,12 @@ if _font_search:
             pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _oblique))
             FONT_ITALIC = 'DejaVu-Oblique'
     except Exception as _e:
-        sys.stderr.write('DejaVu font load failed: ' + str(_e) + ', falling back to Helvetica\n')
+        sys.stderr.write('DejaVu font load failed, falling back to Helvetica')
         FONT = 'Helvetica'
         FONT_BOLD = 'Helvetica-Bold'
         FONT_ITALIC = 'Helvetica-Oblique'
 else:
-    sys.stderr.write('DejaVu fonts not found, using Helvetica (Unicode symbols may appear as boxes)\n')
+    sys.stderr.write('DejaVu fonts not found, using Helvetica')
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
