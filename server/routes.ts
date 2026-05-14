@@ -595,7 +595,7 @@ for page_idx, page in enumerate(doc):
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
                 f.write(img_bytes)
-            page_images.append(img_path)
+            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
         except Exception:
             continue
 
@@ -771,22 +771,25 @@ td_style  = ParagraphStyle('TD',  fontSize=10, leading=13, fontName=FONT)
 def safe_text(tag):
     return (tag.get_text(separator=' ') if tag else '').strip()
 
-def embed_image(img_path, alt_text):
+def embed_image(img_info, alt_text):
     """Return a KeepTogether block: the image + its alt text caption."""
     items = []
+    img_path = img_info['path'] if isinstance(img_info, dict) else img_info
+    orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
+    orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
     try:
-        from PIL import Image as PILImage
-        with PILImage.open(img_path) as pil_img:
-            orig_w, orig_h = pil_img.size
-        max_w = 5.5 * inch  # usable width (letter - 2" margins)
-        scale = min(1.0, max_w / orig_w)
-        disp_w = orig_w * scale
-        disp_h = orig_h * scale
-        # Cap height so images don't fill an entire page
+        max_w = 5.5 * inch  # usable width (letter - 2in margins)
+        # Convert pixels to points (72 DPI assumption for embedded images)
+        pt_w = orig_w * 0.75
+        pt_h = orig_h * 0.75
+        scale = min(1.0, max_w / pt_w) if pt_w > 0 else 1.0
+        disp_w = pt_w * scale
+        disp_h = pt_h * scale
+        # Cap height to 4.5 inches
         if disp_h > 4.5 * inch:
-            scale = 4.5 * inch / orig_h
-            disp_w = orig_w * scale
-            disp_h = orig_h * scale
+            scale = (4.5 * inch) / disp_h
+            disp_w = disp_w * scale
+            disp_h = disp_h * scale
         items.append(Spacer(1, 8))
         items.append(Image(img_path, width=disp_w, height=disp_h))
     except Exception as e:
@@ -854,9 +857,10 @@ def process(tag, page_images_iter):
         # Check if this position should get an extracted image
         figcaption = tag.find('figcaption')
         alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
-        img_path = next(page_images_iter, None)
+        img_info = next(page_images_iter, None)
+        img_path = img_info['path'] if isinstance(img_info, dict) else img_info
         if img_path and os.path.exists(img_path):
-            story.append(embed_image(img_path, alt_text))
+            story.append(embed_image(img_info, alt_text))
         else:
             # No image file — render a styled alt-text box
             story.append(Spacer(1, 4))
@@ -887,11 +891,6 @@ for page_info in pages:
 
 if not story:
     story.append(Paragraph('No content extracted.', body_style))
-
-try:
-    from PIL import Image as PILImage
-except ImportError:
-    PILImage = None
 
 doc.build(story)
 print('ok')
