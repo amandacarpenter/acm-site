@@ -1,8 +1,14 @@
 import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   FileText, Video, Code2, ImageIcon, ArrowRight, CheckCircle2,
-  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight
+  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
 } from "lucide-react";
 // Note: tool cards on homepage are display-only, not linked
 
@@ -108,6 +114,170 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── WCAG 2.1 AA SECTION ── */}
+      <section className="py-20 sm:py-28 bg-gray-50" aria-labelledby="wcag-heading">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
+              <BookOpen className="w-3 h-3" aria-hidden="true" />
+              Standards Reference
+            </div>
+            <h2 id="wcag-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
+              WCAG 2.1 Level AA <span className="text-[#0d9488]">Explained</span>
+            </h2>
+            <p className="text-gray-500 max-w-2xl mx-auto">
+              The Web Content Accessibility Guidelines (WCAG) 2.1 Level AA is the legal standard
+              required by ADA, Section 508, and most higher education accessibility policies.
+              Here's what it actually means in practice.
+            </p>
+          </div>
+
+          <Accordion type="multiple" className="space-y-3">
+
+            {/* ── PERCEIVABLE ── */}
+            <AccordionItem value="perceivable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
+              <AccordionTrigger className="text-left hover:no-underline py-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
+                  <div>
+                    <div className="font-bold text-[#3a485b] text-base">Perceivable</div>
+                    <div className="text-xs text-gray-400 font-normal">Information must be presentable in ways users can perceive</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-5">
+                <div className="space-y-3 ml-11">
+                  {[
+                    { code: "1.1.1", name: "Non-text Content", desc: "All images, charts, and diagrams must have alt text. Complex images like graphs also need a long description." },
+                    { code: "1.2.1–1.2.5", name: "Time-based Media", desc: "Pre-recorded audio and video need captions and audio descriptions. Live video needs captions." },
+                    { code: "1.3.1", name: "Info & Relationships", desc: "Structure conveyed visually (headings, lists, tables) must also be conveyed through markup — not just appearance." },
+                    { code: "1.3.2", name: "Meaningful Sequence", desc: "Content must be presented in a logical reading order when style sheets are removed." },
+                    { code: "1.4.1", name: "Use of Color", desc: "Color must not be the only means of conveying information (e.g., 'required fields in red')." },
+                    { code: "1.4.3", name: "Contrast (Minimum)", desc: "Text must have a contrast ratio of at least 4.5:1 against the background. Large text needs 3:1." },
+                    { code: "1.4.4", name: "Resize Text", desc: "Text must be resizable up to 200% without loss of content or functionality." },
+                  ].map((item) => (
+                    <div key={item.code} className="flex gap-3">
+                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                        <span className="text-sm text-gray-500">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ── OPERABLE ── */}
+            <AccordionItem value="operable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
+              <AccordionTrigger className="text-left hover:no-underline py-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                  <div>
+                    <div className="font-bold text-[#3a485b] text-base">Operable</div>
+                    <div className="text-xs text-gray-400 font-normal">Interface components must be operable by all users</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-5">
+                <div className="space-y-3 ml-11">
+                  {[
+                    { code: "2.1.1", name: "Keyboard", desc: "All functionality must be accessible via keyboard alone — no mouse required." },
+                    { code: "2.1.2", name: "No Keyboard Trap", desc: "Users must be able to move keyboard focus away from any component without getting stuck." },
+                    { code: "2.3.1", name: "Three Flashes", desc: "Content must not flash more than three times per second — prevents seizure risk." },
+                    { code: "2.4.1", name: "Bypass Blocks", desc: "A mechanism must exist to skip repeated navigation and go directly to main content (skip links)." },
+                    { code: "2.4.2", name: "Page Titled", desc: "Every page must have a descriptive title that identifies its topic or purpose." },
+                    { code: "2.4.3", name: "Focus Order", desc: "Keyboard focus must move in a logical sequence that preserves meaning." },
+                    { code: "2.4.4", name: "Link Purpose", desc: "The purpose of every link must be clear from the link text alone or its surrounding context." },
+                    { code: "2.4.7", name: "Focus Visible", desc: "Keyboard focus must be visually visible at all times — users must see where they are on the page." },
+                  ].map((item) => (
+                    <div key={item.code} className="flex gap-3">
+                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                        <span className="text-sm text-gray-500">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ── UNDERSTANDABLE ── */}
+            <AccordionItem value="understandable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
+              <AccordionTrigger className="text-left hover:no-underline py-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
+                  <div>
+                    <div className="font-bold text-[#3a485b] text-base">Understandable</div>
+                    <div className="text-xs text-gray-400 font-normal">Content and operation must be understandable</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-5">
+                <div className="space-y-3 ml-11">
+                  {[
+                    { code: "3.1.1", name: "Language of Page", desc: "The primary language of each page must be declared in the HTML so screen readers use the right pronunciation." },
+                    { code: "3.1.2", name: "Language of Parts", desc: "When content switches language mid-page, that passage must be marked with the correct language attribute." },
+                    { code: "3.2.1", name: "On Focus", desc: "Keyboard focus must not trigger an unexpected context change (like auto-submitting a form)." },
+                    { code: "3.2.2", name: "On Input", desc: "Changing a form field must not automatically submit the form or open a new window without warning." },
+                    { code: "3.3.1", name: "Error Identification", desc: "Form errors must be identified in text — not just by color — and describe what went wrong." },
+                    { code: "3.3.2", name: "Labels or Instructions", desc: "All form fields must have a visible label or clear instructions so users know what to enter." },
+                    { code: "3.3.3", name: "Error Suggestion", desc: "If an error is detected and a correction is known, a suggestion must be provided (e.g., 'Enter a valid email address')." },
+                  ].map((item) => (
+                    <div key={item.code} className="flex gap-3">
+                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                        <span className="text-sm text-gray-500">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* ── ROBUST ── */}
+            <AccordionItem value="robust" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
+              <AccordionTrigger className="text-left hover:no-underline py-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
+                  <div>
+                    <div className="font-bold text-[#3a485b] text-base">Robust</div>
+                    <div className="text-xs text-gray-400 font-normal">Content must be interpreted by assistive technologies</div>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pb-5">
+                <div className="space-y-3 ml-11">
+                  {[
+                    { code: "4.1.1", name: "Parsing", desc: "HTML must have no major errors — unclosed tags, duplicate IDs, or invalid nesting can break screen readers." },
+                    { code: "4.1.2", name: "Name, Role, Value", desc: "All UI components must expose their name, role (button, checkbox, etc.), and state to assistive technologies via ARIA or semantic HTML." },
+                    { code: "4.1.3", name: "Status Messages", desc: "Dynamic status updates (like 'Form submitted' or 'File uploading') must be communicated to screen readers without requiring focus." },
+                  ].map((item) => (
+                    <div key={item.code} className="flex gap-3">
+                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                        <span className="text-sm text-gray-500">{item.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Source:{" "}
+            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#0d9488] transition">
+              W3C WCAG 2.1 Specification
+            </a>
+          </p>
         </div>
       </section>
 
