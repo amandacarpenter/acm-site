@@ -685,195 +685,244 @@ CRITICAL RULES:
 
       const pyPdf = `
 import sys, json, os
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, Image, KeepTogether
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
+from fpdf import FPDF
+from fpdf.enums import Align
 from bs4 import BeautifulSoup
 
-# ── Register DejaVu fonts for full Unicode support (chemical symbols, arrows, math) ──
-FONT = 'Helvetica'
-FONT_BOLD = 'Helvetica-Bold'
-FONT_ITALIC = 'Helvetica-Oblique'
-
-# Use bundled fonts first (in /app/fonts/), then fall back to system fonts
+# ── Font setup: DejaVu for full Unicode (chemical symbols, arrows, math) ──
 _bundled = os.path.join('/app', 'fonts')
 _font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
-
+_regular = None
+_bold = None
+_italic = None
 for _fd in _font_dirs:
     _r = os.path.join(_fd, 'DejaVuSans.ttf')
-    _b = os.path.join(_fd, 'DejaVuSans-Bold.ttf')
-    _o = os.path.join(_fd, 'DejaVuSans-Oblique.ttf')
     if os.path.exists(_r):
-        try:
-            pdfmetrics.registerFont(TTFont('DejaVu', _r))
-            FONT = 'DejaVu'
-            if os.path.exists(_b):
-                pdfmetrics.registerFont(TTFont('DejaVu-Bold', _b))
-                FONT_BOLD = 'DejaVu-Bold'
-            if os.path.exists(_o):
-                pdfmetrics.registerFont(TTFont('DejaVu-Oblique', _o))
-                FONT_ITALIC = 'DejaVu-Oblique'
-            break
-        except Exception:
-            FONT = 'Helvetica'
-            FONT_BOLD = 'Helvetica-Bold'
-            FONT_ITALIC = 'Helvetica-Oblique'
+        _regular = _r
+        _b = os.path.join(_fd, 'DejaVuSans-Bold.ttf')
+        if os.path.exists(_b): _bold = _b
+        _o = os.path.join(_fd, 'DejaVuSans-Oblique.ttf')
+        if os.path.exists(_o): _italic = _o
+        break
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
 
-doc = SimpleDocTemplate(
-    output_path,
-    pagesize=letter,
-    rightMargin=inch,
-    leftMargin=inch,
-    topMargin=inch,
-    bottomMargin=inch,
-    title=doc_title,
-    author='Remedy508',
-    subject='WCAG 2.1 AA Accessible Document',
-)
+# ── Colours (as RGB 0-255 tuples) ──
+NAVY       = (58, 72, 91)
+TEAL       = (13, 148, 136)
+LIGHT_TEAL = (232, 245, 244)
+GRAY       = (85, 85, 85)
+LIGHT_GRAY = (209, 213, 219)
+WHITE      = (255, 255, 255)
+ROW_ALT    = (249, 250, 251)
 
-TEAL = colors.HexColor('#0d9488')
-NAVY = colors.HexColor('#3a485b')
-LIGHT_TEAL = colors.HexColor('#e8f5f4')
-GRAY = colors.HexColor('#555555')
-LIGHT_GRAY = colors.HexColor('#d1d5db')
+MARGIN = 25.4   # 1 inch in mm
+MAX_IMG_W = 88.9  # 3.5 inches in mm
+MAX_IMG_H = 88.9
 
-styles = getSampleStyleSheet()
+class AccessiblePDF(FPDF):
+    def __init__(self, title):
+        super().__init__()
+        self.set_margins(MARGIN, MARGIN, MARGIN)
+        self.set_auto_page_break(True, margin=MARGIN)
+        self.set_lang('en-US')
+        self.set_title(title)
+        self.set_author('Remedy508')
+        self.set_subject('WCAG 2.1 AA Accessible Document')
+        # Register DejaVu fonts for Unicode support
+        if _regular:
+            self.add_font('DejaVu', fname=_regular)
+            if _bold:   self.add_font('DejaVu', style='B', fname=_bold)
+            if _italic: self.add_font('DejaVu', style='I', fname=_italic)
+            self._fn = 'DejaVu'
+        else:
+            self._fn = 'Helvetica'
+        self._body_size = 11
+        self._line_h = 6
 
-h1_style  = ParagraphStyle('H1',  fontSize=20, textColor=NAVY,  spaceAfter=10, spaceBefore=20, fontName=FONT_BOLD, leading=26)
-h2_style  = ParagraphStyle('H2',  fontSize=15, textColor=NAVY,  spaceAfter=8,  spaceBefore=16, fontName=FONT_BOLD, leading=20)
-h3_style  = ParagraphStyle('H3',  fontSize=12, textColor=TEAL,  spaceAfter=6,  spaceBefore=12, fontName=FONT_BOLD, leading=16)
-body_style = ParagraphStyle('Body', fontSize=11, leading=17, spaceAfter=8,  fontName=FONT)
-eq_style  = ParagraphStyle('Eq',  fontSize=11, leading=17, alignment=TA_CENTER, spaceAfter=8, spaceBefore=8, fontName=FONT_ITALIC, textColor=NAVY)
-fig_style = ParagraphStyle('Fig', fontSize=10, leading=14, spaceAfter=6,  fontName=FONT_ITALIC, textColor=GRAY, leftIndent=16)
-bq_style  = ParagraphStyle('Bq',  fontSize=11, leading=17, spaceAfter=8,  fontName=FONT, textColor=NAVY, leftIndent=24)
-li_style  = ParagraphStyle('Li',  fontSize=11, leading=17, spaceAfter=4,  fontName=FONT, leftIndent=24, firstLineIndent=-16)
-cap_style = ParagraphStyle('Cap', fontSize=10, leading=13, spaceAfter=4,  fontName=FONT_BOLD, textColor=NAVY)
-th_style  = ParagraphStyle('TH',  fontSize=10, leading=13, fontName=FONT_BOLD)
-td_style  = ParagraphStyle('TD',  fontSize=10, leading=13, fontName=FONT)
+    def set_body(self, bold=False, italic=False, size=None):
+        sz = size or self._body_size
+        style = ('B' if bold else '') + ('I' if italic else '')
+        self.set_font(self._fn, style=style, size=sz)
+
+    def draw_h1(self, text):
+        self.ln(4)
+        self.set_body(bold=True, size=18)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
+        self.set_draw_color(*TEAL)
+        self.set_line_width(0.5)
+        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
+        self.ln(3)
+        self.set_text_color(0, 0, 0)
+
+    def draw_h2(self, text):
+        self.ln(3)
+        self.set_body(bold=True, size=14)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(2)
+        self.set_text_color(0, 0, 0)
+
+    def draw_h3(self, text):
+        self.ln(2)
+        self.set_body(bold=True, size=12)
+        self.set_text_color(*TEAL)
+        self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_body(self, text):
+        self.set_body()
+        self.set_text_color(0, 0, 0)
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+
+    def draw_equation(self, text):
+        self.set_body(italic=True)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_blockquote(self, text):
+        self.set_body()
+        self.set_text_color(*NAVY)
+        self.set_left_margin(MARGIN + 10)
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.set_left_margin(MARGIN)
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_li(self, text, ordered=False, num=0):
+        self.set_body()
+        prefix = (str(num) + '. ') if ordered else '\u2022 '
+        self.set_left_margin(MARGIN + 8)
+        self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
+        self.set_left_margin(MARGIN)
+
+    def draw_hr(self):
+        self.ln(2)
+        self.set_draw_color(*LIGHT_GRAY)
+        self.set_line_width(0.3)
+        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
+        self.ln(3)
+
+    def draw_image(self, img_path, alt_text, orig_w, orig_h):
+        """Embed image with proper PDF /Figure Alt tag (WCAG 1.1.1)."""
+        try:
+            # Scale to fit max dimensions while preserving aspect ratio
+            # orig_w/h are pixels at 96dpi; convert to mm (1px = 25.4/96 mm)
+            px_to_mm = 25.4 / 96.0
+            w_mm = orig_w * px_to_mm
+            h_mm = orig_h * px_to_mm
+            avail = self.w - 2 * MARGIN
+            if w_mm > MAX_IMG_W:
+                scale = MAX_IMG_W / w_mm
+                w_mm = MAX_IMG_W
+                h_mm = h_mm * scale
+            if h_mm > MAX_IMG_H:
+                scale = MAX_IMG_H / h_mm
+                h_mm = MAX_IMG_H
+                w_mm = w_mm * scale
+            # Center horizontally
+            x = MARGIN + (avail - w_mm) / 2
+            self.ln(3)
+            # image() with alt_text writes a /Figure structure element with Alt entry
+            self.image(img_path, x=x, y=None, w=w_mm, h=h_mm, alt_text=alt_text)
+            self.ln(3)
+        except Exception as ex:
+            self.set_body(italic=True)
+            self.set_text_color(*GRAY)
+            self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
+            self.set_text_color(0, 0, 0)
+
+    def draw_table(self, tag):
+        caption = tag.find('caption')
+        rows = tag.find_all('tr')
+        if not rows: return
+        usable = self.w - 2 * MARGIN
+        cells_per_row = max(len(r.find_all(['th','td'])) for r in rows) or 1
+        col_w = usable / cells_per_row
+        if caption:
+            self.set_body(bold=True, size=10)
+            self.set_text_color(*NAVY)
+            self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
+            self.set_text_color(0, 0, 0)
+        for ridx, row in enumerate(rows):
+            cells = row.find_all(['th','td'])
+            is_header = ridx == 0 or all(c.name == 'th' for c in cells)
+            if is_header:
+                self.set_fill_color(*LIGHT_TEAL)
+                self.set_text_color(*NAVY)
+                self.set_body(bold=True, size=10)
+            else:
+                fill = WHITE if ridx % 2 == 1 else ROW_ALT
+                self.set_fill_color(*fill)
+                self.set_text_color(0, 0, 0)
+                self.set_body(size=10)
+            self.set_draw_color(*LIGHT_GRAY)
+            self.set_line_width(0.2)
+            for cell in cells:
+                txt = cell.get_text(separator=' ').strip()
+                self.multi_cell(col_w, 6, txt, border=1, fill=True, new_x='RIGHT', new_y='TOP', max_line_height=6)
+            self.ln()
+        self.ln(3)
+        self.set_text_color(0, 0, 0)
 
 def safe_text(tag):
     return (tag.get_text(separator=' ') if tag else '').strip()
 
-def embed_image(img_info, alt_text):
-    """Return a KeepTogether block: the image + its WCAG alt text caption."""
-    items = []
-    img_path = img_info['path'] if isinstance(img_info, dict) else img_info
-    orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
-    orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
-    try:
-        # Cap at 3.5 inches wide to match reference document style
-        max_w = 3.5 * inch
-        # Convert pixels to points at 96dpi (standard screen resolution)
-        pt_w = orig_w * (72.0 / 96.0)
-        pt_h = orig_h * (72.0 / 96.0)
-        scale = min(1.0, max_w / pt_w) if pt_w > 0 else 1.0
-        disp_w = pt_w * scale
-        disp_h = pt_h * scale
-        # Also cap height to 3.5 inches
-        if disp_h > 3.5 * inch:
-            scale = (3.5 * inch) / disp_h
-            disp_w = disp_w * scale
-            disp_h = disp_h * scale
-        img_flowable = Image(img_path, width=disp_w, height=disp_h, hAlign='CENTER')
-        items.append(Spacer(1, 8))
-        items.append(img_flowable)
-    except Exception as e:
-        items.append(Paragraph('[Image: ' + alt_text + ']', fig_style))
-    # WCAG 1.1.1: text alternative immediately below image
-    if alt_text:
-        alt_style = ParagraphStyle('AltText', parent=fig_style, alignment=1)  # centered
-        items.append(Paragraph('Alt text: ' + alt_text, alt_style))
-    items.append(Spacer(1, 12))
-    return KeepTogether(items)
-
-def build_table(tag):
-    caption = tag.find('caption')
-    rows_data = []
-    for row in tag.find_all('tr'):
-        cells = row.find_all(['th', 'td'])
-        rows_data.append([
-            Paragraph(safe_text(c), th_style if c.name == 'th' else td_style)
-            for c in cells
-        ])
-    if not rows_data:
-        return []
-    t = Table(rows_data, repeatRows=1, hAlign='LEFT')
-    t.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), LIGHT_TEAL),
-        ('TEXTCOLOR',  (0, 0), (-1, 0), NAVY),
-        ('FONTNAME',   (0, 0), (-1, 0), FONT_BOLD),
-        ('FONTSIZE',   (0, 0), (-1, -1), 10),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9fafb')]),
-        ('GRID',       (0, 0), (-1, -1), 0.5, LIGHT_GRAY),
-        ('PADDING',    (0, 0), (-1, -1), 6),
-        ('VALIGN',     (0, 0), (-1, -1), 'TOP'),
-    ]))
-    items = []
-    if caption:
-        items.append(Paragraph(safe_text(caption), cap_style))
-    items.append(t)
-    items.append(Spacer(1, 10))
-    return items
-
-story = []
+pdf = AccessiblePDF(doc_title)
+pdf.add_page()
 
 def process(tag, page_images_iter):
     name = tag.name if hasattr(tag, 'name') and tag.name else ''
-    if name in ['html', 'body', 'div', 'section', 'article', 'header']:
+    if name in ['html', 'body', 'div', 'section', 'article', 'header', 'main']:
         for c in tag.children:
-            if hasattr(c, 'name'):
+            if hasattr(c, 'name') and c.name:
                 process(c, page_images_iter)
     elif name == 'h1':
-        story.append(Paragraph(safe_text(tag), h1_style))
-        story.append(HRFlowable(width='100%', thickness=1, color=TEAL, spaceAfter=8))
+        pdf.draw_h1(safe_text(tag))
     elif name == 'h2':
-        story.append(Paragraph(safe_text(tag), h2_style))
-    elif name == 'h3':
-        story.append(Paragraph(safe_text(tag), h3_style))
-    elif name in ['h4', 'h5', 'h6']:
-        story.append(Paragraph(safe_text(tag), h3_style))
+        pdf.draw_h2(safe_text(tag))
+    elif name in ['h3','h4','h5','h6']:
+        pdf.draw_h3(safe_text(tag))
     elif name == 'p':
         cls = tag.get('class', [])
         el_id = tag.get('id', '')
         if 'equation' in cls or el_id.startswith('eq-'):
-            story.append(Paragraph(safe_text(tag), eq_style))
+            pdf.draw_equation(safe_text(tag))
         else:
-            story.append(Paragraph(safe_text(tag), body_style))
+            pdf.draw_body(safe_text(tag))
     elif name == 'figure':
-        # Check if this position should get an extracted image
         figcaption = tag.find('figcaption')
         alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
         img_info = next(page_images_iter, None)
-        img_path = img_info['path'] if isinstance(img_info, dict) else img_info
+        img_path = img_info['path'] if isinstance(img_info, dict) else (img_info or '')
         if img_path and os.path.exists(img_path):
-            story.append(embed_image(img_info, alt_text))
+            orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
+            orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
+            pdf.draw_image(img_path, alt_text, orig_w, orig_h)
         else:
-            # No image file — render a styled alt-text box
-            story.append(Spacer(1, 4))
-            story.append(Paragraph('Figure: ' + alt_text, fig_style))
-            story.append(Spacer(1, 4))
+            pdf.set_body(italic=True)
+            pdf.set_text_color(*GRAY)
+            pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
+            pdf.set_text_color(0, 0, 0)
     elif name == 'blockquote':
-        story.append(Paragraph(safe_text(tag), bq_style))
+        pdf.draw_blockquote(safe_text(tag))
     elif name in ['ul', 'ol']:
-        for li in tag.find_all('li', recursive=False):
-            prefix = '\u2022 ' if name == 'ul' else ''
-            story.append(Paragraph(prefix + safe_text(li), li_style))
-        story.append(Spacer(1, 6))
+        items_li = tag.find_all('li', recursive=False)
+        for idx, li in enumerate(items_li, 1):
+            pdf.draw_li(safe_text(li), ordered=(name == 'ol'), num=idx)
+        pdf.ln(2)
     elif name == 'table':
-        for item in build_table(tag):
-            story.append(item)
+        pdf.draw_table(tag)
     elif name == 'hr':
-        story.append(HRFlowable(width='100%', thickness=0.5, color=LIGHT_GRAY, spaceAfter=8))
+        pdf.draw_hr()
 
 for page_info in pages:
     html = page_info['html']
@@ -881,14 +930,11 @@ for page_info in pages:
     soup = BeautifulSoup(html, 'html.parser')
     page_images_iter = iter(img_files)
     for child in soup.children:
-        if hasattr(child, 'name'):
+        if hasattr(child, 'name') and child.name:
             process(child, page_images_iter)
-    story.append(Spacer(1, 12))
+    pdf.ln(4)
 
-if not story:
-    story.append(Paragraph('No content extracted.', body_style))
-
-doc.build(story)
+pdf.output(output_path)
 print('ok')
 `;
 
