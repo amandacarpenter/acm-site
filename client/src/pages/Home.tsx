@@ -49,7 +49,7 @@ export default function Home() {
             <Link href="/signup">
               <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm" data-testid="hero-cta">
                 <Zap className="w-4 h-4" aria-hidden="true" />
-                Try for Free
+                Get Started
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </span>
             </Link>

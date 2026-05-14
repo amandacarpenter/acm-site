@@ -52,7 +52,7 @@ export default function SiteHeader() {
           </Link>
           <Link href="/signup">
             <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-              Try for Free
+              Get Started
             </span>
           </Link>
         </nav>
@@ -89,7 +89,7 @@ export default function SiteHeader() {
             </Link>
             <Link href="/signup">
               <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
-                Try for Free
+                Get Started
               </span>
             </Link>
           </nav>
