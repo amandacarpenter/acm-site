@@ -118,17 +118,17 @@ export default function Home() {
       </section>
 
       {/* ── WCAG 2.1 AA SECTION ── */}
-      <section className="py-20 sm:py-28 bg-gray-50" aria-labelledby="wcag-heading">
+      <section className="py-20 sm:py-28 bg-[#3a485b]" aria-labelledby="wcag-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-white mb-4 border border-white/20">
               <BookOpen className="w-3 h-3" aria-hidden="true" />
               Standards Reference
             </div>
-            <h2 id="wcag-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
+            <h2 id="wcag-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4">
               WCAG 2.1 Level AA <span className="text-[#0d9488]">Explained</span>
             </h2>
-            <p className="text-gray-500 max-w-2xl mx-auto">
+            <p className="text-white/70 max-w-2xl mx-auto">
               The Web Content Accessibility Guidelines (WCAG) 2.1 Level AA is the legal standard
               required by ADA, Section 508, and most higher education accessibility policies.
               Here's what it actually means in practice.
@@ -272,7 +272,7 @@ export default function Home() {
 
           </Accordion>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
+          <p className="text-center text-xs text-white/40 mt-6">
             Source:{" "}
             <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#0d9488] transition">
               W3C WCAG 2.1 Specification
@@ -282,13 +282,13 @@ export default function Home() {
       </section>
 
       {/* ── WHY IT MATTERS ── */}
-      <section className="py-20 sm:py-28 bg-[#3a485b]" aria-labelledby="why-heading">
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="why-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
-            <h2 id="why-heading" className="text-3xl sm:text-4xl font-bold text-white mb-6">
+            <h2 id="why-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-6">
               Why This <span className="text-[#0d9488]">Matters</span>
             </h2>
-            <p className="text-white/70 leading-relaxed mb-12">
+            <p className="text-gray-500 leading-relaxed mb-12">
               When course materials aren't accessible, students using assistive technology can't complete their work.
               That's not a minor inconvenience — it's an educational barrier that violates federal law and excludes
               learners from the education they deserve.
@@ -300,12 +300,12 @@ export default function Home() {
                 { icon: Users, title: "For Students", desc: "Access course content on equal footing — with screen readers, captions, and properly structured documents." },
                 { icon: Shield, title: "For Institutions", desc: "Meet ADA, Section 508, and WCAG 2.1 AA requirements — reduce legal risk proactively." },
               ].map((card) => (
-                <div key={card.title} className="p-6 rounded-xl bg-white/10 border border-white/20">
+                <div key={card.title} className="p-6 rounded-xl bg-gray-50 border border-gray-200">
                   <div className="w-10 h-10 rounded-lg bg-[#0d9488] flex items-center justify-center mb-3">
                     <card.icon className="w-5 h-5 text-white" aria-hidden="true" />
                   </div>
-                  <h3 className="font-bold text-white mb-1 text-sm">{card.title}</h3>
-                  <p className="text-sm text-white/70">{card.desc}</p>
+                  <h3 className="font-bold text-[#3a485b] mb-1 text-sm">{card.title}</h3>
+                  <p className="text-sm text-gray-500">{card.desc}</p>
                 </div>
               ))}
             </div>
