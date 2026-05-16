@@ -1025,6 +1025,21 @@ print('ok')
   });
 
   // ── ALT TEXT GENERATOR ──────────────────────────────────────────────────────
+  // Waitlist endpoint for coming soon page
+  app.post("/api/waitlist", async (req, res) => {
+    try {
+      const { email } = req.body || {};
+      if (!email || typeof email !== "string" || !/^[^@]+@[^@]+\.[^@]+$/.test(email.trim())) {
+        return res.status(400).json({ message: "Please enter a valid email address." });
+      }
+      // Log to console (Railway logs) — easy to review from dashboard
+      console.log(`[WAITLIST] ${new Date().toISOString()} — ${email.trim()}`);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
   app.post("/api/alttext/generate", upload.single("image"), async (req, res) => {
     const context = req.body.context || "";
 
