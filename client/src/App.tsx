@@ -14,7 +14,6 @@ import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
 import About from "@/pages/About";
 import FAQPage from "@/pages/FAQPage";
-import UseCasesPage from "@/pages/UseCasesPage";
 
 export default function App() {
   return (
@@ -33,7 +32,6 @@ export default function App() {
           <Route path="/contact" component={Contact} />
           <Route path="/about" component={About} />
           <Route path="/faq" component={FAQPage} />
-          <Route path="/who-its-for" component={UseCasesPage} />
         </Switch>
       </Router>
       <Toaster />

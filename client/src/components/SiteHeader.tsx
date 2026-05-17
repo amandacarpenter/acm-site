@@ -15,7 +15,6 @@ function Logo() {
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/who-its-for", label: "Who It's For" },
   { href: "/faq", label: "FAQ" },
   { href: "/pricing", label: "Pricing" },
 ];
