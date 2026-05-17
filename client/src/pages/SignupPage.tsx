@@ -1,4 +1,5 @@
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { Shield, CreditCard, CheckCircle2, Lock } from "lucide-react";
 
@@ -155,20 +156,7 @@ export default function SignupPage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-10 mt-16" role="contentinfo">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-sm text-gray-400">© 2026 Remedy508 — Left Coast Learning LLC</span>
-            <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-end">
-              <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
-              <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
-              <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
-              <Link href="/contact"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Contact</span></Link>
-              <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

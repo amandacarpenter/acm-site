@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import {
   Accordion,
   AccordionContent,
@@ -7,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  FileText, FileSearch, Video, Code2, ImageIcon, ArrowRight, CheckCircle2,
+  FileText, FileSearch, Video, Code2, ImageIcon, ArrowRight,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
 } from "lucide-react";
 // Note: tool cards on homepage are display-only, not linked
@@ -340,30 +341,7 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="bg-gray-900 py-10" role="contentinfo">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-400">
-                © 2026 Remedy508 — Left Coast Learning LLC
-              </span>
-            </div>
-            <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
-              <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
-              <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
-              <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
-              <Link href="/contact"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Contact</span></Link>
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-                <span className="text-xs text-gray-400">WCAG 2.1 AA</span>
-              </div>
-              <Link href="/tools">
-                <span className="text-xs text-gray-600 hover:text-gray-400 transition cursor-pointer">©</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

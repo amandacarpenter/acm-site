@@ -1,5 +1,6 @@
 import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Mail } from "lucide-react";
 
 export default function Accessibility() {
@@ -163,20 +164,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function LegalFooter() {
-  return (
-    <footer className="bg-gray-900 py-10" role="contentinfo">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <span className="text-sm text-gray-400">© 2026 Remedy508 — Left Coast Learning LLC</span>
-          <div className="flex items-center gap-6">
-            <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
-            <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
-            <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
-            <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
