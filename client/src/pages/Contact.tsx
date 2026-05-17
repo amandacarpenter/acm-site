@@ -147,7 +147,7 @@ export default function Contact() {
           </div>
         </div>
       </main>
-      <LegalFooter />
+      <SiteFooter />
     </div>
   );
 }

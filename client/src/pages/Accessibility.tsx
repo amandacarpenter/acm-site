@@ -150,7 +150,7 @@ export default function Accessibility() {
 
         </div>
       </main>
-      <LegalFooter />
+      <SiteFooter />
     </div>
   );
 }

@@ -140,7 +140,7 @@ export default function Privacy() {
 
         </div>
       </main>
-      <LegalFooter />
+      <SiteFooter />
     </div>
   );
 }
