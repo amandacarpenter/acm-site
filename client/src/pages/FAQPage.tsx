@@ -69,15 +69,19 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "Individual plans are $19/month or $149/year (roughly $12.42/month billed annually). Institution plans are custom-priced based on users and scope — contact us for a quote. There is no free tier.",
+        a: "Individual plans start at $9/month (Starter), $19/month (Pro), or $29/month (Unlimited). All plans are available at a discount billed annually. Institution plans start at $299/month with custom pricing based on your institution's size and needs.",
       },
       {
-        q: "What's the difference between Individual and Institution plans?",
-        a: "Individual is for solo users — a single faculty member, instructional designer, or disability services coordinator. Institution plans are for teams or campus-wide rollouts with centralized billing, user management, and volume pricing. Both plans access the same core tools.",
+        q: "What's the difference between the Individual plans?",
+        a: "Starter ($9/mo) gives you 15 documents per month — ideal for faculty with occasional needs. Pro ($19/mo) gives you 50 documents per month and adds the Complex PDF tool. Unlimited ($29/mo) removes all document limits and is best for instructional designers or disability services staff handling large backlogs.",
       },
       {
-        q: "Can I upgrade from Individual to Institution?",
-        a: "Yes — reach out at any time and we'll work out a transition that makes sense. You won't lose any work or history in the process.",
+        q: "What counts as a document?",
+        a: "Each file you upload counts as one document, regardless of page count. Video and audio transcriptions also count as one document each.",
+      },
+      {
+        q: "Can I upgrade plans?",
+        a: "Yes — upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan.",
       },
       {
         q: "Do you offer discounts for community colleges?",
