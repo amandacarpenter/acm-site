@@ -116,7 +116,7 @@ export default function PricingPage() {
             </button>
           </div>
           {annual && (
-            <p className="text-xs text-white/70 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
+            <p className="text-sm text-white/70 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
           )}
         </div>
       </section>
