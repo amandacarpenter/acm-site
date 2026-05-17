@@ -140,9 +140,9 @@ export default function SignupPage() {
 
           <p className="text-center text-xs text-gray-400 leading-relaxed">
             By creating an account you agree to our{" "}
-            <a href="#" className="underline hover:text-[#0d9488]">Terms of Service</a>{" "}
+            <Link href="/terms"><span className="underline hover:text-[#0d9488] cursor-pointer">Terms of Service</span></Link>{" "}
             and{" "}
-            <a href="#" className="underline hover:text-[#0d9488]">Privacy Policy</a>.
+            <Link href="/privacy"><span className="underline hover:text-[#0d9488] cursor-pointer">Privacy Policy</span></Link>.
           </p>
         </div>
 
@@ -159,11 +159,11 @@ export default function SignupPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <span className="text-sm text-gray-400">© 2026 Remedy508 — Left Coast Learning LLC</span>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-                <span className="text-xs text-gray-400">WCAG 2.1 AA Compliant</span>
-              </div>
+            <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-end">
+              <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
+              <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
+              <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
+              <Link href="/contact"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Contact</span></Link>
               <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
             </div>
           </div>
