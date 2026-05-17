@@ -1025,6 +1025,21 @@ print('ok')
   });
 
   // ── ALT TEXT GENERATOR ──────────────────────────────────────────────────────
+  // Contact form endpoint
+  app.post("/api/contact", async (req, res) => {
+    try {
+      const { name, email, subject, message } = req.body || {};
+      if (!email || !message) {
+        return res.status(400).json({ message: "Name, email, and message are required." });
+      }
+      console.log(`[CONTACT] ${new Date().toISOString()} — ${name} <${email}> | Subject: ${subject}`);
+      console.log(`[CONTACT MESSAGE] ${message}`);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ message: "Something went wrong. Please try again." });
+    }
+  });
+
   // Waitlist endpoint for coming soon page
   app.post("/api/waitlist", async (req, res) => {
     try {

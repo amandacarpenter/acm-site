@@ -351,6 +351,7 @@ export default function Home() {
               <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
               <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
               <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
+              <Link href="/contact"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Contact</span></Link>
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
                 <span className="text-xs text-gray-400">WCAG 2.1 AA</span>
