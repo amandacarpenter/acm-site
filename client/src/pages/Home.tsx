@@ -46,10 +46,10 @@ export default function Home() {
             <span className="text-[#0d9488]">Made Easy</span>
           </h1>
 
-          <p className="text-xl text-white/80 max-w-xl mb-3 leading-relaxed font-medium">
+          <p className="text-xl text-white max-w-xl mb-3 leading-relaxed font-medium">
             Create compliant content, no expertise required.
           </p>
-          <p className="text-base text-white/60 max-w-2xl mb-10 leading-relaxed">
+          <p className="text-base text-white max-w-2xl mb-10 leading-relaxed">
             Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
           </p>
 
