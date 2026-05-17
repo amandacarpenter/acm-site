@@ -22,6 +22,7 @@ const INDIVIDUAL_PLANS = [
     ],
     cta: "Get Started",
     highlight: false,
+    barColor: "bg-gray-300",
   },
   {
     name: "Pro",
@@ -40,6 +41,7 @@ const INDIVIDUAL_PLANS = [
     ],
     cta: "Get Started",
     highlight: true,
+    barColor: "bg-[#0d9488]",
   },
   {
     name: "Unlimited",
@@ -58,6 +60,7 @@ const INDIVIDUAL_PLANS = [
     ],
     cta: "Get Started",
     highlight: false,
+    barColor: "bg-[#3a485b]",
   },
 ];
 
@@ -124,114 +127,106 @@ export default function PricingPage() {
             {INDIVIDUAL_PLANS.map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-2xl p-7 relative flex flex-col ${
-                  plan.highlight
-                    ? "bg-[#0d9488] shadow-xl ring-2 ring-[#0d9488]"
-                    : "bg-white border border-gray-200 shadow-sm"
-                }`}
+                className="rounded-2xl bg-white border border-gray-200 shadow-sm relative flex flex-col overflow-hidden"
               >
+                {/* Colored top bar */}
+                <div className={`h-2 w-full ${plan.barColor}`} />
+
                 {plan.highlight && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="bg-[#3a485b] text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">
+                  <div className="absolute top-5 right-4">
+                    <span className="bg-[#0d9488] text-white text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
                       Most Popular
                     </span>
                   </div>
                 )}
 
+                <div className="p-7 flex flex-col flex-1">
+                  <div className="mb-4">
+                    <p className="text-xs font-bold uppercase tracking-widest mb-3 text-gray-400">
+                      {plan.name}
+                    </p>
+                    <div className="flex items-end gap-1 mb-1">
+                      <span className="text-4xl font-bold text-[#3a485b]">
+                        ${annual ? Math.round(plan.annual / 12) : plan.monthly}
+                      </span>
+                      <span className="mb-1 text-sm text-gray-400">/mo</span>
+                    </div>
+                    {annual ? (
+                      <p className="text-xs text-gray-400">${plan.annual}/year — {plan.annualSavings}</p>
+                    ) : (
+                      <p className="text-xs text-gray-400">or ${plan.annual}/yr — {plan.annualSavings}</p>
+                    )}
+                  </div>
+
+                  <p className="text-xs leading-relaxed mb-4 text-gray-500">{plan.description}</p>
+
+                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
+                    <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                    {plan.limit}
+                  </div>
+                  <p className="text-xs mb-5 pl-1 text-gray-400">{plan.limitNote}</p>
+
+                  <ul className="space-y-2 mb-6">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-auto">
+                    <Link href="/signup">
+                      <span className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
+                        {plan.cta}
+                      </span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Institution card */}
+            <div className="rounded-2xl bg-white border border-gray-200 shadow-sm relative flex flex-col overflow-hidden">
+              {/* Navy top bar */}
+              <div className="h-2 w-full bg-[#3a485b]" />
+
+              <div className="p-7 flex flex-col flex-1">
                 <div className="mb-4">
-                  <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${plan.highlight ? "text-white" : "text-gray-400"}`}>
-                    {plan.name}
+                  <p className="text-xs font-bold uppercase tracking-widest mb-3 text-gray-400">
+                    Institution
                   </p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className={`text-4xl font-bold ${plan.highlight ? "text-white" : "text-[#3a485b]"}`}>
-                      ${annual ? Math.round(plan.annual / 12) : plan.monthly}
-                    </span>
-                    <span className={`mb-1 text-sm ${plan.highlight ? "text-white" : "text-gray-400"}`}>/mo</span>
+                    <span className="text-4xl font-bold text-[#3a485b]">Custom</span>
                   </div>
-                  {annual ? (
-                    <p className={`text-xs ${plan.highlight ? "text-white" : "text-gray-400"}`}>
-                      ${plan.annual}/year — {plan.annualSavings}
-                    </p>
-                  ) : (
-                    <p className={`text-xs ${plan.highlight ? "text-white" : "text-gray-400"}`}>
-                      or ${plan.annual}/yr — {plan.annualSavings}
-                    </p>
-                  )}
+                  <p className="text-xs text-gray-400">Starting at $299/mo</p>
                 </div>
 
-                <p className={`text-xs leading-relaxed mb-4 ${plan.highlight ? "text-white" : "text-gray-500"}`}>
-                  {plan.description}
+                <p className="text-xs leading-relaxed mb-4 text-gray-500">
+                  For campuses, departments, and teams that need everyone covered.
                 </p>
 
-                <div className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-1 w-fit ${
-                  plan.highlight ? "bg-white/25 text-white" : "bg-[#0d9488]/10 text-[#0d9488]"
-                }`}>
-                  <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-                  {plan.limit}
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-5 w-fit bg-[#3a485b]/10 text-[#3a485b]">
+                  <Users className="w-3 h-3" aria-hidden="true" />
+                  Unlimited users &amp; documents
                 </div>
-                <p className={`text-xs mb-5 pl-1 ${plan.highlight ? "text-white" : "text-gray-400"}`}>
-                  {plan.limitNote}
-                </p>
 
                 <ul className="space-y-2 mb-6">
-                  {plan.features.map((f) => (
-                    <li key={f} className={`flex items-start gap-2 text-xs ${plan.highlight ? "text-white" : "text-gray-600"}`}>
-                      <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${plan.highlight ? "text-white" : "text-[#0d9488]"}`} aria-hidden="true" />
+                  {INSTITUTION_FEATURES.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
                   ))}
                 </ul>
 
                 <div className="mt-auto">
-                  <Link href="/signup">
-                    <span className={`w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer ${
-                      plan.highlight
-                        ? "bg-white text-[#0d9488] hover:bg-gray-50 shadow-sm"
-                        : "bg-[#0d9488] text-white hover:bg-[#0f766e]"
-                    }`}>
-                      {plan.cta}
+                  <a href="mailto:hello@remedy508.com">
+                    <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#3a485b] text-white hover:bg-[#2e3a4a]">
+                      Contact Us
                     </span>
-                  </Link>
+                  </a>
                 </div>
-              </div>
-            ))}
-
-            {/* Institution card */}
-            <div className="rounded-2xl p-7 relative flex flex-col bg-[#3a485b] border border-[#3a485b] shadow-sm">
-              <div className="mb-4">
-                <p className="text-xs font-bold uppercase tracking-widest mb-3 text-white/50">
-                  Institution
-                </p>
-                <div className="flex items-end gap-1 mb-1">
-                  <span className="text-3xl font-bold text-white">Custom</span>
-                </div>
-                <p className="text-xs text-white/50">Starting at $299/mo</p>
-              </div>
-
-              <p className="text-xs leading-relaxed mb-4 text-white/70">
-                For campuses, departments, and teams that need everyone covered.
-              </p>
-
-              <div className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-5 w-fit bg-white/10 text-white/80">
-                <Users className="w-3 h-3" aria-hidden="true" />
-                Unlimited users &amp; documents
-              </div>
-
-              <ul className="space-y-2 mb-6">
-                {INSTITUTION_FEATURES.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-xs text-white/70">
-                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="mt-auto">
-                <a href="mailto:hello@remedy508.com">
-                  <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
-                    Contact Us
-                  </span>
-                </a>
               </div>
             </div>
 
