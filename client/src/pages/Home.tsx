@@ -14,11 +14,11 @@ import {
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
-  { icon: FileText, title: "Document Fixer", desc: "Upload a Word doc or PDF — AI identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
-  { icon: FileSearch, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — AI remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
+  { icon: FileText, title: "Document Fixer", desc: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
+  { icon: FileSearch, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
   { icon: Video, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
-  { icon: Code2, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — AI fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
-  { icon: ImageIcon, title: "Alt Text Generator", desc: "Upload or link an image. AI generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
+  { icon: Code2, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
+  { icon: ImageIcon, title: "Alt Text Generator", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
 ];
 
 const STATS = [
@@ -50,7 +50,7 @@ export default function Home() {
             Create compliant content, no expertise required.
           </p>
           <p className="text-base text-white/60 max-w-2xl mb-10 leading-relaxed">
-            AI-powered tools that fix documents, transcribe videos, clean Canvas HTML, and generate alt text — so every student can learn.
+            Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
           </p>
 
           <div className="flex flex-wrap gap-3">
@@ -88,7 +88,7 @@ export default function Home() {
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
               <Sparkles className="w-3 h-3" aria-hidden="true" />
-              AI-Powered
+              Remedy508 Powered
             </div>
             <h2 id="tools-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
               Four Tools. <span className="text-[#0d9488]">Zero Excuses.</span>

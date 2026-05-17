@@ -46,7 +46,7 @@ export default function About() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { icon: <Target className="w-5 h-5 text-[#0d9488]" />, title: "Precision", desc: "AI that understands accessibility standards — not just formatting rules." },
+              { icon: <Target className="w-5 h-5 text-[#0d9488]" />, title: "Precision", desc: "Remedy508 understands accessibility standards — not just formatting rules." },
               { icon: <Lightbulb className="w-5 h-5 text-[#0d9488]" />, title: "Built for Higher Ed", desc: "Designed specifically for the tools and workflows instructional designers actually use." },
               { icon: <CheckCircle2 className="w-5 h-5 text-[#0d9488]" />, title: "WCAG 2.1 AA", desc: "Every output targets the standard that ADA Title II compliance requires." },
               { icon: <Heart className="w-5 h-5 text-[#0d9488]" />, title: "Student-Centered", desc: "Every accessible document is a student who can actually access their education." },
