@@ -12,6 +12,7 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import Accessibility from "@/pages/Accessibility";
 import Contact from "@/pages/Contact";
+import About from "@/pages/About";
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/terms" component={Terms} />
           <Route path="/accessibility" component={Accessibility} />
           <Route path="/contact" component={Contact} />
+          <Route path="/about" component={About} />
         </Switch>
       </Router>
       <Toaster />
