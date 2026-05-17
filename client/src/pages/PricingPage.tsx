@@ -34,6 +34,7 @@ const INDIVIDUAL_PLANS = [
       "Complex PDF tool",
       "Priority processing",
       "Email support",
+      "Cancel anytime",
     ],
     cta: "Get Started",
     highlight: true,
@@ -49,6 +50,8 @@ const INDIVIDUAL_PLANS = [
       "Everything in Pro",
       "Unlimited processing",
       "Priority support",
+      "Cancel anytime",
+      "Early access to new tools",
     ],
     cta: "Get Started",
     highlight: false,
@@ -57,10 +60,7 @@ const INDIVIDUAL_PLANS = [
 
 const INSTITUTION_FEATURES = [
   "Unlimited users and seats",
-  "Unlimited document processing",
-  "All five tools included",
-  "Institution-wide admin dashboard",
-  "Usage reporting and analytics",
+  "Admin dashboard & usage reporting",
   "Dedicated onboarding support",
   "Invoice and PO billing available",
   "FERPA documentation on request",
@@ -115,7 +115,7 @@ export default function PricingPage() {
       <section className="py-16 sm:py-20 bg-gray-50" aria-labelledby="plans-heading">
         <h2 id="plans-heading" className="sr-only">Pricing plans</h2>
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
 
             {/* Individual plans */}
             {INDIVIDUAL_PLANS.map((plan) => (
@@ -170,17 +170,7 @@ export default function PricingPage() {
                   Doc Fixer &amp; Complex PDF only — other tools unlimited
                 </p>
 
-                <Link href="/signup">
-                  <span className={`w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer mb-5 ${
-                    plan.highlight
-                      ? "bg-white text-[#0d9488] hover:bg-gray-50 shadow-sm"
-                      : "bg-[#0d9488] text-white hover:bg-[#0f766e]"
-                  }`}>
-                    {plan.cta}
-                  </span>
-                </Link>
-
-                <ul className="space-y-2 mt-auto">
+                <ul className="space-y-2 mb-6">
                   {plan.features.map((f) => (
                     <li key={f} className={`flex items-start gap-2 text-xs ${plan.highlight ? "text-white" : "text-gray-600"}`}>
                       <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${plan.highlight ? "text-white/80" : "text-[#0d9488]"}`} aria-hidden="true" />
@@ -188,6 +178,18 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
+
+                <div className="mt-auto">
+                  <Link href="/signup">
+                    <span className={`w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer ${
+                      plan.highlight
+                        ? "bg-white text-[#0d9488] hover:bg-gray-50 shadow-sm"
+                        : "bg-[#0d9488] text-white hover:bg-[#0f766e]"
+                    }`}>
+                      {plan.cta}
+                    </span>
+                  </Link>
+                </div>
               </div>
             ))}
 
@@ -212,13 +214,7 @@ export default function PricingPage() {
                 Unlimited users &amp; documents
               </div>
 
-              <a href="mailto:hello@remedy508.com">
-                <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer mb-5 bg-[#0d9488] text-white hover:bg-[#0f766e]">
-                  Contact Us
-                </span>
-              </a>
-
-              <ul className="space-y-2 mt-auto">
+              <ul className="space-y-2 mb-6">
                 {INSTITUTION_FEATURES.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-xs text-white/70">
                     <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
@@ -226,6 +222,14 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-auto">
+                <a href="mailto:hello@remedy508.com">
+                  <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
+                    Contact Us
+                  </span>
+                </a>
+              </div>
             </div>
 
           </div>
