@@ -75,7 +75,7 @@ export default function LoginPage() {
           {/* Trust note */}
           <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-gray-400">
             <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-            Secure · No data retained after processing
+            Secure · Files processed in memory, never stored
           </div>
         </div>
       </div>

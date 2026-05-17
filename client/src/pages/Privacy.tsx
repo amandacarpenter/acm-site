@@ -21,7 +21,7 @@ export default function Privacy() {
 
           <Section title="1. Information We Collect">
             <Sub title="Account Information">When you create a Remedy508 account, we collect your email address and the credential information you use to authenticate (managed through Clerk, our authentication provider). We may also collect your name if you provide it.</Sub>
-            <Sub title="Uploaded Files and Content">To provide the remediation service, you may upload files such as PDFs, images, video files, and Canvas course content. These files are processed by AI. <strong>Uploaded files are deleted within 24 hours of processing completion.</strong> We do not retain copies of your uploaded documents beyond the processing window.</Sub>
+            <Sub title="Uploaded Files and Content">To provide the remediation service, you may upload files such as PDFs, images, video files, and Canvas course content. These files are processed in memory to generate accessible output. <strong>Uploaded files are not retained after your result is returned.</strong> We do not store copies of your uploaded documents.</Sub>
             <Sub title="Payment Information">Billing is handled by Stripe. We do not collect or store your credit card number, CVV, or banking credentials. We receive only a payment token and summary billing information from Stripe.</Sub>
             <Sub title="Usage and Analytics Data">We collect information about how you use the Service, including pages visited, session duration, browser type, device type, IP address (country-level only), and error logs. This helps us improve the product.</Sub>
           </Section>
@@ -76,7 +76,7 @@ export default function Privacy() {
           </Section>
 
           <Section title="5. FERPA Compliance">
-            <p>Higher education institutions using Remedy508 may upload course materials that contain student educational records covered by FERPA. Left Coast Learning LLC acts as a service provider on behalf of the institution under 34 C.F.R. § 99.31(a)(1). We process student-related data only to perform accessibility remediation, do not use it for any other purpose, do not re-disclose it, and do not retain it beyond the 24-hour processing window.</p>
+            <p>Higher education institutions using Remedy508 may upload course materials that contain student educational records covered by FERPA. Left Coast Learning LLC acts as a service provider on behalf of the institution under 34 C.F.R. § 99.31(a)(1). We process student-related data only to perform accessibility remediation, do not use it for any other purpose, do not re-disclose it, and do not retain it after processing is complete.</p>
           </Section>
 
           <Section title="6. California Residents — CCPA Rights">
@@ -104,7 +104,7 @@ export default function Privacy() {
               </thead>
               <tbody>
                 {[
-                  ["Uploaded files", "Deleted within 24 hours of processing completion"],
+                  ["Uploaded files", "Not retained — deleted immediately after processing"],
                   ["Processed output", "Available until you delete or subscription ends"],
                   ["Account information", "Retained while subscription is active"],
                   ["Billing records", "As required by law (typically 7 years)"],

@@ -62,7 +62,7 @@ export default function Terms() {
 
           <Section title="6. Intellectual Property">
             <p className="mb-3">Remedy508, including its software, design, interface, documentation, trademarks, and logos, is owned by Left Coast Learning LLC. You receive a limited, non-exclusive, non-transferable, revocable license to access the Service during your active subscription.</p>
-            <p><strong>Your content:</strong> You retain full ownership of all content you upload. You grant us a limited license to process your content solely to provide the Service. This license terminates when your files are deleted. We do not claim any ownership interest in your content.</p>
+            <p><strong>Your content:</strong> You retain full ownership of all content you upload. You grant us a limited license to process your content solely to provide the Service. This license terminates when processing is complete and your files are discarded. We do not claim any ownership interest in your content.</p>
           </Section>
 
           <Section title="7. AI Processing Disclosure">
@@ -96,7 +96,7 @@ export default function Terms() {
           </Section>
 
           <Section title="13. Termination">
-            <p>You may terminate your account at any time by contacting hello@remedy508.com. We may suspend or terminate your access if you violate these Terms, we are required to by law, or we discontinue the Service. Upon termination, your access ends and files are deleted per our retention policy.</p>
+            <p>You may terminate your account at any time by contacting hello@remedy508.com. We may suspend or terminate your access if you violate these Terms, we are required to by law, or we discontinue the Service. Upon termination, your access ends. Uploaded files are never retained beyond processing regardless of account status.</p>
           </Section>
 
           <Section title="14. Governing Law and Dispute Resolution">
