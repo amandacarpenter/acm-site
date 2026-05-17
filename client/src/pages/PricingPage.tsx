@@ -1,4 +1,5 @@
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { CheckCircle2, Zap, Shield, Users } from "lucide-react";
 
@@ -127,20 +128,7 @@ export default function PricingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-10" role="contentinfo">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-sm text-gray-400">© 2026 Remedy508 — Left Coast Learning LLC</span>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-                <span className="text-xs text-gray-400">WCAG 2.1 AA Compliant</span>
-              </div>
-              <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

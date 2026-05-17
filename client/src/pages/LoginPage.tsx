@@ -1,4 +1,5 @@
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { Shield, CheckCircle2 } from "lucide-react";
 
@@ -80,11 +81,7 @@ export default function LoginPage() {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gray-900 py-6" role="contentinfo">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <span className="text-xs text-gray-500">© 2026 Remedy508 — Left Coast Learning LLC</span>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
