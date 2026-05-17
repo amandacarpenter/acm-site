@@ -19,6 +19,7 @@ const INDIVIDUAL_PLANS = [
       "Canvas HTML Fixer",
       "Video Transcription",
       "Email support",
+      "Monthly — cancel anytime",
     ],
     cta: "Get Started",
     highlight: false,
@@ -37,7 +38,7 @@ const INDIVIDUAL_PLANS = [
       "Complex PDF tool",
       "Priority processing",
       "Email support",
-      "Cancel anytime",
+      "Monthly — cancel anytime",
     ],
     cta: "Get Started",
     highlight: true,
@@ -55,7 +56,7 @@ const INDIVIDUAL_PLANS = [
       "Everything in Pro",
       "Unlimited processing",
       "Priority support",
-      "Cancel anytime",
+      "Monthly — cancel anytime",
       "Early access to new tools",
     ],
     cta: "Get Started",
@@ -114,6 +115,9 @@ export default function PricingPage() {
               <span className="ml-1.5 text-xs font-bold text-[#0d9488]">Save up to 35%</span>
             </button>
           </div>
+          {annual && (
+            <p className="text-xs text-gray-400 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
+          )}
         </div>
       </section>
 
@@ -241,7 +245,7 @@ export default function PricingPage() {
           <div className="space-y-6">
             {[
               { q: "What counts toward my monthly document limit?", a: "On Starter, only Document Fixer uploads count toward the limit. On Pro, both Document Fixer and Complex PDF count. Unlimited removes all caps. Video Transcription, Canvas HTML Fixer, and Alt Text Generator are unlimited on every plan. Each upload counts as one document regardless of page count." },
-              { q: "Is there a free trial?", a: "Individual plans can be cancelled anytime — no long-term commitment. Institution plans include a dedicated onboarding session so your team gets value from day one." },
+              { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges." },
               { q: "Can I upgrade plans?", a: "Yes, upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan." },
               { q: "How is Institution pricing determined?", a: "Institution pricing starts at $299/mo and scales based on your institution's size and needs. Contact us for a custom quote." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },

@@ -80,6 +80,10 @@ const FAQ_SECTIONS: FAQSection[] = [
         a: "Each file you upload counts as one document, regardless of page count. Video and audio transcriptions also count as one document each.",
       },
       {
+        q: "Can I cancel my plan?",
+        a: "Monthly plans can be cancelled at any time — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
+      },
+      {
         q: "Can I upgrade plans?",
         a: "Yes — upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan.",
       },

@@ -96,7 +96,7 @@ export default function Terms() {
           </Section>
 
           <Section title="13. Termination">
-            <p>You may terminate your account at any time by contacting hello@remedy508.com. We may suspend or terminate your access if you violate these Terms, we are required to by law, or we discontinue the Service. Upon termination, your access ends. Uploaded files are never retained beyond processing regardless of account status.</p>
+            <p>You may terminate your account at any time by contacting hello@remedy508.com. We may suspend or terminate your access if you violate these Terms, we are required to by law, or we discontinue the Service. Monthly plans may be cancelled at any time; you will not be billed for the next period. Annual plans are billed upfront and are non-refundable — you may cancel before your renewal date to stop future charges. Upon cancellation, your access continues until the end of the paid period. Uploaded files are never retained beyond processing regardless of account status.</p>
           </Section>
 
           <Section title="14. Governing Law and Dispute Resolution">
