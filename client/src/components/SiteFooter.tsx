@@ -27,6 +27,16 @@ export default function SiteFooter() {
               Accessibility
             </span>
           </Link>
+          <Link href="/who-its-for">
+            <span className="text-xs text-gray-400 hover:text-white transition cursor-pointer whitespace-nowrap">
+              Who It's For
+            </span>
+          </Link>
+          <Link href="/faq">
+            <span className="text-xs text-gray-400 hover:text-white transition cursor-pointer whitespace-nowrap">
+              FAQ
+            </span>
+          </Link>
           <Link href="/contact">
             <span className="text-xs text-gray-400 hover:text-white transition cursor-pointer whitespace-nowrap">
               Contact
