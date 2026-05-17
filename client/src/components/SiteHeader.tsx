@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import logoUrl from "@/assets/logo.png";
+import { useUser, UserButton } from "@clerk/clerk-react";
 
 function Logo() {
   return (
@@ -22,6 +23,7 @@ const NAV_LINKS = [
 export default function SiteHeader() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isSignedIn } = useUser();
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
@@ -46,16 +48,27 @@ export default function SiteHeader() {
               </span>
             </Link>
           ))}
-          <Link href="/login">
-            <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
-              Log in
-            </span>
-          </Link>
-          <Link href="/signup">
-            <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-              Get Started
-            </span>
-          </Link>
+          {isSignedIn ? (
+            <div className="flex items-center gap-3 ml-2">
+              <Link href="/dashboard">
+                <span className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">Dashboard</span>
+              </Link>
+              <UserButton afterSignOutUrl="/#/" appearance={{ variables: { colorPrimary: "#0d9488" } }} />
+            </div>
+          ) : (
+            <>
+              <Link href="/login">
+                <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                  Log in
+                </span>
+              </Link>
+              <Link href="/signup">
+                <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                  Get Started
+                </span>
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Mobile hamburger */}
@@ -83,16 +96,26 @@ export default function SiteHeader() {
                 </span>
               </Link>
             ))}
-            <Link href="/login">
-              <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
-                Log in
-              </span>
-            </Link>
-            <Link href="/signup">
-              <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
-                Get Started
-              </span>
-            </Link>
+            {isSignedIn ? (
+              <Link href="/dashboard">
+                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
+                  Dashboard
+                </span>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
+                    Log in
+                  </span>
+                </Link>
+                <Link href="/signup">
+                  <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
+                    Get Started
+                  </span>
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       )}
