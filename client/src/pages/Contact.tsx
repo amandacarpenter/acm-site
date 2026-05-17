@@ -35,14 +35,14 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-
-        {/* Header */}
-        <div className="mb-12 text-center">
-          <span className="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">Support</span>
-          <h1 className="text-4xl font-bold text-[#3a485b] mb-3">Get in Touch</h1>
-          <p className="text-gray-500 max-w-xl mx-auto">Have a question, need help with a document, or want to talk about an institution plan? We're here.</p>
+      <section className="bg-[#3a485b] py-16 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Support</div>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Get in Touch</h1>
+          <p className="text-white max-w-xl mx-auto">Have a question, need help with a document, or want to talk about an institution plan? We're here.</p>
         </div>
+      </section>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 

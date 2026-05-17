@@ -6,13 +6,14 @@ export default function Terms() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
-        <div className="mb-10">
-          <span className="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">Legal</span>
-          <h1 className="text-4xl font-bold text-[#3a485b] mb-3">Terms of Service</h1>
-          <p className="text-gray-500 text-sm">Left Coast Learning LLC, doing business as Remedy508 &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
+      <section className="bg-[#3a485b] py-16 sm:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Legal</div>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Terms of Service</h1>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
         </div>
-
+      </section>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
         <div className="space-y-8 text-gray-700 leading-relaxed">
 
           <p>These Terms of Service ("Terms") govern your access to and use of Remedy508, operated by Left Coast Learning LLC, a California limited liability company ("Left Coast Learning," "we," "us," or "our"). By creating an account or accessing any part of the Service, you agree to be bound by these Terms.</p>

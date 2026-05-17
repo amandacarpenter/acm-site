@@ -7,12 +7,14 @@ export default function Accessibility() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
-        <div className="mb-10">
-          <span className="inline-block bg-teal-50 text-teal-700 text-xs font-semibold px-3 py-1 rounded-full mb-4 uppercase tracking-wide">Accessibility</span>
-          <h1 className="text-4xl font-bold text-[#3a485b] mb-3">Accessibility Statement</h1>
-          <p className="text-gray-500 text-sm">Left Coast Learning LLC, doing business as Remedy508 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
+      <section className="bg-[#3a485b] py-16 sm:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Accessibility</div>
+          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Accessibility Statement</h1>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
         </div>
+      </section>
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
 
         {/* Commitment callout */}
         <div className="bg-teal-50 border-l-4 border-[#0d9488] p-5 rounded-r-lg mb-10">

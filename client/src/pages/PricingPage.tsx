@@ -81,26 +81,26 @@ export default function PricingPage() {
       <SiteHeader />
 
       {/* Header */}
-      <section className="bg-white border-b py-20 sm:py-24" aria-labelledby="pricing-heading">
+      <section className="bg-[#3a485b] py-20 sm:py-24" aria-labelledby="pricing-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0d9488] mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-8">
             <Zap className="w-3.5 h-3.5" aria-hidden="true" />
             No hidden fees. No surprises.
           </div>
-          <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-[#3a485b] mb-4">
+          <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4">
             Accessibility shouldn't{" "}
             <span className="text-[#0d9488]">break the budget.</span>
           </h1>
-          <p className="text-lg text-gray-500 max-w-xl mx-auto mb-10">
+          <p className="text-lg text-white max-w-xl mx-auto mb-10">
             For individual educators or entire institutions — pick the plan that fits.
           </p>
 
           {/* Monthly / Annual toggle */}
-          <div className="inline-flex items-center gap-3 bg-gray-100 rounded-full px-2 py-1.5">
+          <div className="inline-flex items-center gap-3 bg-white/10 rounded-full px-2 py-1.5">
             <button
               onClick={() => setAnnual(false)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-white/60"
               }`}
             >
               Monthly
@@ -108,7 +108,7 @@ export default function PricingPage() {
             <button
               onClick={() => setAnnual(true)}
               className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                annual ? "bg-white text-[#3a485b] shadow-sm" : "text-white/60"
               }`}
             >
               Annual
@@ -116,7 +116,7 @@ export default function PricingPage() {
             </button>
           </div>
           {annual && (
-            <p className="text-xs text-gray-400 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
+            <p className="text-xs text-white/70 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
           )}
         </div>
       </section>

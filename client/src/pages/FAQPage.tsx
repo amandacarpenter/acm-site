@@ -127,18 +127,18 @@ export default function FAQPage() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="bg-white border-b py-16 sm:py-20" aria-labelledby="faq-heading">
+      <section className="bg-[#3a485b] py-16 sm:py-20" aria-labelledby="faq-heading">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0d9488] mb-6">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
             Got questions?
           </div>
-          <h1 id="faq-heading" className="text-4xl sm:text-5xl font-bold text-[#3a485b] mb-4">
+          <h1 id="faq-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4">
             Frequently Asked <span className="text-[#0d9488]">Questions</span>
           </h1>
-          <p className="text-lg text-gray-500">
+          <p className="text-lg text-white">
             Everything you need to know about Remedy508. Can't find what you're looking for?{" "}
-            <a href="/contact" className="text-[#0d9488] hover:underline font-medium">
+            <a href="/#/contact" className="text-[#0d9488] hover:underline font-medium">
               Contact us
             </a>.
           </p>
