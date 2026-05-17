@@ -7,13 +7,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  FileText, Video, Code2, ImageIcon, ArrowRight, CheckCircle2,
+  FileText, FileSearch, Video, Code2, ImageIcon, ArrowRight, CheckCircle2,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
 } from "lucide-react";
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
   { icon: FileText, title: "Document Fixer", desc: "Upload a Word doc or PDF — AI identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
+  { icon: FileSearch, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — AI remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
   { icon: Video, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
   { icon: Code2, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — AI fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
   { icon: ImageIcon, title: "Alt Text Generator", desc: "Upload or link an image. AI generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
