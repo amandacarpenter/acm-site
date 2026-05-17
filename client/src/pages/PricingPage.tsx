@@ -12,6 +12,7 @@ const INDIVIDUAL_PLANS = [
     annualSavings: "save 27%",
     description: "For faculty who occasionally need to remediate course materials.",
     limit: "15 documents / month",
+    limitNote: "Document Fixer only — other tools unlimited",
     features: [
       "Document Fixer (Word & PDF)",
       "Alt Text Generator",
@@ -29,6 +30,7 @@ const INDIVIDUAL_PLANS = [
     annualSavings: "save 35%",
     description: "For instructional designers and regular accessibility work.",
     limit: "50 documents / month",
+    limitNote: "Doc Fixer & Complex PDF — other tools unlimited",
     features: [
       "Everything in Starter",
       "Complex PDF tool",
@@ -46,6 +48,7 @@ const INDIVIDUAL_PLANS = [
     annualSavings: "save 34%",
     description: "For power users running large backlogs or full course libraries.",
     limit: "Unlimited documents",
+    limitNote: "All tools, no limits",
     features: [
       "Everything in Pro",
       "Unlimited processing",
@@ -167,7 +170,7 @@ export default function PricingPage() {
                   {plan.limit}
                 </div>
                 <p className={`text-xs mb-5 pl-1 ${plan.highlight ? "text-white/50" : "text-gray-400"}`}>
-                  Doc Fixer &amp; Complex PDF only — other tools unlimited
+                  {plan.limitNote}
                 </p>
 
                 <ul className="space-y-2 mb-6">
