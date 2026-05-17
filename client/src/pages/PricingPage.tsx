@@ -70,7 +70,7 @@ const INSTITUTION_FEATURES = [
   "Campus-wide access for all staff and faculty",
   "Dedicated onboarding support",
   "Invoice and PO billing available",
-  "FERPA documentation on request",
+  "Usage & activity reporting",
 ];
 
 export default function PricingPage() {
@@ -171,12 +171,14 @@ export default function PricingPage() {
                   <p className="text-xs mb-5 pl-1 text-gray-400">{plan.limitNote}</p>
 
                   <ul className="space-y-2 mb-6">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
-                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
-                        {f}
-                      </li>
-                    ))}
+                    {plan.features
+                      .filter((f) => !(annual && f === "Cancel anytime"))
+                      .map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
+                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                          {f}
+                        </li>
+                      ))}
                   </ul>
 
                   <div className="mt-auto">
