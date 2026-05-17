@@ -30,12 +30,13 @@ export default function PricingPage() {
       {/* Header */}
       <section className="bg-white border-b py-20 sm:py-24" aria-labelledby="pricing-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#3a485b]/10 border border-[#3a485b]/20 text-sm font-medium text-[#3a485b] mb-8">
-            <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-            Simple, transparent pricing
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0d9488] mb-8">
+            <Zap className="w-3.5 h-3.5" aria-hidden="true" />
+            No hidden fees. No surprises.
           </div>
           <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-[#3a485b] mb-4">
-            Simple, straightforward pricing.
+            Accessibility shouldn't<br className="hidden sm:block" />{" "}
+            <span className="text-[#0d9488]">break the budget.</span>
           </h1>
           <p className="text-lg text-gray-500 max-w-xl mx-auto">
             For individual educators or entire institutions — pick the plan that fits.
