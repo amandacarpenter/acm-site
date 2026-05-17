@@ -245,7 +245,7 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What counts toward my monthly document limit?", a: "Only Document Fixer and Complex PDF uploads count toward your monthly limit. Video Transcription, Canvas HTML Fixer, and Alt Text Generator are unlimited on all plans. Each file upload counts as one document regardless of page count." },
+              { q: "What counts toward my monthly document limit?", a: "On Starter, only Document Fixer uploads count toward the limit. On Pro, both Document Fixer and Complex PDF count. Unlimited removes all caps. Video Transcription, Canvas HTML Fixer, and Alt Text Generator are unlimited on every plan. Each upload counts as one document regardless of page count." },
               { q: "Is there a free trial?", a: "Individual plans can be cancelled anytime — no long-term commitment. Institution plans include a dedicated onboarding session so your team gets value from day one." },
               { q: "Can I upgrade plans?", a: "Yes, upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan." },
               { q: "How is Institution pricing determined?", a: "Institution pricing starts at $299/mo and scales based on your institution's size and needs. Contact us for a custom quote." },
