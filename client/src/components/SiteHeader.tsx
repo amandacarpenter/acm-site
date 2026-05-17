@@ -16,7 +16,7 @@ function Logo() {
 const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/faq", label: "FAQ" },
-  { href: "/pricing", label: "Pricing" },
+  { href: "/pricing", label: "Plans & Pricing" },
 ];
 
 export default function SiteHeader() {
