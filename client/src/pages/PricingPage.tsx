@@ -139,44 +139,44 @@ export default function PricingPage() {
                 )}
 
                 <div className="mb-4">
-                  <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${plan.highlight ? "text-white/70" : "text-gray-400"}`}>
+                  <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${plan.highlight ? "text-white" : "text-gray-400"}`}>
                     {plan.name}
                   </p>
                   <div className="flex items-end gap-1 mb-1">
                     <span className={`text-4xl font-bold ${plan.highlight ? "text-white" : "text-[#3a485b]"}`}>
                       ${annual ? Math.round(plan.annual / 12) : plan.monthly}
                     </span>
-                    <span className={`mb-1 text-sm ${plan.highlight ? "text-white/70" : "text-gray-400"}`}>/mo</span>
+                    <span className={`mb-1 text-sm ${plan.highlight ? "text-white" : "text-gray-400"}`}>/mo</span>
                   </div>
                   {annual ? (
-                    <p className={`text-xs ${plan.highlight ? "text-white/60" : "text-gray-400"}`}>
+                    <p className={`text-xs ${plan.highlight ? "text-white" : "text-gray-400"}`}>
                       ${plan.annual}/year — {plan.annualSavings}
                     </p>
                   ) : (
-                    <p className={`text-xs ${plan.highlight ? "text-white/60" : "text-gray-400"}`}>
+                    <p className={`text-xs ${plan.highlight ? "text-white" : "text-gray-400"}`}>
                       or ${plan.annual}/yr — {plan.annualSavings}
                     </p>
                   )}
                 </div>
 
-                <p className={`text-xs leading-relaxed mb-4 ${plan.highlight ? "text-white/80" : "text-gray-500"}`}>
+                <p className={`text-xs leading-relaxed mb-4 ${plan.highlight ? "text-white" : "text-gray-500"}`}>
                   {plan.description}
                 </p>
 
                 <div className={`inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-1 w-fit ${
-                  plan.highlight ? "bg-white/20 text-white" : "bg-[#0d9488]/10 text-[#0d9488]"
+                  plan.highlight ? "bg-white/25 text-white" : "bg-[#0d9488]/10 text-[#0d9488]"
                 }`}>
                   <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
                   {plan.limit}
                 </div>
-                <p className={`text-xs mb-5 pl-1 ${plan.highlight ? "text-white/50" : "text-gray-400"}`}>
+                <p className={`text-xs mb-5 pl-1 ${plan.highlight ? "text-white" : "text-gray-400"}`}>
                   {plan.limitNote}
                 </p>
 
                 <ul className="space-y-2 mb-6">
                   {plan.features.map((f) => (
                     <li key={f} className={`flex items-start gap-2 text-xs ${plan.highlight ? "text-white" : "text-gray-600"}`}>
-                      <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${plan.highlight ? "text-white/80" : "text-[#0d9488]"}`} aria-hidden="true" />
+                      <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${plan.highlight ? "text-white" : "text-[#0d9488]"}`} aria-hidden="true" />
                       {f}
                     </li>
                   ))}
