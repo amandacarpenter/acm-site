@@ -347,12 +347,14 @@ export default function Home() {
                 © 2026 Remedy508 — Left Coast Learning LLC
               </span>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-end">
+              <Link href="/privacy"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Privacy Policy</span></Link>
+              <Link href="/terms"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Terms of Service</span></Link>
+              <Link href="/accessibility"><span className="text-xs text-gray-400 hover:text-white transition cursor-pointer">Accessibility</span></Link>
               <div className="flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-                <span className="text-xs text-gray-400">WCAG 2.1 AA Compliant</span>
+                <span className="text-xs text-gray-400">WCAG 2.1 AA</span>
               </div>
-              <span className="text-xs text-gray-500">Not Accessible, Not Acceptable™</span>
               <Link href="/tools">
                 <span className="text-xs text-gray-600 hover:text-gray-400 transition cursor-pointer">©</span>
               </Link>
