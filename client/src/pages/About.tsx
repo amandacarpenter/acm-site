@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import { CheckCircle2, Target, Lightbulb, Heart } from "lucide-react";
+import { CheckCircle2, Target, Lightbulb, Heart, Info } from "lucide-react";
 
 export default function About() {
   return (
@@ -11,7 +11,10 @@ export default function About() {
       {/* Hero */}
       <section className="bg-[#3a485b] py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">About</div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+            <Info className="w-3.5 h-3.5" aria-hidden="true" />
+            About
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
             Not Accessible,<br />Not Acceptable™
           </h1>
