@@ -15,11 +15,13 @@ import Contact from "@/pages/Contact";
 import About from "@/pages/About";
 import FAQPage from "@/pages/FAQPage";
 import Dashboard from "@/pages/Dashboard";
+import ScrollToTop from "@/components/ScrollToTop";
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router hook={useHashLocation}>
+          <ScrollToTop />
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/tools" component={ToolsPage} />
