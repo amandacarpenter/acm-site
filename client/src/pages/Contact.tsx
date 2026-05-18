@@ -37,7 +37,10 @@ export default function Contact() {
       <SiteHeader />
       <section className="bg-[#3a485b] py-16 sm:py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Support</div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+            <Mail className="w-3.5 h-3.5" aria-hidden="true" />
+            Support
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Get in Touch</h1>
           <p className="text-white max-w-xl mx-auto">Have a question, need help with a document, or want to talk about an institution plan? We're here.</p>
         </div>

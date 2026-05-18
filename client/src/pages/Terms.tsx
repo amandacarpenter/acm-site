@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { FileText } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -8,7 +9,10 @@ export default function Terms() {
       <SiteHeader />
       <section className="bg-[#3a485b] py-16 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Legal</div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+            <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+            Legal
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Terms of Service</h1>
           <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
         </div>

@@ -9,7 +9,10 @@ export default function Accessibility() {
       <SiteHeader />
       <section className="bg-[#3a485b] py-16 sm:py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Accessibility</div>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+            Accessibility
+          </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Accessibility Statement</h1>
           <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
         </div>
