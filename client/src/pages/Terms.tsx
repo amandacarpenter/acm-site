@@ -37,17 +37,26 @@ export default function Terms() {
           <Section title="4. Subscription Plans and Billing">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
-                <p className="font-semibold text-[#3a485b]">Individual Plan</p>
-                <p className="text-sm">$19/month or $149/year. For individual professionals.</p>
+                <p className="font-semibold text-[#3a485b]">Starter — $9/month or $79/year</p>
+                <p className="text-sm">Up to 15 documents per month via Document Fixer. All other tools unlimited.</p>
               </div>
               <div>
-                <p className="font-semibold text-[#3a485b]">Institution Plan</p>
-                <p className="text-sm">Custom pricing for institutional access. Contact <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> for details.</p>
+                <p className="font-semibold text-[#3a485b]">Pro — $19/month or $149/year</p>
+                <p className="text-sm">Up to 50 documents per month via Document Fixer and Complex PDF. All other tools unlimited.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-[#3a485b]">Unlimited — $29/month or $229/year</p>
+                <p className="text-sm">Unlimited documents across all tools. Access to beta features.</p>
+              </div>
+              <div>
+                <p className="font-semibold text-[#3a485b]">Institution — Custom pricing</p>
+                <p className="text-sm">Campus-wide access for all staff and faculty. Contact <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> for details.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">
               <li><strong>Billing:</strong> Handled by Stripe. Subscriptions renew automatically at the end of each billing period.</li>
-              <li><strong>Cancellation:</strong> Cancel anytime through account settings or by emailing us. Cancellation takes effect at the end of the current billing period. <strong>We do not provide refunds for the current billing period.</strong></li>
+              <li><strong>Monthly plans:</strong> Cancel anytime through account settings or by emailing us. Cancellation takes effect at the end of the current billing period. No future charges.</li>
+              <li><strong>Annual plans:</strong> Billed upfront and non-refundable. Cancel before your renewal date to stop future charges.</li>
               <li><strong>Price Changes:</strong> We may change pricing with at least 30 days' notice, applying to your next renewal.</li>
               <li><strong>Taxes:</strong> You are responsible for applicable taxes where we are not required to collect them.</li>
             </ul>
