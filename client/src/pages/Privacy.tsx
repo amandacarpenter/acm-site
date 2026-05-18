@@ -56,10 +56,10 @@ export default function Privacy() {
             <p className="mb-3">We work with a limited set of trusted third-party service providers to operate Remedy508.</p>
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-[#3a485b] text-white">
-                  <th className="text-left p-3">Sub-Processor</th>
-                  <th className="text-left p-3">Role</th>
-                  <th className="text-left p-3">Data Involved</th>
+                <tr className="bg-[#3a485b]">
+                  <th className="text-left p-3 text-white font-semibold">Sub-Processor</th>
+                  <th className="text-left p-3 text-white font-semibold">Role</th>
+                  <th className="text-left p-3 text-white font-semibold">Data Involved</th>
                 </tr>
               </thead>
               <tbody>
