@@ -11,11 +11,11 @@ export default function About() {
       {/* Hero */}
       <section className="bg-[#3a485b] py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <span className="inline-block bg-teal-900 text-teal-300 text-xs font-semibold px-3 py-1 rounded-full mb-6 uppercase tracking-wide">About</span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">About</div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
             Not Accessible,<br />Not Acceptable™
           </h1>
-          <p className="text-lg text-gray-300 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-lg text-white leading-relaxed max-w-2xl mx-auto">
             Remedy508 was built because the gap between "technically compliant" and "actually accessible" costs real students their education every day. We're here to close it.
           </p>
         </div>
