@@ -25,9 +25,17 @@ export default function SignupPage() {
               formButtonPrimary: "bg-[#0d9488] hover:bg-[#0f766e]",
               footerActionLink: "text-[#0d9488] hover:text-[#0f766e]",
             },
+            layout: {
+              socialButtonsPlacement: "bottom",
+            },
           }}
+          unsafeMetadata={{}}
         />
       </div>
+      <style>{`
+        .cl-headerTitle::after { content: "Sign Up"; }
+        .cl-headerTitle > * { display: none; }
+      `}</style>
       <SiteFooter />
     </div>
   );
