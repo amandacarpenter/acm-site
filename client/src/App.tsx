@@ -20,8 +20,12 @@ import Dashboard from "@/pages/Dashboard";
 const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string;
 
 export default function App() {
+  if (!CLERK_PUBLISHABLE_KEY) {
+    console.error("Missing VITE_CLERK_PUBLISHABLE_KEY");
+  }
+
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY ?? "pk_test_placeholder"}>
       <QueryClientProvider client={queryClient}>
         <Router hook={useHashLocation}>
           <Switch>
