@@ -102,9 +102,9 @@ export default function Privacy() {
           <Section title="8. Data Retention">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="bg-[#3a485b] text-white">
-                  <th className="text-left p-3">Data Type</th>
-                  <th className="text-left p-3">Retention Period</th>
+                <tr className="bg-[#3a485b]">
+                  <th className="text-left p-3 text-white font-semibold">Data Type</th>
+                  <th className="text-left p-3 text-white font-semibold">Retention Period</th>
                 </tr>
               </thead>
               <tbody>
