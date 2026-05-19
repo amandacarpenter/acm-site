@@ -10,7 +10,7 @@ export default function LoginPage() {
         <SignIn
           routing="hash"
           signUpUrl="/#/signup"
-          afterSignInUrl="/#/dashboard"
+          afterSignInUrl="/#/"
           appearance={{
             variables: {
               colorPrimary: "#0d9488",
