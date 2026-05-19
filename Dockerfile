@@ -4,9 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Pass Vite env vars through Docker build args so they get baked into the bundle
-ARG VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+# Write Clerk key into .env file so Vite picks it up at build time
+RUN echo "VITE_CLERK_PUBLISHABLE_KEY=pk_test_dW5jb21tb24tcmVkZmlzaC05OC5jbGVyay5hY2NvdW50cy5kZXYk" > client/.env
 RUN npm run build
 
 # ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────
