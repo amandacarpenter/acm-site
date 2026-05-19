@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
 
 function Logo() {
@@ -47,16 +48,26 @@ export default function SiteHeader() {
               </span>
             </Link>
           ))}
-          <Link href="/login">
-            <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
-              Log in
-            </span>
-          </Link>
-          <Link href="/signup">
-            <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-              Get Started
-            </span>
-          </Link>
+          <SignedOut>
+            <Link href="/login">
+              <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                Log in
+              </span>
+            </Link>
+            <Link href="/signup">
+              <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                Get Started
+              </span>
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link href="/dashboard">
+              <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                Dashboard
+              </span>
+            </Link>
+            <UserButton afterSignOutUrl="/#/" />
+          </SignedIn>
         </nav>
 
         {/* Mobile hamburger */}
@@ -84,16 +95,28 @@ export default function SiteHeader() {
                 </span>
               </Link>
             ))}
-            <Link href="/login">
-              <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
-                Log in
-              </span>
-            </Link>
-            <Link href="/signup">
-              <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
-                Get Started
-              </span>
-            </Link>
+            <SignedOut>
+              <Link href="/login">
+                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
+                  Log in
+                </span>
+              </Link>
+              <Link href="/signup">
+                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
+                  Get Started
+                </span>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/dashboard">
+                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 cursor-pointer">
+                  Dashboard
+                </span>
+              </Link>
+              <div className="px-3 py-2">
+                <UserButton afterSignOutUrl="/#/" />
+              </div>
+            </SignedIn>
           </nav>
         </div>
       )}
