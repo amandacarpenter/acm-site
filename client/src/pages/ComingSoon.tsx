@@ -11,30 +11,20 @@ export default function ComingSoon() {
   }
 
   return (
-    <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center px-4 text-center">
-      {/* Logo — white background so original PNG shows correctly */}
-      <div
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 text-center">
+      {/* Logo */}
+      <img
+        src={logoUrl}
+        alt="Remedy508"
         className="mb-10"
-        style={{
-          background: "#ffffff",
-          borderRadius: "12px",
-          padding: "12px 24px",
-          display: "inline-flex",
-          alignItems: "center",
-        }}
-      >
-        <img
-          src={logoUrl}
-          alt="Remedy508"
-          style={{ height: 48, width: "auto" }}
-        />
-      </div>
+        style={{ height: 56, width: "auto" }}
+      />
 
       {/* Heading */}
-      <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
+      <h1 className="text-4xl sm:text-5xl font-bold text-[#111827] mb-4 tracking-tight">
         Something big is coming.
       </h1>
-      <p className="text-gray-400 text-lg max-w-md mb-10">
+      <p className="text-gray-500 text-lg max-w-md mb-10">
         Remedy508 is almost ready. Enter your email and we'll let you know the moment we launch.
       </p>
 
@@ -51,7 +41,7 @@ export default function ComingSoon() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email"
-            className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
+            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
           />
           <button
             type="submit"
@@ -63,7 +53,7 @@ export default function ComingSoon() {
       )}
 
       {/* Footer */}
-      <p className="text-gray-600 text-xs mt-12">
+      <p className="text-gray-400 text-xs mt-12">
         © {new Date().getFullYear()} Remedy508 — Left Coast Learning LLC
       </p>
     </div>
