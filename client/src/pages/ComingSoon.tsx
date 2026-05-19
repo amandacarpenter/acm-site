@@ -12,26 +12,22 @@ export default function ComingSoon() {
 
   return (
     <div className="min-h-screen bg-[#111827] flex flex-col items-center justify-center px-4 text-center">
-      {/* Logo — icon + white wordmark */}
-      <div className="flex items-center gap-3 mb-10">
+      {/* Logo — white background so original PNG shows correctly */}
+      <div
+        className="mb-10"
+        style={{
+          background: "#ffffff",
+          borderRadius: "12px",
+          padding: "12px 24px",
+          display: "inline-flex",
+          alignItems: "center",
+        }}
+      >
         <img
           src={logoUrl}
-          alt=""
-          aria-hidden="true"
-          style={{ height: 48, width: 48, objectFit: "contain" }}
+          alt="Remedy508"
+          style={{ height: 48, width: "auto" }}
         />
-        <span
-          style={{
-            fontFamily: "'Clash Display', sans-serif",
-            fontWeight: 700,
-            fontSize: "1.75rem",
-            color: "#ffffff",
-            letterSpacing: "-0.02em",
-            lineHeight: 1,
-          }}
-        >
-          Remedy<span style={{ color: "#0d9488" }}>508</span>
-        </span>
       </div>
 
       {/* Heading */}
