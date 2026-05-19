@@ -41,7 +41,8 @@ export default function App() {
         <Router hook={useHashLocation}>
           <ScrollToTop />
           <Switch>
-            <Route path="/" component={Home} />
+            <Route path="/" component={ComingSoon} />
+            <Route path="/home" component={Home} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
             <Route path="/pricing" component={PricingPage} />
