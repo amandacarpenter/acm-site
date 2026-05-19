@@ -1,6 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile"
+dockerBuildArgs = ["VITE_CLERK_PUBLISHABLE_KEY"]
 
 [deploy]
 startCommand = "./start.sh"
