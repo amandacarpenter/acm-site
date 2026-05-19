@@ -1,8 +1,17 @@
-import { SignIn } from "@clerk/clerk-react";
+import { SignIn, useAuth } from "@clerk/clerk-react";
+import { useLocation } from "wouter";
+import { useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 
 export default function LoginPage() {
+  const { isSignedIn } = useAuth();
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    if (isSignedIn) navigate("/");
+  }, [isSignedIn]);
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteHeader />
