@@ -91,7 +91,7 @@ export default function Home() {
               Remedy508 Powered
             </div>
             <h2 id="tools-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Four Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
+              Five Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
               Each tool is designed for educators who need to fix accessibility issues quickly — no training required.
