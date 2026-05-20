@@ -1,13 +1,33 @@
 import { useState } from "react";
 import logoUrl from "@/assets/logo.png";
 
+const ZOHO_FORM_URL =
+  "https://forms.zohopublic.com/helloreme1/form/Email/formperma/RQoS1mMAxeCWXFpdJLynieXn4CVBTqnCCjZPQ6ymHaY";
+
 export default function ComingSoon() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (email) setSubmitted(true);
+    if (!email) return;
+    setLoading(true);
+
+    try {
+      // Submit to Zoho Forms via fetch (no-cors — Zoho receives it)
+      await fetch(ZOHO_FORM_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ Email: email, zf_referrer_name: "", zf_redirect_url: "", zc_gad: "" }),
+      });
+    } catch (_) {
+      // no-cors always throws — that's expected, submission still goes through
+    }
+
+    setLoading(false);
+    setSubmitted(true);
   }
 
   return (
@@ -45,9 +65,10 @@ export default function ComingSoon() {
           />
           <button
             type="submit"
-            className="px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition"
+            disabled={loading}
+            className="px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition disabled:opacity-60"
           >
-            Notify me
+            {loading ? "Sending..." : "Notify me"}
           </button>
         </form>
       )}
