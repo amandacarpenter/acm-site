@@ -22,10 +22,15 @@ export default function Contact() {
     e.preventDefault();
     setLoading(true);
     try {
-      await fetch("/api/contact", {
+      const data = new FormData();
+      data.append("name", form.name);
+      data.append("email", form.email);
+      data.append("subject", form.subject);
+      data.append("message", form.message);
+      await fetch("https://formspree.io/f/xojbekbr", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: data,
+        headers: { "Accept": "application/json" },
       });
     } catch (_) {}
     setLoading(false);
