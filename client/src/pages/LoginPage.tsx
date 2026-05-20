@@ -18,8 +18,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center py-16 px-4">
         <SignIn
           routing="hash"
-          signUpUrl="/#/signup"
-          afterSignInUrl="/#/"
+          signUpUrl="/signup"
+          afterSignInUrl="/"
           appearance={{
             variables: {
               colorPrimary: "#0d9488",

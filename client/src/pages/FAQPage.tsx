@@ -138,7 +138,7 @@ export default function FAQPage() {
           </h1>
           <p className="text-lg text-white">
             Everything you need to know about Remedy508. Can't find what you're looking for?{" "}
-            <a href="/#/contact" className="text-[#0d9488] hover:underline font-medium">
+            <a href="/contact" className="text-[#0d9488] hover:underline font-medium">
               Contact us
             </a>.
           </p>

@@ -179,12 +179,6 @@ export function serveStatic(app: Express) {
   // fall through to index.html if the file doesn't exist
   // If request comes from a custom domain, serve the coming-soon page instead
   app.use("/{*path}", (req, res) => {
-    const host = req.headers.host || "";
-    if (isComingSoonHost(host)) {
-      res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.setHeader("Cache-Control", "no-store");
-      return res.send(comingSoonHtml());
-    }
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
