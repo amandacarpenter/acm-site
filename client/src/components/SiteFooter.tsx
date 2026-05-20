@@ -15,7 +15,7 @@ export default function SiteFooter() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Copyright */}
         <div className="text-center sm:text-left text-sm text-gray-400 mb-4">
-          © 2026 Remedy508 — Left Coast Learning LLC
+          © 2026 Remedy508 — <a href="https://leftcoastlearningllc.com" target="_blank" rel="noopener" style={{color:"inherit",textDecoration:"underline",textUnderlineOffset:"3px"}}>Left Coast Learning LLC</a>
         </div>
 
         {/* Links row — wraps cleanly on mobile */}
