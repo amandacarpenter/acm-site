@@ -16,6 +16,7 @@ import About from "@/pages/About";
 import FAQPage from "@/pages/FAQPage";
 import Dashboard from "@/pages/Dashboard";
 import ComingSoon from "@/pages/ComingSoon";
+import AdminPortal from "@/pages/AdminPortal";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/about" component={About} />
             <Route path="/faq" component={FAQPage} />
             <Route path="/coming-soon" component={ComingSoon} />
+            <Route path="/admin" component={AdminPortal} />
           </Switch>
         </Router>
         <Toaster />
