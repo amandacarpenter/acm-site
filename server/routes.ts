@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { Server } from "http";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
+import Stripe from "stripe";
 import { storage } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
@@ -1123,6 +1124,41 @@ Rules:
       res.status(500).json({ error: err.message });
     }
   });
+
+  // ── Stripe Checkout ──────────────────────────────────────────
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+    apiVersion: "2025-04-30.basil",
+  });
+
+  app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    try {
+      const { priceId } = req.body;
+      if (!priceId) return res.status(400).json({ error: "Missing priceId" });
+
+      const validPrices = [
+        process.env.STRIPE_PRICE_MONTHLY,
+        process.env.STRIPE_PRICE_ANNUAL,
+      ];
+      if (!validPrices.includes(priceId)) {
+        return res.status(400).json({ error: "Invalid priceId" });
+      }
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        success_url: `${process.env.APP_URL || "https://remedy508.com"}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_URL || "https://remedy508.com"}/pricing`,
+        allow_promotion_codes: true,
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Stripe checkout error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
 }
 // pdftotext fix Thu Apr 16 18:03:54 UTC 2026
 // yt-dlp android client fix Thu Apr 16 23:10:37 UTC 2026
+// Stripe checkout Thu May 21 2026

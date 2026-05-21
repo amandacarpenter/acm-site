@@ -1,8 +1,32 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
-import { CheckCircle2, Zap, Users } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2 } from "lucide-react";
 import { useState } from "react";
+
+const PRICE_MONTHLY = "price_1TZdtqA48KphfHO56kqO3qQP";
+const PRICE_ANNUAL  = "price_1TZduPA48KphfHO54HGBEFMC";
+
+async function startCheckout(priceId: string, setLoading: (v: boolean) => void) {
+  setLoading(true);
+  try {
+    const res = await fetch("/api/stripe/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ priceId }),
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  } catch {
+    alert("Something went wrong. Please try again.");
+    setLoading(false);
+  }
+}
 
 const INDIVIDUAL_FEATURES = [
   "Document Fixer (Word & PDF)",
@@ -26,6 +50,7 @@ const INSTITUTION_FEATURES = [
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen bg-white">
@@ -121,11 +146,13 @@ export default function PricingPage() {
                 </ul>
 
                 <div className="mt-auto">
-                  <Link href="/signup">
-                    <span className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
-                      Get Started
-                    </span>
-                  </Link>
+                  <button
+                    onClick={() => startCheckout(annual ? PRICE_ANNUAL : PRICE_MONTHLY, setLoading)}
+                    disabled={loading}
+                    className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-70 disabled:cursor-not-allowed"
+                  >
+                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting…</> : "Get Started"}
+                  </button>
                 </div>
               </div>
             </div>
