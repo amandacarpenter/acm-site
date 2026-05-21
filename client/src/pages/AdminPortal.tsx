@@ -2,7 +2,7 @@ import React from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Redirect } from "wouter";
 
-const ADMIN_EMAIL = "carpenter_amanda@sccollege.edu";
+const ADMIN_EMAIL = "amandathecarpenter@gmail.com";
 
 // ── Section data ──────────────────────────────────────────────
 const platforms = [
