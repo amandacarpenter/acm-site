@@ -83,15 +83,9 @@ export default function PricingPage() {
               {/* Teal top bar */}
               <div className="h-1.5 w-full bg-[#0d9488]" />
 
-              <div className="absolute top-6 right-5">
-                <span className="bg-[#0d9488] text-white text-xs font-bold px-3 py-1 rounded-full">
-                  Most Popular
-                </span>
-              </div>
-
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-4 text-gray-400">
+                  <p className="text-2xl font-bold text-[#3a485b] mb-4">
                     Individual
                   </p>
                   <div className="flex items-end gap-1 mb-1">
@@ -108,7 +102,7 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-sm leading-relaxed mb-6 text-gray-500">
-                  For instructional designers, faculty, and accessibility coordinators doing their own remediation work.
+                  One seat. All five tools. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
@@ -143,7 +137,7 @@ export default function PricingPage() {
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-4 text-white/50">
+                  <p className="text-2xl font-bold text-white mb-4">
                     Institution
                   </p>
                   <div className="flex items-end gap-1 mb-1">
@@ -153,7 +147,7 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-sm leading-relaxed mb-6 text-white/70">
-                  For colleges, departments, and teams that need campus-wide coverage. Custom contract, invoicing, and dedicated support.
+                  Campus-wide coverage with a custom contract, dedicated onboarding, and invoicing built for procurement.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-6 w-fit bg-white/10 text-white">
@@ -171,11 +165,11 @@ export default function PricingPage() {
                 </ul>
 
                 <div className="mt-auto">
-                  <a href="mailto:hello@remedy508.com">
+                  <Link href="/contact">
                     <span className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-white text-[#3a485b] hover:bg-gray-100">
                       Get a Quote
                     </span>
-                  </a>
+                  </Link>
                   <p className="text-xs text-white/40 text-center mt-3">We'll respond within one business day.</p>
                 </div>
               </div>
