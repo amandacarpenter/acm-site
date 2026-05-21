@@ -29,12 +29,7 @@ const sites = [
   { name: "Railway (direct)", desc: "Direct app URL", url: "https://acm-site-production.up.railway.app", status: "live" },
 ];
 
-const docs = [
-  { name: "Accounts Reference", desc: "All logins & credentials", url: "#", icon: "🗝️" },
-  { name: "Marketing Strategy", desc: "90-day plan & social strategy", url: "#", icon: "📣" },
-  { name: "Legal Documents", desc: "Terms, Privacy, Accessibility", url: "https://remedy508.com/terms", icon: "⚖️" },
-  { name: "Pricing Strategy", desc: "Tier breakdown & rationale", url: "https://remedy508.com/pricing", icon: "💰" },
-];
+
 
 // ── Components ────────────────────────────────────────────────
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
@@ -142,24 +137,6 @@ export default function AdminPortal() {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#111827" }}>{s.name}</div>
                   <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>{s.desc}</div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Docs */}
-        <div className="mb-10">
-          <SectionHeader title="Key Documents" />
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
-            {docs.map(d => (
-              <Card key={d.name} onClick={() => d.url !== "#" ? window.open(d.url, "_blank") : undefined}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>
-                  {d.icon}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: "0.9rem", color: "#111827" }}>{d.name}</div>
-                  <div style={{ fontSize: "0.75rem", color: "#6b7280" }}>{d.desc}</div>
                 </div>
               </Card>
             ))}
