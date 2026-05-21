@@ -115,7 +115,7 @@ export default function Accessibility() {
                     <li>The assistive technology and browser you were using</li>
                     <li>What you were trying to accomplish</li>
                   </ul>
-                  <p className="text-sm mt-3 text-gray-500">We will acknowledge your message within 2 business days.</p>
+                  <p className="text-sm mt-3 text-gray-500">We will acknowledge your message within one business day.</p>
                 </div>
               </div>
             </div>

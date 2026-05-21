@@ -64,7 +64,7 @@ export default function Contact() {
             <InfoCard
               icon={<Clock className="w-5 h-5 text-[#0d9488]" />}
               title="Response Time"
-              body={<p className="text-sm text-gray-600">We respond within 2 business days. Accessibility issues are prioritized.</p>}
+              body={<p className="text-sm text-gray-600">We respond within one business day. Accessibility issues are prioritized.</p>}
             />
             <InfoCard
               icon={<Building2 className="w-5 h-5 text-[#0d9488]" />}
@@ -84,7 +84,7 @@ export default function Contact() {
               <div className="flex flex-col items-center justify-center h-full py-16 text-center">
                 <CheckCircle2 className="w-14 h-14 text-[#0d9488] mb-4" aria-hidden="true" />
                 <h2 className="text-2xl font-bold text-[#3a485b] mb-2">Message received</h2>
-                <p className="text-gray-500">We'll get back to you within 2 business days.</p>
+                <p className="text-gray-500">We'll get back to you within one business day.</p>
                 <button
                   onClick={() => { setSubmitted(false); setForm({ name: "", email: "", subject: "General Question", message: "" }); }}
                   className="mt-6 text-sm text-[#0d9488] hover:underline"
