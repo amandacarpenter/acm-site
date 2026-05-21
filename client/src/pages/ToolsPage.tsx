@@ -719,7 +719,7 @@ const TAB_META = [
   { id: "document", label: "Documents", icon: FileText, desc: "Fix .docx & .pdf" },
   { id: "complexpdf", label: "Complex PDF", icon: FileText, desc: "Science & diagrams" },
   { id: "video", label: "Video", icon: Video, desc: "Timecoded transcripts" },
-  { id: "canvas", label: "Canvas", icon: Code2, desc: "LMS page fixer" },
+  { id: "canvas", label: "Canvas", icon: Code2, desc: "LMS page fixer", beta: true },
   { id: "alttext", label: "Alt Text", icon: ImageIcon, desc: "Image descriptions" },
 ];
 
@@ -755,7 +755,10 @@ export default function ToolsPage() {
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col gap-0.5 py-2 px-1 h-auto text-xs" data-testid={`tab-${tab.id}`}>
                 <tab.icon className="w-4 h-4" aria-hidden="true" />
-                <span className="font-semibold">{tab.label}</span>
+                <span className="font-semibold flex items-center gap-1">
+                  {tab.label}
+                  {tab.beta && <span className="bg-[#0d9488] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
+                </span>
                 <span className="text-[10px] text-muted-foreground hidden sm:block">{tab.desc}</span>
               </TabsTrigger>
             ))}

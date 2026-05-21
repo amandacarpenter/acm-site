@@ -37,20 +37,12 @@ export default function Terms() {
           <Section title="4. Subscription Plans and Billing">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
-                <p className="font-semibold text-[#3a485b]">Starter — $9/month or $79/year</p>
-                <p className="text-sm">Up to 15 documents per month via Document Fixer. All other tools unlimited.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-[#3a485b]">Pro — $19/month or $149/year</p>
-                <p className="text-sm">Up to 50 documents per month via Document Fixer and Complex PDF. All other tools unlimited.</p>
-              </div>
-              <div>
-                <p className="font-semibold text-[#3a485b]">Unlimited — $29/month or $229/year</p>
-                <p className="text-sm">Unlimited documents across all tools. Access to beta features.</p>
+                <p className="font-semibold text-[#3a485b]">Individual — $19/month or $149/year</p>
+                <p className="text-sm">Up to 50 documents per month via Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only.</p>
               </div>
               <div>
                 <p className="font-semibold text-[#3a485b]">Institution — Custom pricing</p>
-                <p className="text-sm">Campus-wide access for all staff and faculty. Contact <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> for details.</p>
+                <p className="text-sm">Unlimited users and documents. Campus-wide access for all staff and faculty. Includes dedicated onboarding, invoice and PO billing, and usage reporting. Contact <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> for a custom quote.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">

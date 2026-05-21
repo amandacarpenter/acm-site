@@ -69,23 +69,23 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "Individual plans start at $9/month (Starter), $19/month (Pro), or $29/month (Unlimited). All plans are available at a discount billed annually. Institution plans start at $299/month with custom pricing based on your institution's size and needs.",
+        a: "The Individual plan is $19/month or $149/year (save 35%). Institution plans start at $299/month with custom pricing based on your institution's size and needs. Contact hello@remedy508.com for a quote.",
       },
       {
-        q: "What's the difference between the Individual plans?",
-        a: "Starter ($9/mo) gives you 15 documents per month — ideal for faculty with occasional needs. Pro ($19/mo) gives you 50 documents per month and adds the Complex PDF tool. Unlimited ($29/mo) removes all document limits and is best for instructional designers or disability services staff handling large backlogs.",
+        q: "What does the Individual plan include?",
+        a: "The Individual plan gives you 50 documents per month across Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. The plan is licensed for single-user personal use — institutions require a separate plan.",
       },
       {
         q: "What counts as a document?",
-        a: "Each file you upload counts as one document, regardless of page count. Video and audio transcriptions also count as one document each.",
+        a: "Each file you upload and process counts as one document, regardless of page count. The 50-document limit applies to Document Fixer and Complex PDF. Alt Text, Canvas, and Video tools are unlimited.",
       },
       {
         q: "Can I cancel my plan?",
         a: "Monthly plans can be cancelled at any time — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
       },
       {
-        q: "Can I upgrade plans?",
-        a: "Yes — upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan.",
+        q: "Can I upgrade to an Institution plan?",
+        a: "Yes — contact us at hello@remedy508.com and we'll apply any remaining Individual subscription credit toward your Institution plan.",
       },
       {
         q: "Do you offer discounts for community colleges?",

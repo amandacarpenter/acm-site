@@ -1,76 +1,27 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
-import { CheckCircle2, Zap, Users, ArrowRight } from "lucide-react";
+import { CheckCircle2, Zap, Users } from "lucide-react";
 import { useState } from "react";
 
-const INDIVIDUAL_PLANS = [
-  {
-    name: "Starter",
-    monthly: 9,
-    annual: 79,
-    annualSavings: "save 27%",
-    description: "For faculty who occasionally need to remediate course materials.",
-    limit: "15 documents / month",
-    limitNote: "Document Fixer only — other tools unlimited",
-    features: [
-      "Document Fixer (Word & PDF)",
-      "Alt Text Generator",
-      "Canvas HTML Fixer",
-      "Video Transcription",
-      "Email support",
-      "Cancel anytime",
-    ],
-    cta: "Get Started",
-    highlight: false,
-    barColor: "bg-gray-300",
-  },
-  {
-    name: "Pro",
-    monthly: 19,
-    annual: 149,
-    annualSavings: "save 35%",
-    description: "For instructional designers and regular accessibility work.",
-    limit: "50 documents / month",
-    limitNote: "Doc Fixer & Complex PDF — other tools unlimited",
-    features: [
-      "Everything in Starter",
-      "Complex PDF tool",
-      "Priority processing",
-      "Email support",
-      "Cancel anytime",
-    ],
-    cta: "Get Started",
-    highlight: true,
-    barColor: "bg-[#0d9488]",
-  },
-  {
-    name: "Unlimited",
-    monthly: 29,
-    annual: 229,
-    annualSavings: "save 34%",
-    description: "For power users running large backlogs or full course libraries.",
-    limit: "Unlimited documents",
-    limitNote: "All tools, no limits",
-    features: [
-      "Everything in Pro",
-      "Unlimited processing",
-      "Email support",
-      "Access to Beta Tools",
-      "Cancel anytime",
-    ],
-    cta: "Get Started",
-    highlight: false,
-    barColor: "bg-[#3a485b]",
-  },
+const INDIVIDUAL_FEATURES = [
+  "Document Fixer (Word & PDF)",
+  "Complex PDF tool",
+  "Alt Text Generator",
+  "Canvas HTML Fixer",
+  "Video Transcription",
+  "Email support",
+  "Cancel anytime",
 ];
 
 const INSTITUTION_FEATURES = [
+  "Everything in Individual",
   "Unlimited users and seats",
   "Campus-wide access for all staff and faculty",
   "Dedicated onboarding support",
   "Invoice and PO billing available",
   "Usage & activity reporting",
+  "Priority support",
 ];
 
 export default function PricingPage() {
@@ -92,7 +43,7 @@ export default function PricingPage() {
             <span className="text-[#0d9488]">break the budget.</span>
           </h1>
           <p className="text-lg text-white max-w-xl mx-auto mb-10">
-            For individual educators or entire institutions — pick the plan that fits.
+            One simple plan for individuals. Custom pricing for institutions.
           </p>
 
           {/* Monthly / Annual toggle */}
@@ -112,7 +63,7 @@ export default function PricingPage() {
               }`}
             >
               Annual
-              <span className="ml-1.5 text-xs font-bold text-[#0d9488]">Save up to 35%</span>
+              <span className="ml-1.5 text-xs font-bold text-[#0d9488]">Save 35%</span>
             </button>
           </div>
           {annual && (
@@ -121,106 +72,99 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* All plans grid */}
-      <section className="py-16 sm:py-20 bg-gray-50" aria-labelledby="plans-heading">
+      {/* Two-card grid */}
+      <section className="py-16 sm:py-24 bg-gray-50" aria-labelledby="plans-heading">
         <h2 id="plans-heading" className="sr-only">Pricing plans</h2>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 items-stretch">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
 
-            {/* Individual plans */}
-            {INDIVIDUAL_PLANS.map((plan) => (
-              <div
-                key={plan.name}
-                className="rounded-2xl bg-white border border-gray-200 shadow-sm relative flex flex-col overflow-hidden"
-              >
-                {/* Colored top bar */}
-                <div className={`h-2 w-full ${plan.barColor}`} />
+            {/* Individual card */}
+            <div className="rounded-2xl bg-white border-2 border-[#0d9488] shadow-lg relative flex flex-col overflow-hidden">
+              {/* Teal top bar */}
+              <div className="h-1.5 w-full bg-[#0d9488]" />
 
-                {plan.highlight && (
-                  <div className="absolute top-5 right-4">
-                    <span className="bg-[#0d9488] text-white text-xs font-bold px-2.5 py-0.5 rounded-full whitespace-nowrap">
-                      Most Popular
+              <div className="absolute top-6 right-5">
+                <span className="bg-[#0d9488] text-white text-xs font-bold px-3 py-1 rounded-full">
+                  Most Popular
+                </span>
+              </div>
+
+              <div className="p-8 flex flex-col flex-1">
+                <div className="mb-6">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-4 text-gray-400">
+                    Individual
+                  </p>
+                  <div className="flex items-end gap-1 mb-1">
+                    <span className="text-5xl font-bold text-[#3a485b]">
+                      {annual ? "$12" : "$19"}
                     </span>
+                    <span className="mb-2 text-sm text-gray-400">/mo</span>
                   </div>
-                )}
+                  {annual ? (
+                    <p className="text-sm text-gray-400">$149/year — save 35%</p>
+                  ) : (
+                    <p className="text-sm text-gray-400">or $149/yr — save 35%</p>
+                  )}
+                </div>
 
-                <div className="p-7 flex flex-col flex-1">
-                  <div className="mb-4">
-                    <p className="text-xs font-bold uppercase tracking-widest mb-3 text-gray-400">
-                      {plan.name}
-                    </p>
-                    <div className="flex items-end gap-1 mb-1">
-                      <span className="text-4xl font-bold text-[#3a485b]">
-                        ${annual ? Math.round(plan.annual / 12) : plan.monthly}
-                      </span>
-                      <span className="mb-1 text-sm text-gray-400">/mo</span>
-                    </div>
-                    {annual ? (
-                      <p className="text-xs text-gray-400">${plan.annual}/year — {plan.annualSavings}</p>
-                    ) : (
-                      <p className="text-xs text-gray-400">or ${plan.annual}/yr — {plan.annualSavings}</p>
-                    )}
-                  </div>
+                <p className="text-sm leading-relaxed mb-6 text-gray-500">
+                  For instructional designers, faculty, and accessibility coordinators doing their own remediation work.
+                </p>
 
-                  <p className="text-xs leading-relaxed mb-4 text-gray-500">{plan.description}</p>
+                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
+                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                  50 documents / month
+                </div>
+                <p className="text-xs mb-6 pl-1 text-gray-400">Individual use only — one seat per account</p>
 
-                  <div className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
-                    <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
-                    {plan.limit}
-                  </div>
-                  <p className="text-xs mb-5 pl-1 text-gray-400">{plan.limitNote}</p>
+                <ul className="space-y-3 mb-8">
+                  {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
 
-                  <ul className="space-y-2 mb-6">
-                    {plan.features
-                      .filter((f) => !(annual && f === "Cancel anytime"))
-                      .map((f) => (
-                        <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
-                          <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
-                          {f}
-                        </li>
-                      ))}
-                  </ul>
-
-                  <div className="mt-auto">
-                    <Link href="/signup">
-                      <span className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
-                        {plan.cta}
-                      </span>
-                    </Link>
-                  </div>
+                <div className="mt-auto">
+                  <Link href="/signup">
+                    <span className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e]">
+                      Get Started
+                    </span>
+                  </Link>
                 </div>
               </div>
-            ))}
+            </div>
 
             {/* Institution card */}
-            <div className="rounded-2xl bg-white border border-gray-200 shadow-sm relative flex flex-col overflow-hidden">
+            <div className="rounded-2xl bg-[#3a485b] border-2 border-[#3a485b] shadow-lg relative flex flex-col overflow-hidden">
               {/* Navy top bar */}
-              <div className="h-2 w-full bg-[#3a485b]" />
+              <div className="h-1.5 w-full bg-[#0d9488]" />
 
-              <div className="p-7 flex flex-col flex-1">
-                <div className="mb-4">
-                  <p className="text-xs font-bold uppercase tracking-widest mb-3 text-gray-400">
+              <div className="p-8 flex flex-col flex-1">
+                <div className="mb-6">
+                  <p className="text-xs font-bold uppercase tracking-widest mb-4 text-white/50">
                     Institution
                   </p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className="text-4xl font-bold text-[#3a485b]">Custom</span>
+                    <span className="text-5xl font-bold text-white">Custom</span>
                   </div>
-                  <p className="text-xs text-gray-400">Starting at $299/mo</p>
+                  <p className="text-sm text-white/50">Starting at $299/mo</p>
                 </div>
 
-                <p className="text-xs leading-relaxed mb-4 text-gray-500">
-                  For campuses, departments, and teams that need everyone covered.
+                <p className="text-sm leading-relaxed mb-6 text-white/70">
+                  For colleges, departments, and teams that need campus-wide coverage. Custom contract, invoicing, and dedicated support.
                 </p>
 
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold rounded-full px-3 py-1 mb-5 w-fit bg-[#3a485b]/10 text-[#3a485b]">
-                  <Users className="w-3 h-3" aria-hidden="true" />
+                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-6 w-fit bg-white/10 text-white">
+                  <Users className="w-4 h-4" aria-hidden="true" />
                   Unlimited users &amp; documents
                 </div>
 
-                <ul className="space-y-2 mb-6">
+                <ul className="space-y-3 mb-8">
                   {INSTITUTION_FEATURES.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-xs text-gray-600">
-                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-white/80">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
                   ))}
@@ -228,10 +172,11 @@ export default function PricingPage() {
 
                 <div className="mt-auto">
                   <a href="mailto:hello@remedy508.com">
-                    <span className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition cursor-pointer bg-[#3a485b] text-white hover:bg-[#2e3a4a]">
-                      Contact Us
+                    <span className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-white text-[#3a485b] hover:bg-gray-100">
+                      Get a Quote
                     </span>
                   </a>
+                  <p className="text-xs text-white/40 text-center mt-3">We'll respond within one business day.</p>
                 </div>
               </div>
             </div>
@@ -241,15 +186,15 @@ export default function PricingPage() {
       </section>
 
       {/* FAQ */}
-      <section className="py-16 sm:py-20 bg-gray-50 border-t" aria-labelledby="faq-heading">
+      <section className="py-16 sm:py-20 bg-white border-t" aria-labelledby="faq-heading">
         <div className="max-w-2xl mx-auto px-4 sm:px-6">
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What counts toward my monthly document limit?", a: "On Starter, only Document Fixer uploads count toward the limit. On Pro, both Document Fixer and Complex PDF count. Unlimited removes all caps. Video Transcription, Canvas HTML Fixer, and Alt Text Generator are unlimited on every plan. Each upload counts as one document regardless of page count." },
-              { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges." },
-              { q: "Can I upgrade plans?", a: "Yes, upgrade at any time. If you move from an Individual plan to Institution, we'll apply any remaining subscription credit to your new plan." },
-              { q: "How is Institution pricing determined?", a: "Institution pricing starts at $299/mo and scales based on your institution's size and needs. Contact us for a custom quote." },
+              { q: "What counts toward my 50-document limit?", a: "Each file you upload and process counts as one document, regardless of page count. The 50-document limit applies to Document Fixer and Complex PDF combined. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on the Individual plan." },
+              { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
+              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — requires an Institution plan. Accounts found in violation may be suspended." },
+              { q: "How is Institution pricing determined?", a: "Institution pricing starts at $299/mo and scales based on your institution's size, number of users, and volume. Contact us at hello@remedy508.com for a custom quote. We support invoice and PO billing." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">
