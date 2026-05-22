@@ -10,7 +10,7 @@ const PRICE_ANNUAL  = "price_1TZduPA48KphfHO54HGBEFMC";
 async function startCheckout(priceId: string, setLoading: (v: boolean) => void) {
   setLoading(true);
   try {
-    const res = await fetch("/api/stripe/create-checkout-session", {
+    const res = await fetch("https://acm-site-production.up.railway.app/api/stripe/create-checkout-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ priceId }),

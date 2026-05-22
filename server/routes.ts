@@ -1130,7 +1130,16 @@ Rules:
     apiVersion: "2026-04-22.dahlia",
   });
 
+  app.options("/api/stripe/create-checkout-session", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.header("Access-Control-Allow-Methods", "POST");
+    res.sendStatus(200);
+  });
+
   app.post("/api/stripe/create-checkout-session", async (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
     try {
       const { priceId } = req.body;
       if (!priceId) return res.status(400).json({ error: "Missing priceId" });
