@@ -1126,9 +1126,8 @@ Rules:
   });
 
   // ── Stripe Checkout ──────────────────────────────────────────
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-    apiVersion: "2026-04-22.dahlia",
-  });
+  const stripeKey = process.env.STRIPE_SECRET_KEY || "";
+  const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
 
   app.options("/api/stripe/create-checkout-session", (req, res) => {
     res.header("Access-Control-Allow-Origin", "*");
@@ -1141,6 +1140,7 @@ Rules:
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type");
     try {
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { priceId } = req.body;
       if (!priceId) return res.status(400).json({ error: "Missing priceId" });
 
