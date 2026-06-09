@@ -15,13 +15,13 @@ const platforms = [
   { name: "Stripe", desc: "Payments (setup pending)", url: "https://dashboard.stripe.com", icon: "💳", color: "#635bff" },
   { name: "Namecheap", desc: "leftcoastlearningllc.com registrar", url: "https://namecheap.com", icon: "🌐", color: "#de3723" },
   { name: "Porkbun", desc: "remedy508.ai registrar", url: "https://porkbun.com", icon: "🐷", color: "#f472b6" },
-  { name: "Buffer", desc: "Social media scheduling", url: "https://buffer.com", icon: "📅", color: "#168eea" },
   { name: "Plausible", desc: "remedy508.com analytics", url: "https://plausible.io/remedy508.com", icon: "📊", color: "#5850ec" },
 ];
 
 const socials = [
   { name: "LinkedIn", desc: "linkedin.com/company/remedy508", url: "https://www.linkedin.com/company/remedy508", icon: "💼", color: "#0077b5" },
   { name: "Instagram", desc: "@remedy508app", url: "https://www.instagram.com/remedy508app/", icon: "📸", color: "#e1306c" },
+  { name: "Buffer", desc: "Social media scheduling", url: "https://buffer.com", icon: "📅", color: "#168eea" },
 ];
 
 const sites = [
@@ -145,14 +145,15 @@ export default function AdminPortal() {
           </div>
         </div>
 
-        {/* Analytics placeholder */}
+        {/* Analytics */}
         <div className="mb-10">
-          <SectionHeader title="Analytics & Users" subtitle="Coming once tracking and Stripe are connected" />
+          <SectionHeader title="Analytics & Users" subtitle="Live data available once Stripe and Plausible Business are connected" />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
-            {[{ label: "Active Users", value: "—" }, { label: "Monthly Revenue", value: "—" }, { label: "Site Visits", value: "—" }].map(stat => (
+            {[{ label: "Active Users", value: "—", note: "Clerk" }, { label: "Monthly Revenue", value: "—", note: "Stripe" }, { label: "Site Visits", value: "—", note: "Plausible" }].map(stat => (
               <div key={stat.label} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "20px 24px", textAlign: "center" }}>
                 <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#0d9488", fontFamily: "'Clash Display', sans-serif" }}>{stat.value}</div>
                 <div style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: 4 }}>{stat.label}</div>
+                <div style={{ fontSize: "0.7rem", color: "#9ca3af", marginTop: 2 }}>via {stat.note}</div>
               </div>
             ))}
           </div>
