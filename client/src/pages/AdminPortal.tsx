@@ -15,6 +15,7 @@ const platforms = [
   { name: "Stripe", desc: "Payments (setup pending)", url: "https://dashboard.stripe.com", icon: "💳", color: "#635bff" },
   { name: "Namecheap", desc: "leftcoastlearningllc.com registrar", url: "https://namecheap.com", icon: "🌐", color: "#de3723" },
   { name: "Porkbun", desc: "remedy508.ai registrar", url: "https://porkbun.com", icon: "🐷", color: "#f472b6" },
+  { name: "Buffer", desc: "Social media scheduling", url: "https://buffer.com", icon: "📅", color: "#168eea" },
 ];
 
 const socials = [
