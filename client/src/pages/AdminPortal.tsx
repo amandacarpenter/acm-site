@@ -16,6 +16,7 @@ const platforms = [
   { name: "Namecheap", desc: "leftcoastlearningllc.com registrar", url: "https://namecheap.com", icon: "🌐", color: "#de3723" },
   { name: "Porkbun", desc: "remedy508.ai registrar", url: "https://porkbun.com", icon: "🐷", color: "#f472b6" },
   { name: "Buffer", desc: "Social media scheduling", url: "https://buffer.com", icon: "📅", color: "#168eea" },
+  { name: "Plausible", desc: "remedy508.com analytics", url: "https://plausible.io/remedy508.com", icon: "📊", color: "#5850ec" },
 ];
 
 const socials = [
