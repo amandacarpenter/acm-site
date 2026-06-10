@@ -31,7 +31,7 @@ const SOCIAL_ICONS = (
 );
 
 export default function ComingSoon() {
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
