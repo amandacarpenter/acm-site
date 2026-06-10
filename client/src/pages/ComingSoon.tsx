@@ -1,21 +1,13 @@
-import { useState, useRef } from "react";
+import { useState, useRef } from "react"; // useRef kept for potential future use
 import logoUrl from "@/assets/logo.png";
 import teaserVideo from "@/assets/teaser.mp4";
+import teaserCaptions from "@/assets/teaser.vtt";
 
 export default function ComingSoon() {
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [playing, setPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  function handlePlay() {
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.play();
-      setPlaying(true);
-    }
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,42 +29,11 @@ export default function ComingSoon() {
         <img src={logoUrl} alt="Remedy508" style={{ height: 72, width: "auto" }} />
       </div>
 
-      {/* Two-column layout on desktop, stacked on mobile */}
+      {/* Two-column layout on desktop, stacked on mobile (text first on mobile) */}
       <div className="flex flex-col lg:flex-row items-center lg:items-start gap-10 lg:gap-16 max-w-5xl mx-auto w-full flex-1">
 
-        {/* Left — Video */}
-        <div className="w-full lg:w-1/2 flex-shrink-0 relative">
-          <video
-            ref={videoRef}
-            src={teaserVideo}
-            playsInline
-            className="w-full rounded-2xl shadow-lg"
-            style={{ display: "block", width: "100%", height: "auto" }}
-          />
-          {/* Play button overlay */}
-          {!playing && (
-            <button
-              onClick={handlePlay}
-              aria-label="Play video"
-              className="absolute inset-0 flex items-center justify-center rounded-2xl"
-              style={{ background: "rgba(0,0,0,0.35)", border: "none", cursor: "pointer" }}
-            >
-              <div style={{
-                width: 72, height: 72, borderRadius: "50%",
-                background: "rgba(255,255,255,0.95)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
-              }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="#0d9488">
-                  <polygon points="5,3 19,12 5,21" />
-                </svg>
-              </div>
-            </button>
-          )}
-        </div>
-
-        {/* Right — Text + CTA */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left">
+        {/* Right — Text + CTA (renders first on mobile via order) */}
+        <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left order-1 lg:order-2">
 
           {/* Badge */}
           <div className="mb-5 inline-flex lg:self-start items-center justify-center bg-[#0d9488]/10 border border-[#0d9488]/25 rounded-full px-5 py-2">
@@ -147,6 +108,27 @@ export default function ComingSoon() {
             </form>
           )}
         </div>
+
+        {/* Left — Video (order-2 on mobile so text shows first) */}
+        <div className="w-full lg:w-5/12 flex-shrink-0 order-2 lg:order-1" style={{ maxWidth: 420 }}>
+          <video
+            ref={videoRef}
+            playsInline
+            controls
+            className="w-full rounded-2xl shadow-lg"
+            style={{ display: "block", width: "100%", height: "auto" }}
+          >
+            <source src={teaserVideo} type="video/mp4" />
+            <track
+              kind="captions"
+              src={teaserCaptions}
+              srcLang="en"
+              label="English"
+              default
+            />
+          </video>
+        </div>
+
       </div>
 
       {/* Bottom — Social icons + footer */}
