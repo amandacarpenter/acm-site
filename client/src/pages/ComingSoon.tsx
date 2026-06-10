@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import logoUrl from "@/assets/logo.png";
 import teaserVideo from "@/assets/teaser.mp4";
 
@@ -6,6 +6,16 @@ export default function ComingSoon() {
   const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  function handlePlay() {
+    if (videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.play();
+      setPlaying(true);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,16 +41,34 @@ export default function ComingSoon() {
       <div className="flex flex-col lg:flex-row items-center lg:items-start gap-10 lg:gap-16 max-w-5xl mx-auto w-full flex-1">
 
         {/* Left — Video */}
-        <div className="w-full lg:w-1/2 flex-shrink-0">
+        <div className="w-full lg:w-1/2 flex-shrink-0 relative">
           <video
+            ref={videoRef}
             src={teaserVideo}
-            autoPlay
-            muted
-            loop
             playsInline
             className="w-full rounded-2xl shadow-lg"
-            style={{ maxHeight: 520, objectFit: "cover" }}
+            style={{ display: "block", width: "100%", height: "auto" }}
           />
+          {/* Play button overlay */}
+          {!playing && (
+            <button
+              onClick={handlePlay}
+              aria-label="Play video"
+              className="absolute inset-0 flex items-center justify-center rounded-2xl"
+              style={{ background: "rgba(0,0,0,0.35)", border: "none", cursor: "pointer" }}
+            >
+              <div style={{
+                width: 72, height: 72, borderRadius: "50%",
+                background: "rgba(255,255,255,0.95)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.2)"
+              }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="#0d9488">
+                  <polygon points="5,3 19,12 5,21" />
+                </svg>
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Right — Text + CTA */}
