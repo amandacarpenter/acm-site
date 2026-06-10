@@ -94,16 +94,13 @@ export default function ComingSoon() {
                     className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
                   <input type="tel" name="phone" placeholder="Phone Number"
                     className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
-                  <input type="text" name="organization" required placeholder="Organization"
+                  <input type="text" name="organization" required placeholder="Organization (or Individual)"
                     className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
                   <button type="submit" disabled={loading}
                     className="px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition disabled:opacity-60">
                     {loading ? "Submitting..." : "Request Early Access"}
                   </button>
-                  <button type="button" onClick={() => setShowForm(false)}
-                    className="text-xs text-gray-400 hover:text-gray-600 transition text-center">
-                    Cancel
-                  </button>
+
                 </form>
               )}
             </div>
