@@ -93,7 +93,7 @@ export default function ComingSoon() {
 
             {/* Phone frame mockup — second on mobile */}
             <div className="flex-shrink-0 order-2 lg:order-1 flex justify-center">
-              <div style={{ position: "relative", width: 260 }}>
+              <div style={{ position: "relative", width: 360 }}>
                 {/* Phone frame image */}
                 <img src={phoneFrame} alt="" aria-hidden="true" style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
                 {/* Video overlaid on screen area: top 10.5%, left 13.5%, width 73%, height 74.5% */}
