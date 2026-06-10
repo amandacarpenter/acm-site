@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import logoUrl from "@/assets/logo.png";
 import teaserVideo from "@/assets/teaser.mp4";
 import teaserCaptions from "@/assets/teaser.vtt";
+import phoneFrame from "@/assets/phone-frame.jpg";
 
 export default function ComingSoon() {
   const [showForm, setShowForm] = useState(false);
@@ -24,9 +25,9 @@ export default function ComingSoon() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#fff" }}>
 
-      {/* White header with logo */}
+      {/* White header with logo — centered */}
       <header style={{ background: "#fff", borderBottom: "1px solid #f0f0f0", padding: "20px 40px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "center" }}>
           <img src={logoUrl} alt="Remedy508" style={{ height: 52, width: "auto" }} />
         </div>
       </header>
@@ -35,8 +36,8 @@ export default function ComingSoon() {
       <main style={{ background: "#fff", flex: 1 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 40px 80px" }}>
 
-          {/* Two-column layout */}
-          <div className="flex flex-col lg:flex-row items-center lg:items-start gap-12 lg:gap-20">
+          {/* Two-column layout — pushed right with justify-end */}
+          <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center lg:justify-end gap-12 lg:gap-20">
 
             {/* Text + CTA — first on mobile */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left order-1 lg:order-2">
@@ -90,31 +91,31 @@ export default function ComingSoon() {
               )}
             </div>
 
-            {/* Phone frame — second on mobile */}
+            {/* Phone frame mockup — second on mobile */}
             <div className="flex-shrink-0 order-2 lg:order-1 flex justify-center">
-              <div style={{
-                width: 240,
-                background: "#1a1a1a",
-                borderRadius: 40,
-                padding: "14px 10px",
-                boxShadow: "0 12px 50px rgba(0,0,0,0.2), inset 0 0 0 2px #333",
-              }}>
-                {/* Notch */}
-                <div style={{ width: 60, height: 6, background: "#333", borderRadius: 4, margin: "0 auto 10px" }} />
-                {/* Screen */}
-                <div style={{ borderRadius: 24, overflow: "hidden", background: "#000" }}>
+              <div style={{ position: "relative", width: 260 }}>
+                {/* Phone frame image */}
+                <img src={phoneFrame} alt="" aria-hidden="true" style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
+                {/* Video overlaid on screen area: top 10.5%, left 13.5%, width 73%, height 74.5% */}
+                <div style={{
+                  position: "absolute",
+                  top: "10.5%",
+                  left: "13.5%",
+                  width: "73%",
+                  height: "74.5%",
+                  overflow: "hidden",
+                  borderRadius: "6% / 4%",
+                }}>
                   <video
                     ref={videoRef}
                     playsInline
                     controls
-                    style={{ display: "block", width: "100%", height: "auto" }}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   >
                     <source src={`${teaserVideo}#t=2.5`} type="video/mp4" />
                     <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
                   </video>
                 </div>
-                {/* Home bar */}
-                <div style={{ width: 80, height: 5, background: "#444", borderRadius: 4, margin: "10px auto 0" }} />
               </div>
             </div>
 
@@ -151,7 +152,7 @@ export default function ComingSoon() {
             </a>
           </div>
 
-          <p style={{ color: "rgba(255,255,255,0.35)", fontSize: "0.75rem" }}>
+          <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem" }}>
             © {new Date().getFullYear()} Remedy508 — Left Coast Learning LLC
           </p>
         </div>
