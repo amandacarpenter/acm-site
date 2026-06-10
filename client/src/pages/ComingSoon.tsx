@@ -109,24 +109,46 @@ export default function ComingSoon() {
           )}
         </div>
 
-        {/* Left — Video (order-2 on mobile so text shows first) */}
-        <div className="w-full lg:w-5/12 flex-shrink-0 order-2 lg:order-1" style={{ maxWidth: 420 }}>
-          <video
-            ref={videoRef}
-            playsInline
-            controls
-            className="w-full rounded-2xl shadow-lg"
-            style={{ display: "block", width: "100%", height: "auto" }}
-          >
-            <source src={teaserVideo} type="video/mp4" />
-            <track
-              kind="captions"
-              src={teaserCaptions}
-              srcLang="en"
-              label="English"
-              default
-            />
-          </video>
+        {/* Left — Video in phone frame (order-2 on mobile so text shows first) */}
+        <div className="flex-shrink-0 order-2 lg:order-1 flex justify-center">
+          {/* Phone frame */}
+          <div style={{
+            width: 260,
+            background: "#1a1a1a",
+            borderRadius: 40,
+            padding: "14px 10px",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.18), inset 0 0 0 2px #333",
+            position: "relative",
+          }}>
+            {/* Speaker notch */}
+            <div style={{
+              width: 60, height: 6, background: "#333",
+              borderRadius: 4, margin: "0 auto 10px"
+            }} />
+            {/* Video screen */}
+            <div style={{ borderRadius: 24, overflow: "hidden", background: "#000" }}>
+              <video
+                ref={videoRef}
+                playsInline
+                controls
+                style={{ display: "block", width: "100%", height: "auto" }}
+              >
+                <source src={teaserVideo} type="video/mp4" />
+                <track
+                  kind="captions"
+                  src={teaserCaptions}
+                  srcLang="en"
+                  label="English"
+                  default
+                />
+              </video>
+            </div>
+            {/* Home bar */}
+            <div style={{
+              width: 80, height: 5, background: "#444",
+              borderRadius: 4, margin: "10px auto 0"
+            }} />
+          </div>
         </div>
 
       </div>
