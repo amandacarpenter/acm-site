@@ -22,6 +22,7 @@ const socials = [
   { name: "LinkedIn", desc: "linkedin.com/company/remedy508", url: "https://www.linkedin.com/company/remedy508", icon: "💼", color: "#0077b5" },
   { name: "Instagram", desc: "@remedy508app", url: "https://www.instagram.com/remedy508app/", icon: "📸", color: "#e1306c" },
   { name: "Buffer", desc: "Social media scheduling", url: "https://buffer.com", icon: "📅", color: "#168eea" },
+  { name: "YouTube", desc: "@Remedy508", url: "https://www.youtube.com/@Remedy508", icon: "🎥", color: "#ff0000" },
 ];
 
 const sites = [
