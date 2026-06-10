@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import logoUrl from "@/assets/logo.png";
 import teaserVideo from "@/assets/teaser.mp4";
 import teaserCaptions from "@/assets/teaser.vtt";
-import phoneFrame from "@/assets/phone-frame.jpg";
+import phoneFrame from "@/assets/phone-frame.png";
 
 const SOCIAL_ICONS = (
   <div style={{ display: "flex", gap: 24, alignItems: "center", justifyContent: "center" }}>
