@@ -34,12 +34,7 @@ export default function ComingSoon() {
         Something big is coming.
       </h1>
 
-      {/* Launch date */}
-      <div className="mb-4 inline-flex items-center gap-2 bg-[#0d9488]/10 border border-[#0d9488]/25 rounded-full px-5 py-2">
-        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0d9488", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching July 14, 2026</span>
-      </div>
-
-      <p className="text-gray-500 text-lg max-w-md mb-8 mt-4">
+      <p className="text-gray-500 text-lg max-w-md mb-8">
         Remedy508 is almost ready. Be the first to know when we launch.
       </p>
 
