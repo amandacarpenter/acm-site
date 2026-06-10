@@ -35,11 +35,11 @@ export default function ComingSoon() {
 
       {/* Launching in July badge */}
       <div className="mb-6 inline-flex items-center gap-2 bg-[#0d9488]/10 border border-[#0d9488]/25 rounded-full px-5 py-2">
-        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0d9488", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching in July</span>
+        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0d9488", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching July 2026</span>
       </div>
 
       <p className="text-gray-500 text-lg max-w-md mb-8">
-        Remedy508 is almost ready. Get early access and be the first to know when we launch.
+        Remedy508 is almost ready. Request Early Access to be one of the first users.
       </p>
 
       {/* CTA / Form */}
@@ -79,7 +79,8 @@ export default function ComingSoon() {
           <input
             type="text"
             name="organization"
-            placeholder="Organization (optional)"
+            required
+            placeholder="Organization"
             className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
           />
           <button
