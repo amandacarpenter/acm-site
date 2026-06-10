@@ -2,13 +2,12 @@ import { useState } from "react";
 import logoUrl from "@/assets/logo.png";
 
 export default function ComingSoon() {
-  const [email, setEmail] = useState("");
+  const [showForm, setShowForm] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
     setLoading(true);
     await fetch("https://formspree.io/f/xredprko", {
       method: "POST",
@@ -34,32 +33,68 @@ export default function ComingSoon() {
         Something big is coming.
       </h1>
 
+      {/* Launching in July badge */}
+      <div className="mb-6 inline-flex items-center gap-2 bg-[#0d9488]/10 border border-[#0d9488]/25 rounded-full px-5 py-2">
+        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0d9488", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching in July</span>
+      </div>
+
       <p className="text-gray-500 text-lg max-w-md mb-8">
-        Remedy508 is almost ready. Be the first to know when we launch.
+        Remedy508 is almost ready. Get early access and be the first to know when we launch.
       </p>
 
-      {/* Email capture */}
+      {/* CTA / Form */}
       {submitted ? (
-        <div className="bg-[#0d9488]/10 border border-[#0d9488]/30 rounded-xl px-6 py-4 text-[#0d9488] font-medium">
-          You're on the list — we'll be in touch!
+        <div className="bg-[#0d9488]/10 border border-[#0d9488]/30 rounded-xl px-6 py-4 text-[#0d9488] font-medium max-w-md w-full">
+          You're on the list — we'll be in touch soon!
         </div>
+      ) : !showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="px-8 py-3.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition"
+        >
+          Get Early Access
+        </button>
       ) : (
-        <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 w-full max-w-md">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-md text-left">
+          <input
+            type="text"
+            name="name"
+            required
+            placeholder="Full Name"
+            className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
+          />
           <input
             type="email"
             name="email"
             required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            className="flex-1 px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
+            placeholder="Email Address"
+            className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
+          />
+          <input
+            type="tel"
+            name="phone"
+            placeholder="Phone Number"
+            className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
+          />
+          <input
+            type="text"
+            name="organization"
+            placeholder="Organization (optional)"
+            className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm"
           />
           <button
             type="submit"
             disabled={loading}
             className="px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition disabled:opacity-60"
           >
-            {loading ? "Sending..." : "Notify me"}
+            {loading ? "Submitting..." : "Request Early Access"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition text-center"
+          >
+            Cancel
           </button>
         </form>
       )}
