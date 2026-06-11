@@ -128,7 +128,7 @@ export default function Home() {
               Standards Reference
             </div>
             <h2 id="wcag-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              WCAG 2.1 Level AA <span className="text-[#0d9488]">Explained</span>
+              WCAG 2.1 Level AA <span className="text-white">Explained</span>
             </h2>
             <p className="text-white/70 max-w-2xl mx-auto">
               The Web Content Accessibility Guidelines (WCAG) 2.1 Level AA is the legal standard
@@ -162,7 +162,7 @@ export default function Home() {
                     { code: "1.4.4", name: "Resize Text", desc: "Text must be resizable up to 200% without loss of content or functionality." },
                   ].map((item) => (
                     <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
                       <div>
                         <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
                         <span className="text-sm text-gray-500">{item.desc}</span>
@@ -197,7 +197,7 @@ export default function Home() {
                     { code: "2.4.7", name: "Focus Visible", desc: "Keyboard focus must be visually visible at all times — users must see where they are on the page." },
                   ].map((item) => (
                     <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
                       <div>
                         <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
                         <span className="text-sm text-gray-500">{item.desc}</span>
@@ -231,7 +231,7 @@ export default function Home() {
                     { code: "3.3.3", name: "Error Suggestion", desc: "If an error is detected and a correction is known, a suggestion must be provided (e.g., 'Enter a valid email address')." },
                   ].map((item) => (
                     <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
                       <div>
                         <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
                         <span className="text-sm text-gray-500">{item.desc}</span>
@@ -261,7 +261,7 @@ export default function Home() {
                     { code: "4.1.3", name: "Status Messages", desc: "Dynamic status updates (like 'Form submitted' or 'File uploading') must be communicated to screen readers without requiring focus." },
                   ].map((item) => (
                     <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-[#0d9488] bg-[#0d9488]/10 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
+                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
                       <div>
                         <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
                         <span className="text-sm text-gray-500">{item.desc}</span>

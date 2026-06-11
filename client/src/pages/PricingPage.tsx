@@ -88,7 +88,7 @@ export default function PricingPage() {
               }`}
             >
               Annual
-              <span className="ml-1.5 text-xs font-bold text-[#0d9488]">Save 35%</span>
+              <span className="ml-1.5 text-xs font-bold text-white">Save 35%</span>
             </button>
           </div>
           {annual && (
