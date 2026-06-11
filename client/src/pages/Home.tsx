@@ -42,7 +42,7 @@ export default function Home() {
           </div>
 
           <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white max-w-3xl mb-4 leading-tight">
-            <span style={{ background: "#0d9488", color: "#fff", padding: "0 6px 2px", borderRadius: 4 }}>Accessibility</span>{" "}
+            <span className="text-white">Accessibility</span>{" "}
             <span className="text-white">Made Easy</span>
           </h1>
 
