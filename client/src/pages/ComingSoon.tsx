@@ -117,7 +117,7 @@ export default function ComingSoon() {
                 }}>
                   <video ref={videoRef} playsInline controls
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}>
-                    <source src={`${teaserVideo}#t=2.5`} type="video/mp4" />
+                    <source src={teaserVideo} type="video/mp4" />
                     <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
                   </video>
                 </div>
