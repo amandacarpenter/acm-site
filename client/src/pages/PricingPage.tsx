@@ -65,7 +65,7 @@ export default function PricingPage() {
           </div>
           <h1 id="pricing-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4">
             Accessibility shouldn't{" "}
-            <span className="text-[#0d9488]">break the budget.</span>
+            <span className="text-white">break the budget.</span>
           </h1>
           <p className="text-lg text-white max-w-xl mx-auto mb-10">
             One simple plan for individuals. Custom pricing for institutions.

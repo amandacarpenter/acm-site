@@ -134,7 +134,7 @@ export default function FAQPage() {
             Got questions?
           </div>
           <h1 id="faq-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            Frequently Asked <span className="text-[#0d9488]">Questions</span>
+            Frequently Asked <span className="text-white">Questions</span>
           </h1>
           <p className="text-lg text-white">
             Everything you need to know about Remedy508. Can't find what you're looking for?{" "}
