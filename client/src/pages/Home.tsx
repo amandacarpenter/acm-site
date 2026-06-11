@@ -42,8 +42,8 @@ export default function Home() {
           </div>
 
           <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white max-w-3xl mb-4 leading-tight">
-            Accessibility{" "}
-            <span className="text-[#0d9488]">Made Easy</span>
+            <span style={{ background: "#0d9488", color: "#fff", padding: "0 6px 2px", borderRadius: 4 }}>Accessibility</span>{" "}
+            <span className="text-white">Made Easy</span>
           </h1>
 
           <p className="text-xl text-white max-w-xl mb-3 leading-relaxed font-medium">
@@ -73,7 +73,7 @@ export default function Home() {
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 border-t border-white/20">
             {STATS.map((stat) => (
               <div key={stat.label}>
-                <div className="text-3xl font-bold text-[#0d9488] mb-1">{stat.value}</div>
+                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
                 <div className="text-sm text-white/80">{stat.label}</div>
                 <div className="text-xs text-white/50 mt-0.5">{stat.source}</div>
               </div>
