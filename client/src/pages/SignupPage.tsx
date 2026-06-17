@@ -9,7 +9,7 @@ export default function SignupPage() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (isSignedIn) navigate("/");
+    if (isSignedIn) navigate("/pricing");
   }, [isSignedIn]);
 
   return (
@@ -19,7 +19,7 @@ export default function SignupPage() {
         <SignUp
           routing="hash"
           signInUrl="/login"
-          afterSignUpUrl="/"
+          afterSignUpUrl="/pricing"
           appearance={{
             variables: {
               colorPrimary: "#0d9488",
