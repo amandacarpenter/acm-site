@@ -5,7 +5,7 @@ COPY package*.json ./
 RUN npm ci
 COPY . .
 # Write Clerk key into .env file so Vite picks it up at build time
-RUN echo "VITE_CLERK_PUBLISHABLE_KEY=pk_test_dW5jb21tb24tcmVkZmlzaC05OC5jbGVyay5hY2NvdW50cy5kZXYk" > client/.env
+RUN echo "VITE_CLERK_PUBLISHABLE_KEY=pk_live_Y2xlcmsucmVtZWR5NTA4LmNvbSQ" > client/.env
 RUN npm run build
 
 # ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────
