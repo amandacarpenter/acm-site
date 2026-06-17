@@ -1,8 +1,9 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { Server } from "http";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
 import Stripe from "stripe";
+import { createClerkClient } from "@clerk/backend";
 import { storage } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
@@ -1129,6 +1130,83 @@ Rules:
   const stripeKey = process.env.STRIPE_SECRET_KEY || "";
   const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
 
+  // ── Stripe Webhook ───────────────────────────────────────────
+  // Must be registered BEFORE express.json() parses the body
+  app.post("/api/stripe/webhook", (req, res, next) => {
+    // Express may have already parsed; use raw body if available
+    const rawBody = (req as any).rawBody || req.body;
+    const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
+
+    if (!stripe || !webhookSecret) {
+      return res.status(400).json({ error: "Stripe webhook not configured" });
+    }
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    } catch (err: any) {
+      console.error("Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle checkout completed — mark user as subscribed in Clerk
+    if (event.type === "checkout.session.completed" || event.type === "customer.subscription.created") {
+      (async () => {
+        try {
+          const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+          let clerkUserId: string | undefined;
+
+          if (event.type === "checkout.session.completed") {
+            const session = event.data.object as Stripe.Checkout.Session;
+            clerkUserId = session.client_reference_id || undefined;
+            // Also store Stripe customer ID for future lookups
+            if (clerkUserId && session.customer) {
+              await clerkClient.users.updateUserMetadata(clerkUserId, {
+                publicMetadata: {
+                  subscribed: true,
+                  stripeCustomerId: session.customer as string,
+                  subscribedAt: new Date().toISOString(),
+                },
+              });
+              console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed`);
+            }
+          }
+
+          // Also handle subscription cancellation
+        } catch (err: any) {
+          console.error("[WEBHOOK] Failed to update Clerk metadata:", err.message);
+        }
+      })();
+    }
+
+    // Handle subscription cancelled/deleted — remove subscribed flag
+    if (event.type === "customer.subscription.deleted") {
+      (async () => {
+        try {
+          const subscription = event.data.object as Stripe.Subscription;
+          const customerId = subscription.customer as string;
+          const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+          // Find user by stripeCustomerId in metadata
+          const users = await clerkClient.users.getUserList({ limit: 100 });
+          const user = users.data.find(
+            (u) => (u.publicMetadata as any)?.stripeCustomerId === customerId
+          );
+          if (user) {
+            await clerkClient.users.updateUserMetadata(user.id, {
+              publicMetadata: { subscribed: false },
+            });
+            console.log(`[WEBHOOK] Removed subscription for user ${user.id}`);
+          }
+        } catch (err: any) {
+          console.error("[WEBHOOK] Failed to remove subscription:", err.message);
+        }
+      })();
+    }
+
+    res.json({ received: true });
+  });
+
   app.options("/api/stripe/create-checkout-session", (req, res) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Content-Type");
@@ -1141,7 +1219,7 @@ Rules:
     res.header("Access-Control-Allow-Headers", "Content-Type");
     try {
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
-      const { priceId } = req.body;
+      const { priceId, clerkUserId } = req.body;
       if (!priceId) return res.status(400).json({ error: "Missing priceId" });
 
       const validPrices = [
@@ -1159,6 +1237,8 @@ Rules:
         success_url: `${process.env.APP_URL || "https://remedy508.com"}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.APP_URL || "https://remedy508.com"}/pricing`,
         allow_promotion_codes: true,
+        // Pass Clerk user ID so webhook can link payment to account
+        client_reference_id: clerkUserId || undefined,
       });
 
       res.json({ url: session.url });

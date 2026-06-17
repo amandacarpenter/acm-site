@@ -31,7 +31,7 @@ const INSTITUTION_FEATURES = [
 export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, userId } = useAuth();
   const [, navigate] = useLocation();
 
   async function handleGetStarted() {
@@ -45,7 +45,7 @@ export default function PricingPage() {
       const res = await fetch("https://acm-site-production.up.railway.app/api/stripe/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId }),
+        body: JSON.stringify({ priceId, clerkUserId: userId }),
       });
       const data = await res.json();
       if (data.url) {

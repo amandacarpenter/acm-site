@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import SiteHeader from "@/components/SiteHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -726,6 +727,33 @@ const TAB_META = [
 export default function ToolsPage() {
   const [, params] = useRoute("/tools/:tab");
   const initialTab = params?.tab || "document";
+  const { isSignedIn, isLoaded } = useAuth();
+  const { user } = useUser();
+  const [, navigate] = useLocation();
+
+  // Wait for Clerk to load before checking auth
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0d9488]" />
+      </div>
+    );
+  }
+
+  // Not signed in — send to signup
+  if (!isSignedIn) {
+    navigate("/signup");
+    return null;
+  }
+
+  // Signed in but not subscribed — send to pricing
+  const subscribed = (user?.publicMetadata as any)?.subscribed === true;
+  // Allow admin (amandathecarpenter@gmail.com) to bypass
+  const isAdmin = user?.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com";
+  if (!subscribed && !isAdmin) {
+    navigate("/pricing");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50" data-testid="tools-page">
