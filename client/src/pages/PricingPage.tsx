@@ -5,8 +5,8 @@ import { CheckCircle2, Zap, Users, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
-const PRICE_MONTHLY = "price_1TZdtqA48KphfHO56kqO3qQP";
-const PRICE_ANNUAL  = "price_1TZduPA48KphfHO54HGBEFMC";
+const PRICE_MONTHLY = "price_1Thc2tAaDElV6hZxMwA0Wxgk";
+const PRICE_ANNUAL  = "price_1Thc2sAaDElV6hZx3M4Ua1kM";
 
 const INDIVIDUAL_FEATURES = [
   "Document Fixer (Word & PDF)",
