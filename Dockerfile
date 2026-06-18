@@ -39,4 +39,5 @@ COPY start.sh ./
 RUN chmod +x start.sh
 
 EXPOSE 5000
+# Force rebuild to pick up new env vars 2026-06-18
 CMD ["./start.sh"]
