@@ -1246,8 +1246,9 @@ Rules:
 
       res.json({ url: session.url });
     } catch (err: any) {
-      console.error("Stripe checkout error:", err.message);
-      res.status(500).json({ error: err.message });
+      const keyPrefix = (process.env.STRIPE_SECRET_KEY || "").slice(0, 15);
+      console.error("Stripe checkout error:", err.message, "| key prefix:", keyPrefix);
+      res.status(500).json({ error: err.message, keyPrefix });
     }
   });
 }
