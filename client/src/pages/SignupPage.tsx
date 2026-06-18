@@ -29,9 +29,10 @@ export default function SignupPage() {
               }
             }}
           />
-          <p className="mt-3 text-center text-xs text-gray-400" style={{width: "inherit"}}>
-            A verification code will be sent to your email. If you don't see it, check your spam or junk folder.
-          </p>
+          <div className="mt-3 text-center text-xs text-gray-400" style={{width: "inherit"}}>
+            <p>A verification code will be sent to your email.</p>
+            <p>If you don't see it, check your spam or junk folder.</p>
+          </div>
         </div>
       </div>
       <SiteFooter />
