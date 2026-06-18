@@ -48,7 +48,9 @@ export default function App() {
             <Route path="/tools/:tab" component={ToolsPage} />
             <Route path="/pricing" component={PricingPage} />
             <Route path="/login" component={LoginPage} />
+            <Route path="/login/:rest*" component={LoginPage} />
             <Route path="/signup" component={SignupPage} />
+            <Route path="/signup/:rest*" component={SignupPage} />
             <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
             <Route path="/privacy" component={Privacy} />
             <Route path="/terms" component={Terms} />
