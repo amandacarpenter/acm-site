@@ -37,7 +37,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
 export default function App() {
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY}>
+    <ClerkProvider publishableKey={PUBLISHABLE_KEY} signInUrl="/login" signUpUrl="/signup" afterSignOutUrl="/">
       <QueryClientProvider client={queryClient}>
         <Router base="">
           <ScrollToTop />
