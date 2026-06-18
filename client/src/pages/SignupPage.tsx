@@ -29,7 +29,7 @@ export default function SignupPage() {
             }
           }}
         />
-          <p className="mt-3 text-center text-xs text-gray-400">
+          <p className="mt-3 text-center text-xs text-gray-400 max-w-xs mx-auto">
             A verification code will be sent to your email. If you don't see it, check your spam or junk folder.
           </p>
         </div>
