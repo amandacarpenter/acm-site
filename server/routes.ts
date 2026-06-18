@@ -1225,7 +1225,10 @@ Rules:
       const validPrices = [
         process.env.STRIPE_PRICE_MONTHLY,
         process.env.STRIPE_PRICE_ANNUAL,
-      ];
+        // live mode prices
+        "price_1Thc2tAaDElV6hZxMwA0Wxgk",
+        "price_1Thc2sAaDElV6hZx3M4Ua1kM",
+      ].filter(Boolean);
       if (!validPrices.includes(priceId)) {
         return res.status(400).json({ error: "Invalid priceId" });
       }
