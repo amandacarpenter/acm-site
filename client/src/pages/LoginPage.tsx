@@ -17,7 +17,8 @@ export default function LoginPage() {
       <SiteHeader />
       <div className="flex-1 flex items-center justify-center py-16 px-4">
         <SignIn
-          routing="hash"
+          routing="path"
+          path="/login"
           signUpUrl="/signup"
           afterSignInUrl="/"
           appearance={{

@@ -1128,6 +1128,7 @@ Rules:
 
   // ── Stripe Checkout ──────────────────────────────────────────
   const stripeKey = process.env.STRIPE_SECRET_KEY || "";
+  console.log("[STARTUP] STRIPE_SECRET_KEY prefix:", stripeKey.slice(0, 15) || "(not set)");
   const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
 
   // ── Stripe Webhook ───────────────────────────────────────────

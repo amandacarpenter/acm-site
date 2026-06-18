@@ -18,7 +18,8 @@ export default function SignupPage() {
       <div className="flex-1 flex items-center justify-center py-16 px-4">
         <div className="flex flex-col items-center">
           <SignUp
-            routing="hash"
+            routing="path"
+            path="/signup"
             signInUrl="/login"
             afterSignUpUrl="/pricing"
             appearance={{
