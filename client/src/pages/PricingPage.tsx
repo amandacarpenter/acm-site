@@ -42,7 +42,7 @@ export default function PricingPage() {
     const priceId = annual ? PRICE_ANNUAL : PRICE_MONTHLY;
     setLoading(true);
     try {
-      const res = await fetch("https://acm-site-production.up.railway.app/api/stripe/create-checkout-session", {
+      const res = await fetch("/api/stripe/create-checkout-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ priceId, clerkUserId: userId }),
