@@ -12,16 +12,8 @@ const TOOLS = [
   { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
 ];
 
-const RECENT_ACTIVITY = [
-  { name: "Syllabus_HIST101.docx", tool: "Document Fixer", date: "Today, 2:14 PM", status: "Done" },
-  { name: "lecture_slides.pdf", tool: "Complex PDF", date: "Today, 11:30 AM", status: "Done" },
-  { name: "week3_intro.mp4", tool: "Video Transcription", date: "Yesterday", status: "Done" },
-  { name: "course_banner.png", tool: "Alt Text Generator", date: "Yesterday", status: "Done" },
-  { name: "module2_content.html", tool: "Canvas HTML Fixer", date: "May 15", status: "Done" },
-];
-
 export default function Dashboard() {
-  const docsUsed = 12;
+  const docsUsed = 0;
   const docsLimit = 50;
   const usagePct = Math.round((docsUsed / docsLimit) * 100);
 
@@ -116,41 +108,10 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">File</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden sm:table-cell">Tool</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide hidden md:table-cell">Date</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {RECENT_ACTIVITY.map((row, i) => (
-                  <tr key={i} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition">
-                    <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-3.5 h-3.5 text-gray-300 shrink-0" />
-                        <span className="text-gray-700 font-medium text-xs truncate max-w-[140px]">{row.name}</span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5 hidden sm:table-cell"><span className="text-xs text-gray-500">{row.tool}</span></td>
-                    <td className="px-5 py-3.5 hidden md:table-cell">
-                      <div className="flex items-center gap-1 text-xs text-gray-400">
-                        <Clock className="w-3 h-3" />{row.date}
-                      </div>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-[#0d9488]">
-                        <CheckCircle2 className="w-3 h-3" />{row.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-              <p className="text-xs text-gray-400">Showing placeholder activity — live history coming with full auth.</p>
+            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <FileText className="w-8 h-8 text-gray-200 mb-3" />
+              <p className="text-sm font-medium text-gray-400">No activity yet</p>
+              <p className="text-xs text-gray-300 mt-1">Your processed files will appear here</p>
             </div>
           </div>
         </div>

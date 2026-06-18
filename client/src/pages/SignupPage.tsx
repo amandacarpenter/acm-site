@@ -16,6 +16,10 @@ export default function SignupPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteHeader />
       <div className="flex-1 flex items-center justify-center py-16 px-4">
+        <div className="w-full max-w-md">
+          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700">
+            📧 A verification code will be sent to your email. If you don't see it, check your spam or junk folder.
+          </div>
         <SignUp
           routing="hash"
           signInUrl="/login"
@@ -28,6 +32,7 @@ export default function SignupPage() {
             }
           }}
         />
+        </div>
       </div>
       <SiteFooter />
     </div>
