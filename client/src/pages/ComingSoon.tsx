@@ -115,7 +115,7 @@ export default function ComingSoon() {
                   width: "73%", height: "74.5%",
                   overflow: "hidden", borderRadius: "6% / 4%",
                 }}>
-                  <video ref={videoRef} playsInline controls
+                  <video ref={videoRef} playsInline autoPlay muted loop controls
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}>
                     <source src={teaserVideo} type="video/mp4" />
                     <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
