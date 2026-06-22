@@ -85,54 +85,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── VIDEO ── */}
-      <section className="py-20 sm:py-28 bg-white" aria-labelledby="video-heading">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
-              <Video className="w-3 h-3" aria-hidden="true" />
-              See It In Action
-            </div>
-            <h2 id="video-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Watch Remedy508 <span className="text-[#0d9488]">at Work</span>
-            </h2>
-            <p className="text-gray-500 max-w-xl mx-auto">
-              From inaccessible document to WCAG 2.1 AA compliant — in seconds.
-            </p>
-          </div>
-
-          {/* Phone mockup */}
-          <div className="flex justify-center">
-            <div style={{ position: "relative", width: 320 }}>
-              <img src={phoneFrame} alt="" aria-hidden="true"
-                style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
-              <div style={{
-                position: "absolute", top: "10.5%", left: "13.5%",
-                width: "73%", height: "74.5%",
-                overflow: "hidden", borderRadius: "6% / 4%",
-              }}>
-                <video
-                  autoPlay muted loop playsInline controls
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                >
-                  <source src={teaserVideo} type="video/mp4" />
-                  <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
-                </video>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── TOOLS ── */}
-      <section className="py-20 sm:py-28 bg-white" aria-labelledby="tools-heading">
+      {/* ── HOW IT WORKS ── */}
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
+
+          {/* Section header */}
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
               <Sparkles className="w-3 h-3" aria-hidden="true" />
-              Remedy508 Powered
+              How It Works
             </div>
-            <h2 id="tools-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
+            <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
               Five Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
             </h2>
             <p className="text-gray-500 max-w-xl mx-auto">
@@ -140,23 +103,50 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {TOOLS.map((tool) => (
-              <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-6 h-full" data-testid={`tool-card-${tool.tab}`}>
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
-                    <tool.icon className="w-5 h-5 text-white" aria-hidden="true" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-[#3a485b]">{tool.title}</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
+          {/* Two-column: tools left, phone right */}
+          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+
+            {/* Tool cards */}
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {TOOLS.map((tool) => (
+                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-6 h-full" data-testid={`tool-card-${tool.tab}`}>
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
+                      <tool.icon className="w-5 h-5 text-white" aria-hidden="true" />
                     </div>
-                    <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-[#3a485b]">{tool.title}</h3>
+                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
+                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Phone mockup */}
+            <div className="flex-shrink-0 flex justify-center">
+              <div style={{ position: "relative", width: 300 }}>
+                <img src={phoneFrame} alt="" aria-hidden="true"
+                  style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
+                <div style={{
+                  position: "absolute", top: "10.5%", left: "13.5%",
+                  width: "73%", height: "74.5%",
+                  overflow: "hidden", borderRadius: "6% / 4%",
+                }}>
+                  <video
+                    autoPlay muted loop playsInline controls
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                  >
+                    <source src={teaserVideo} type="video/mp4" />
+                    <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
+                  </video>
+                </div>
               </div>
-            ))}
+            </div>
+
           </div>
         </div>
       </section>
