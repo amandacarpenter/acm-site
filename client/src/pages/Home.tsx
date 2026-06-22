@@ -1,6 +1,8 @@
 import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import teaserVideo from "@/assets/teaser.mp4";
+import teaserCaptions from "@/assets/teaser.vtt";
 import {
   Accordion,
   AccordionContent,
@@ -78,6 +80,40 @@ export default function Home() {
                 <div className="text-xs text-white/50 mt-0.5">{stat.source}</div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── VIDEO ── */}
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="video-heading">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
+              <Video className="w-3 h-3" aria-hidden="true" />
+              See It In Action
+            </div>
+            <h2 id="video-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
+              Watch Remedy508 <span className="text-[#0d9488]">at Work</span>
+            </h2>
+            <p className="text-gray-500 max-w-xl mx-auto">
+              From inaccessible document to WCAG 2.1 AA compliant — in seconds.
+            </p>
+          </div>
+
+          {/* Video player */}
+          <div className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-[#111827]">
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              className="w-full block"
+              style={{ maxHeight: 540 }}
+            >
+              <source src={teaserVideo} type="video/mp4" />
+              <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
+            </video>
           </div>
         </div>
       </section>
