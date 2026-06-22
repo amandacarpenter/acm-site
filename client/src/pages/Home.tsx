@@ -103,28 +103,8 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Two-column: tools left, phone right */}
+          {/* Two-column: phone left, tools right */}
           <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-
-            {/* Tool cards */}
-            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {TOOLS.map((tool) => (
-                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-6 h-full" data-testid={`tool-card-${tool.tab}`}>
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
-                      <tool.icon className="w-5 h-5 text-white" aria-hidden="true" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-[#3a485b]">{tool.title}</h3>
-                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
-                      </div>
-                      <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
 
             {/* Phone mockup */}
             <div className="flex-shrink-0 flex justify-center">
@@ -145,6 +125,26 @@ export default function Home() {
                   </video>
                 </div>
               </div>
+            </div>
+
+            {/* Tool cards — single column */}
+            <div className="flex-1 flex flex-col gap-4">
+              {TOOLS.map((tool) => (
+                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
+                      <tool.icon className="w-4 h-4 text-white" aria-hidden="true" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-[#3a485b] text-sm">{tool.title}</h3>
+                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
+                      </div>
+                      <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
           </div>
