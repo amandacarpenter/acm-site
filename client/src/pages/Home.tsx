@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import teaserVideo from "@/assets/teaser.mp4";
 import teaserCaptions from "@/assets/teaser.vtt";
+import phoneFrame from "@/assets/phone-frame.png";
 import {
   Accordion,
   AccordionContent,
@@ -100,20 +101,25 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Video player */}
-          <div className="rounded-2xl overflow-hidden shadow-2xl border border-gray-200 bg-[#111827]">
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              controls
-              className="w-full block"
-              style={{ maxHeight: 540 }}
-            >
-              <source src={teaserVideo} type="video/mp4" />
-              <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
-            </video>
+          {/* Phone mockup */}
+          <div className="flex justify-center">
+            <div style={{ position: "relative", width: 320 }}>
+              <img src={phoneFrame} alt="" aria-hidden="true"
+                style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
+              <div style={{
+                position: "absolute", top: "10.5%", left: "13.5%",
+                width: "73%", height: "74.5%",
+                overflow: "hidden", borderRadius: "6% / 4%",
+              }}>
+                <video
+                  autoPlay muted loop playsInline controls
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                >
+                  <source src={teaserVideo} type="video/mp4" />
+                  <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
+                </video>
+              </div>
+            </div>
           </div>
         </div>
       </section>
