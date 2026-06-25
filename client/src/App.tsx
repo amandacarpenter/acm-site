@@ -42,8 +42,7 @@ export default function App() {
       signInUrl="/login"
       signUpUrl="/signup"
       afterSignOutUrl="/"
-      isSatellite={typeof window !== "undefined" && window.location.hostname === "remedy508.ai"}
-      domain={typeof window !== "undefined" && window.location.hostname === "remedy508.ai" ? "remedy508.ai" : undefined}
+      clerkJSUrl="https://clerk.remedy508.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
     >
       <QueryClientProvider client={queryClient}>
         <Router base="">
