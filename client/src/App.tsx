@@ -37,7 +37,14 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
 export default function App() {
   return (
-    <ClerkProvider publishableKey={PUBLISHABLE_KEY} signInUrl="/login" signUpUrl="/signup" afterSignOutUrl="/">
+    <ClerkProvider
+      publishableKey={PUBLISHABLE_KEY}
+      signInUrl="/login"
+      signUpUrl="/signup"
+      afterSignOutUrl="/"
+      isSatellite={typeof window !== "undefined" && window.location.hostname === "remedy508.ai"}
+      domain={typeof window !== "undefined" && window.location.hostname === "remedy508.ai" ? "remedy508.ai" : undefined}
+    >
       <QueryClientProvider client={queryClient}>
         <Router base="">
           <ScrollToTop />
