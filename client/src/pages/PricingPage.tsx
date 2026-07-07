@@ -1,7 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link, useLocation } from "wouter";
-import { CheckCircle2, Zap, Users, Loader2 } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, Building2 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
@@ -18,14 +18,14 @@ const INDIVIDUAL_FEATURES = [
   "Cancel anytime",
 ];
 
-const INSTITUTION_FEATURES = [
+const TEAM_FEATURES = [
   "Everything in Individual",
-  "Unlimited users and seats",
-  "Campus-wide access for all staff and faculty",
-  "Dedicated onboarding support",
-  "Invoice and PO billing available",
-  "Usage & activity reporting",
-  "Priority support",
+  "Admin dashboard for your team",
+  "Invite by link or email",
+  "Per-user document history",
+  "Priority email support",
+  "Pay by credit card or invoice/PO",
+  "Annual plan (non-refundable)",
 ];
 
 export default function PricingPage() {
@@ -76,7 +76,7 @@ export default function PricingPage() {
             <span className="text-white">break the budget.</span>
           </h1>
           <p className="text-lg text-white max-w-xl mx-auto mb-10">
-            One simple plan for individuals. Custom pricing for institutions.
+            Simple pricing for individuals and teams.
           </p>
 
           {/* Monthly / Annual toggle */}
@@ -165,33 +165,32 @@ export default function PricingPage() {
               </div>
             </div>
 
-            {/* Institution card */}
+            {/* Team card */}
             <div className="rounded-2xl bg-[#3a485b] border-2 border-[#3a485b] shadow-lg relative flex flex-col overflow-hidden">
-              {/* Navy top bar */}
               <div className="h-1.5 w-full bg-[#0d9488]" />
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
-                  <p className="text-2xl font-bold text-white mb-4">
-                    Institution
-                  </p>
+                  <p className="text-2xl font-bold text-white mb-4">Team</p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className="text-5xl font-bold text-white">Custom</span>
+                    <span className="text-5xl font-bold text-white">$149</span>
+                    <span className="mb-2 text-sm text-white/50">/seat/yr</span>
                   </div>
-                  <p className="text-sm text-white/50">Starting at $299/mo</p>
+                  <p className="text-sm text-white/50">Annual only · 2+ seats · non-refundable</p>
                 </div>
 
                 <p className="text-sm leading-relaxed mb-6 text-white/70">
-                  Campus-wide coverage with a custom contract, dedicated onboarding, and invoicing built for procurement.
+                  Built for accessibility teams, colleges, universities, government agencies, and healthcare organizations.
                 </p>
 
-                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-6 w-fit bg-white/10 text-white">
-                  <Users className="w-4 h-4" aria-hidden="true" />
-                  Unlimited users &amp; documents
+                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-white/10 text-white">
+                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                  75 documents / month per seat, pooled
                 </div>
+                <p className="text-xs mb-6 pl-1 text-white/40">2+ seats — annual plan</p>
 
                 <ul className="space-y-3 mb-8">
-                  {INSTITUTION_FEATURES.map((f) => (
+                  {TEAM_FEATURES.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-sm text-white/80">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
@@ -200,12 +199,11 @@ export default function PricingPage() {
                 </ul>
 
                 <div className="mt-auto">
-                  <Link href="/contact">
+                  <Link href="/team">
                     <span className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-white text-[#3a485b] hover:bg-gray-100">
-                      Get a Quote
+                      Choose seats →
                     </span>
                   </Link>
-                  <p className="text-xs text-white/40 text-center mt-3">We'll respond within one business day.</p>
                 </div>
               </div>
             </div>
@@ -222,8 +220,8 @@ export default function PricingPage() {
             {[
               { q: "What counts toward my 50-document limit?", a: "Each file you upload and process counts as one document, regardless of page count. The 50-document limit applies to Document Fixer and Complex PDF combined. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on the Individual plan." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
-              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — requires an Institution plan. Accounts found in violation may be suspended." },
-              { q: "How is Institution pricing determined?", a: "Institution pricing starts at $299/mo and scales based on your institution's size, number of users, and volume. Contact us at hello@remedy508.com for a custom quote. We support invoice and PO billing." },
+              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — requires a Team plan. Accounts found in violation may be suspended." },
+              { q: "How does the Team plan work?", a: "Team plans are $149/seat/year, billed annually. Documents are pooled across your team at 75/seat/month. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">

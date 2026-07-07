@@ -1163,14 +1163,38 @@ Rules:
             clerkUserId = session.client_reference_id || undefined;
             // Also store Stripe customer ID for future lookups
             if (clerkUserId && session.customer) {
-              await clerkClient.users.updateUserMetadata(clerkUserId, {
-                publicMetadata: {
-                  subscribed: true,
-                  stripeCustomerId: session.customer as string,
-                  subscribedAt: new Date().toISOString(),
-                },
-              });
-              console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed`);
+              const plan = (session.metadata as any)?.plan || "individual";
+              const seats = parseInt((session.metadata as any)?.seats || "1");
+
+              if (plan === "team") {
+                // Create a Clerk Organization for the buyer
+                const orgName = `Team (${new Date().toLocaleDateString()})`;
+                const org = await clerkClient.organizations.createOrganization({
+                  name: orgName,
+                  createdBy: clerkUserId,
+                });
+                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                  publicMetadata: {
+                    subscribed: true,
+                    plan: "team",
+                    teamSeats: seats,
+                    orgId: org.id,
+                    stripeCustomerId: session.customer as string,
+                    subscribedAt: new Date().toISOString(),
+                  },
+                });
+                console.log(`[WEBHOOK] Team checkout: created org ${org.id} for user ${clerkUserId} with ${seats} seats`);
+              } else {
+                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                  publicMetadata: {
+                    subscribed: true,
+                    plan: "individual",
+                    stripeCustomerId: session.customer as string,
+                    subscribedAt: new Date().toISOString(),
+                  },
+                });
+                console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed (individual)`);
+              }
             }
           }
 
@@ -1206,6 +1230,74 @@ Rules:
     }
 
     res.json({ received: true });
+  });
+
+  // ── Team Checkout ─────────────────────────────────────────
+  app.post("/api/stripe/create-team-checkout", async (req, res) => {
+    try {
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+      const { seats, clerkUserId } = req.body;
+      const qty = Math.max(2, parseInt(seats) || 2);
+      const TEAM_PRICE = "price_1TqdJpAaDElV6hZx2kEMey6p";
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "subscription",
+        payment_method_types: ["card"],
+        line_items: [{ price: TEAM_PRICE, quantity: qty }],
+        success_url: `${process.env.APP_URL || "https://remedy508.com"}/team/setup?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_URL || "https://remedy508.com"}/pricing`,
+        allow_promotion_codes: true,
+        client_reference_id: clerkUserId || undefined,
+        metadata: { plan: "team", seats: String(qty) },
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Team checkout error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Invoice / PO Request ──────────────────────────────────
+  app.post("/api/invoice-request", async (req, res) => {
+    try {
+      const {
+        institutionName, contactName, contactEmail, contactPhone,
+        institutionType, seats, poNumber, timeline, notes,
+      } = req.body;
+
+      if (!institutionName || !contactName || !contactEmail || !institutionType || !seats || !timeline) {
+        return res.status(400).json({ error: "Missing required fields" });
+      }
+
+      const total = (parseInt(seats) || 2) * 149;
+      const body = [
+        `Institution: ${institutionName}`,
+        `Type: ${institutionType}`,
+        `Contact: ${contactName} — ${contactEmail}${contactPhone ? ` — ${contactPhone}` : ""}`,
+        `Seats: ${seats} × $149 = $${total.toLocaleString()}/year`,
+        `PO Number: ${poNumber || "Not provided"}`,
+        `Timeline: ${timeline}`,
+        `Notes: ${notes || "None"}`,
+      ].join("\n");
+
+      // Send email via Formspree contact endpoint (reuse existing)
+      await fetch("https://formspree.io/f/xojbekbr", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: contactEmail,
+          subject: `Invoice Request — ${institutionName} (${seats} seats)`,
+          message: body,
+        }),
+      });
+
+      console.log(`[INVOICE REQUEST] ${institutionName} — ${seats} seats — ${contactEmail}`);
+      res.json({ ok: true });
+    } catch (err: any) {
+      console.error("Invoice request error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.options("/api/stripe/create-checkout-session", (req, res) => {

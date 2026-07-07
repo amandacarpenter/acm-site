@@ -18,6 +18,9 @@ import Dashboard from "@/pages/Dashboard";
 import ComingSoon from "@/pages/ComingSoon";
 import AdminPortal from "@/pages/AdminPortal";
 import CheckoutSuccess from "@/pages/CheckoutSuccess";
+import TeamCheckout from "@/pages/TeamCheckout";
+import InvoiceRequest from "@/pages/InvoiceRequest";
+import TeamSetup from "@/pages/TeamSetup";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -67,6 +70,10 @@ export default function App() {
             <Route path="/coming-soon" component={ComingSoon} />
             <Route path="/admin" component={AdminPortal} />
             <Route path="/checkout/success" component={CheckoutSuccess} />
+            <Route path="/team" component={TeamCheckout} />
+            <Route path="/team/checkout" component={TeamCheckout} />
+            <Route path="/team/setup" component={TeamSetup} />
+            <Route path="/invoice-request" component={InvoiceRequest} />
           </Switch>
         </Router>
         <Toaster />
