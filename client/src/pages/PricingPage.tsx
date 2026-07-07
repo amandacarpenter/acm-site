@@ -78,30 +78,6 @@ export default function PricingPage() {
           <p className="text-lg text-white max-w-xl mx-auto mb-10">
             Simple pricing for individuals and teams.
           </p>
-
-          {/* Monthly / Annual toggle */}
-          <div className="inline-flex items-center gap-3 bg-white/10 rounded-full px-2 py-1.5">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-white/60"
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition ${
-                annual ? "bg-white text-[#3a485b] shadow-sm" : "text-white/60"
-              }`}
-            >
-              Annual
-              <span className="ml-1.5 text-xs font-bold text-white">Save 35%</span>
-            </button>
-          </div>
-          {annual && (
-            <p className="text-sm text-white/70 mt-3">Annual plans are billed upfront and non-refundable. Cancel before renewal to stop future charges.</p>
-          )}
         </div>
       </section>
 
@@ -118,9 +94,28 @@ export default function PricingPage() {
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
-                  <p className="text-2xl font-bold text-[#3a485b] mb-4">
-                    Individual
-                  </p>
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-2xl font-bold text-[#3a485b]">Individual</p>
+                    {/* Monthly / Annual toggle — Individual only */}
+                    <div className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-1.5 py-1">
+                      <button
+                        onClick={() => setAnnual(false)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                          !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                        }`}
+                      >
+                        Monthly
+                      </button>
+                      <button
+                        onClick={() => setAnnual(true)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
+                          annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                        }`}
+                      >
+                        Annual <span className="text-[#0d9488]">−35%</span>
+                      </button>
+                    </div>
+                  </div>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-5xl font-bold text-[#3a485b]">
                       {annual ? "$12" : "$19"}
@@ -128,7 +123,7 @@ export default function PricingPage() {
                     <span className="mb-2 text-sm text-gray-400">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-sm text-gray-400">$149/year — save 35%</p>
+                    <p className="text-sm text-gray-400">$149/year — billed annually, non-refundable</p>
                   ) : (
                     <p className="text-sm text-gray-400">or $149/yr — save 35%</p>
                   )}
