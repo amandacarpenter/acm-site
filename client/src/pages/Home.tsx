@@ -352,7 +352,7 @@ export default function Home() {
             Ready to make your content accessible?
           </h2>
           <p className="text-white/70 mb-8">
-            Individual or institution — straightforward pricing built for higher education.
+            Individual or team — straightforward pricing built for higher education.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/signup">

@@ -69,27 +69,27 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "The Individual plan is $19/month or $149/year (save 35%). Institution plans start at $299/month with custom pricing based on your institution's size and needs. Contact hello@remedy508.com for a quote.",
+        a: "Individual plans are $19/month or $149/year (save 35%). Team plans are $149/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 50 documents per month across Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. The plan is licensed for single-user personal use — institutions require a separate plan.",
+        a: "The Individual plan gives you 50 documents per month across Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only.",
+      },
+      {
+        q: "What does the Team plan include?",
+        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 75 documents/seat/month pooled across your team. Pay by credit card or invoice/PO.",
       },
       {
         q: "What counts as a document?",
-        a: "Each file you upload and process counts as one document, regardless of page count. The 50-document limit applies to Document Fixer and Complex PDF. Alt Text, Canvas, and Video tools are unlimited.",
+        a: "Each file you upload and process counts as one document, regardless of page count. The monthly limit applies to Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on all paid plans.",
       },
       {
         q: "Can I cancel my plan?",
-        a: "Monthly plans can be cancelled at any time — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
+        a: "Monthly Individual plans can be cancelled at any time — you won't be billed again. Annual plans (Individual and Team) are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
       },
       {
-        q: "Can I upgrade to an Institution plan?",
-        a: "Yes — contact us at hello@remedy508.com and we'll apply any remaining Individual subscription credit toward your Institution plan.",
-      },
-      {
-        q: "Do you offer discounts for community colleges?",
-        a: "We understand community colleges often face the steepest compliance pressure with the tightest budgets. Reach out to discuss institution pricing — we're committed to making Remedy508 accessible to the institutions that need it most.",
+        q: "Do you offer invoice or PO billing?",
+        a: "Yes — the Team plan supports invoice and PO billing, making it easy for institutions to route payment through procurement. Select 'Pay by invoice / PO' when choosing your seats and we'll send an invoice within one business day.",
       },
     ],
   },
