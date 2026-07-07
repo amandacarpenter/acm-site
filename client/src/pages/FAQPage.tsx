@@ -98,7 +98,7 @@ const FAQ_SECTIONS: FAQSection[] = [
 function FAQAccordion({ item }: { item: FAQItem }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-gray-100 last:border-0">
+    <div>
       <button
         className="w-full text-left py-5 flex items-start justify-between gap-4 group"
         onClick={() => setOpen(!open)}
@@ -153,7 +153,7 @@ export default function FAQPage() {
               <h2 className="text-xs font-bold uppercase tracking-widest text-[#0d9488] mb-4">
                 {section.title}
               </h2>
-              <div className="bg-white border border-gray-100 rounded-2xl px-6 divide-y-0">
+              <div className="bg-white border border-gray-100 rounded-2xl px-6 divide-y divide-gray-100">
                 {section.items.map((item) => (
                   <FAQAccordion key={item.q} item={item} />
                 ))}
