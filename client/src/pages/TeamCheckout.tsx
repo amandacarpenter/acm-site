@@ -70,7 +70,7 @@ export default function TeamCheckout() {
           <h1 id="team-heading" className="text-4xl font-bold text-white mb-3">
             Team Plan
           </h1>
-          <p className="text-white/70 text-lg">$149/seat/year — annual only, non-refundable</p>
+          <p className="text-white/70 text-lg">$149/seat/year — annual only</p>
         </div>
       </section>
 
