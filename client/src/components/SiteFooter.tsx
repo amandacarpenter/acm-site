@@ -31,11 +31,6 @@ export default function SiteFooter() {
             <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
             <span className="text-xs text-gray-400 whitespace-nowrap">WCAG 2.1 AA</span>
           </div>
-          {/* Hidden tools shortcut */}
-          <Link href="/tools">
-            <span className="text-xs text-gray-600 hover:text-gray-400 transition cursor-pointer">©</span>
-          </Link>
-
           {/* Social links */}
           <div className="flex items-center gap-4 sm:ml-auto">
             <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener" aria-label="Remedy508 on LinkedIn" className="text-gray-400 hover:text-white transition">
