@@ -191,12 +191,9 @@ export default function Home() {
                     { code: "1.4.3", name: "Contrast (Minimum)", desc: "Text must have a contrast ratio of at least 4.5:1 against the background. Large text needs 3:1." },
                     { code: "1.4.4", name: "Resize Text", desc: "Text must be resizable up to 200% without loss of content or functionality." },
                   ].map((item) => (
-                    <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
-                      <div>
-                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                        <span className="text-sm text-gray-500">{item.desc}</span>
-                      </div>
+                    <div key={item.code}>
+                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-sm text-gray-500">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -226,12 +223,9 @@ export default function Home() {
                     { code: "2.4.4", name: "Link Purpose", desc: "The purpose of every link must be clear from the link text alone or its surrounding context." },
                     { code: "2.4.7", name: "Focus Visible", desc: "Keyboard focus must be visually visible at all times — users must see where they are on the page." },
                   ].map((item) => (
-                    <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
-                      <div>
-                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                        <span className="text-sm text-gray-500">{item.desc}</span>
-                      </div>
+                    <div key={item.code}>
+                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-sm text-gray-500">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -260,12 +254,9 @@ export default function Home() {
                     { code: "3.3.2", name: "Labels or Instructions", desc: "All form fields must have a visible label or clear instructions so users know what to enter." },
                     { code: "3.3.3", name: "Error Suggestion", desc: "If an error is detected and a correction is known, a suggestion must be provided (e.g., 'Enter a valid email address')." },
                   ].map((item) => (
-                    <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
-                      <div>
-                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                        <span className="text-sm text-gray-500">{item.desc}</span>
-                      </div>
+                    <div key={item.code}>
+                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-sm text-gray-500">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -290,12 +281,9 @@ export default function Home() {
                     { code: "4.1.2", name: "Name, Role, Value", desc: "All UI components must expose their name, role (button, checkbox, etc.), and state to assistive technologies via ARIA or semantic HTML." },
                     { code: "4.1.3", name: "Status Messages", desc: "Dynamic status updates (like 'Form submitted' or 'File uploading') must be communicated to screen readers without requiring focus." },
                   ].map((item) => (
-                    <div key={item.code} className="flex gap-3">
-                      <span className="text-[10px] font-mono font-bold text-white bg-white/15 px-2 py-0.5 rounded h-fit mt-0.5 shrink-0">{item.code}</span>
-                      <div>
-                        <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                        <span className="text-sm text-gray-500">{item.desc}</span>
-                      </div>
+                    <div key={item.code}>
+                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-sm text-gray-500">{item.desc}</span>
                     </div>
                   ))}
                 </div>
