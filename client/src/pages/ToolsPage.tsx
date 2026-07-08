@@ -609,6 +609,7 @@ function ComplexPdfTab() {
   const [result, setResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { user: complexPdfUser } = useUser();
 
   const run = async () => {
     if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }

@@ -49,6 +49,7 @@ export default function Terms() {
               <li><strong>Billing:</strong> Handled by Stripe. Subscriptions renew automatically at the end of each billing period.</li>
               <li><strong>Monthly plans:</strong> Cancel anytime through account settings or by emailing us. Cancellation takes effect at the end of the current billing period. No future charges.</li>
               <li><strong>Annual plans:</strong> Billed upfront and non-refundable. Cancel before your renewal date to stop future charges.</li>
+              <li><strong>Credit Packs:</strong> Document credits may be purchased as a one-time add-on at $0.30 per document (minimum 10). Credit packs are <strong>non-refundable</strong>. Purchased credits do not expire unless your account has been inactive (no login or document processing) for 12 or more consecutive months, after which unused credits are forfeited without notice or compensation. Credits are applied after your monthly subscription pool is exhausted. Credits are tied to your individual account and are non-transferable.</li>
               <li><strong>Price Changes:</strong> We may change pricing with at least 30 days' notice, applying to your next renewal.</li>
               <li><strong>Taxes:</strong> You are responsible for applicable taxes where we are not required to collect them.</li>
             </ul>

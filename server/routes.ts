@@ -12,6 +12,57 @@ import * as os from "os";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 const anthropic = new Anthropic();
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+
+// ── Usage Helpers ────────────────────────────────────────
+
+function getResetDate(): string {
+  const now = new Date();
+  const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 8, 0, 0)); // 1st of next month 12AM PT (UTC-8)
+  return next.toISOString();
+}
+
+async function checkAndIncrementUsage(clerkUserId: string): Promise<{ allowed: boolean; reason?: string }> {
+  const user = await clerkClient.users.getUser(clerkUserId);
+  const meta = (user.publicMetadata || {}) as any;
+
+  const plan: string = meta.plan || "individual";
+  const monthlyLimit: number = plan === "team" ? (meta.teamSeats || 1) * 75 : 50;
+  let monthlyUsed: number = meta.monthlyDocsUsed || 0;
+  let purchasedCredits: number = meta.purchasedCredits || 0;
+  const resetDate: string = meta.usageResetDate || getResetDate();
+
+  // Check if monthly usage should be reset
+  if (new Date() >= new Date(resetDate)) {
+    monthlyUsed = 0;
+    await clerkClient.users.updateUserMetadata(clerkUserId, {
+      publicMetadata: { ...meta, monthlyDocsUsed: 0, usageResetDate: getResetDate() },
+    });
+  }
+
+  // Consume monthly pool first
+  if (monthlyUsed < monthlyLimit) {
+    await clerkClient.users.updateUserMetadata(clerkUserId, {
+      publicMetadata: { ...meta, monthlyDocsUsed: monthlyUsed + 1, usageResetDate: resetDate },
+    });
+    return { allowed: true };
+  }
+
+  // Fall back to purchased credits
+  if (purchasedCredits > 0) {
+    await clerkClient.users.updateUserMetadata(clerkUserId, {
+      publicMetadata: { ...meta, purchasedCredits: purchasedCredits - 1 },
+    });
+    return { allowed: true };
+  }
+
+  // Hard block
+  const resetStr = new Date(resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return {
+    allowed: false,
+    reason: `You've used all ${monthlyLimit} documents this month. Documents reset on ${resetStr}. Need more? Purchase additional credits.`,
+  };
+}
 
 // Helper: call Claude for text tasks
 async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384): Promise<string> {
@@ -144,6 +195,20 @@ export function registerRoutes(httpServer: Server, app: Express) {
   app.post("/api/document/fix", upload.single("file"), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
+
+    // ── Usage gate ──────────────────────────────────────────────────────────
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    if (clerkUserId) {
+      try {
+        const usage = await checkAndIncrementUsage(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[USAGE GATE] Error:", gateErr.message);
+        // Fail open — don't block if Clerk is temporarily unavailable
+      }
+    }
 
     try {
       let rawText = "";
@@ -531,6 +596,20 @@ Canvas-specific rules:
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
+
+    // ── Usage gate ──────────────────────────────────────────────────────────
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    if (clerkUserId) {
+      try {
+        const usage = await checkAndIncrementUsage(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[USAGE GATE] Error:", gateErr.message);
+        // Fail open — don't block if Clerk is temporarily unavailable
+      }
+    }
 
     try {
       const { execFile } = await import("child_process");
@@ -1160,11 +1239,29 @@ Rules:
 
           if (event.type === "checkout.session.completed") {
             const session = event.data.object as Stripe.Checkout.Session;
-            clerkUserId = session.client_reference_id || undefined;
+            clerkUserId = session.client_reference_id || (session.metadata as any)?.clerkUserId || undefined;
             // Also store Stripe customer ID for future lookups
-            if (clerkUserId && session.customer) {
+            if (clerkUserId) {
               const plan = (session.metadata as any)?.plan || "individual";
               const seats = parseInt((session.metadata as any)?.seats || "1");
+
+              // ── Credit pack purchase ──────────────────────────────────────
+              if (plan === "credits") {
+                const qty = parseInt((session.metadata as any)?.quantity || "0");
+                const existing = await clerkClient.users.getUser(clerkUserId);
+                const existingMeta = (existing.publicMetadata || {}) as any;
+                const currentCredits = existingMeta.purchasedCredits || 0;
+                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                  publicMetadata: {
+                    ...existingMeta,
+                    purchasedCredits: currentCredits + qty,
+                  },
+                });
+                console.log(`[WEBHOOK] Added ${qty} credits to user ${clerkUserId} (total: ${currentCredits + qty})`);
+                return; // Done — no subscription to handle
+              }
+
+              if (!session.customer) return;
 
               if (plan === "team") {
                 // Create a Clerk Organization for the buyer
@@ -1296,6 +1393,32 @@ Rules:
       res.json({ ok: true });
     } catch (err: any) {
       console.error("Invoice request error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Credit Pack Checkout ────────────────────────────────────────────────────
+  app.post("/api/stripe/create-credits-checkout", async (req, res) => {
+    try {
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+      const { quantity, clerkUserId } = req.body;
+      const qty = Math.max(10, Math.min(10000, parseInt(quantity) || 10));
+      const CREDITS_PRICE = "price_1Tr16SAaDElV6hZx7u7chyLL";
+
+      const session = await stripe.checkout.sessions.create({
+        mode: "payment",
+        payment_method_types: ["card"],
+        line_items: [{ price: CREDITS_PRICE, quantity: qty }],
+        success_url: `${process.env.APP_URL || "https://remedy508.com"}/dashboard?credits=purchased`,
+        cancel_url: `${process.env.APP_URL || "https://remedy508.com"}/dashboard`,
+        allow_promotion_codes: true,
+        client_reference_id: clerkUserId || undefined,
+        metadata: { plan: "credits", quantity: String(qty), clerkUserId: clerkUserId || "" },
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Credits checkout error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });

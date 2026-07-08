@@ -1,8 +1,11 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight } from "lucide-react";
+import { useUser } from "@clerk/clerk-react";
+import { useState } from "react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
+import BuyCreditsModal from "@/components/BuyCreditsModal";
 
 const TOOLS = [
   { label: "Document Fixer", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
@@ -13,9 +16,31 @@ const TOOLS = [
 ];
 
 export default function Dashboard() {
-  const docsUsed = 0;
-  const docsLimit = 50;
-  const usagePct = Math.round((docsUsed / docsLimit) * 100);
+  const { user } = useUser();
+  const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
+
+  const meta = (user?.publicMetadata || {}) as any;
+  const plan: string = meta.plan || "individual";
+  const teamSeats: number = meta.teamSeats || 1;
+  const docsLimit: number = plan === "team" ? teamSeats * 75 : 50;
+  const docsUsed: number = meta.monthlyDocsUsed || 0;
+  const purchasedCredits: number = meta.purchasedCredits || 0;
+  const usagePct = Math.min(100, Math.round((docsUsed / docsLimit) * 100));
+  const isLow = usagePct >= 80;
+
+  // Format reset date
+  const resetDateStr = meta.usageResetDate
+    ? new Date(meta.usageResetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+    : (() => {
+        const now = new Date();
+        const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        return next.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+      })();
+
+  const planLabel = plan === "team" ? `Team (${teamSeats} seat${teamSeats !== 1 ? "s" : ""})` : "Individual";
+  const billingCycle = meta.subscribedAt
+    ? new Date(meta.subscribedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+    : null;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -43,35 +68,88 @@ export default function Dashboard() {
 
         {/* Top row — Usage + Plan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+
+          {/* Usage card */}
           <div className="md:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#0d9488]" />
                 <span className="font-semibold text-[#3a485b] text-sm">Document Usage</span>
               </div>
-              <span className="text-xs text-gray-400">Resets Jun 17</span>
+              <span className="text-xs text-gray-400">Resets {resetDateStr}</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
               <span className="text-4xl font-bold text-[#3a485b]">{docsUsed}</span>
               <span className="text-gray-400 text-sm mb-1">/ {docsLimit} docs this month</span>
             </div>
-            <div className="w-full bg-gray-100 rounded-full h-2.5 mb-2">
-              <div className="bg-[#0d9488] h-2.5 rounded-full transition-all" style={{ width: `${usagePct}%` }} />
+            <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
+              <div
+                className={`h-2.5 rounded-full transition-all ${isLow ? "bg-amber-500" : "bg-[#0d9488]"}`}
+                style={{ width: `${usagePct}%` }}
+              />
             </div>
-            <p className="text-xs text-gray-400">{docsLimit - docsUsed} documents remaining — Document Fixer &amp; Complex PDF count toward this limit.</p>
+
+            {/* Low usage warning + buy button */}
+            {isLow && (
+              <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <p className="text-xs text-amber-700 font-medium">
+                    {docsLimit - docsUsed <= 0
+                      ? "Monthly limit reached. Purchase credits to continue."
+                      : `Only ${docsLimit - docsUsed} doc${docsLimit - docsUsed === 1 ? "" : "s"} remaining this month.`}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setBuyCreditsOpen(true)}
+                  className="ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition"
+                >
+                  <ShoppingCart className="w-3 h-3" />
+                  Buy More Docs
+                </button>
+              </div>
+            )}
+
+            <p className="text-xs text-gray-400">{docsLimit - docsUsed > 0 ? docsLimit - docsUsed : 0} documents remaining — Document Fixer &amp; Complex PDF count toward this limit.</p>
+
+            {/* Purchased credits balance */}
+            {purchasedCredits > 0 && (
+              <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-100 rounded-xl">
+                <ShoppingCart className="w-3.5 h-3.5 text-[#0d9488] shrink-0" />
+                <p className="text-xs text-[#0d9488] font-medium">
+                  {purchasedCredits} purchased credit{purchasedCredits !== 1 ? "s" : ""} available — used after your monthly pool runs out.
+                </p>
+              </div>
+            )}
           </div>
 
+          {/* Plan card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="w-4 h-4 text-[#0d9488]" />
               <span className="font-semibold text-[#3a485b] text-sm">Your Plan</span>
             </div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0d9488] text-white">Pro</span>
-              <span className="text-xs text-gray-400">Monthly</span>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0d9488] text-white">
+                {plan === "team" ? "Team" : "Individual"}
+              </span>
+              {meta.stripeCustomerId && (
+                <span className="text-xs text-gray-400">Active</span>
+              )}
             </div>
-            <p className="text-xs text-gray-400 mb-4">Renews Jun 17, 2026</p>
-            <div className="mt-auto">
+            {billingCycle && (
+              <p className="text-xs text-gray-400 mb-2">Member since {billingCycle}</p>
+            )}
+            <p className="text-xs text-gray-400 mb-4">{planLabel} · {docsLimit} docs/mo</p>
+
+            <div className="mt-auto flex flex-col gap-2">
+              <button
+                onClick={() => setBuyCreditsOpen(true)}
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
+              >
+                <ShoppingCart className="w-3 h-3" />
+                Buy More Docs
+              </button>
               <Link href="/pricing">
                 <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
                   Upgrade Plan <ArrowRight className="w-3 h-3" />
@@ -116,6 +194,9 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      <BuyCreditsModal open={buyCreditsOpen} onClose={() => setBuyCreditsOpen(false)} userId={user?.id} />
+
       <SiteFooter />
     </div>
   );
