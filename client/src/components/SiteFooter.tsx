@@ -15,7 +15,7 @@ export default function SiteFooter() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Copyright */}
         <div className="text-center sm:text-left text-sm text-gray-400 mb-4">
-          © 2026 Remedy508 — <a href="https://leftcoastlearningllc.com" target="_blank" rel="noopener" style={{color:"inherit",textDecoration:"underline",textUnderlineOffset:"3px"}}>Left Coast Learning LLC</a>
+          © 2026 Remedy508
         </div>
 
         {/* Links row — wraps cleanly on mobile */}
@@ -27,10 +27,6 @@ export default function SiteFooter() {
               </span>
             </Link>
           ))}
-          <div className="flex items-center gap-1">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-            <span className="text-xs text-gray-400 whitespace-nowrap">WCAG 2.1 AA</span>
-          </div>
           {/* Social links */}
           <div className="flex items-center gap-4 sm:ml-auto">
             <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener" aria-label="Remedy508 on LinkedIn" className="text-gray-400 hover:text-white transition">
