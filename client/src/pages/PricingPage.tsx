@@ -196,7 +196,7 @@ export default function PricingPage() {
                 <div className="mt-auto">
                   <Link href="/team">
                     <span className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-white text-[#3a485b] hover:bg-gray-100">
-                      Choose seats →
+                      Choose Seat Count →
                     </span>
                   </Link>
                 </div>
