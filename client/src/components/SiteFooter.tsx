@@ -18,8 +18,8 @@ export default function SiteFooter() {
           © 2026 Remedy508
         </div>
         {/* Company attribution */}
-        <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" role="img" aria-label="American flag" className="shrink-0 rounded-sm">
+        <div className="flex items-start justify-center sm:justify-start gap-1.5 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" role="img" aria-label="American flag" className="shrink-0 rounded-sm mt-0.5">
             <rect width="20" height="11" fill="#B22234"/>
             <rect y="0.846" width="20" height="0.846" fill="white"/>
             <rect y="1.692" width="20" height="0.846" fill="#B22234"/>
@@ -43,7 +43,7 @@ export default function SiteFooter() {
               <circle cx="1.65" cy="4.8" r="0.3"/><circle cx="2.95" cy="4.8" r="0.3"/><circle cx="4.25" cy="4.8" r="0.3"/><circle cx="5.55" cy="4.8" r="0.3"/><circle cx="6.85" cy="4.8" r="0.3"/>
             </g>
           </svg>
-          <span className="text-xs text-gray-500">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
+          <span className="text-xs text-gray-500 text-center sm:text-left">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
         </div>
 
         {/* Links row — wraps cleanly on mobile */}
