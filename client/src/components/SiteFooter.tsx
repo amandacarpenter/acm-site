@@ -18,7 +18,7 @@ export default function SiteFooter() {
           © 2026 Remedy508
         </div>
         {/* Company attribution */}
-        <div className="flex items-start justify-center sm:justify-start gap-1.5 mb-4">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start sm:justify-start gap-1 sm:gap-1.5 mb-4">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" role="img" aria-label="American flag" className="shrink-0 rounded-sm mt-0.5">
             <rect width="20" height="11" fill="#B22234"/>
             <rect y="0.846" width="20" height="0.846" fill="white"/>
