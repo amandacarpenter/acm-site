@@ -47,7 +47,7 @@ export default function SiteFooter() {
         </div>
 
         {/* Links row — wraps cleanly on mobile */}
-        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2">
+        <div className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-3">
           {footerLinks.map(({ href, label }) => (
             <Link key={href} href={href}>
               <span className="text-xs text-gray-400 hover:text-white transition cursor-pointer whitespace-nowrap">
@@ -56,7 +56,7 @@ export default function SiteFooter() {
             </Link>
           ))}
           {/* Social links */}
-          <div className="flex items-center gap-4 sm:ml-auto">
+          <div className="flex items-center gap-4 w-full justify-center sm:w-auto sm:ml-auto">
             <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener" aria-label="Remedy508 on LinkedIn" className="text-gray-400 hover:text-white transition">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
             </a>
