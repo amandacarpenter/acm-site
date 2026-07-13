@@ -19,7 +19,30 @@ export default function SiteFooter() {
         </div>
         {/* Company attribution */}
         <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-4">
-          <span className="text-base leading-none" role="img" aria-label="American flag">🇺🇸</span>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" role="img" aria-label="American flag" className="shrink-0 rounded-sm">
+            <rect width="20" height="11" fill="#B22234"/>
+            <rect y="0.846" width="20" height="0.846" fill="white"/>
+            <rect y="1.692" width="20" height="0.846" fill="#B22234"/>
+            <rect y="2.538" width="20" height="0.846" fill="white"/>
+            <rect y="3.384" width="20" height="0.846" fill="#B22234"/>
+            <rect y="4.23" width="20" height="0.846" fill="white"/>
+            <rect y="5.077" width="20" height="0.846" fill="#B22234"/>
+            <rect y="5.923" width="20" height="0.846" fill="white"/>
+            <rect y="6.769" width="20" height="0.846" fill="#B22234"/>
+            <rect y="7.615" width="20" height="0.846" fill="white"/>
+            <rect y="8.461" width="20" height="0.846" fill="#B22234"/>
+            <rect y="9.307" width="20" height="0.846" fill="white"/>
+            <rect y="10.154" width="20" height="0.846" fill="#B22234"/>
+            <rect width="8" height="5.923" fill="#3C3B6E"/>
+            <g fill="white">
+              <circle cx="1" cy="0.8" r="0.3"/><circle cx="2.3" cy="0.8" r="0.3"/><circle cx="3.6" cy="0.8" r="0.3"/><circle cx="4.9" cy="0.8" r="0.3"/><circle cx="6.2" cy="0.8" r="0.3"/><circle cx="7.5" cy="0.8" r="0.3"/>
+              <circle cx="1.65" cy="1.6" r="0.3"/><circle cx="2.95" cy="1.6" r="0.3"/><circle cx="4.25" cy="1.6" r="0.3"/><circle cx="5.55" cy="1.6" r="0.3"/><circle cx="6.85" cy="1.6" r="0.3"/>
+              <circle cx="1" cy="2.4" r="0.3"/><circle cx="2.3" cy="2.4" r="0.3"/><circle cx="3.6" cy="2.4" r="0.3"/><circle cx="4.9" cy="2.4" r="0.3"/><circle cx="6.2" cy="2.4" r="0.3"/><circle cx="7.5" cy="2.4" r="0.3"/>
+              <circle cx="1.65" cy="3.2" r="0.3"/><circle cx="2.95" cy="3.2" r="0.3"/><circle cx="4.25" cy="3.2" r="0.3"/><circle cx="5.55" cy="3.2" r="0.3"/><circle cx="6.85" cy="3.2" r="0.3"/>
+              <circle cx="1" cy="4" r="0.3"/><circle cx="2.3" cy="4" r="0.3"/><circle cx="3.6" cy="4" r="0.3"/><circle cx="4.9" cy="4" r="0.3"/><circle cx="6.2" cy="4" r="0.3"/><circle cx="7.5" cy="4" r="0.3"/>
+              <circle cx="1.65" cy="4.8" r="0.3"/><circle cx="2.95" cy="4.8" r="0.3"/><circle cx="4.25" cy="4.8" r="0.3"/><circle cx="5.55" cy="4.8" r="0.3"/><circle cx="6.85" cy="4.8" r="0.3"/>
+            </g>
+          </svg>
           <span className="text-xs text-gray-500">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
         </div>
 
