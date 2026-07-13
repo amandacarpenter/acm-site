@@ -14,8 +14,13 @@ export default function SiteFooter() {
     <footer className="bg-gray-900 py-10" role="contentinfo">
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         {/* Copyright */}
-        <div className="text-center sm:text-left text-sm text-gray-400 mb-4">
+        <div className="text-center sm:text-left text-sm text-gray-400 mb-1">
           © 2026 Remedy508
+        </div>
+        {/* Company attribution */}
+        <div className="flex items-center justify-center sm:justify-start gap-1.5 mb-4">
+          <span className="text-base leading-none" role="img" aria-label="American flag">🇺🇸</span>
+          <span className="text-xs text-gray-500">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
         </div>
 
         {/* Links row — wraps cleanly on mobile */}
