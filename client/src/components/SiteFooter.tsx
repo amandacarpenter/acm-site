@@ -70,9 +70,9 @@ export default function SiteFooter() {
         {/* Row 3 — Copyright + flag/attribution (centered mobile, space-between desktop) */}
         <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
           <span className="text-sm text-gray-400">© 2026 Remedy508</span>
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
             {FLAG_SVG}
-            <span className="text-xs text-gray-500">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
+            <span className="text-xs text-gray-500 text-center sm:text-left">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
           </div>
         </div>
 
