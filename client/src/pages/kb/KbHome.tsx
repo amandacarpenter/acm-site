@@ -30,7 +30,7 @@ function ArticleCard({ article }: { article: KbArticle }) {
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-white group-hover:text-[#0d9488] transition-colors leading-snug">
+            <span className="text-sm font-medium text-gray-800 group-hover:text-[#0d9488] transition-colors leading-snug">
               {article.title}
             </span>
             {article.video_status === "coming_soon" ? (
@@ -99,13 +99,13 @@ export default function KbHome() {
                 placeholder="Search videos, transcripts…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-700 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
+                className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
                 aria-label="Search the knowledge base"
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
                   aria-label="Clear search"
                 >
                   ✕
@@ -132,7 +132,7 @@ export default function KbHome() {
                   <section key={sec.section} aria-labelledby={`section-${sec.section}-heading`}>
                     <div className="flex items-center gap-2 mb-3">
                       <span className="text-xl" aria-hidden="true">{SECTION_ICONS[i]}</span>
-                      <h2 id={`section-${sec.section}-heading`} className="text-base font-semibold text-white">
+                      <h2 id={`section-${sec.section}-heading`} className="text-base font-semibold text-gray-900">
                         {sec.section_name}
                       </h2>
                       <span className="text-xs text-gray-400 ml-auto">

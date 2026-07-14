@@ -309,7 +309,7 @@ export default function KbAdmin() {
                         return (
                           <tr key={article.id} className="hover:hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3 text-gray-500 text-xs">{article.order_num}</td>
-                            <td className="px-4 py-3 text-white font-medium">{article.title}</td>
+                            <td className="px-4 py-3 text-gray-900 font-medium">{article.title}</td>
                             <td className="px-4 py-3 hidden sm:table-cell"><StatusBadge status={article.video_status} /></td>
                             <td className="px-4 py-3 text-right">
                               <button

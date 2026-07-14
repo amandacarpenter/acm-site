@@ -87,7 +87,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="1.5" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
             <div className="text-center">
-              <p className="text-white font-semibold text-sm">Video coming soon</p>
+              <p className="text-gray-900 font-semibold text-sm">Video coming soon</p>
               <p className="text-gray-400 text-xs mt-1">This video is being produced. Check back soon.</p>
             </div>
           </div>
@@ -152,7 +152,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
       ) : !article ? (
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
-            <p className="text-white text-lg font-semibold">Article not found</p>
+            <p className="text-gray-900 text-lg font-semibold">Article not found</p>
             <Link href="/kb"><a className="text-[#0d9488] text-sm mt-2 hover:underline">← Back to Knowledge Base</a></Link>
           </div>
         </div>
