@@ -21,6 +21,9 @@ import CheckoutSuccess from "@/pages/CheckoutSuccess";
 import TeamCheckout from "@/pages/TeamCheckout";
 import InvoiceRequest from "@/pages/InvoiceRequest";
 import TeamSetup from "@/pages/TeamSetup";
+import KbHome from "@/pages/kb/KbHome";
+import KbArticlePage from "@/pages/kb/KbArticle";
+import KbAdmin from "@/pages/kb/KbAdmin";
 import ScrollToTop from "@/components/ScrollToTop";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -74,6 +77,9 @@ export default function App() {
             <Route path="/team/checkout" component={TeamCheckout} />
             <Route path="/team/setup" component={TeamSetup} />
             <Route path="/invoice-request" component={InvoiceRequest} />
+            <Route path="/kb" component={KbHome} />
+            <Route path="/kb/articles/:id" component={KbArticlePage} />
+            <Route path="/kb/admin" component={KbAdmin} />
           </Switch>
         </Router>
         <Toaster />

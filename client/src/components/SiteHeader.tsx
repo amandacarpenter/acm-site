@@ -18,6 +18,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
+  { href: "/kb", label: "Knowledge Base" },
   { href: "/pricing", label: "Plans & Pricing" },
 ];
 

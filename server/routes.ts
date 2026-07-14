@@ -1,4 +1,6 @@
 import type { Express, Request } from "express";
+import { kbDb } from "./kb";
+import fs from "fs";
 import { Server } from "http";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
@@ -1467,6 +1469,107 @@ Rules:
       res.status(500).json({ error: err.message, keyPrefix });
     }
   });
+
+  // ── KB API ────────────────────────────────────────────────────────────────
+
+  // GET all sections + articles
+  app.get("/api/kb/sections", (_req, res) => {
+    res.json(kbDb.getSections());
+  });
+
+  // GET all articles
+  app.get("/api/kb/articles", (_req, res) => {
+    res.json(kbDb.getAll());
+  });
+
+  // GET single article
+  app.get("/api/kb/articles/:id", (req, res) => {
+    const article = kbDb.getById(req.params.id);
+    if (!article) return res.status(404).json({ error: "Not found" });
+    res.json(article);
+  });
+
+  // GET search
+  app.get("/api/kb/search", (req, res) => {
+    const q = (req.query.q as string || "").trim();
+    if (!q) return res.json([]);
+    res.json(kbDb.search(q));
+  });
+
+  // PATCH article (admin only)
+  app.patch("/api/kb/articles/:id", async (req, res) => {
+    try {
+      const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+      if (!clerkSecretKey) return res.status(500).json({ error: "Auth not configured" });
+      const { createClerkClient } = await import("@clerk/backend");
+      const clerkClient = createClerkClient({ secretKey: clerkSecretKey });
+
+      // Verify session token from Authorization header
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+      let userId: string;
+      try {
+        const session = await clerkClient.verifyToken(token);
+        userId = session.sub;
+      } catch {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+
+      // Admin check
+      const user = await clerkClient.users.getUser(userId);
+      const email = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress;
+      if (email !== "amandathecarpenter@gmail.com") {
+        return res.status(403).json({ error: "Admin only" });
+      }
+
+      const updated = kbDb.update(req.params.id, req.body);
+      if (!updated) return res.status(404).json({ error: "Not found" });
+      res.json(updated);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST upload video file for an article (admin only, multipart)
+  const kbUpload = multer({ dest: "/tmp/kb-uploads/" });
+  app.post("/api/kb/articles/:id/upload-video", kbUpload.single("video"), async (req, res) => {
+    try {
+      // In production, you'd upload to Cloudflare R2/S3 here.
+      // For now, store locally and serve from /uploads/kb/
+      const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+      if (!clerkSecretKey) return res.status(500).json({ error: "Auth not configured" });
+      const { createClerkClient } = await import("@clerk/backend");
+      const clerkClient = createClerkClient({ secretKey: clerkSecretKey });
+      const token = req.headers.authorization?.replace("Bearer ", "");
+      if (!token) return res.status(401).json({ error: "Unauthorized" });
+      let userId: string;
+      try {
+        const session = await clerkClient.verifyToken(token);
+        userId = session.sub;
+      } catch {
+        return res.status(401).json({ error: "Invalid token" });
+      }
+      const user = await clerkClient.users.getUser(userId);
+      const email = user.emailAddresses.find(e => e.id === user.primaryEmailAddressId)?.emailAddress;
+      if (email !== "amandathecarpenter@gmail.com") return res.status(403).json({ error: "Admin only" });
+
+      if (!req.file) return res.status(400).json({ error: "No file" });
+
+      const uploadDir = path.join(process.cwd(), "public", "kb-videos");
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      const ext = path.extname(req.file.originalname) || ".mp4";
+      const filename = `${req.params.id}${ext}`;
+      fs.renameSync(req.file.path, path.join(uploadDir, filename));
+      const video_url = `/kb-videos/${filename}`;
+
+      const updated = kbDb.update(req.params.id, { video_url, video_status: "published" });
+      res.json({ video_url, article: updated });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
 }
 // pdftotext fix Thu Apr 16 18:03:54 UTC 2026
 // yt-dlp android client fix Thu Apr 16 23:10:37 UTC 2026
