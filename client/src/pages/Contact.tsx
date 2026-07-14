@@ -13,7 +13,7 @@ export default function Contact() {
     "General Question",
     "Technical Support",
     "Accessibility Issue",
-    "Institution / Pricing Inquiry",
+    "Team / Pricing Inquiry",
     "Partnership",
     "Other",
   ];
@@ -47,7 +47,7 @@ export default function Contact() {
             Support
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Get in Touch</h1>
-          <p className="text-white max-w-xl mx-auto">Have a question, need help with a document, or want to talk about an institution plan? We're here.</p>
+          <p className="text-white max-w-xl mx-auto">Have a question, need help with a document, or want to talk about a team plan? We're here.</p>
         </div>
       </section>
       <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
@@ -68,8 +68,8 @@ export default function Contact() {
             />
             <InfoCard
               icon={<Building2 className="w-5 h-5 text-[#0d9488]" />}
-              title="Institution Inquiries"
-              body={<p className="text-sm text-gray-600">Looking for a campus-wide plan? Use the form and select "Institution / Pricing Inquiry."</p>}
+              title="Team Inquiries"
+              body={<p className="text-sm text-gray-600">Looking for a team plan? Use the form and select "Team / Pricing Inquiry."</p>}
             />
             <InfoCard
               icon={<MessageSquare className="w-5 h-5 text-[#0d9488]" />}
