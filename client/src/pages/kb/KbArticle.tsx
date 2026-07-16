@@ -8,7 +8,7 @@ function RelatedCard({ article }: { article: KbArticle }) {
   return (
     <Link href={`/kb/articles/${article.id}`}>
       <a className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0d9488]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0d9488]/20 text-[#0d9488] text-xs font-bold flex items-center justify-center">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0d9488]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center">
           {article.order_num}
         </span>
         <p className="text-sm text-gray-900 font-medium leading-snug">{article.title}</p>
@@ -31,24 +31,24 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm mb-6" aria-label="Breadcrumb">
-          <Link href="/kb"><a className="text-[#0d9488] hover:underline">Knowledge Base</a></Link>
+          <Link href="/kb"><a className="text-[#0f766e] hover:underline">Knowledge Base</a></Link>
           <span className="text-gray-300" aria-hidden="true">/</span>
           <span className="text-gray-500 truncate">{article.section_name}</span>
         </nav>
 
         {/* Title */}
         <div className="mb-8">
-          <p className="text-xs text-[#0d9488] font-semibold uppercase tracking-wider mb-2">
+          <p className="text-xs text-[#0f766e] font-semibold uppercase tracking-wider mb-2">
             Section {article.section} — {article.section_name}
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#0d9488] leading-tight">{article.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0f766e] leading-tight">{article.title}</h1>
           <p className="mt-3 text-gray-500 text-base leading-relaxed">{article.summary}</p>
         </div>
 
         {/* Main content */}
         {article.transcript ? (
           <div
-            className="prose prose-sm sm:prose max-w-none text-gray-700 leading-relaxed [&_h2]:text-[#0d9488] [&_h3]:text-[#0d9488] [&_h4]:text-[#0d9488] [&_h2]:font-bold [&_h3]:font-semibold [&_a]:text-[#0d9488] [&_a]:no-underline [&_a:hover]:underline [&_strong]:text-gray-900"
+            className="prose prose-sm sm:prose max-w-none text-gray-700 leading-relaxed [&_h2]:text-[#0f766e] [&_h3]:text-[#0f766e] [&_h4]:text-[#0f766e] [&_h2]:font-bold [&_h3]:font-semibold [&_a]:text-[#0f766e] [&_a]:no-underline [&_a:hover]:underline [&_strong]:text-gray-900"
             dangerouslySetInnerHTML={{ __html: article.transcript }}
           />
         ) : (
@@ -72,7 +72,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
           <p className="text-sm text-gray-700 font-medium mb-1">Still have questions?</p>
           <p className="text-sm text-gray-500">
             Email us at{" "}
-            <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]">
+            <a href="mailto:hello@remedy508.com" className="text-[#0f766e] hover:underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]">
               hello@remedy508.com
             </a>
           </p>
@@ -99,7 +99,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-900 text-lg font-semibold">Article not found</p>
-            <Link href="/kb"><a className="text-[#0d9488] text-sm mt-2 hover:underline block mt-2">← Back to Knowledge Base</a></Link>
+            <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline block mt-2">← Back to Knowledge Base</a></Link>
           </div>
         </div>
       ) : (

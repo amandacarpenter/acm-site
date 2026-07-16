@@ -15,16 +15,16 @@ function ArticleCard({ article }: { article: KbArticle }) {
         className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488] focus-visible:outline-offset-2"
         aria-label={article.title}
       >
-        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0d9488]/20 text-[#0d9488] text-xs font-bold flex items-center justify-center mt-0.5">
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0d9488]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center mt-0.5">
           {article.order_num}
         </span>
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-gray-800 group-hover:text-[#0d9488] transition-colors leading-snug block">
+          <span className="text-sm font-medium text-gray-800 group-hover:text-[#0f766e] transition-colors leading-snug block">
             {article.title}
           </span>
           <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{article.summary}</p>
         </div>
-        <svg className="flex-shrink-0 w-4 h-4 text-gray-300 group-hover:text-[#0d9488] mt-0.5 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <svg className="flex-shrink-0 w-4 h-4 text-gray-300 group-hover:text-[#0f766e] mt-0.5 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
       </a>
     </Link>
   );
@@ -36,7 +36,7 @@ function SearchResults({ q }: { q: string }) {
   if (!results.length) return <p className="text-gray-500 text-sm py-4">No results for "{q}"</p>;
   return (
     <div>
-      <p className="text-sm text-gray-400 mb-3">{results.length} result{results.length !== 1 ? "s" : ""} for "{q}"</p>
+      <p className="text-sm text-gray-500 mb-3">{results.length} result{results.length !== 1 ? "s" : ""} for "{q}"</p>
       <div className="flex flex-col gap-1">
         {results.map(a => <ArticleCard key={a.id} article={a} />)}
       </div>
@@ -111,7 +111,7 @@ export default function KbHome() {
                     <h2 id={`section-${sec.section}-heading`} className="text-base font-semibold text-gray-900">
                       {sec.section_name}
                     </h2>
-                    <span className="text-xs text-gray-400 ml-auto">{sec.articles.length} articles</span>
+                    <span className="text-xs text-gray-500 ml-auto">{sec.articles.length} articles</span>
                   </div>
                   <div className="bg-gray-50 rounded-xl border border-gray-200 divide-y divide-gray-100">
                     {sec.articles.map(article => (
