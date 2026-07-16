@@ -4,6 +4,7 @@ import KbGate from "./KbGate";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useKbSections, useKbSearch, type KbArticle } from "./useKb";
+import { BookOpen } from "lucide-react";
 
 const SECTION_ICONS = ["🚀", "🛠️", "📄", "✏️", "♿"];
 
@@ -51,12 +52,20 @@ export default function KbHome() {
     <KbGate>
       <div className="min-h-screen bg-white text-gray-900">
         <SiteHeader />
-        <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
 
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Knowledge Base</h1>
-            <p className="mt-2 text-gray-500 text-sm sm:text-base">Step-by-step guides for creating accessible content with Remedy508.</p>
+        {/* Page hero — matches Contact, Pricing, etc. */}
+        <section className="bg-[#3a485b] py-16 sm:py-20">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+              <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+              Knowledge Base
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">How-To Guides & Tips</h1>
+            <p className="text-white max-w-xl mx-auto">Step-by-step articles for creating accessible content with Remedy508 — from uploading your first file to editing in Acrobat.</p>
           </div>
+        </section>
+
+        <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
 
           {/* Search */}
           <div className="mb-8">
