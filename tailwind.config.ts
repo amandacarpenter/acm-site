@@ -5,41 +5,12 @@ export default {
   content: ["./client/index.html", "./client/src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {
-      boxShadow: {
-        "card": "0 1px 3px rgba(31,41,55,0.06), 0 1px 2px rgba(31,41,55,0.04)",
-        "card-hover": "0 10px 30px rgba(31,41,55,0.10), 0 4px 8px rgba(31,41,55,0.06)",
-      },
       borderRadius: {
         lg: ".5625rem", /* 9px */
         md: ".375rem", /* 6px */
         sm: ".1875rem", /* 3px */
       },
       colors: {
-
-        // KB-specific design tokens
-        teal: {
-          DEFAULT: "#0C9488",
-          hover: "#0A7F74",
-          dark: "#08615A",
-          light: "#E6F4F2",
-        },
-        "navy-muted": "#6B7280",
-        "navy-faint": "#9CA3AF",
-        "cream-offset": "#F3EFE8",
-        "cream-card": "#FFFFFF",
-        "teal-dark": "#08615A",
-        "teal-light": "#E6F4F2",
-        cream: {
-          DEFAULT: "#FAF7F2",
-          card: "#FFFFFF",
-          offset: "#F3EFE8",
-        },
-        navy: {
-          DEFAULT: "#1F2937",
-          light: "#374151",
-          muted: "#6B7280",
-          faint: "#9CA3AF",
-        },
         // Flat / base colors (regular buttons)
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
