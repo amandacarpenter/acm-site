@@ -41,14 +41,14 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
           <p className="text-xs text-[#0d9488] font-semibold uppercase tracking-wider mb-2">
             Section {article.section} — {article.section_name}
           </p>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{article.title}</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#0d9488] leading-tight">{article.title}</h1>
           <p className="mt-3 text-gray-500 text-base leading-relaxed">{article.summary}</p>
         </div>
 
         {/* Main content */}
         {article.transcript ? (
           <div
-            className="prose prose-gray prose-sm sm:prose max-w-none text-gray-700 leading-relaxed"
+            className="prose prose-sm sm:prose max-w-none text-gray-700 leading-relaxed [&_h2]:text-[#0d9488] [&_h3]:text-[#0d9488] [&_h4]:text-[#0d9488] [&_h2]:font-bold [&_h3]:font-semibold [&_a]:text-[#0d9488] [&_a]:no-underline [&_a:hover]:underline [&_strong]:text-gray-900"
             dangerouslySetInnerHTML={{ __html: article.transcript }}
           />
         ) : (
