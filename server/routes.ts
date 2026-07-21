@@ -1194,8 +1194,8 @@ import zlib as _zlib, tempfile as _tmpmod
 
 def _raw_patch_streams(input_path, output_path):
     _TEXT_OPS_B2 = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
+    import zlib as _zl
     pdf_bytes = bytearray(open(input_path, 'rb').read())
-    # Diagnostic: check what stream markers exist
     _lf_count = pdf_bytes.count(b'stream' + bytes([10]))
     _crlf_count = pdf_bytes.count(b'stream' + bytes([13, 10]))
     print(f'[RAW-DIAG] pdf_size={len(pdf_bytes)} stream_LF={_lf_count} stream_CRLF={_crlf_count}', file=sys.stderr)
@@ -1216,21 +1216,22 @@ def _raw_patch_streams(input_path, output_path):
         actual_end = end - 2 if bytes(pdf_bytes[end-2:end]) == bytes([13,10]) else (end - 1 if bytes(pdf_bytes[end-1:end]) == bytes([10]) else end)
         raw_compressed = bytes(pdf_bytes[data_start:actual_end])
         try:
-            decoded = _zlib.decompress(raw_compressed)
+            decoded = _zl.decompress(raw_compressed)
             if b'BT' in decoded and _TEXT_OPS_B2.search(decoded):
                 modified, new_mcids = _tag_decoded_stream(decoded)
                 if new_mcids:
-                    patches.append((data_start, actual_end, _zlib.compress(modified, level=6)))
+                    patches.append((data_start, actual_end, _zl.compress(modified, level=6)))
         except Exception as _ze:
-            if len(patches) == 0 and i < 5000:
+            if len(patches) == 0:
                 print(f'[ZLIB-ERR] offset={data_start} size={len(raw_compressed)} first4={raw_compressed[:4].hex()} err={_ze}', file=sys.stderr)
         i = end + 9
     print(f'[RAW-PATCH] patching {len(patches)} streams', file=sys.stderr)
     for ds, de, nd in sorted(patches, reverse=True):
         pdf_bytes[ds:de] = nd
-    tmp = _tmpmod.mktemp(suffix='.pdf', dir=os.path.dirname(output_path))
-    open(tmp, 'wb').write(pdf_bytes)
-    pp = pikepdf.open(tmp, suppress_warnings=True)
+    # Write patched bytes directly to output_path
+    open(output_path, 'wb').write(pdf_bytes)
+    # Open with allow_overwriting_input=True so pikepdf adds metadata WITHOUT re-encoding streams
+    pp = pikepdf.open(output_path, allow_overwriting_input=True, suppress_warnings=True)
     if '/MarkInfo' not in pp.Root:
         pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     else:
@@ -1246,21 +1247,18 @@ def _raw_patch_streams(input_path, output_path):
         pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
     pp.save(output_path, linearize=False)
     pp.close()
-    os.unlink(tmp)
 
 _tmp_dir = os.path.dirname(output_path)
-fixed_path = os.path.join(_tmp_dir, 'fixed_' + os.path.basename(output_path))
 try:
-    _raw_patch_streams(output_path, fixed_path)
-    _vp = pikepdf.open(fixed_path, suppress_warnings=True)
+    _raw_patch_streams(output_path, output_path)
+    _vp = pikepdf.open(output_path, suppress_warnings=True)
     _vs = _vp.pages[0].get('/Contents')
     if isinstance(_vs, pikepdf.Array): _vs = list(_vs)[0]
     _vraw = _vs.read_bytes()
     _bdc = _vraw.count(b'BDC')
     _bmc = _vraw.count(b'BMC')
     _vp.close()
-    print(f'[VERIFY] fixed_path page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
-    os.replace(fixed_path, output_path)
+    print(f'[VERIFY] output page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
     print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
     import traceback
