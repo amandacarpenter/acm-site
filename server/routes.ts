@@ -729,7 +729,7 @@ print(json.dumps({'pages': result, 'total': len(doc)}))
       await writeFile(tmpExtractScript, pyExtract, "utf8");
 
       const extractJson = await new Promise<string>((resolve, reject) => {
-        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 90000 }, (err, stdout, stderr) => {
+        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 300000 }, (err, stdout, stderr) => {
           if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
           else resolve(stdout.trim());
         });
@@ -738,6 +738,10 @@ print(json.dumps({'pages': result, 'total': len(doc)}))
       const { pages: pageData, total: totalPages } = JSON.parse(extractJson);
       await unlink(tmpExtractScript).catch(() => {});
       await unlink(tmpPdf).catch(() => {});
+
+      if (totalPages > 15) {
+        return res.status(400).json({ error: `This PDF has ${totalPages} pages. Complex PDF supports up to 15 pages. Please split the document and re-upload.` });
+      }
 
       // ── Step 2: Claude Vision — extract accessible HTML per page ──
       const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert processing one page of a PDF document.
