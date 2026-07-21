@@ -1076,10 +1076,17 @@ try:
         page["/Tabs"] = pikepdf.Name("/S")
 
     # 3. MarkInfo Marked=true → fixes "Tagged content" failure
-    pp.Root["/MarkInfo"] = pikepdf.Dictionary(**{"/Marked": pikepdf.Boolean(True)})
+    mi = pikepdf.Dictionary()
+    mi["/Marked"] = pikepdf.Boolean(True)
+    pp.Root["/MarkInfo"] = mi
 
-    # Save to separate path first (avoid in-place overwrite issues)
-    pp.save(fixed_path)
+    # Save to separate path — preserve existing structure exactly
+    pp.save(
+        fixed_path,
+        linearize=False,
+        compress_streams=False,
+        preserve_pdfa=True,
+    )
     pp.close()
 
     # Replace original with fixed version
