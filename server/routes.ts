@@ -1195,6 +1195,16 @@ try:
         pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
     pp.save(fixed_path, linearize=False)
     pp.close()
+    # Verify BDC count in saved file before replacing
+    _verify = pikepdf.open(fixed_path, suppress_warnings=True)
+    _pg0 = _verify.pages[0]
+    _s0 = _pg0.get('/Contents')
+    if isinstance(_s0, pikepdf.Array): _s0 = list(_s0)[0]
+    _raw0 = _s0.read_bytes().decode('latin-1')
+    _bdc = _raw0.count('BDC')
+    _bmc = _raw0.count('BMC')
+    _verify.close()
+    print(f'[VERIFY] fixed_path page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
     os.replace(fixed_path, output_path)
     print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
