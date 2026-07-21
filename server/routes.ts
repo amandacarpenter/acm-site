@@ -1204,6 +1204,10 @@ def _raw_patch_streams(input_path, output_path):
         _new_streams = []
         for _s in _slist:
             _decoded = _s.read_bytes()
+            if _s.objgen[0] == 14:
+                print(f'[DBG14] len={len(_decoded)} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} first60={repr(_decoded[:60])}', file=sys.stderr)
+                _ttmp = _re.split(rb'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', _decoded)
+                print(f'[DBG14] tokens={len(_ttmp)} tok0={repr(_ttmp[0][:20])} tok1={repr(_ttmp[1][:20]) if len(_ttmp)>1 else ""}', file=sys.stderr)
             if b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded):
                 _modified, _new_mcids = _tag_decoded_stream(_decoded)
                 print(f'[STREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} mcids={len(_new_mcids)}', file=sys.stderr)
