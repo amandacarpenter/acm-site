@@ -1205,12 +1205,17 @@ def _raw_patch_streams(input_path, output_path):
         for _s in _slist:
             _decoded = _s.read_bytes()
             _dbg_first = getattr(_raw_patch_streams, '_dbg_done', False)
-            if not _dbg_first and b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded):
+            if not _dbg_first and b'BT' in _decoded:
                 _raw_patch_streams._dbg_done = True
-                _ttmp = _re.split(rb'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', _decoded)
-                _tj_tok = next((t for t in _ttmp if b'Tj' in t), b'')
-                _mod_test, _mc_test = _tag_decoded_stream(_decoded)
-                print(f'[DBGSTREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} tokens={len(_ttmp)} tj_tok={repr(_tj_tok[:40])} mcids_returned={len(_mc_test)}', file=sys.stderr)
+                _tj_raw = b'Tj'
+                _has_tj = _tj_raw in _decoded
+                _ops_match = _TEXT_OPS_B2.search(_decoded)
+                print(f'[DBGSTREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} has_Tj={_has_tj} ops_match={bool(_ops_match)} len={len(_decoded)}', file=sys.stderr)
+                if _has_tj:
+                    _tj_idx = _decoded.index(_tj_raw)
+                    print(f'[DBGSTREAM] Tj_ctx={repr(_decoded[_tj_idx-5:_tj_idx+5])} ord_before={_decoded[_tj_idx-1]} ord_after={_decoded[_tj_idx+2]}', file=sys.stderr)
+                    _simple_re = _re.compile(b'Tj')
+                    print(f'[DBGSTREAM] simple_Tj_match={bool(_simple_re.search(_decoded))}', file=sys.stderr)
             if b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded):
                 _modified, _new_mcids = _tag_decoded_stream(_decoded)
                 print(f'[STREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} mcids={len(_new_mcids)}', file=sys.stderr)
