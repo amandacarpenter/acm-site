@@ -1175,7 +1175,9 @@ def _patch_streams(pdf):
         sp_counter = _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree)
         if parent_tree is not None: st_root['/ParentTreeNextKey'] = sp_counter
 
-fixed_path = output_path + '.fixed.pdf'
+import tempfile as _tmpmod
+_tmp_dir = os.path.dirname(output_path)
+fixed_path = os.path.join(_tmp_dir, 'fixed_' + os.path.basename(output_path))
 try:
     pp = pikepdf.open(output_path, suppress_warnings=True)
     _patch_streams(pp)
@@ -1187,16 +1189,14 @@ try:
     mi = pikepdf.Dictionary()
     mi['/Marked'] = pikepdf.Boolean(True)
     pp.Root['/MarkInfo'] = mi
-    # Add bookmarks stub if missing (Acrobat requires Outlines for docs > 1 page)
     if '/Outlines' not in pp.Root and len(pp.pages) > 1:
         outlines = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
         pp.Root['/Outlines'] = outlines
         pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
-
-    pp.save(fixed_path, linearize=False, preserve_pdfa=True)
+    pp.save(fixed_path, linearize=False)
     pp.close()
-    shutil.move(fixed_path, output_path)
-    print('[OK] pikepdf done', file=sys.stderr)
+    os.replace(fixed_path, output_path)
+    print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
     import traceback
     print(f'[PIKEPDF-ERROR] {e}', file=sys.stderr)
