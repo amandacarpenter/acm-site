@@ -1125,8 +1125,8 @@ def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
                     else:
                         out.append(tok)
                 i += 1
-            # Use pikepdf.Stream() instead of s.write() — s.write() silently fails on Railway
-            new_streams.append(pikepdf.Stream(pdf, ''.join(out).encode('latin-1')))
+            # Use make_indirect(pikepdf.Stream()) — plain Stream or s.write() silently fails on Railway
+            new_streams.append(pdf.make_indirect(pikepdf.Stream(pdf, ''.join(out).encode('latin-1'))))
         # Replace content streams on page
         if new_streams:
             valid = [ns for ns in new_streams if ns is not None]
