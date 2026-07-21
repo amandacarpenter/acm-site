@@ -1218,7 +1218,6 @@ def _raw_patch_streams(input_path, output_path):
             _obj_pos = _raw_pdf.find(_obj_marker)
             if _obj_pos == -1:
                 continue
-            # Find stream\n within 500 bytes of obj marker
             _stream_pos = _raw_pdf.find(b'stream' + bytes([10]), _obj_pos)
             if _stream_pos == -1 or _stream_pos - _obj_pos > 500:
                 continue
