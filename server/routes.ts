@@ -1069,22 +1069,8 @@ pdf.output(output_path)
 # ── Post-process with pikepdf — fix all Acrobat checker failures ──
 import pikepdf, shutil, re as _re
 
-def _patch_streams(pdf):
-    """Tag ALL untagged content: text gets /P BDC+MCID, graphics get /Artifact BMC."""
-    st_root = pdf.Root.get('/StructTreeRoot')
-    if st_root is None:
-        return
-    k = st_root.get('/K')
-    items = list(k) if isinstance(k, pikepdf.Array) else ([k] if k else [])
-    doc_elem = None
-    for item in items:
-        try:
-            if item.get('/S') == pikepdf.Name('/Document'):
-                doc_elem = item; break
-        except: pass
-    if doc_elem is None and items:
-        doc_elem = items[0]
-
+def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
+    """Tag all untagged content on every page. Returns updated sp_counter."""
     for page in pdf.pages:
         page_obj = page.obj
         contents = page.get('/Contents')
@@ -1117,24 +1103,61 @@ def _patch_streams(pdf):
                 elif tok == 'ET':
                     out.append('ET' + chr(10) + 'EMC') if depth == 0 else out.append('ET')
                 else:
-                    # Non-operator segment outside any tag — wrap graphics as Artifact
-                    if depth == 0 and _re.search(r'(?<![\w/])(?:S|f|F|B\b|b\b|Do|sh)(?!\w)', tok) and tok.strip():
+                    if depth == 0 and _re.search(r'(?<![/\w])(?:S\b|f\b|F\b|B\b|b\b|Do\b|sh\b)', tok) and tok.strip():
                         out.append('/Artifact BMC' + chr(10) + tok + chr(10) + 'EMC')
                     else:
                         out.append(tok)
             s.write(''.join(out).encode('latin-1'))
         if new_text_mcids and doc_elem is not None:
+            page['/StructParents'] = sp_counter
+            page_elems = pikepdf.Array()
             k_val = doc_elem.get('/K')
             k_list = k_val if isinstance(k_val, pikepdf.Array) else (pikepdf.Array([k_val]) if k_val else pikepdf.Array())
             for mcid in new_text_mcids:
-                elem = pikepdf.Dictionary()
-                elem['/Type'] = pikepdf.Name('/StructElem')
-                elem['/S'] = pikepdf.Name('/P')
-                elem['/Pg'] = page_obj
-                elem['/K'] = mcid
-                elem['/P'] = doc_elem
+                elem = pdf.make_indirect(pikepdf.Dictionary(
+                    Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/P'),
+                    Pg=page_obj, K=mcid, P=doc_elem
+                ))
                 k_list.append(elem)
+                page_elems.append(elem)
             doc_elem['/K'] = k_list
+            if parent_tree is not None:
+                parent_tree['/Nums'].append(sp_counter)
+                parent_tree['/Nums'].append(page_elems)
+            sp_counter += 1
+    return sp_counter
+
+def _patch_streams(pdf):
+    """Tag ALL untagged content. Builds a StructTreeRoot if one does not exist."""
+    st_root = pdf.Root.get('/StructTreeRoot')
+    if st_root is None:
+        # Build from scratch (e.g. plain FPDF2 output with no figures)
+        st_root = pdf.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/StructTreeRoot')))
+        doc_elem = pdf.make_indirect(pikepdf.Dictionary(
+            Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/Document'),
+            P=st_root, K=pikepdf.Array()
+        ))
+        st_root['/K'] = pikepdf.Array([doc_elem])
+        parent_tree = pdf.make_indirect(pikepdf.Dictionary(Nums=pikepdf.Array()))
+        st_root['/ParentTree'] = parent_tree
+        pdf.Root['/StructTreeRoot'] = st_root
+        pdf.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
+        sp_counter = _tag_page_streams(pdf, doc_elem, 0, parent_tree)
+        st_root['/ParentTreeNextKey'] = sp_counter
+    else:
+        # Existing tree — find Document element and patch untagged content
+        k = st_root.get('/K')
+        items = list(k) if isinstance(k, pikepdf.Array) else ([k] if k else [])
+        doc_elem = None
+        for item in items:
+            try:
+                if item.get('/S') == pikepdf.Name('/Document'): doc_elem = item; break
+            except: pass
+        if doc_elem is None and items: doc_elem = items[0]
+        parent_tree = st_root.get('/ParentTree')
+        sp_counter = int(st_root.get('/ParentTreeNextKey', 0))
+        sp_counter = _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree)
+        if parent_tree is not None: st_root['/ParentTreeNextKey'] = sp_counter
 
 fixed_path = output_path + '.fixed.pdf'
 try:
