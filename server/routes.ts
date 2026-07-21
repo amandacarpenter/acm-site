@@ -1059,42 +1059,28 @@ for page_info in pages:
 
 pdf.output(output_path)
 
-# ── Post-process with PyMuPDF to fix remaining Acrobat checker failures ──
-import fitz
+# ── Post-process with pikepdf to fix Acrobat checker failures ──
+import pikepdf
 
-doc = fitz.open(output_path)
-catalog_xref = doc.pdf_catalog()
-
-# 1. DisplayDocTitle = true → fixes "Title" failure in Acrobat checker
 try:
-    vp_ref = doc.xref_get_key(catalog_xref, "ViewerPreferences")
-    if vp_ref[0] == "xref":
-        vp_num = int(vp_ref[1].split()[0])
-        existing = doc.xref_object(vp_num, compressed=False)
-        if "DisplayDocTitle" not in existing:
-            doc.update_object(vp_num, existing.rstrip(" >") + " /DisplayDocTitle true >>")
-    else:
-        new_vp = doc.get_new_xref()
-        doc.update_object(new_vp, "<< /DisplayDocTitle true >>")
-        doc.xref_set_key(catalog_xref, "ViewerPreferences", f"{new_vp} 0 R")
-except Exception as e:
-    print(f"[WARN] ViewerPreferences: {e}", file=sys.stderr)
+    pp = pikepdf.open(output_path)
 
-# 2. Tab order = S (Structure) on every page → fixes "Tab order" failure
-try:
-    for page in doc:
-        page.set_tab_order("S")
-except Exception as e:
-    print(f"[WARN] Tab order: {e}", file=sys.stderr)
+    # 1. DisplayDocTitle = true → fixes "Title" failure
+    if "/ViewerPreferences" not in pp.Root:
+        pp.Root["/ViewerPreferences"] = pikepdf.Dictionary()
+    pp.Root["/ViewerPreferences"]["/DisplayDocTitle"] = pikepdf.Boolean(True)
 
-# 3. MarkInfo Marked=true → helps "Tagged content" failure
-try:
-    doc.xref_set_key(catalog_xref, "MarkInfo", "<< /Marked true >>")
-except Exception as e:
-    print(f"[WARN] MarkInfo: {e}", file=sys.stderr)
+    # 2. Tab order = S on every page → fixes "Tab order" failure
+    for page in pp.pages:
+        page["/Tabs"] = pikepdf.Name("/S")
 
-doc.saveIncr()
-doc.close()
+    # 3. MarkInfo Marked=true → fixes "Tagged content" failure
+    pp.Root["/MarkInfo"] = pikepdf.Dictionary(**{"/Marked": pikepdf.Boolean(True)})
+
+    pp.save(output_path)
+    pp.close()
+except Exception as e:
+    print(f"[WARN] pikepdf post-process: {e}", file=sys.stderr)
 
 print("ok")
 `;
