@@ -1214,7 +1214,11 @@ try:
     _bmc = _raw0.count('BMC')
     _verify.close()
     print(f'[VERIFY] fixed_path page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
+    print(f'[PATHS] output={output_path} fixed={fixed_path}', file=sys.stderr)
+    print(f'[PRE-REPLACE] output exists={os.path.exists(output_path)} fixed exists={os.path.exists(fixed_path)}', file=sys.stderr)
+    print(f'[PRE-REPLACE] output size={os.path.getsize(output_path)} fixed size={os.path.getsize(fixed_path)}', file=sys.stderr)
     os.replace(fixed_path, output_path)
+    print(f'[POST-REPLACE] output size={os.path.getsize(output_path)} fixed exists={os.path.exists(fixed_path)}', file=sys.stderr)
     print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
     import traceback
