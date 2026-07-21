@@ -1196,9 +1196,11 @@ try:
     pp.save(fixed_path, linearize=False, preserve_pdfa=True)
     pp.close()
     shutil.move(fixed_path, output_path)
-    print('[OK] pikepdf post-process applied', file=sys.stderr)
+    print('[OK] pikepdf done', file=sys.stderr)
 except Exception as e:
-    print(f'[WARN] pikepdf post-process: {e}', file=sys.stderr)
+    import traceback
+    print(f'[PIKEPDF-ERROR] {e}', file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
     try: os.remove(fixed_path)
     except: pass
 
@@ -1220,6 +1222,8 @@ print('ok')
         proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
         proc.on("close", (code: number) => {
           unlink(tmpPdfInput).catch(() => {});
+          // Always log stderr so pikepdf errors appear in Railway logs
+          if (stderr) console.error("[py-pdf-stderr]", stderr.slice(-1200));
           if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
           else resolve();
         });
