@@ -1221,8 +1221,9 @@ def _raw_patch_streams(input_path, output_path):
                 modified, new_mcids = _tag_decoded_stream(decoded)
                 if new_mcids:
                     patches.append((data_start, actual_end, _zlib.compress(modified, level=6)))
-        except Exception:
-            pass
+        except Exception as _ze:
+            if len(patches) == 0 and i < 5000:
+                print(f'[ZLIB-ERR] offset={data_start} size={len(raw_compressed)} first4={raw_compressed[:4].hex()} err={_ze}', file=sys.stderr)
         i = end + 9
     print(f'[RAW-PATCH] patching {len(patches)} streams', file=sys.stderr)
     for ds, de, nd in sorted(patches, reverse=True):
