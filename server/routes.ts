@@ -1198,8 +1198,8 @@ def _raw_patch_streams(input_path, output_path):
     patches = []
     i = 0
     while True:
-        pos = pdf_bytes.find(b'stream\n', i)
-        pos2 = pdf_bytes.find(b'stream\r\n', i)
+        pos = pdf_bytes.find(b'stream' + bytes([10]), i)
+        pos2 = pdf_bytes.find(b'stream' + bytes([13, 10]), i)
         if pos == -1 and pos2 == -1:
             break
         if pos == -1 or (pos2 != -1 and pos2 < pos):
@@ -1209,7 +1209,7 @@ def _raw_patch_streams(input_path, output_path):
         end = pdf_bytes.find(b'endstream', data_start)
         if end == -1:
             break
-        actual_end = end - 2 if bytes(pdf_bytes[end-2:end]) == b'\r\n' else (end - 1 if bytes(pdf_bytes[end-1:end]) == b'\n' else end)
+        actual_end = end - 2 if bytes(pdf_bytes[end-2:end]) == bytes([13,10]) else (end - 1 if bytes(pdf_bytes[end-1:end]) == bytes([10]) else end)
         raw_compressed = bytes(pdf_bytes[data_start:actual_end])
         try:
             decoded = _zlib.decompress(raw_compressed)
