@@ -1159,16 +1159,17 @@ print('ok')
       const tmpPdfScript = join(tmpdir(), `gen_pdf_${ts}.py`);
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
+      // Write payload to temp file to avoid stdin buffer limits on large documents
+      const tmpPdfInput = join(tmpdir(), `pdf_input_${ts}.json`);
+      await writeFile(tmpPdfInput, pdfInput, "utf8");
+
       await new Promise<void>((resolve, reject) => {
-        // Write payload to temp file to avoid stdin buffer limits on large documents
-        const tmpPdfInput = join(tmpdir(), `pdf_input_${ts}.json`);
-        await writeFile(tmpPdfInput, pdfInput, "utf8");
         const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut, tmpPdfInput], { timeout: 300000 });
         proc.stdin.end();
         let stderr = "";
         proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
-        proc.on("close", async (code: number) => {
-          await unlink(tmpPdfInput).catch(() => {});
+        proc.on("close", (code: number) => {
+          unlink(tmpPdfInput).catch(() => {});
           if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
           else resolve();
         });
