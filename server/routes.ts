@@ -1076,10 +1076,12 @@ def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
             continue
         stream_list = list(contents) if isinstance(contents, pikepdf.Array) else [contents]
         new_text_mcids = []
+        new_streams = []
         for s in stream_list:
             try:
                 raw = s.read_bytes().decode('latin-1')
             except Exception:
+                new_streams.append(None)
                 continue
             existing = [int(m) for m in _re.findall(r'/MCID\s+(\d+)', raw)]
             next_mcid = max(existing) + 1 if existing else 0
@@ -1123,7 +1125,13 @@ def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
                     else:
                         out.append(tok)
                 i += 1
-            s.write(''.join(out).encode('latin-1'))
+            # Use pikepdf.Stream() instead of s.write() — s.write() silently fails on Railway
+            new_streams.append(pikepdf.Stream(pdf, ''.join(out).encode('latin-1')))
+        # Replace content streams on page
+        if new_streams:
+            valid = [ns for ns in new_streams if ns is not None]
+            if valid:
+                page['/Contents'] = pikepdf.Array(valid) if len(valid) > 1 else valid[0]
         if new_text_mcids and doc_elem is not None:
             page['/StructParents'] = sp_counter
             page_elems = pikepdf.Array()
