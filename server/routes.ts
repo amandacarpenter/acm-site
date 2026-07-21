@@ -1212,6 +1212,7 @@ def _raw_patch_streams(input_path, output_path):
                 continue
             _modified, _new_mcids = _tag_decoded_stream(_decoded)
             if not _new_mcids:
+                print(f'[SKIP] obj={_objnum} decoded_len={len(_decoded)} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")}', file=sys.stderr)
                 continue
             # Locate this object in raw bytes by its object number
             _obj_marker = str(_objnum).encode() + b' 0 obj'
