@@ -1151,74 +1151,111 @@ def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
             sp_counter += 1
     return sp_counter
 
-def _patch_streams(pdf):
-    """Tag ALL untagged content. Builds a StructTreeRoot if one does not exist."""
-    st_root = pdf.Root.get('/StructTreeRoot')
-    if st_root is None:
-        # Build from scratch (e.g. plain FPDF2 output with no figures)
-        st_root = pdf.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/StructTreeRoot')))
-        doc_elem = pdf.make_indirect(pikepdf.Dictionary(
-            Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/Document'),
-            P=st_root, K=pikepdf.Array()
-        ))
-        st_root['/K'] = pikepdf.Array([doc_elem])
-        parent_tree = pdf.make_indirect(pikepdf.Dictionary(Nums=pikepdf.Array()))
-        st_root['/ParentTree'] = parent_tree
-        pdf.Root['/StructTreeRoot'] = st_root
-        pdf.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
-        sp_counter = _tag_page_streams(pdf, doc_elem, 0, parent_tree)
-        st_root['/ParentTreeNextKey'] = sp_counter
-    else:
-        # Existing tree — find Document element and patch untagged content
-        k = st_root.get('/K')
-        items = list(k) if isinstance(k, pikepdf.Array) else ([k] if k else [])
-        doc_elem = None
-        for item in items:
-            try:
-                if item.get('/S') == pikepdf.Name('/Document'): doc_elem = item; break
-            except: pass
-        if doc_elem is None and items: doc_elem = items[0]
-        parent_tree = st_root.get('/ParentTree')
-        sp_counter = int(st_root.get('/ParentTreeNextKey', 0))
-        sp_counter = _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree)
-        if parent_tree is not None: st_root['/ParentTreeNextKey'] = sp_counter
+def _tag_decoded_stream(raw_bytes):
+    _TEXT_OPS_B = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
+    tokens = _re.split(rb'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw_bytes)
+    existing = [int(m) for m in _re.findall(rb'/MCID\s+(\d+)', raw_bytes)]
+    next_mcid = max(existing) + 1 if existing else 0
+    new_mcids = []
+    out = []
+    depth = 0
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok in (b'BDC', b'BMC'):
+            depth += 1; out.append(tok)
+        elif tok == b'EMC':
+            depth -= 1; out.append(tok)
+        elif tok == b'BT':
+            if depth == 0:
+                j = i + 1
+                inner_parts = []
+                while j < len(tokens) and tokens[j] != b'ET':
+                    inner_parts.append(tokens[j]); j += 1
+                inner = b''.join(inner_parts)
+                if _TEXT_OPS_B.search(inner):
+                    out.append(b'/P <</MCID ' + str(next_mcid).encode() + b'>> BDC' + chr(10).encode() + b'BT')
+                    new_mcids.append(next_mcid); next_mcid += 1
+                else:
+                    out.append(b'/Artifact BMC' + chr(10).encode() + b'BT')
+                out.append(inner)
+                out.append(b'ET' + chr(10).encode() + b'EMC')
+                i = j
+            else:
+                out.append(b'BT')
+        elif tok == b'ET':
+            out.append(b'ET' + chr(10).encode() + b'EMC') if depth == 0 else out.append(b'ET')
+        else:
+            out.append(tok)
+        i += 1
+    return b''.join(out), new_mcids
 
-import tempfile as _tmpmod
-print(f'[PIKEPDF-VERSION] {pikepdf.__version__}', file=sys.stderr)
-_tmp_dir = os.path.dirname(output_path)
-fixed_path = os.path.join(_tmp_dir, 'fixed_' + os.path.basename(output_path))
-try:
-    pp = pikepdf.open(output_path, suppress_warnings=True)
-    _patch_streams(pp)
+import zlib as _zlib, tempfile as _tmpmod
+
+def _raw_patch_streams(input_path, output_path):
+    _TEXT_OPS_B2 = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
+    pdf_bytes = bytearray(open(input_path, 'rb').read())
+    patches = []
+    i = 0
+    while True:
+        pos = pdf_bytes.find(b'stream\n', i)
+        pos2 = pdf_bytes.find(b'stream\r\n', i)
+        if pos == -1 and pos2 == -1:
+            break
+        if pos == -1 or (pos2 != -1 and pos2 < pos):
+            pos = pos2; data_start = pos + 8
+        else:
+            data_start = pos + 7
+        end = pdf_bytes.find(b'endstream', data_start)
+        if end == -1:
+            break
+        actual_end = end - 2 if bytes(pdf_bytes[end-2:end]) == b'\r\n' else (end - 1 if bytes(pdf_bytes[end-1:end]) == b'\n' else end)
+        raw_compressed = bytes(pdf_bytes[data_start:actual_end])
+        try:
+            decoded = _zlib.decompress(raw_compressed)
+            if b'BT' in decoded and _TEXT_OPS_B2.search(decoded):
+                modified, new_mcids = _tag_decoded_stream(decoded)
+                if new_mcids:
+                    patches.append((data_start, actual_end, _zlib.compress(modified, level=6)))
+        except Exception:
+            pass
+        i = end + 9
+    print(f'[RAW-PATCH] patching {len(patches)} streams', file=sys.stderr)
+    for ds, de, nd in sorted(patches, reverse=True):
+        pdf_bytes[ds:de] = nd
+    tmp = _tmpmod.mktemp(suffix='.pdf', dir=os.path.dirname(output_path))
+    open(tmp, 'wb').write(pdf_bytes)
+    pp = pikepdf.open(tmp, suppress_warnings=True)
+    if '/MarkInfo' not in pp.Root:
+        pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
+    else:
+        pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
     if '/ViewerPreferences' not in pp.Root:
         pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
     pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
     for page in pp.pages:
         page['/Tabs'] = pikepdf.Name('/S')
-    mi = pikepdf.Dictionary()
-    mi['/Marked'] = pikepdf.Boolean(True)
-    pp.Root['/MarkInfo'] = mi
     if '/Outlines' not in pp.Root and len(pp.pages) > 1:
         outlines = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
         pp.Root['/Outlines'] = outlines
         pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
-    pp.save(fixed_path, linearize=False)
+    pp.save(output_path, linearize=False)
     pp.close()
-    # Verify BDC count in saved file before replacing
-    _verify = pikepdf.open(fixed_path, suppress_warnings=True)
-    _pg0 = _verify.pages[0]
-    _s0 = _pg0.get('/Contents')
-    if isinstance(_s0, pikepdf.Array): _s0 = list(_s0)[0]
-    _raw0 = _s0.read_bytes().decode('latin-1')
-    _bdc = _raw0.count('BDC')
-    _bmc = _raw0.count('BMC')
-    _verify.close()
+    os.unlink(tmp)
+
+_tmp_dir = os.path.dirname(output_path)
+fixed_path = os.path.join(_tmp_dir, 'fixed_' + os.path.basename(output_path))
+try:
+    _raw_patch_streams(output_path, fixed_path)
+    _vp = pikepdf.open(fixed_path, suppress_warnings=True)
+    _vs = _vp.pages[0].get('/Contents')
+    if isinstance(_vs, pikepdf.Array): _vs = list(_vs)[0]
+    _vraw = _vs.read_bytes()
+    _bdc = _vraw.count(b'BDC')
+    _bmc = _vraw.count(b'BMC')
+    _vp.close()
     print(f'[VERIFY] fixed_path page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
-    print(f'[PATHS] output={output_path} fixed={fixed_path}', file=sys.stderr)
-    print(f'[PRE-REPLACE] output exists={os.path.exists(output_path)} fixed exists={os.path.exists(fixed_path)}', file=sys.stderr)
-    print(f'[PRE-REPLACE] output size={os.path.getsize(output_path)} fixed size={os.path.getsize(fixed_path)}', file=sys.stderr)
     os.replace(fixed_path, output_path)
-    print(f'[POST-REPLACE] output size={os.path.getsize(output_path)} fixed exists={os.path.exists(fixed_path)}', file=sys.stderr)
     print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
     import traceback
