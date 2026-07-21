@@ -1058,7 +1058,50 @@ for page_info in pages:
     pdf.ln(4)
 
 pdf.output(output_path)
-print('ok')
+
+# ── Post-process with PyMuPDF to fix remaining Acrobat checker failures ──
+import fitz
+
+doc = fitz.open(output_path)
+
+# 1. DisplayDocTitle = true  →  fixes "Title" failure in Acrobat checker
+# Sets ViewerPreferences so the doc title shows in the title bar
+trailer = doc.pdf_trailer()
+catalog_xref = doc.pdf_catalog()
+
+# Set ViewerPreferences/DisplayDocTitle via low-level PDF update
+vp_key = fitz.PDF_NAME("ViewerPreferences")
+catalog = doc.xref_object(catalog_xref, compressed=False)
+
+# Check if ViewerPreferences already exists
+vp_xref = doc.xref_get_key(catalog_xref, "ViewerPreferences")[1]
+if vp_xref == "null" or vp_xref is None:
+    # Create new ViewerPreferences dict
+    new_vp_xref = doc.get_new_xref()
+    doc.update_object(new_vp_xref, "<< /DisplayDocTitle true >>")
+    doc.xref_set_key(catalog_xref, "ViewerPreferences", f"{new_vp_xref} 0 R")
+else:
+    # Update existing — find the xref number
+    try:
+        vp_num = int(str(vp_xref).split()[0])
+        existing = doc.xref_object(vp_num, compressed=False)
+        if "DisplayDocTitle" not in existing:
+            doc.update_object(vp_num, existing.rstrip(" >") + " /DisplayDocTitle true >>")
+    except Exception:
+        pass
+
+# 2. Tab order = S (Structure) on every page  →  fixes "Tab order" failure
+for page in doc:
+    page.set_tab_order("S")
+
+# 3. Mark all artifact content as tagged  →  helps "Tagged content" failure
+# Set MarkInfo to Marked=true (fpdf2 sets this but double-ensure)
+doc.xref_set_key(catalog_xref, "MarkInfo", "<< /Marked true >>")
+
+doc.saveIncr()  # incremental save preserves existing tag structure
+doc.close()
+
+print("ok")
 `;
 
       const tmpPdfOut = join(tmpdir(), `accessible-${ts}.pdf`);
