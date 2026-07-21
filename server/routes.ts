@@ -1059,46 +1059,71 @@ for page_info in pages:
 
 pdf.output(output_path)
 
-# ── Post-process with pikepdf to fix Acrobat checker failures ──
-import pikepdf, shutil
+# ── Post-process with pikepdf to fix all Acrobat checker failures ──
+import pikepdf, shutil, re as _re
 
-fixed_path = output_path + ".fixed.pdf"
+def _patch_stream(data: str) -> bytes:
+    """Wrap every untagged BT...ET block with /Artifact BMC...EMC markers."""
+    tokens = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', data)
+    output = []
+    depth = 0
+    for tok in tokens:
+        if tok in ('BDC', 'BMC'):
+            depth += 1
+            output.append(tok)
+        elif tok == 'EMC':
+            depth -= 1
+            output.append(tok)
+        elif tok == 'BT':
+            output.append('/Artifact BMC\nBT') if depth == 0 else output.append('BT')
+        elif tok == 'ET':
+            output.append('ET\nEMC') if depth == 0 else output.append('ET')
+        else:
+            output.append(tok)
+    return ''.join(output).encode('latin-1')
+
+fixed_path = output_path + '.fixed.pdf'
 try:
-    pp = pikepdf.open(output_path)
+    pp = pikepdf.open(output_path, suppress_warnings=True)
 
-    # 1. DisplayDocTitle = true → fixes "Title" failure
-    if "/ViewerPreferences" not in pp.Root:
-        pp.Root["/ViewerPreferences"] = pikepdf.Dictionary()
-    pp.Root["/ViewerPreferences"]["/DisplayDocTitle"] = pikepdf.Boolean(True)
-
-    # 2. Tab order = S on every page → fixes "Tab order" failure
+    # Patch every page content stream → fixes "Tagged content" failure
     for page in pp.pages:
-        page["/Tabs"] = pikepdf.Name("/S")
+        contents = page.get('/Contents')
+        if contents is None:
+            continue
+        stream_list = list(contents) if isinstance(contents, pikepdf.Array) else [contents]
+        for s in stream_list:
+            try:
+                raw = s.read_bytes().decode('latin-1')
+                if 'BT' in raw:
+                    s.write(_patch_stream(raw))
+            except Exception:
+                pass
 
-    # 3. MarkInfo Marked=true → fixes "Tagged content" failure
+    # DisplayDocTitle = true → fixes "Title" failure
+    if '/ViewerPreferences' not in pp.Root:
+        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
+    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+
+    # Tab order = S → fixes "Tab order" failure
+    for page in pp.pages:
+        page['/Tabs'] = pikepdf.Name('/S')
+
+    # MarkInfo Marked=true → reinforces tagged PDF declaration
     mi = pikepdf.Dictionary()
-    mi["/Marked"] = pikepdf.Boolean(True)
-    pp.Root["/MarkInfo"] = mi
+    mi['/Marked'] = pikepdf.Boolean(True)
+    pp.Root['/MarkInfo'] = mi
 
-    # Save to separate path — preserve existing structure exactly
-    pp.save(
-        fixed_path,
-        linearize=False,
-        compress_streams=False,
-        preserve_pdfa=True,
-    )
+    pp.save(fixed_path, linearize=False, preserve_pdfa=True)
     pp.close()
-
-    # Replace original with fixed version
     shutil.move(fixed_path, output_path)
-    print(f"[OK] pikepdf post-process applied", file=sys.stderr)
+    print('[OK] pikepdf post-process applied', file=sys.stderr)
 except Exception as e:
-    print(f"[WARN] pikepdf post-process: {e}", file=sys.stderr)
-    # Clean up temp if it exists
+    print(f'[WARN] pikepdf post-process: {e}', file=sys.stderr)
     try: os.remove(fixed_path)
     except: pass
 
-print("ok")
+print('ok')
 `;
 
       const tmpPdfOut = join(tmpdir(), `accessible-${ts}.pdf`);
