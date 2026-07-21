@@ -1075,9 +1075,9 @@ def _patch_stream(data: str) -> bytes:
             depth -= 1
             output.append(tok)
         elif tok == 'BT':
-            output.append('/Artifact BMC\nBT') if depth == 0 else output.append('BT')
+            output.append('/Artifact BMC' + chr(10) + 'BT') if depth == 0 else output.append('BT')
         elif tok == 'ET':
-            output.append('ET\nEMC') if depth == 0 else output.append('ET')
+            output.append('ET' + chr(10) + 'EMC') if depth == 0 else output.append('ET')
         else:
             output.append(tok)
     return ''.join(output).encode('latin-1')
