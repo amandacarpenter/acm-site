@@ -1063,7 +1063,7 @@ pdf.output(output_path)
 import pikepdf, shutil, re as _re
 
 def _patch_streams(pdf):
-    """Tag every untagged BT...ET block with /P BDC MCID and add struct elements."""
+    """Tag ALL untagged content: text gets /P BDC+MCID, graphics get /Artifact BMC."""
     st_root = pdf.Root.get('/StructTreeRoot')
     if st_root is None:
         return
@@ -1084,13 +1084,11 @@ def _patch_streams(pdf):
         if contents is None:
             continue
         stream_list = list(contents) if isinstance(contents, pikepdf.Array) else [contents]
-        new_mcids = []
+        new_text_mcids = []
         for s in stream_list:
             try:
                 raw = s.read_bytes().decode('latin-1')
             except Exception:
-                continue
-            if 'BT' not in raw:
                 continue
             existing = [int(m) for m in _re.findall(r'/MCID\s+(\d+)', raw)]
             next_mcid = max(existing) + 1 if existing else 2
@@ -1104,7 +1102,7 @@ def _patch_streams(pdf):
                     depth -= 1; out.append(tok)
                 elif tok == 'BT':
                     if depth == 0:
-                        new_mcids.append(next_mcid)
+                        new_text_mcids.append(next_mcid)
                         out.append('/P <</MCID ' + str(next_mcid) + '>> BDC' + chr(10) + 'BT')
                         next_mcid += 1
                     else:
@@ -1112,12 +1110,16 @@ def _patch_streams(pdf):
                 elif tok == 'ET':
                     out.append('ET' + chr(10) + 'EMC') if depth == 0 else out.append('ET')
                 else:
-                    out.append(tok)
+                    # Non-operator segment outside any tag — wrap graphics as Artifact
+                    if depth == 0 and _re.search(r'(?<![\w/])(?:S|f|F|B\b|b\b|Do|sh)(?!\w)', tok) and tok.strip():
+                        out.append('/Artifact BMC' + chr(10) + tok + chr(10) + 'EMC')
+                    else:
+                        out.append(tok)
             s.write(''.join(out).encode('latin-1'))
-        if new_mcids and doc_elem is not None:
+        if new_text_mcids and doc_elem is not None:
             k_val = doc_elem.get('/K')
             k_list = k_val if isinstance(k_val, pikepdf.Array) else (pikepdf.Array([k_val]) if k_val else pikepdf.Array())
-            for mcid in new_mcids:
+            for mcid in new_text_mcids:
                 elem = pikepdf.Dictionary()
                 elem['/Type'] = pikepdf.Name('/StructElem')
                 elem['/S'] = pikepdf.Name('/P')
