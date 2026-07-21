@@ -1206,6 +1206,7 @@ def _raw_patch_streams(input_path, output_path):
             _decoded = _s.read_bytes()
             if b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded):
                 _modified, _new_mcids = _tag_decoded_stream(_decoded)
+                print(f'[STREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} mcids={len(_new_mcids)}', file=sys.stderr)
                 if _new_mcids:
                     _patched += 1
                     _ns = pikepdf.Stream(_pp, _modified)
