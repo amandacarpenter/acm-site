@@ -1184,6 +1184,7 @@ def _patch_streams(pdf):
         if parent_tree is not None: st_root['/ParentTreeNextKey'] = sp_counter
 
 import tempfile as _tmpmod
+print(f'[PIKEPDF-VERSION] {pikepdf.__version__}', file=sys.stderr)
 _tmp_dir = os.path.dirname(output_path)
 fixed_path = os.path.join(_tmp_dir, 'fixed_' + os.path.basename(output_path))
 try:
