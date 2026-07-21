@@ -1069,7 +1069,7 @@ pdf.output(output_path)
 # ── Post-process with pikepdf — fix all Acrobat checker failures ──
 import pikepdf, shutil, re as _re
 
-_TEXT_OPS = _re.compile(r'\b(Tj|TJ|\'|")\b')
+_TEXT_OPS = _re.compile(r'\b(Tj|TJ|' + chr(39) + '|")\b')
 _GRAPHIC_MARK = _re.compile(r'(?<![/\w])(?:S\b|f\b|F\b|B\b|b\b|Do\b|sh\b)')
 
 def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
