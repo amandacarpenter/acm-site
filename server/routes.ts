@@ -762,36 +762,41 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      const pageResults: Array<{ html: string; images: string[] }> = [];
+      // Run Claude Vision in parallel (batches of 5) to stay under Cloudflare's 100s timeout
+      const BATCH_SIZE = 5;
+      const orderedResults: Array<{ html: string; images: string[] }> = new Array(pageData.length);
 
-      for (let i = 0; i < pageData.length; i++) {
-        const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
-        const imgBuffer = require("fs").readFileSync(screenshot);
-        const imgBase64 = imgBuffer.toString("base64");
+      for (let batchStart = 0; batchStart < pageData.length; batchStart += BATCH_SIZE) {
+        const batch = pageData.slice(batchStart, batchStart + BATCH_SIZE);
+        await Promise.all(batch.map(async ({ page: pageNum, screenshot, images: extractedImages }, batchIdx) => {
+          const globalIdx = batchStart + batchIdx;
+          const imgBuffer = require("fs").readFileSync(screenshot);
+          const imgBase64 = imgBuffer.toString("base64");
 
-        const visionResp = await anthropic.messages.create({
-          model: "claude-sonnet-4-6",
-          max_tokens: 8192,
-          system: visionSystemPrompt,
-          messages: [{
-            role: "user",
-            content: [
-              { type: "image", source: { type: "base64", media_type: "image/png", data: imgBase64 } },
-              { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extract all content as accessible semantic HTML.` },
-            ],
-          }],
-        });
+          const visionResp = await anthropic.messages.create({
+            model: "claude-sonnet-4-6",
+            max_tokens: 8192,
+            system: visionSystemPrompt,
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image", source: { type: "base64", media_type: "image/png", data: imgBase64 } },
+                { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extract all content as accessible semantic HTML.` },
+              ],
+            }],
+          });
 
-        let pageHtml = (visionResp.content[0] as any).text.trim();
-        if (pageHtml.startsWith("```")) {
-          pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
-        }
+          let pageHtml = (visionResp.content[0] as any).text.trim();
+          if (pageHtml.startsWith("```")) {
+            pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+          }
 
-        pageResults.push({ html: pageHtml, images: extractedImages });
-
-        // Clean up screenshot (keep extracted images for PDF build)
-        await unlink(screenshot).catch(() => {});
+          orderedResults[globalIdx] = { html: pageHtml, images: extractedImages };
+          await unlink(screenshot).catch(() => {});
+        }));
       }
+
+      const pageResults = orderedResults;
 
       // ── Step 3: Build accessible PDF with images embedded + alt text ──
       // Pass HTML + image manifest as JSON via stdin
