@@ -1060,8 +1060,9 @@ for page_info in pages:
 pdf.output(output_path)
 
 # ── Post-process with pikepdf to fix Acrobat checker failures ──
-import pikepdf
+import pikepdf, shutil
 
+fixed_path = output_path + ".fixed.pdf"
 try:
     pp = pikepdf.open(output_path)
 
@@ -1077,10 +1078,18 @@ try:
     # 3. MarkInfo Marked=true → fixes "Tagged content" failure
     pp.Root["/MarkInfo"] = pikepdf.Dictionary(**{"/Marked": pikepdf.Boolean(True)})
 
-    pp.save(output_path)
+    # Save to separate path first (avoid in-place overwrite issues)
+    pp.save(fixed_path)
     pp.close()
+
+    # Replace original with fixed version
+    shutil.move(fixed_path, output_path)
+    print(f"[OK] pikepdf post-process applied", file=sys.stderr)
 except Exception as e:
     print(f"[WARN] pikepdf post-process: {e}", file=sys.stderr)
+    # Clean up temp if it exists
+    try: os.remove(fixed_path)
+    except: pass
 
 print("ok")
 `;
