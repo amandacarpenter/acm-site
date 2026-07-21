@@ -1193,60 +1193,62 @@ def _tag_decoded_stream(raw_bytes):
 import zlib as _zlib, tempfile as _tmpmod
 
 def _raw_patch_streams(input_path, output_path):
-    _TEXT_OPS_B2 = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
     import zlib as _zl
-    pdf_bytes = bytearray(open(input_path, 'rb').read())
-    _lf_count = pdf_bytes.count(b'stream' + bytes([10]))
-    _crlf_count = pdf_bytes.count(b'stream' + bytes([13, 10]))
-    print(f'[RAW-DIAG] pdf_size={len(pdf_bytes)} stream_LF={_lf_count} stream_CRLF={_crlf_count}', file=sys.stderr)
-    patches = []
-    i = 0
-    while True:
-        pos = pdf_bytes.find(b'stream' + bytes([10]), i)
-        pos2 = pdf_bytes.find(b'stream' + bytes([13, 10]), i)
-        if pos == -1 and pos2 == -1:
-            break
-        if pos == -1 or (pos2 != -1 and pos2 < pos):
-            pos = pos2; data_start = pos + 8
-        else:
-            data_start = pos + 7
-        end = pdf_bytes.find(b'endstream', data_start)
-        if end == -1:
-            break
-        actual_end = end - 2 if bytes(pdf_bytes[end-2:end]) == bytes([13,10]) else (end - 1 if bytes(pdf_bytes[end-1:end]) == bytes([10]) else end)
-        raw_compressed = bytes(pdf_bytes[data_start:actual_end])
-        try:
-            decoded = _zl.decompress(raw_compressed)
-            if b'BT' in decoded and _TEXT_OPS_B2.search(decoded):
-                modified, new_mcids = _tag_decoded_stream(decoded)
-                if new_mcids:
-                    patches.append((data_start, actual_end, _zl.compress(modified, level=6)))
-        except Exception as _ze:
-            if len(patches) == 0:
-                print(f'[ZLIB-ERR] offset={data_start} size={len(raw_compressed)} first4={raw_compressed[:4].hex()} err={_ze}', file=sys.stderr)
-        i = end + 9
-    print(f'[RAW-PATCH] patching {len(patches)} streams', file=sys.stderr)
-    for ds, de, nd in sorted(patches, reverse=True):
-        pdf_bytes[ds:de] = nd
-    # Write patched bytes directly to output_path
-    open(output_path, 'wb').write(pdf_bytes)
-    # Open with allow_overwriting_input=True so pikepdf adds metadata WITHOUT re-encoding streams
-    pp = pikepdf.open(output_path, allow_overwriting_input=True, suppress_warnings=True)
-    if '/MarkInfo' not in pp.Root:
-        pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
+    _TEXT_OPS_B2 = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
+    # Use pikepdf to enumerate page content stream objects (guaranteed correct boundaries)
+    _pdf = pikepdf.open(input_path, suppress_warnings=True)
+    _raw_pdf = bytearray(open(input_path, 'rb').read())
+    print(f'[RAW-DIAG] pdf_size={len(_raw_pdf)} pages={len(_pdf.pages)}', file=sys.stderr)
+    _patches = 0
+    for _page in _pdf.pages:
+        _contents = _page.get('/Contents')
+        if _contents is None:
+            continue
+        _slist = list(_contents) if isinstance(_contents, pikepdf.Array) else [_contents]
+        for _s in _slist:
+            _objnum = _s.objgen[0]
+            _decoded = _s.read_bytes()
+            if not (b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded)):
+                continue
+            _modified, _new_mcids = _tag_decoded_stream(_decoded)
+            if not _new_mcids:
+                continue
+            # Locate this object in raw bytes by its object number
+            _obj_marker = str(_objnum).encode() + b' 0 obj'
+            _obj_pos = _raw_pdf.find(_obj_marker)
+            if _obj_pos == -1:
+                continue
+            # Find stream\n within 500 bytes of obj marker
+            _stream_pos = _raw_pdf.find(b'stream' + bytes([10]), _obj_pos)
+            if _stream_pos == -1 or _stream_pos - _obj_pos > 500:
+                continue
+            _ds = _stream_pos + 7
+            _en = _raw_pdf.find(b'endstream', _ds)
+            if _en == -1:
+                continue
+            _ae = _en - 1 if _raw_pdf[_en-1:_en] == bytes([10]) else _en
+            _raw_pdf[_ds:_ae] = _zl.compress(_modified, 6)
+            _patches += 1
+    _pdf.close()
+    print(f'[RAW-PATCH] patching {_patches} streams', file=sys.stderr)
+    # Write patched bytes, then use pikepdf only for metadata
+    open(output_path, 'wb').write(_raw_pdf)
+    _pp = pikepdf.open(output_path, allow_overwriting_input=True, suppress_warnings=True)
+    if '/MarkInfo' not in _pp.Root:
+        _pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     else:
-        pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
-    if '/ViewerPreferences' not in pp.Root:
-        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
-    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-    for page in pp.pages:
-        page['/Tabs'] = pikepdf.Name('/S')
-    if '/Outlines' not in pp.Root and len(pp.pages) > 1:
-        outlines = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
-        pp.Root['/Outlines'] = outlines
-        pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
-    pp.save(output_path, linearize=False)
-    pp.close()
+        _pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
+    if '/ViewerPreferences' not in _pp.Root:
+        _pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
+    _pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+    for _pg in _pp.pages:
+        _pg['/Tabs'] = pikepdf.Name('/S')
+    if '/Outlines' not in _pp.Root and len(_pp.pages) > 1:
+        _outlines = _pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
+        _pp.Root['/Outlines'] = _outlines
+        _pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
+    _pp.save(output_path, linearize=False)
+    _pp.close()
 
 _tmp_dir = os.path.dirname(output_path)
 try:
