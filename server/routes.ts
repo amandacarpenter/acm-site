@@ -1069,6 +1069,9 @@ pdf.output(output_path)
 # ── Post-process with pikepdf — fix all Acrobat checker failures ──
 import pikepdf, shutil, re as _re
 
+_TEXT_OPS = _re.compile(r'\b(Tj|TJ|\'|")\b')
+_GRAPHIC_MARK = _re.compile(r'(?<![/\w])(?:S\b|f\b|F\b|B\b|b\b|Do\b|sh\b)')
+
 def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
     """Tag all untagged content on every page. Returns updated sp_counter."""
     for page in pdf.pages:
@@ -1084,29 +1087,47 @@ def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
             except Exception:
                 continue
             existing = [int(m) for m in _re.findall(r'/MCID\s+(\d+)', raw)]
-            next_mcid = max(existing) + 1 if existing else 2
+            next_mcid = max(existing) + 1 if existing else 0
             tokens = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw)
             out = []
             depth = 0
-            for tok in tokens:
+            i = 0
+            while i < len(tokens):
+                tok = tokens[i]
                 if tok in ('BDC', 'BMC'):
                     depth += 1; out.append(tok)
                 elif tok == 'EMC':
                     depth -= 1; out.append(tok)
                 elif tok == 'BT':
                     if depth == 0:
-                        new_text_mcids.append(next_mcid)
-                        out.append('/P <</MCID ' + str(next_mcid) + '>> BDC' + chr(10) + 'BT')
-                        next_mcid += 1
+                        # Peek ahead to collect BT...ET inner content
+                        j = i + 1
+                        inner_parts = []
+                        while j < len(tokens) and tokens[j] != 'ET':
+                            inner_parts.append(tokens[j])
+                            j += 1
+                        inner = ''.join(inner_parts)
+                        if _TEXT_OPS.search(inner):
+                            # Real visible text — tag with /P MCID
+                            new_text_mcids.append(next_mcid)
+                            out.append('/P <</MCID ' + str(next_mcid) + '>> BDC' + chr(10) + 'BT')
+                            next_mcid += 1
+                        else:
+                            # Font-setting-only BT/ET — treat as artifact
+                            out.append('/Artifact BMC' + chr(10) + 'BT')
+                        out.append(inner)
+                        out.append('ET' + chr(10) + 'EMC')
+                        i = j  # skip ahead to ET position
                     else:
                         out.append('BT')
                 elif tok == 'ET':
                     out.append('ET' + chr(10) + 'EMC') if depth == 0 else out.append('ET')
                 else:
-                    if depth == 0 and _re.search(r'(?<![/\w])(?:S\b|f\b|F\b|B\b|b\b|Do\b|sh\b)', tok) and tok.strip():
+                    if depth == 0 and _GRAPHIC_MARK.search(tok) and tok.strip():
                         out.append('/Artifact BMC' + chr(10) + tok + chr(10) + 'EMC')
                     else:
                         out.append(tok)
+                i += 1
             s.write(''.join(out).encode('latin-1'))
         if new_text_mcids and doc_elem is not None:
             page['/StructParents'] = sp_counter
@@ -1171,6 +1192,12 @@ try:
     mi = pikepdf.Dictionary()
     mi['/Marked'] = pikepdf.Boolean(True)
     pp.Root['/MarkInfo'] = mi
+    # Add bookmarks stub if missing (Acrobat requires Outlines for docs > 1 page)
+    if '/Outlines' not in pp.Root and len(pp.pages) > 1:
+        outlines = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
+        pp.Root['/Outlines'] = outlines
+        pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
+
     pp.save(fixed_path, linearize=False, preserve_pdfa=True)
     pp.close()
     shutil.move(fixed_path, output_path)
