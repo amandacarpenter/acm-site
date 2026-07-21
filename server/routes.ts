@@ -1195,6 +1195,10 @@ import zlib as _zlib, tempfile as _tmpmod
 def _raw_patch_streams(input_path, output_path):
     _TEXT_OPS_B2 = _re.compile(b'(?<![A-Za-z0-9_])(Tj|TJ|' + chr(39).encode() + b'|")(?![A-Za-z0-9_])')
     pdf_bytes = bytearray(open(input_path, 'rb').read())
+    # Diagnostic: check what stream markers exist
+    _lf_count = pdf_bytes.count(b'stream' + bytes([10]))
+    _crlf_count = pdf_bytes.count(b'stream' + bytes([13, 10]))
+    print(f'[RAW-DIAG] pdf_size={len(pdf_bytes)} stream_LF={_lf_count} stream_CRLF={_crlf_count}', file=sys.stderr)
     patches = []
     i = 0
     while True:
