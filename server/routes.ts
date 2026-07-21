@@ -1063,42 +1063,37 @@ pdf.output(output_path)
 import fitz
 
 doc = fitz.open(output_path)
-
-# 1. DisplayDocTitle = true  →  fixes "Title" failure in Acrobat checker
-# Sets ViewerPreferences so the doc title shows in the title bar
-trailer = doc.pdf_trailer()
 catalog_xref = doc.pdf_catalog()
 
-# Set ViewerPreferences/DisplayDocTitle via low-level PDF update
-vp_key = fitz.PDF_NAME("ViewerPreferences")
-catalog = doc.xref_object(catalog_xref, compressed=False)
-
-# Check if ViewerPreferences already exists
-vp_xref = doc.xref_get_key(catalog_xref, "ViewerPreferences")[1]
-if vp_xref == "null" or vp_xref is None:
-    # Create new ViewerPreferences dict
-    new_vp_xref = doc.get_new_xref()
-    doc.update_object(new_vp_xref, "<< /DisplayDocTitle true >>")
-    doc.xref_set_key(catalog_xref, "ViewerPreferences", f"{new_vp_xref} 0 R")
-else:
-    # Update existing — find the xref number
-    try:
-        vp_num = int(str(vp_xref).split()[0])
+# 1. DisplayDocTitle = true → fixes "Title" failure in Acrobat checker
+try:
+    vp_ref = doc.xref_get_key(catalog_xref, "ViewerPreferences")
+    if vp_ref[0] == "xref":
+        vp_num = int(vp_ref[1].split()[0])
         existing = doc.xref_object(vp_num, compressed=False)
         if "DisplayDocTitle" not in existing:
             doc.update_object(vp_num, existing.rstrip(" >") + " /DisplayDocTitle true >>")
-    except Exception:
-        pass
+    else:
+        new_vp = doc.get_new_xref()
+        doc.update_object(new_vp, "<< /DisplayDocTitle true >>")
+        doc.xref_set_key(catalog_xref, "ViewerPreferences", f"{new_vp} 0 R")
+except Exception as e:
+    print(f"[WARN] ViewerPreferences: {e}", file=sys.stderr)
 
-# 2. Tab order = S (Structure) on every page  →  fixes "Tab order" failure
-for page in doc:
-    page.set_tab_order("S")
+# 2. Tab order = S (Structure) on every page → fixes "Tab order" failure
+try:
+    for page in doc:
+        page.set_tab_order("S")
+except Exception as e:
+    print(f"[WARN] Tab order: {e}", file=sys.stderr)
 
-# 3. Mark all artifact content as tagged  →  helps "Tagged content" failure
-# Set MarkInfo to Marked=true (fpdf2 sets this but double-ensure)
-doc.xref_set_key(catalog_xref, "MarkInfo", "<< /Marked true >>")
+# 3. MarkInfo Marked=true → helps "Tagged content" failure
+try:
+    doc.xref_set_key(catalog_xref, "MarkInfo", "<< /Marked true >>")
+except Exception as e:
+    print(f"[WARN] MarkInfo: {e}", file=sys.stderr)
 
-doc.saveIncr()  # incremental save preserves existing tag structure
+doc.saveIncr()
 doc.close()
 
 print("ok")
