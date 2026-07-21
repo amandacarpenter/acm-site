@@ -1059,61 +1059,86 @@ for page_info in pages:
 
 pdf.output(output_path)
 
-# ── Post-process with pikepdf to fix all Acrobat checker failures ──
+# ── Post-process with pikepdf — fix all Acrobat checker failures ──
 import pikepdf, shutil, re as _re
 
-def _patch_stream(data: str) -> bytes:
-    """Wrap every untagged BT...ET block with /Artifact BMC...EMC markers."""
-    tokens = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', data)
-    output = []
-    depth = 0
-    for tok in tokens:
-        if tok in ('BDC', 'BMC'):
-            depth += 1
-            output.append(tok)
-        elif tok == 'EMC':
-            depth -= 1
-            output.append(tok)
-        elif tok == 'BT':
-            output.append('/Artifact BMC' + chr(10) + 'BT') if depth == 0 else output.append('BT')
-        elif tok == 'ET':
-            output.append('ET' + chr(10) + 'EMC') if depth == 0 else output.append('ET')
-        else:
-            output.append(tok)
-    return ''.join(output).encode('latin-1')
+def _patch_streams(pdf):
+    """Tag every untagged BT...ET block with /P BDC MCID and add struct elements."""
+    st_root = pdf.Root.get('/StructTreeRoot')
+    if st_root is None:
+        return
+    k = st_root.get('/K')
+    items = list(k) if isinstance(k, pikepdf.Array) else ([k] if k else [])
+    doc_elem = None
+    for item in items:
+        try:
+            if item.get('/S') == pikepdf.Name('/Document'):
+                doc_elem = item; break
+        except: pass
+    if doc_elem is None and items:
+        doc_elem = items[0]
 
-fixed_path = output_path + '.fixed.pdf'
-try:
-    pp = pikepdf.open(output_path, suppress_warnings=True)
-
-    # Patch every page content stream → fixes "Tagged content" failure
-    for page in pp.pages:
+    for page in pdf.pages:
+        page_obj = page.obj
         contents = page.get('/Contents')
         if contents is None:
             continue
         stream_list = list(contents) if isinstance(contents, pikepdf.Array) else [contents]
+        new_mcids = []
         for s in stream_list:
             try:
                 raw = s.read_bytes().decode('latin-1')
-                if 'BT' in raw:
-                    s.write(_patch_stream(raw))
             except Exception:
-                pass
+                continue
+            if 'BT' not in raw:
+                continue
+            existing = [int(m) for m in _re.findall(r'/MCID\s+(\d+)', raw)]
+            next_mcid = max(existing) + 1 if existing else 2
+            tokens = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw)
+            out = []
+            depth = 0
+            for tok in tokens:
+                if tok in ('BDC', 'BMC'):
+                    depth += 1; out.append(tok)
+                elif tok == 'EMC':
+                    depth -= 1; out.append(tok)
+                elif tok == 'BT':
+                    if depth == 0:
+                        new_mcids.append(next_mcid)
+                        out.append('/P <</MCID ' + str(next_mcid) + '>> BDC' + chr(10) + 'BT')
+                        next_mcid += 1
+                    else:
+                        out.append('BT')
+                elif tok == 'ET':
+                    out.append('ET' + chr(10) + 'EMC') if depth == 0 else out.append('ET')
+                else:
+                    out.append(tok)
+            s.write(''.join(out).encode('latin-1'))
+        if new_mcids and doc_elem is not None:
+            k_val = doc_elem.get('/K')
+            k_list = k_val if isinstance(k_val, pikepdf.Array) else (pikepdf.Array([k_val]) if k_val else pikepdf.Array())
+            for mcid in new_mcids:
+                elem = pikepdf.Dictionary()
+                elem['/Type'] = pikepdf.Name('/StructElem')
+                elem['/S'] = pikepdf.Name('/P')
+                elem['/Pg'] = page_obj
+                elem['/K'] = mcid
+                elem['/P'] = doc_elem
+                k_list.append(elem)
+            doc_elem['/K'] = k_list
 
-    # DisplayDocTitle = true → fixes "Title" failure
+fixed_path = output_path + '.fixed.pdf'
+try:
+    pp = pikepdf.open(output_path, suppress_warnings=True)
+    _patch_streams(pp)
     if '/ViewerPreferences' not in pp.Root:
         pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
     pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-
-    # Tab order = S → fixes "Tab order" failure
     for page in pp.pages:
         page['/Tabs'] = pikepdf.Name('/S')
-
-    # MarkInfo Marked=true → reinforces tagged PDF declaration
     mi = pikepdf.Dictionary()
     mi['/Marked'] = pikepdf.Boolean(True)
     pp.Root['/MarkInfo'] = mi
-
     pp.save(fixed_path, linearize=False, preserve_pdfa=True)
     pp.close()
     shutil.move(fixed_path, output_path)
