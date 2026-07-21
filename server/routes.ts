@@ -594,7 +594,7 @@ Canvas-specific rules:
   });
 
   // ── COMPLEX PDF (VISION-BASED) ────────────────────────────────────────────────
-  app.post("/api/complexpdf/fix", upload.single("file"), async (req, res) => {
+  app.post("/api/complexpdf/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
@@ -827,7 +827,9 @@ for _fd in _font_dirs:
         if os.path.exists(_o): _italic = _o
         break
 
-data = json.loads(sys.stdin.read())
+# Read payload from file arg (avoids stdin buffer limits for large docs)
+with open(sys.argv[2]) as _f:
+    data = json.loads(_f.read())
 output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
@@ -1158,12 +1160,15 @@ print('ok')
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
       await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut], { timeout: 180000 });
-        proc.stdin.write(pdfInput);
+        // Write payload to temp file to avoid stdin buffer limits on large documents
+        const tmpPdfInput = join(tmpdir(), `pdf_input_${ts}.json`);
+        await writeFile(tmpPdfInput, pdfInput, "utf8");
+        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut, tmpPdfInput], { timeout: 300000 });
         proc.stdin.end();
         let stderr = "";
         proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
-        proc.on("close", (code: number) => {
+        proc.on("close", async (code: number) => {
+          await unlink(tmpPdfInput).catch(() => {});
           if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
           else resolve();
         });
