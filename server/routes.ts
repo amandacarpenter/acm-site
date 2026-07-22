@@ -611,33 +611,30 @@ Canvas-specific rules:
     await writeFile(tmpIn, req.file.buffer);
 
     const pyPatch = `
-import pikepdf, re, zlib, sys
+import pikepdf, re, zlib, sys, json
 
 def count_bookmarks(node):
-    count = 0
-    cur = node.get('/First')
-    while cur is not None:
-        count += 1
-        cur = cur.get('/Next')
-    return count
+    c = 0; cur = node.get('/First')
+    while cur: c += 1; cur = cur.get('/Next')
+    return c
 
 def tag_untagged(raw):
-    markers = list(re.finditer(r'(?:(?:/[\w]+(?:\s*<<[^>]*>>)?)\s*)?(?:BDC|BMC).*?EMC', raw, re.DOTALL))
+    markers = list(re.finditer(r'(?:(?:/[\\w]+(?:\\s*<<[^>]*>>)?)\\s*)?(?:BDC|BMC).*?EMC', raw, re.DOTALL))
     if not markers:
-        if re.search(r'\b(Tj|TJ|m|l|S|f|re|B)\b', raw.strip()):
+        if re.search(r'\\b(Tj|TJ|m|l|S|f|re|B|Do|BI)\\b', raw.strip()):
             return '/Artifact BMC' + chr(10) + raw + chr(10) + 'EMC' + chr(10)
         return raw
     out = []; pos = 0
     for m in markers:
         before = raw[pos:m.start()]
-        if before.strip() and re.search(r'\b(re|m|l|S|f|B|W)\b', before):
+        if before.strip() and re.search(r'\\b(re|m|l|S|f|B|W|Do|BI)\\b', before):
             out.append('/Artifact BMC' + chr(10) + before + chr(10) + 'EMC' + chr(10))
         else:
             out.append(before)
         out.append(m.group(0))
         pos = m.end()
     after = raw[pos:]
-    if after.strip() and re.search(r'\b(re|m|l|S|f|B|W|Tj|TJ)\b', after):
+    if after.strip() and re.search(r'\\b(re|m|l|S|f|B|W|Tj|TJ|Do|BI)\\b', after):
         out.append('/Artifact BMC' + chr(10) + after + chr(10) + 'EMC' + chr(10))
     else:
         out.append(after)
@@ -648,8 +645,7 @@ def find_tables(obj, depth=0, results=None):
     if depth > 15: return results
     if isinstance(obj, pikepdf.Dictionary):
         s = obj.get('/S')
-        if s and str(s) == '/Table':
-            results.append(obj)
+        if s and str(s) == '/Table': results.append(obj)
         else:
             k = obj.get('/K')
             if k: find_tables(k, depth+1, results)
@@ -658,91 +654,132 @@ def find_tables(obj, depth=0, results=None):
     return results
 
 def fix_table_headers(st):
-    tables = find_tables(st)
-    th_count = 0
-    for tbl in tables:
+    th_fixed = 0
+    for tbl in find_tables(st):
         k = tbl.get('/K')
-        if k is None: continue
+        if not k: continue
         children = list(k) if isinstance(k, pikepdf.Array) else [k]
         first_row = None
         for child in children:
             if not isinstance(child, pikepdf.Dictionary): continue
             s = str(child.get('/S', ''))
-            if s == '/TR':
-                first_row = child; break
+            if s == '/TR': first_row = child; break
             elif s in ('/THead', '/TBody', '/TFoot'):
                 rowk = child.get('/K')
                 if rowk:
-                    rowlist = list(rowk) if isinstance(rowk, pikepdf.Array) else [rowk]
-                    for r in rowlist:
+                    for r in (list(rowk) if isinstance(rowk, pikepdf.Array) else [rowk]):
                         if isinstance(r, pikepdf.Dictionary) and str(r.get('/S','')) == '/TR':
                             first_row = r; break
                 if first_row: break
-        if first_row is None: continue
+        if not first_row: continue
         cells = first_row.get('/K')
-        if cells is None: continue
-        cell_list = list(cells) if isinstance(cells, pikepdf.Array) else [cells]
-        for cell in cell_list:
-            if not isinstance(cell, pikepdf.Dictionary): continue
-            if str(cell.get('/S', '')) == '/TD':
+        if not cells: continue
+        for cell in (list(cells) if isinstance(cells, pikepdf.Array) else [cells]):
+            if isinstance(cell, pikepdf.Dictionary) and str(cell.get('/S','')) == '/TD':
                 cell['/S'] = pikepdf.Name('/TH')
                 cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
-                th_count += 1
-    return th_count
+                th_fixed += 1
+    return th_fixed
+
+def fix_figures(obj, depth=0, count=None):
+    if count is None: count = [0]
+    if depth > 20: return count[0]
+    if isinstance(obj, pikepdf.Dictionary):
+        s = str(obj.get('/S', ''))
+        if s in ('/Figure', '/Formula'):
+            if '/Alt' not in obj:
+                obj['/Alt'] = pikepdf.String('Figure')
+                count[0] += 1
+        k = obj.get('/K')
+        if k: fix_figures(k, depth+1, count)
+    elif isinstance(obj, pikepdf.Array):
+        for item in list(obj): fix_figures(item, depth, count)
+    return count[0]
+
+def fix_headings(st):
+    nodes = []
+    def collect(obj, depth=0):
+        if depth > 20: return
+        if isinstance(obj, pikepdf.Dictionary):
+            s = str(obj.get('/S', ''))
+            if re.match(r'/H\\d+$', s): nodes.append(obj)
+            k = obj.get('/K')
+            if k: collect(k, depth+1)
+        elif isinstance(obj, pikepdf.Array):
+            for item in list(obj): collect(item, depth)
+    collect(st)
+    if not nodes: return 0
+    levels = sorted(set(int(re.match(r'/H(\\d+)', str(n['/S'])).group(1)) for n in nodes))
+    level_map = {old: new+1 for new, old in enumerate(levels)}
+    fixed = 0
+    for node in nodes:
+        old = int(re.match(r'/H(\\d+)', str(node['/S'])).group(1))
+        new = level_map[old]
+        if old != new:
+            node['/S'] = pikepdf.Name(f'/H{new}')
+            fixed += 1
+    return fixed
 
 try:
     pp = pikepdf.open(sys.argv[1], suppress_warnings=True)
+    stats = {}
 
-    # Fix Outlines /Count
-    if '/Outlines' in pp.Root:
-        outlines = pp.Root['/Outlines']
-        top_count = count_bookmarks(outlines)
-        if top_count > 0:
-            outlines['/Count'] = pikepdf.Integer(top_count)
-
-    # Fix /Lang to en-US
+    # Metadata fixes
     pp.Root['/Lang'] = pikepdf.String('en-US')
-
-    # Ensure /MarkInfo
     pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
-
-    # Ensure /ViewerPreferences with DisplayDocTitle
     pp.Root['/ViewerPreferences'] = pikepdf.Dictionary(DisplayDocTitle=pikepdf.Boolean(True))
 
-    # Fix /Info — add Title, Author, Subject
     info = pp.trailer.get('/Info')
     if info:
-        fname = sys.argv[1].split('/')[-1].replace('-in-','').rsplit('.',1)[0]
-        title = sys.argv[3] if len(sys.argv) > 3 else fname
+        title = sys.argv[3] if len(sys.argv) > 3 else str(info.get('/Title', sys.argv[1].split('/')[-1]))
         info['/Title'] = pikepdf.String(title)
-        info['/Author'] = pikepdf.String('Remedy508')
         info['/Subject'] = pikepdf.String('WCAG 2.1 AA Accessible Document')
 
-    # Fix table headers: promote first-row TDs to TH with Scope=Column
-    if '/StructTreeRoot' in pp.Root:
-        th_count = fix_table_headers(pp.Root['/StructTreeRoot'])
-        print(f'th_fixed={th_count}')
+    # Bookmarks
+    if '/Outlines' in pp.Root:
+        top = count_bookmarks(pp.Root['/Outlines'])
+        if top > 0: pp.Root['/Outlines']['/Count'] = pikepdf.Integer(top)
+        stats['bookmarks_count'] = top
 
-    # Add /Tabs /S per page + wrap untagged content
-    patched = 0
+    # Struct tree fixes
+    if '/StructTreeRoot' in pp.Root:
+        st = pp.Root['/StructTreeRoot']
+        stats['figures_alt_added'] = fix_figures(st)
+        stats['th_headers_fixed'] = fix_table_headers(st)
+        stats['headings_remapped'] = fix_headings(st)
+
+    # Tagged annotations — add /Contents to untagged link annots
+    annot_fixed = 0
+    for page in pp.pages:
+        annots = page.get('/Annots')
+        if not annots: continue
+        for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
+            if not isinstance(a, pikepdf.Dictionary): continue
+            if '/StructParent' not in a and '/Contents' not in a:
+                a['/Contents'] = pikepdf.String('Link')
+                annot_fixed += 1
+    stats['annotations_tagged'] = annot_fixed
+
+    # Tagged content + /Tabs /S per page
+    stream_patched = 0
     for page in pp.pages:
         page['/Tabs'] = pikepdf.Name('/S')
         cc = page.get('/Contents')
-        if cc is None: continue
-        sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
-        for s in sl:
+        if not cc: continue
+        for s in (list(cc) if isinstance(cc, pikepdf.Array) else [cc]):
             raw = s.read_bytes().decode('latin-1', errors='replace')
             tg = tag_untagged(raw)
             if tg != raw:
-                compressed = zlib.compress(tg.encode('latin-1'), 9)
-                s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
-                patched += 1
+                s.write(zlib.compress(tg.encode('latin-1'), 9), filter=pikepdf.Name('/FlateDecode'))
+                stream_patched += 1
+    stats['streams_patched'] = stream_patched
 
     pp.save(sys.argv[2])
     pp.close()
-    print(f'patched={patched}')
+    print(json.dumps(stats))
 except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
+    import traceback
+    print(traceback.format_exc(), file=sys.stderr)
     sys.exit(1)
 `;
 
@@ -750,12 +787,15 @@ except Exception as e:
       await writeFile(`${tmpIn}.py`, pyPatch);
       const origTitle = req.file.originalname.replace(/\.pdf$/i, "").replace(/-/g, " ");
       const result = await execFileAsync("python3", [`${tmpIn}.py`, tmpIn, tmpOut, origTitle], { timeout: 120000 });
-      console.log("PDF patch:", result.stdout.trim());
+      let stats: Record<string, number> = {};
+      try { stats = JSON.parse(result.stdout.trim()); } catch {}
+      console.log("PDF patch stats:", stats);
 
       const outBuf = await readFile(tmpOut);
       const originalName = req.file.originalname.replace(/\.pdf$/i, "");
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${originalName}-accessible.pdf"`);
+      res.setHeader("X-Accessibility-Stats", JSON.stringify(stats));
       res.send(outBuf);
     } catch (err: any) {
       console.error("PDF patch error:", err.stderr || err.message);
