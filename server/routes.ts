@@ -1194,7 +1194,6 @@ import zlib as _zlib, tempfile as _tmpmod
 
 def _raw_patch_streams(input_path, output_path):
     _TEXT_OPS_B2 = _re.compile(b'Tj')
-    print(f'[REGEX] pattern={_TEXT_OPS_B2.pattern} test={bool(_TEXT_OPS_B2.search(b" Tj "))}', file=sys.stderr)
     _pp = pikepdf.open(input_path, allow_overwriting_input=True, suppress_warnings=True)
     _patched = 0
     for _page in _pp.pages:
@@ -1206,7 +1205,7 @@ def _raw_patch_streams(input_path, output_path):
         for _s in _slist:
             _decoded = _s.read_bytes()
 
-            if b'BT' in _decoded and _TEXT_OPS_B2.search(_decoded):
+            if b'BT' in _decoded and b'Tj' in _decoded:
                 _modified, _new_mcids = _tag_decoded_stream(_decoded)
                 print(f'[STREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} mcids={len(_new_mcids)}', file=sys.stderr)
                 if _new_mcids:
