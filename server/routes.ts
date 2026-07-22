@@ -1069,83 +1069,50 @@ import pikepdf, re as _re, zlib as _zlib
 
 
 def _tag_s(raw):
-    _re_split = _re.compile('(BDC|BMC|EMC|BT|ET)')
-    _TX = _re.compile('Tj')
-    toks = _re_split.split(raw)
+    # FPDF2 already generates /P BDC...EMC for text. We just wrap untagged segments with /Artifact.
+    # Split on tagged blocks (BDC/BMC ... EMC) — keep separators
+    _re_seg = _re.compile('((?:/[A-Za-z]+[ \t]*(?:<<[^>]*>>)?[ \t]*)?(?:BDC|BMC).*?EMC)', _re.DOTALL)
+    parts = _re_seg.split(raw)
     out = []
-    mcid = 0
-    i = 0
-    while i < len(toks):
-        tok = toks[i]
-        if tok == 'BT':
-            j = i+1
-            inner = []
-            while j < len(toks) and toks[j] != 'ET':
-                inner.append(toks[j]); j += 1
-            inn = ''.join(inner)
-            if _TX.search(inn):
-                out.append('/P <</MCID '+str(mcid)+'>> BDC'+chr(10)+'BT')
-                out.append(inn)
-                out.append('ET'+chr(10)+'EMC')
-                mcid += 1
-            else:
-                out.append('BT'); out.extend(inner); out.append('ET')
-            i = j+1
-        elif tok == 'BDC':
-            # find matching EMC
-            j = i+1; depth = 1
-            bdc_inner = []
-            while j < len(toks) and depth > 0:
-                if toks[j] in ('BDC','BMC'): depth += 1
-                elif toks[j] == 'EMC': depth -= 1
-                if depth > 0: bdc_inner.append(toks[j])
-                j += 1
-            out.append('/Artifact BMC')
-            out.extend(bdc_inner)
-            out.append('EMC')
-            i = j
-        elif tok == 'BMC':
-            j = i+1; depth = 1
-            bmc_inner = []
-            while j < len(toks) and depth > 0:
-                if toks[j] in ('BDC','BMC'): depth += 1
-                elif toks[j] == 'EMC': depth -= 1
-                if depth > 0: bmc_inner.append(toks[j])
-                j += 1
-            out.append('/Artifact BMC')
-            out.extend(bmc_inner)
-            out.append('EMC')
-            i = j
-        elif tok == 'EMC':
-            i += 1
+    for part in parts:
+        stripped = part.strip()
+        if not stripped:
+            out.append(part)
+        elif 'BDC' in part or 'BMC' in part:
+            out.append(part)
         else:
-            out.append(tok); i += 1
+            # Check for drawable PDF operators (untagged graphics)
+            has_draw = bool(_re.search('(?:^| )(m|l|c|re|S|s|f|F|B|b|n|W|Do|BI)(?= |$|'+chr(10)+'|'+chr(13)+')', stripped))
+            if has_draw:
+                out.append('/Artifact BMC'+chr(10)+part+chr(10)+'EMC'+chr(10))
+            else:
+                out.append(part)
     return ''.join(out)
+
 
 def _tag_streams(input_path, output_path):
     import zlib as _zlib
     pp = pikepdf.open(input_path, suppress_warnings=True, allow_overwriting_input=True)
-    _re_split = _re.compile('(BDC|BMC|EMC|BT|ET)')
-    _TX = _re.compile('Tj')
     patched = 0
     for pidx, page in enumerate(pp.pages):
+        # Add /Tabs /S to each page (required for Tab order check)
+        page['/Tabs'] = pikepdf.Name('/S')
         cc = page.get('/Contents')
         if cc is None: continue
         sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
         for s in sl:
             rs = s.read_bytes().decode('latin-1', errors='replace')
-            if 'BT' not in rs or not _TX.search(rs): continue
             tg = _tag_s(rs)
-            diff = tg.count('BDC') - rs.count('BDC')
-            if diff > 0:
+            if tg != rs:
                 compressed = _zlib.compress(tg.encode('latin-1'), 9)
                 s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
                 patched += 1
-    # Set metadata
+    # Ensure metadata (FPDF2 already sets most of these)
     pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
-    pp.Root['/Lang'] = pikepdf.String('en-US')
-    pp.Root['/ViewerPreferences'] = pikepdf.Dictionary(DisplayDocTitle=pikepdf.Boolean(True))
-    pp.Root['/Tabs'] = pikepdf.Name('/S')
+    if '/Lang' not in pp.Root:
+        pp.Root['/Lang'] = pikepdf.String('en-US')
+    if '/ViewerPreferences' not in pp.Root:
+        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary(DisplayDocTitle=pikepdf.Boolean(True))
     if '/Outlines' not in pp.Root:
         pp.Root['/Outlines'] = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
     pp.save(output_path)
