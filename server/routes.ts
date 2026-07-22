@@ -681,23 +681,116 @@ def fix_table_headers(st):
                 th_fixed += 1
     return th_fixed
 
-def fix_figures(obj, doc_title='', depth=0, count=None):
-    if count is None: count = [0]
-    if depth > 20: return count[0]
+def collect_figures(obj, depth=0, results=None):
+    if results is None: results = []
+    if depth > 20: return results
     if isinstance(obj, pikepdf.Dictionary):
         s = str(obj.get('/S', ''))
         if s in ('/Figure', '/Formula'):
             if '/Alt' not in obj:
-                n = count[0] + 1
-                label = 'Chemical formula' if s == '/Formula' else 'Figure'
-                alt = f'{label} {n}' + (f' from {doc_title}' if doc_title else '')
-                obj['/Alt'] = pikepdf.String(alt)
-                count[0] += 1
+                results.append(obj)
         k = obj.get('/K')
-        if k: fix_figures(k, doc_title, depth+1, count)
+        if k: collect_figures(k, depth+1, results)
     elif isinstance(obj, pikepdf.Array):
-        for item in list(obj): fix_figures(item, doc_title, depth, count)
-    return count[0]
+        for item in list(obj): collect_figures(item, depth, results)
+    return results
+
+def get_fig_page_index(fig_obj, pp):
+    k = fig_obj.get('/K')
+    if k is None: return None
+    kl = list(k) if isinstance(k, pikepdf.Array) else [k]
+    for ki in kl:
+        if isinstance(ki, pikepdf.Dictionary):
+            pg = ki.get('/Pg')
+            if pg:
+                for i, page in enumerate(pp.pages):
+                    try:
+                        if page.objgen == pg.objgen: return i
+                    except: pass
+    return None
+
+def fix_figures_with_vision(st, pp, anthropic_key):
+    import fitz as _fitz, base64 as _b64, threading as _threading, urllib.request as _urlreq, json as _json
+    figs = collect_figures(st)
+    if not figs: return 0
+
+    # Render each page once
+    doc = _fitz.open(sys.argv[1])
+    page_pixmaps = {}
+    for i in range(doc.page_count):
+        page_pixmaps[i] = doc[i]
+
+    # Get image blocks per page (skip tiny header images <50px tall)
+    page_img_blocks = {}
+    for pi in range(doc.page_count):
+        d = page_pixmaps[pi].get_text("dict")
+        blocks = [b for b in d['blocks'] if b['type'] == 1 and (b['bbox'][3]-b['bbox'][1]) > 50]
+        page_img_blocks[pi] = blocks
+
+    # Match each figure to an image block by page order
+    page_fig_idx = {}  # page_index -> count of figures assigned so far
+    results = {}  # fig index -> alt text
+    lock = _threading.Lock()
+
+    def describe_fig(fig_idx, fig_obj):
+        pi = get_fig_page_index(fig_obj, pp)
+        if pi is None or pi not in page_img_blocks:
+            results[fig_idx] = 'Figure'
+            return
+        with lock:
+            idx = page_fig_idx.get(pi, 0)
+            page_fig_idx[pi] = idx + 1
+        blocks = page_img_blocks[pi]
+        if idx >= len(blocks):
+            results[fig_idx] = 'Figure'
+            return
+        block = blocks[idx]
+        bbox = _fitz.Rect(block['bbox'])
+        mat = _fitz.Matrix(2, 2)
+        pix = page_pixmaps[pi].get_pixmap(matrix=mat, clip=bbox)
+        img_b64 = _b64.standard_b64encode(pix.tobytes('png')).decode()
+
+        # Call Claude Vision
+        payload = _json.dumps({
+            "model": "claude-haiku-4-5",
+            "max_tokens": 150,
+            "messages": [{
+                "role": "user",
+                "content": [
+                    {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": img_b64}},
+                    {"type": "text", "text": "Write a concise alt text description for this figure from an academic document. Be specific about what is shown (chemical structures, charts, diagrams, labels, values). Under 120 characters. No markdown."}
+                ]
+            }]
+        }).encode()
+        req = _urlreq.Request(
+            "https://api.anthropic.com/v1/messages",
+            data=payload,
+            headers={
+                "x-api-key": anthropic_key,
+                "anthropic-version": "2023-06-01",
+                "content-type": "application/json"
+            }
+        )
+        try:
+            with _urlreq.urlopen(req, timeout=30) as resp:
+                data = _json.loads(resp.read())
+                alt = data['content'][0]['text'].strip().lstrip('# ').split(chr(10))[0][:200]
+                results[fig_idx] = alt
+        except Exception as e:
+            results[fig_idx] = 'Figure'
+
+    threads = []
+    for i, fig in enumerate(figs):
+        t = _threading.Thread(target=describe_fig, args=(i, fig))
+        threads.append(t)
+        t.start()
+    for t in threads: t.join()
+
+    doc.close()
+
+    for i, fig in enumerate(figs):
+        fig['/Alt'] = pikepdf.String(results.get(i, 'Figure'))
+    return len(figs)
 
 def fix_headings(st):
     nodes = []
@@ -747,8 +840,8 @@ try:
     # Struct tree fixes
     if '/StructTreeRoot' in pp.Root:
         st = pp.Root['/StructTreeRoot']
-        _doc_title = str(info.get('/Title', '')) if info else ''
-        stats['figures_alt_added'] = fix_figures(st, _doc_title)
+        _anthropic_key = sys.argv[4] if len(sys.argv) > 4 else ''
+        stats['figures_alt_added'] = fix_figures_with_vision(st, pp, _anthropic_key)
         stats['th_headers_fixed'] = fix_table_headers(st)
         stats['headings_remapped'] = fix_headings(st)
 
@@ -838,7 +931,8 @@ except Exception as e:
     try {
       await writeFile(`${tmpIn}.py`, pyPatch);
       const origTitle = req.file.originalname.replace(/\.pdf$/i, "").replace(/-/g, " ");
-      const result = await execFileAsync("python3", [`${tmpIn}.py`, tmpIn, tmpOut, origTitle], { timeout: 120000 });
+      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || "";
+      const result = await execFileAsync("python3", [`${tmpIn}.py`, tmpIn, tmpOut, origTitle, ANTHROPIC_KEY], { timeout: 180000 });
       let stats: Record<string, number> = {};
       try { stats = JSON.parse(result.stdout.trim()); } catch {}
       console.log("PDF patch stats:", stats);
