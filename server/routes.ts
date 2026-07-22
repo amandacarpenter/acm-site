@@ -1061,188 +1061,118 @@ for page_info in pages:
 
 pdf.output(output_path)
 
-# ── Post-process with pikepdf — fix all Acrobat checker failures ──
-import pikepdf, shutil, re as _re
+# ── Post-process: tag content streams via pure incremental PDF update ──
+# Bypasses pikepdf.save() entirely (Railway's pikepdf re-encodes streams on save)
+# Appends new stream objects + updated page dicts + updated Root as incremental update
 
-_TEXT_OPS = _re.compile('Tj')
-_GRAPHIC_MARK = _re.compile(r'(?<![/\w])(?:S\b|f\b|F\b|B\b|b\b|Do\b|sh\b)')
+import pikepdf, re as _re, zlib as _zlib
 
-def _tag_page_streams(pdf, doc_elem, sp_counter, parent_tree):
-    """Tag all untagged content on every page. Returns updated sp_counter."""
-    for page in pdf.pages:
-        page_obj = page.obj
-        contents = page.get('/Contents')
-        if contents is None:
-            continue
-        stream_list = list(contents) if isinstance(contents, pikepdf.Array) else [contents]
-        new_text_mcids = []
-        new_streams = []
-        for s in stream_list:
-            try:
-                raw = s.read_bytes().decode('latin-1')
-            except Exception:
-                new_streams.append(None)
-                continue
-            existing = [int(m) for m in _re.findall(r'/MCID\s+(\d+)', raw)]
-            next_mcid = max(existing) + 1 if existing else 0
-            tokens = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw)
-            out = []
-            depth = 0
-            i = 0
-            while i < len(tokens):
-                tok = tokens[i]
-                if tok in ('BDC', 'BMC'):
-                    depth += 1; out.append(tok)
-                elif tok == 'EMC':
-                    depth -= 1; out.append(tok)
-                elif tok == 'BT':
-                    if depth == 0:
-                        # Peek ahead to collect BT...ET inner content
-                        j = i + 1
-                        inner_parts = []
-                        while j < len(tokens) and tokens[j] != 'ET':
-                            inner_parts.append(tokens[j])
-                            j += 1
-                        inner = ''.join(inner_parts)
-                        if _TEXT_OPS.search(inner):
-                            # Real visible text — tag with /P MCID
-                            new_text_mcids.append(next_mcid)
-                            out.append('/P <</MCID ' + str(next_mcid) + '>> BDC' + chr(10) + 'BT')
-                            next_mcid += 1
-                        else:
-                            # Font-setting-only BT/ET — treat as artifact
-                            out.append('/Artifact BMC' + chr(10) + 'BT')
-                        out.append(inner)
-                        out.append('ET' + chr(10) + 'EMC')
-                        i = j  # skip ahead to ET position
-                    else:
-                        out.append('BT')
-                elif tok == 'ET':
-                    out.append('ET' + chr(10) + 'EMC') if depth == 0 else out.append('ET')
-                else:
-                    if depth == 0 and _GRAPHIC_MARK.search(tok) and tok.strip():
-                        out.append('/Artifact BMC' + chr(10) + tok + chr(10) + 'EMC')
-                    else:
-                        out.append(tok)
-                i += 1
-            # Use make_indirect(pikepdf.Stream()) — plain Stream or s.write() silently fails on Railway
-            new_streams.append(pdf.make_indirect(pikepdf.Stream(pdf, ''.join(out).encode('latin-1'))))
-        # Replace content streams on page
-        if new_streams:
-            valid = [ns for ns in new_streams if ns is not None]
-            if valid:
-                page['/Contents'] = pikepdf.Array(valid) if len(valid) > 1 else valid[0]
-        if new_text_mcids and doc_elem is not None:
-            page['/StructParents'] = sp_counter
-            page_elems = pikepdf.Array()
-            k_val = doc_elem.get('/K')
-            k_list = k_val if isinstance(k_val, pikepdf.Array) else (pikepdf.Array([k_val]) if k_val else pikepdf.Array())
-            for mcid in new_text_mcids:
-                elem = pdf.make_indirect(pikepdf.Dictionary(
-                    Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/P'),
-                    Pg=page_obj, K=mcid, P=doc_elem
-                ))
-                k_list.append(elem)
-                page_elems.append(elem)
-            doc_elem['/K'] = k_list
-            if parent_tree is not None:
-                parent_tree['/Nums'].append(sp_counter)
-                parent_tree['/Nums'].append(page_elems)
-            sp_counter += 1
-    return sp_counter
-
-def _tag_decoded_stream(raw_bytes):
-    _TEXT_OPS_B = _re.compile(b'Tj')
-    tokens = _re.split(rb'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw_bytes)
-    existing = [int(m) for m in _re.findall(rb'/MCID\s+(\d+)', raw_bytes)]
-    next_mcid = max(existing) + 1 if existing else 0
-    new_mcids = []
-    out = []
-    depth = 0
-    i = 0
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok in (b'BDC', b'BMC'):
-            depth += 1; out.append(tok)
-        elif tok == b'EMC':
-            depth -= 1; out.append(tok)
-        elif tok == b'BT':
-            if depth == 0:
-                j = i + 1
-                inner_parts = []
-                while j < len(tokens) and tokens[j] != b'ET':
-                    inner_parts.append(tokens[j]); j += 1
-                inner = b''.join(inner_parts)
-                if _TEXT_OPS_B.search(inner):
-                    out.append(b'/P <</MCID ' + str(next_mcid).encode() + b'>> BDC' + chr(10).encode() + b'BT')
-                    new_mcids.append(next_mcid); next_mcid += 1
-                else:
-                    out.append(b'/Artifact BMC' + chr(10).encode() + b'BT')
-                out.append(inner)
-                out.append(b'ET' + chr(10).encode() + b'EMC')
-                i = j
-            else:
-                out.append(b'BT')
-        elif tok == b'ET':
-            out.append(b'ET' + chr(10).encode() + b'EMC') if depth == 0 else out.append(b'ET')
-        else:
-            out.append(tok)
-        i += 1
-    return b''.join(out), new_mcids
-
-import zlib as _zlib, tempfile as _tmpmod
-
-def _raw_patch_streams(input_path, output_path):
-    _pp = pikepdf.open(input_path, allow_overwriting_input=True, suppress_warnings=True)
-    _sp = _tag_page_streams(_pp, None, 0, None)
-    # Save to temp first, re-open to verify, then handle metadata
-    import tempfile as _tf2
-    _tmp2 = _tf2.mktemp(suffix='.pdf', dir=_tmp_dir)
-    _pp.save(_tmp2, linearize=False)
-    _pp.close()
-    _pp_check = pikepdf.open(_tmp2, suppress_warnings=True)
-    _vs_check = _pp_check.pages[0].get('/Contents')
-    if isinstance(_vs_check, pikepdf.Array): _vs_check = list(_vs_check)[0]
-    _vr_check = _vs_check.read_bytes()
-    print(f'[RAW-PATCH] after_save BDC={_vr_check.count(b"BDC")} len={len(_vr_check)}', file=sys.stderr)
-    _pp_check.close()
-    # Now open the temp for metadata and final save
-    _pp = pikepdf.open(_tmp2, allow_overwriting_input=True, suppress_warnings=True)
-    if '/MarkInfo' not in _pp.Root:
-        _pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
+def _incremental_tag(input_path, output_path):
+    orig = open(input_path, 'rb').read()
+    pp = pikepdf.open(input_path, suppress_warnings=True)
+    all_objnums = set()
+    for _obj in pp.objects:
+        try: all_objnums.add(_obj.objgen[0])
+        except: pass
+    next_obj = max(all_objnums) + 1 if all_objnums else 100
+    root_objnum = pp.Root.objgen[0]
+    _TX = _re.compile('Tj')
+    def _tag_s(raw):
+        toks = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw)
+        nm = 0; out = []; dep = 0; i = 0
+        while i < len(toks):
+            t = toks[i]
+            if t in ('BDC','BMC'): dep += 1; out.append(t)
+            elif t == 'EMC': dep -= 1; out.append(t)
+            elif t == 'BT':
+                if dep == 0:
+                    j = i+1; ip = []
+                    while j < len(toks) and toks[j] != 'ET': ip.append(toks[j]); j += 1
+                    inn = ''.join(ip)
+                    out.append(('/P <</MCID '+str(nm)+'>> BDC\nBT') if _TX.search(inn) else '/Artifact BMC\nBT')
+                    if _TX.search(inn): nm += 1
+                    out.append(inn); out.append('ET\nEMC'); i = j
+                else: out.append('BT')
+            elif t == 'ET':
+                out.append('ET\nEMC') if dep == 0 else out.append('ET')
+            else: out.append(t)
+            i += 1
+        return ''.join(out)
+    aobjs = []; pcup = {}
+    for pidx, page in enumerate(pp.pages):
+        cc = page.get('/Contents')
+        if cc is None: continue
+        sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
+        nn = []; tagged = False
+        for s in sl:
+            try: rs = s.read_bytes().decode('latin-1')
+            except: nn.append(s.objgen[0]); continue
+            if 'BT' in rs and 'Tj' in rs:
+                tg = _tag_s(rs); diff = tg.count('BDC') - rs.count('BDC')
+                dt = tg.encode('latin-1'); comp = _zlib.compress(dt, 6)
+                aobjs.append((next_obj, str(next_obj).encode()+b' 0 obj\n<< /Filter /FlateDecode /Length '+str(len(comp)).encode()+b' >>\nstream\n'+comp+b'\nendstream\nendobj\n'))
+                nn.append(next_obj); next_obj += 1
+                if diff > 0: tagged = True
+            else: nn.append(s.objgen[0])
+        if tagged: pcup[pidx] = nn
+    def _ser(v):
+        if isinstance(v, pikepdf.Name): return str(v)
+        if hasattr(v,'objgen'): return f'{v.objgen[0]} 0 R'
+        if isinstance(v, pikepdf.Array):
+            its = []
+            for it in v:
+                if hasattr(it,'objgen'): its.append(f'{it.objgen[0]} 0 R')
+                else: its.append(str(it))
+            return '['+' '.join(its)+']'
+        if isinstance(v, pikepdf.Dictionary):
+            inn = '<<'
+            for k2,v2 in v.items():
+                if hasattr(v2,'objgen'): inn += f' {k2} {v2.objgen[0]} 0 R'
+                else: inn += f' {k2} {v2}'
+            return inn+'>>'
+        return str(v)
+    for pidx, nns in pcup.items():
+        pg = pp.pages[pidx]; opn = pg.objgen[0]
+        d = '<<' + ''.join(f' {k} {_ser(pg[k])}' for k in pg.keys() if k != '/Contents')
+        d += (' /Contents '+f'{nns[0]} 0 R' if len(nns)==1 else ' /Contents ['+' '.join(f'{n} 0 R' for n in nns)+']')
+        d += '>>'
+        aobjs.append((opn, str(opn).encode()+b' 0 obj\n'+d.encode('latin-1')+b'\nendobj\n'))
+    ro = pp.Root
+    rd = '<<' + ''.join(f' {k} {_ser(ro[k])}' for k in ro.keys() if k not in ('/MarkInfo','/ViewerPreferences','/Outlines','/Tabs'))
+    if '/Outlines' in ro: oln = ro['/Outlines'].objgen[0]
     else:
-        _pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
-    if '/ViewerPreferences' not in _pp.Root:
-        _pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
-    _pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-    for _pg in _pp.pages:
-        _pg['/Tabs'] = pikepdf.Name('/S')
-    if '/Outlines' not in _pp.Root and len(_pp.pages) > 1:
-        _outlines = _pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/Outlines'), Count=0))
-        _pp.Root['/Outlines'] = _outlines
-        _pp.Root['/PageMode'] = pikepdf.Name('/UseOutlines')
-    _pp.save(output_path, linearize=False)
-    _pp.close()
+        oln = next_obj; next_obj += 1
+        aobjs.append((oln, str(oln).encode()+b' 0 obj\n<< /Type /Outlines /Count 0 >>\nendobj\n'))
+    rd += f' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines {oln} 0 R /Tabs /S>>'
+    aobjs.append((root_objnum, str(root_objnum).encode()+b' 0 obj\n'+rd.encode('latin-1')+b'\nendobj\n'))
+    pp.close()
+    base = len(orig); upd = b''; offs = {}
+    for on, rb in aobjs: offs[on] = base+len(upd); upd += rb
+    xo = base+len(upd)
+    upd += b'xref\n0 1\n0000000000 65535 f \n'
+    for on in sorted(offs.keys()): upd += f'{on} 1\n'.encode()+f'{offs[on]:010d} 00000 n \n'.encode()
+    sxm = _re.search(rb'startxref\s*[\r\n]+(\d+)', orig[-200:]); px = int(sxm.group(1)) if sxm else 0
+    rm = _re.search(rb'/Root\s+(\d+)\s+0\s+R', orig[-500:]); rn = int(rm.group(1)) if rm else root_objnum
+    upd += (b'trailer\n<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>\nstartxref\n'+str(xo).encode()+b'\n%%EOF\n')
+    open(output_path,'wb').write(orig+upd)
+    return len(pcup)
 
 _tmp_dir = os.path.dirname(output_path)
 try:
-    _raw_patch_streams(output_path, output_path)
+    _patched = _incremental_tag(output_path, output_path)
     _vp = pikepdf.open(output_path, suppress_warnings=True)
     _vs = _vp.pages[0].get('/Contents')
     if isinstance(_vs, pikepdf.Array): _vs = list(_vs)[0]
     _vraw = _vs.read_bytes()
-    _bdc = _vraw.count(b'BDC')
-    _bmc = _vraw.count(b'BMC')
+    _bdc = _vraw.count(b'BDC'); _bmc = _vraw.count(b'BMC')
     _vp.close()
+    print(f'[INCR-TAG] patched_pages={_patched}', file=sys.stderr)
     print(f'[VERIFY] output page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
-    print(f'[OK] pikepdf done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
+    print(f'[OK] done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
 except Exception as e:
     import traceback
-    print(f'[PIKEPDF-ERROR] {e}', file=sys.stderr)
+    print(f'[ERROR] incremental tag failed: {e}', file=sys.stderr)
     traceback.print_exc(file=sys.stderr)
-    try: os.remove(fixed_path)
-    except: pass
-
 print('ok')
 `;
 
