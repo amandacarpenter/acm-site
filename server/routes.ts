@@ -643,6 +643,53 @@ def tag_untagged(raw):
         out.append(after)
     return ''.join(out)
 
+def find_tables(obj, depth=0, results=None):
+    if results is None: results = []
+    if depth > 15: return results
+    if isinstance(obj, pikepdf.Dictionary):
+        s = obj.get('/S')
+        if s and str(s) == '/Table':
+            results.append(obj)
+        else:
+            k = obj.get('/K')
+            if k: find_tables(k, depth+1, results)
+    elif isinstance(obj, pikepdf.Array):
+        for item in list(obj): find_tables(item, depth, results)
+    return results
+
+def fix_table_headers(st):
+    tables = find_tables(st)
+    th_count = 0
+    for tbl in tables:
+        k = tbl.get('/K')
+        if k is None: continue
+        children = list(k) if isinstance(k, pikepdf.Array) else [k]
+        first_row = None
+        for child in children:
+            if not isinstance(child, pikepdf.Dictionary): continue
+            s = str(child.get('/S', ''))
+            if s == '/TR':
+                first_row = child; break
+            elif s in ('/THead', '/TBody', '/TFoot'):
+                rowk = child.get('/K')
+                if rowk:
+                    rowlist = list(rowk) if isinstance(rowk, pikepdf.Array) else [rowk]
+                    for r in rowlist:
+                        if isinstance(r, pikepdf.Dictionary) and str(r.get('/S','')) == '/TR':
+                            first_row = r; break
+                if first_row: break
+        if first_row is None: continue
+        cells = first_row.get('/K')
+        if cells is None: continue
+        cell_list = list(cells) if isinstance(cells, pikepdf.Array) else [cells]
+        for cell in cell_list:
+            if not isinstance(cell, pikepdf.Dictionary): continue
+            if str(cell.get('/S', '')) == '/TD':
+                cell['/S'] = pikepdf.Name('/TH')
+                cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
+                th_count += 1
+    return th_count
+
 try:
     pp = pikepdf.open(sys.argv[1], suppress_warnings=True)
 
@@ -659,15 +706,22 @@ try:
     # Ensure /MarkInfo
     pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
 
-    # Ensure /ViewerPreferences
-    if '/ViewerPreferences' not in pp.Root:
-        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary(DisplayDocTitle=pikepdf.Boolean(True))
+    # Ensure /ViewerPreferences with DisplayDocTitle
+    pp.Root['/ViewerPreferences'] = pikepdf.Dictionary(DisplayDocTitle=pikepdf.Boolean(True))
 
-    # Fix /Info
+    # Fix /Info — add Title, Author, Subject
     info = pp.trailer.get('/Info')
     if info:
+        fname = sys.argv[1].split('/')[-1].replace('-in-','').rsplit('.',1)[0]
+        title = sys.argv[3] if len(sys.argv) > 3 else fname
+        info['/Title'] = pikepdf.String(title)
         info['/Author'] = pikepdf.String('Remedy508')
         info['/Subject'] = pikepdf.String('WCAG 2.1 AA Accessible Document')
+
+    # Fix table headers: promote first-row TDs to TH with Scope=Column
+    if '/StructTreeRoot' in pp.Root:
+        th_count = fix_table_headers(pp.Root['/StructTreeRoot'])
+        print(f'th_fixed={th_count}')
 
     # Add /Tabs /S per page + wrap untagged content
     patched = 0
@@ -694,7 +748,8 @@ except Exception as e:
 
     try {
       await writeFile(`${tmpIn}.py`, pyPatch);
-      const result = await execFileAsync("python3", [`${tmpIn}.py`, tmpIn, tmpOut], { timeout: 120000 });
+      const origTitle = req.file.originalname.replace(/\.pdf$/i, "").replace(/-/g, " ");
+      const result = await execFileAsync("python3", [`${tmpIn}.py`, tmpIn, tmpOut, origTitle], { timeout: 120000 });
       console.log("PDF patch:", result.stdout.trim());
 
       const outBuf = await readFile(tmpOut);
