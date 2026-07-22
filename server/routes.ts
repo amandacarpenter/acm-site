@@ -1083,7 +1083,7 @@ def _tag_s(raw):
                 out.append('/P <</MCID '+str(mcid)+'>> BDC'+chr(10)+'BT'+inn+'ET'+chr(10)+'EMC'+chr(10))
                 mcid += 1
             else:
-                out.append('BT'+inn+'ET')
+                out.append('/Artifact BMC'+chr(10)+'BT'+inn+'ET'+chr(10)+'EMC'+chr(10))
             i = j+1
         elif tok in ('BDC','BMC'):
             j = i+1; depth = 1; inner = []
@@ -1092,15 +1092,23 @@ def _tag_s(raw):
                 elif toks[j] == 'EMC': depth -= 1
                 if depth > 0: inner.append(toks[j])
                 j += 1
-            out.append('/Artifact BMC'+chr(10)+''.join(inner)+chr(10)+'EMC'+chr(10))
+            inner_str = ''.join(inner)
+            if _TX.search(inner_str):
+                out.append('/P <</MCID '+str(mcid)+'>> BDC'+chr(10)+inner_str+chr(10)+'EMC'+chr(10))
+                mcid += 1
+            else:
+                out.append('/Artifact BMC'+chr(10)+inner_str+chr(10)+'EMC'+chr(10))
             i = j
         elif tok == 'EMC':
             i += 1
         else:
-            out.append(tok); i += 1
+            seg = tok
+            if seg.strip():
+                out.append('/Artifact BMC'+chr(10)+seg+chr(10)+'EMC'+chr(10))
+            else:
+                out.append(seg)
+            i += 1
     return ''.join(out)
-
-
 def _tag_streams(input_path, output_path):
     import zlib as _zlib
     pp = pikepdf.open(input_path, suppress_warnings=True, allow_overwriting_input=True)
@@ -1110,12 +1118,6 @@ def _tag_streams(input_path, output_path):
         cc = page.get('/Contents')
         if cc is None: continue
         sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
-        needs_tag = False
-        for s in sl:
-            rs = s.read_bytes().decode('latin-1', errors='replace')
-            if 'BT' in rs and 'BDC' not in rs:
-                needs_tag = True; break
-        if needs_tag:
             for s in sl:
                 rs = s.read_bytes().decode('latin-1', errors='replace')
                 if 'BT' not in rs: continue
