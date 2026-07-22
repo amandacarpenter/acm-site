@@ -1160,6 +1160,7 @@ def _tag_decoded_stream(raw_bytes):
     out = []
     depth = 0
     i = 0
+    _dbg_logged = False
     while i < len(tokens):
         tok = tokens[i]
         if tok in (b'BDC', b'BMC'):
@@ -1173,6 +1174,9 @@ def _tag_decoded_stream(raw_bytes):
                 while j < len(tokens) and tokens[j] != b'ET':
                     inner_parts.append(tokens[j]); j += 1
                 inner = b''.join(inner_parts)
+                if not _dbg_logged:
+                    _dbg_logged = True
+                    print(f'[TAG-DBG] first_BT tok={i} inner_len={len(inner)} Tj_in_inner={b"Tj" in inner} inner_first50={repr(inner[:50])}', file=sys.stderr)
                 if _TEXT_OPS_B.search(inner):
                     out.append(b'/P <</MCID ' + str(next_mcid).encode() + b'>> BDC' + chr(10).encode() + b'BT')
                     new_mcids.append(next_mcid); next_mcid += 1
