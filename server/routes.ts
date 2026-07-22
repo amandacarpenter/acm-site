@@ -1117,40 +1117,40 @@ def _incremental_tag(input_path, output_path):
         if tagged: pcup[pidx] = nn
     def _ser(v):
         if isinstance(v, pikepdf.Name): return str(v)
-        if hasattr(v,'objgen'): return f'{v.objgen[0]} 0 R'
+        if hasattr(v,'objgen'): return str(v.objgen[0])+' 0 R'
         if isinstance(v, pikepdf.Array):
             its = []
             for it in v:
-                if hasattr(it,'objgen'): its.append(f'{it.objgen[0]} 0 R')
+                if hasattr(it,'objgen'): its.append(str(it.objgen[0])+' 0 R')
                 else: its.append(str(it))
             return '['+' '.join(its)+']'
         if isinstance(v, pikepdf.Dictionary):
             inn = '<<'
             for k2,v2 in v.items():
-                if hasattr(v2,'objgen'): inn += f' {k2} {v2.objgen[0]} 0 R'
-                else: inn += f' {k2} {v2}'
+                if hasattr(v2,'objgen'): inn += ' '+k2+' '+str(v2.objgen[0])+' 0 R'
+                else: inn += ' '+k2+' '+str(v2)
             return inn+'>>'
         return str(v)
     for pidx, nns in pcup.items():
         pg = pp.pages[pidx]; opn = pg.objgen[0]
-        d = '<<' + ''.join(f' {k} {_ser(pg[k])}' for k in pg.keys() if k != '/Contents')
-        d += (' /Contents '+f'{nns[0]} 0 R' if len(nns)==1 else ' /Contents ['+' '.join(f'{n} 0 R' for n in nns)+']')
+        d = '<<' + ''.join(' '+k+' '+_ser(pg[k]) for k in pg.keys() if k != '/Contents')
+        d += (' /Contents '+str(nns[0])+' 0 R' if len(nns)==1 else ' /Contents ['+' '.join(str(n)+' 0 R' for n in nns)+']')
         d += '>>'
         aobjs.append((opn, str(opn).encode()+b' 0 obj\n'+d.encode('latin-1')+b'\nendobj\n'))
     ro = pp.Root
-    rd = '<<' + ''.join(f' {k} {_ser(ro[k])}' for k in ro.keys() if k not in ('/MarkInfo','/ViewerPreferences','/Outlines','/Tabs'))
+    rd = '<<' + ''.join(' '+k+' '+_ser(ro[k]) for k in ro.keys() if k not in ('/MarkInfo','/ViewerPreferences','/Outlines','/Tabs'))
     if '/Outlines' in ro: oln = ro['/Outlines'].objgen[0]
     else:
         oln = next_obj; next_obj += 1
         aobjs.append((oln, str(oln).encode()+b' 0 obj\n<< /Type /Outlines /Count 0 >>\nendobj\n'))
-    rd += f' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines {oln} 0 R /Tabs /S>>'
+    rd += ' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines '+str(oln)+' 0 R /Tabs /S>>'
     aobjs.append((root_objnum, str(root_objnum).encode()+b' 0 obj\n'+rd.encode('latin-1')+b'\nendobj\n'))
     pp.close()
     base = len(orig); upd = b''; offs = {}
     for on, rb in aobjs: offs[on] = base+len(upd); upd += rb
     xo = base+len(upd)
     upd += b'xref\n0 1\n0000000000 65535 f \n'
-    for on in sorted(offs.keys()): upd += f'{on} 1\n'.encode()+f'{offs[on]:010d} 00000 n \n'.encode()
+    for on in sorted(offs.keys()): upd += (str(on)+' 1\n').encode()+(('%010d' % offs[on])+' 00000 n \n').encode()
     sxm = _re.search(rb'startxref\s*[\r\n]+(\d+)', orig[-200:]); px = int(sxm.group(1)) if sxm else 0
     rm = _re.search(rb'/Root\s+(\d+)\s+0\s+R', orig[-500:]); rn = int(rm.group(1)) if rm else root_objnum
     upd += (b'trailer\n<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>\nstartxref\n'+str(xo).encode()+b'\n%%EOF\n')
@@ -1166,12 +1166,12 @@ try:
     _vraw = _vs.read_bytes()
     _bdc = _vraw.count(b'BDC'); _bmc = _vraw.count(b'BMC')
     _vp.close()
-    print(f'[INCR-TAG] patched_pages={_patched}', file=sys.stderr)
-    print(f'[VERIFY] output page0: BDC={_bdc} BMC={_bmc}', file=sys.stderr)
-    print(f'[OK] done, saved {os.path.getsize(output_path)} bytes', file=sys.stderr)
+    print('[INCR-TAG] patched_pages='+str(_patched), file=sys.stderr)
+    print('[VERIFY] output page0: BDC='+str(_bdc)+' BMC='+str(_bmc), file=sys.stderr)
+    print('[OK] done, saved '+str(os.path.getsize(output_path))+' bytes', file=sys.stderr)
 except Exception as e:
     import traceback
-    print(f'[ERROR] incremental tag failed: {e}', file=sys.stderr)
+    print('[ERROR] incremental tag failed: '+str(e), file=sys.stderr)
     traceback.print_exc(file=sys.stderr)
 print('ok')
 `;
