@@ -664,6 +664,9 @@ def fix_table_headers(st):
             if not isinstance(child, pikepdf.Dictionary): continue
             s = str(child.get('/S', ''))
             if s == '/TR': first_row = child; break
+            elif s == '/NonStruct':
+                child['/S'] = pikepdf.Name('/TR')
+                first_row = child; break
             elif s in ('/THead', '/TBody', '/TFoot'):
                 rowk = child.get('/K')
                 if rowk:
@@ -675,10 +678,12 @@ def fix_table_headers(st):
         cells = first_row.get('/K')
         if not cells: continue
         for cell in (list(cells) if isinstance(cells, pikepdf.Array) else [cells]):
-            if isinstance(cell, pikepdf.Dictionary) and str(cell.get('/S','')) == '/TD':
-                cell['/S'] = pikepdf.Name('/TH')
-                cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
-                th_fixed += 1
+            if isinstance(cell, pikepdf.Dictionary):
+                cs = str(cell.get('/S',''))
+                if cs in ('/TD', '/NonStruct'):
+                    cell['/S'] = pikepdf.Name('/TH')
+                    cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
+                    th_fixed += 1
     return th_fixed
 
 def collect_figures(obj, depth=0, results=None):
@@ -689,11 +694,37 @@ def collect_figures(obj, depth=0, results=None):
         if s in ('/Figure', '/Formula'):
             if '/Alt' not in obj:
                 results.append(obj)
+            k = obj.get('/K')
+            if k: collect_figures(k, depth+1, results)
+            return results
         k = obj.get('/K')
         if k: collect_figures(k, depth+1, results)
     elif isinstance(obj, pikepdf.Array):
         for item in list(obj): collect_figures(item, depth, results)
     return results
+
+def fix_nested_alt(obj, depth=0):
+    if depth > 20: return
+    if isinstance(obj, pikepdf.Dictionary):
+        s = str(obj.get('/S', ''))
+        if s in ('/Figure', '/Formula'):
+            k = obj.get('/K')
+            if k:
+                kl = list(k) if isinstance(k, pikepdf.Array) else [k]
+                for ki in kl:
+                    if isinstance(ki, pikepdf.Dictionary):
+                        ks = str(ki.get('/S',''))
+                        if ks in ('/Figure', '/Formula') and '/Alt' in ki:
+                            inner_alt = str(ki['/Alt'])
+                            outer_alt = str(obj.get('/Alt',''))
+                            if outer_alt in ('', 'Figure', 'Chemical formula'):
+                                obj['/Alt'] = pikepdf.String(inner_alt)
+                            del ki['/Alt']
+            return
+        k2 = obj.get('/K')
+        if k2: fix_nested_alt(k2, depth+1)
+    elif isinstance(obj, pikepdf.Array):
+        for item in list(obj): fix_nested_alt(item, depth)
 
 def get_fig_page_index(fig_obj, pp):
     k = fig_obj.get('/K')
@@ -790,6 +821,7 @@ def fix_figures_with_vision(st, pp, anthropic_key):
 
     for i, fig in enumerate(figs):
         fig['/Alt'] = pikepdf.String(results.get(i, 'Figure'))
+    fix_nested_alt(st)
     return len(figs)
 
 def fix_headings(st):
@@ -905,19 +937,9 @@ try:
                     annot_fixed += 1
     stats['annotations_tagged'] = annot_fixed
 
-    # Tagged content + /Tabs /S per page
-    stream_patched = 0
+    # /Tabs /S per page
     for page in pp.pages:
         page['/Tabs'] = pikepdf.Name('/S')
-        cc = page.get('/Contents')
-        if not cc: continue
-        for s in (list(cc) if isinstance(cc, pikepdf.Array) else [cc]):
-            raw = s.read_bytes().decode('latin-1', errors='replace')
-            tg = tag_untagged(raw)
-            if tg != raw:
-                s.write(zlib.compress(tg.encode('latin-1'), 9), filter=pikepdf.Name('/FlateDecode'))
-                stream_patched += 1
-    stats['streams_patched'] = stream_patched
 
     pp.save(sys.argv[2])
     pp.close()
