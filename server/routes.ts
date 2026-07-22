@@ -1118,14 +1118,14 @@ def _tag_streams(input_path, output_path):
         cc = page.get('/Contents')
         if cc is None: continue
         sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
-            for s in sl:
-                rs = s.read_bytes().decode('latin-1', errors='replace')
-                if 'BT' not in rs: continue
-                tg = _tag_s(rs)
-                if tg != rs:
-                    compressed = _zlib.compress(tg.encode('latin-1'), 9)
-                    s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
-                    patched += 1
+        for s in sl:
+            rs = s.read_bytes().decode('latin-1', errors='replace')
+            if 'BT' not in rs: continue
+            tg = _tag_s(rs)
+            if tg != rs:
+                compressed = _zlib.compress(tg.encode('latin-1'), 9)
+                s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
+                patched += 1
     pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     if '/Lang' not in pp.Root:
         pp.Root['/Lang'] = pikepdf.String('en-US')
