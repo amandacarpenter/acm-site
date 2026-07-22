@@ -1067,6 +1067,7 @@ pdf.output(output_path)
 
 import pikepdf, re as _re, zlib as _zlib
 
+_NL = bytes([10])
 def _incremental_tag(input_path, output_path):
     orig = open(input_path, 'rb').read()
     pp = pikepdf.open(input_path, suppress_warnings=True)
@@ -1110,7 +1111,7 @@ def _incremental_tag(input_path, output_path):
             if 'BT' in rs and 'Tj' in rs:
                 tg = _tag_s(rs); diff = tg.count('BDC') - rs.count('BDC')
                 dt = tg.encode('latin-1'); comp = _zlib.compress(dt, 6)
-                aobjs.append((next_obj, str(next_obj).encode()+b' 0 obj\n<< /Filter /FlateDecode /Length '+str(len(comp)).encode()+b' >>\nstream\n'+comp+b'\nendstream\nendobj\n'))
+                aobjs.append((next_obj, str(next_obj).encode()+b' 0 obj'+_NL+b'<< /Filter /FlateDecode /Length '+str(len(comp)).encode()+b' >>'+_NL+b'stream'+_NL+comp+_NL+b'endstream'+_NL+b'endobj'+_NL))
                 nn.append(next_obj); next_obj += 1
                 if diff > 0: tagged = True
             else: nn.append(s.objgen[0])
@@ -1136,24 +1137,24 @@ def _incremental_tag(input_path, output_path):
         d = '<<' + ''.join(' '+k+' '+_ser(pg[k]) for k in pg.keys() if k != '/Contents')
         d += (' /Contents '+str(nns[0])+' 0 R' if len(nns)==1 else ' /Contents ['+' '.join(str(n)+' 0 R' for n in nns)+']')
         d += '>>'
-        aobjs.append((opn, str(opn).encode()+b' 0 obj\n'+d.encode('latin-1')+b'\nendobj\n'))
+        aobjs.append((opn, str(opn).encode()+b' 0 obj'+_NL+d.encode('latin-1')+_NL+b'endobj'+_NL))
     ro = pp.Root
     rd = '<<' + ''.join(' '+k+' '+_ser(ro[k]) for k in ro.keys() if k not in ('/MarkInfo','/ViewerPreferences','/Outlines','/Tabs'))
     if '/Outlines' in ro: oln = ro['/Outlines'].objgen[0]
     else:
         oln = next_obj; next_obj += 1
-        aobjs.append((oln, str(oln).encode()+b' 0 obj\n<< /Type /Outlines /Count 0 >>\nendobj\n'))
+        aobjs.append((oln, str(oln).encode()+b' 0 obj'+_NL+b'<< /Type /Outlines /Count 0 >>'+_NL+b'endobj'+_NL))
     rd += ' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines '+str(oln)+' 0 R /Tabs /S>>'
-    aobjs.append((root_objnum, str(root_objnum).encode()+b' 0 obj\n'+rd.encode('latin-1')+b'\nendobj\n'))
+    aobjs.append((root_objnum, str(root_objnum).encode()+b' 0 obj'+_NL+rd.encode('latin-1')+_NL+b'endobj'+_NL))
     pp.close()
     base = len(orig); upd = b''; offs = {}
     for on, rb in aobjs: offs[on] = base+len(upd); upd += rb
     xo = base+len(upd)
-    upd += b'xref\n0 1\n0000000000 65535 f \n'
-    for on in sorted(offs.keys()): upd += (str(on)+' 1\n').encode()+(('%010d' % offs[on])+' 00000 n \n').encode()
+    upd += b'xref'+_NL+b'0 1'+_NL+b'0000000000 65535 f '+_NL
+    for on in sorted(offs.keys()): upd += (str(on)+' 1').encode()+_NL+(('%010d' % offs[on])+' 00000 n ').encode()+_NL
     sxm = _re.search(rb'startxref\s*[\r\n]+(\d+)', orig[-200:]); px = int(sxm.group(1)) if sxm else 0
     rm = _re.search(rb'/Root\s+(\d+)\s+0\s+R', orig[-500:]); rn = int(rm.group(1)) if rm else root_objnum
-    upd += (b'trailer\n<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>\nstartxref\n'+str(xo).encode()+b'\n%%EOF\n')
+    upd += (b'trailer'+_NL+b'<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>'+_NL+b'startxref'+_NL+str(xo).encode()+_NL+b'%%EOF'+_NL)
     open(output_path,'wb').write(orig+upd)
     return len(pcup)
 
