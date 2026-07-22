@@ -1079,7 +1079,7 @@ def _incremental_tag(input_path, output_path):
     root_objnum = pp.Root.objgen[0]
     _TX = _re.compile('Tj')
     def _tag_s(raw):
-        toks = _re.split(r'(\bBDC\b|\bBMC\b|\bEMC\b|\bBT\b|\bET\b)', raw)
+        toks = _re.split('(BDC|BMC|EMC|BT|ET)', raw)
         nm = 0; out = []; dep = 0; i = 0
         while i < len(toks):
             t = toks[i]
@@ -1110,7 +1110,6 @@ def _incremental_tag(input_path, output_path):
             except: nn.append(s.objgen[0]); continue
             if 'BT' in rs and 'Tj' in rs:
                 tg = _tag_s(rs); diff = tg.count('BDC') - rs.count('BDC')
-                print('[INCR-DBG] page '+str(pidx)+' stream: BT='+str(rs.count('BT'))+' Tj='+str(rs.count('Tj'))+' BDC_in='+str(rs.count('BDC'))+' BDC_out='+str(tg.count('BDC'))+' diff='+str(diff), file=sys.stderr)
                 dt = tg.encode('latin-1'); comp = _zlib.compress(dt, 6)
                 aobjs.append((next_obj, str(next_obj).encode()+b' 0 obj'+_NL+b'<< /Filter /FlateDecode /Length '+str(len(comp)).encode()+b' >>'+_NL+b'stream'+_NL+comp+_NL+b'endstream'+_NL+b'endobj'+_NL))
                 nn.append(next_obj); next_obj += 1
