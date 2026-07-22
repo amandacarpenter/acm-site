@@ -1195,7 +1195,10 @@ import zlib as _zlib, tempfile as _tmpmod
 def _raw_patch_streams(input_path, output_path):
     _pp = pikepdf.open(input_path, allow_overwriting_input=True, suppress_warnings=True)
     _sp = _tag_page_streams(_pp, None, 0, None)
-    print(f'[RAW-PATCH] tag_page_streams done sp={_sp}', file=sys.stderr)
+    _vs_pre = _pp.pages[0].get('/Contents')
+    if isinstance(_vs_pre, pikepdf.Array): _vs_pre = list(_vs_pre)[0]
+    _vr_pre = _vs_pre.read_bytes()
+    print(f'[RAW-PATCH] tag_page_streams done sp={_sp} pre_save_BDC={_vr_pre.count(b"BDC")}', file=sys.stderr)
     if '/MarkInfo' not in _pp.Root:
         _pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     else:
