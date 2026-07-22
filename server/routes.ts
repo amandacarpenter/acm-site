@@ -1089,12 +1089,12 @@ def _incremental_tag(input_path, output_path):
                     j = i+1; ip = []
                     while j < len(toks) and toks[j] != 'ET': ip.append(toks[j]); j += 1
                     inn = ''.join(ip)
-                    out.append(('/P <</MCID '+str(nm)+'>> BDC\nBT') if _TX.search(inn) else '/Artifact BMC\nBT')
+                    out.append(('/P <</MCID '+str(nm)+'>> BDC'+chr(10)+'BT') if _TX.search(inn) else '/Artifact BMC'+chr(10)+'BT')
                     if _TX.search(inn): nm += 1
-                    out.append(inn); out.append('ET\nEMC'); i = j
+                    out.append(inn); out.append('ET'+chr(10)+'EMC'); i = j
                 else: out.append('BT')
             elif t == 'ET':
-                out.append('ET\nEMC') if dep == 0 else out.append('ET')
+                out.append('ET'+chr(10)+'EMC') if dep == 0 else out.append('ET')
             else: out.append(t)
             i += 1
         return ''.join(out)
