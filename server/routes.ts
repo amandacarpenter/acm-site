@@ -1152,13 +1152,17 @@ def _incremental_tag(input_path, output_path):
     xo = base+len(upd)
     upd += b'xref'+_NL+b'0 1'+_NL+b'0000000000 65535 f '+_NL
     for on in sorted(offs.keys()): upd += (str(on)+' 1').encode()+_NL+(('%010d' % offs[on])+' 00000 n ').encode()+_NL
-    sxm = _re.search(rb'startxref\s*[\r\n]+(\d+)', orig[-200:]); px = int(sxm.group(1)) if sxm else 0
-    rm = _re.search(rb'/Root\s+(\d+)\s+0\s+R', orig[-500:]); rn = int(rm.group(1)) if rm else root_objnum
+    _sxm_m = orig[-200:].rfind(b'startxref'); px = int(orig[-200:][_sxm_m+9:].strip().split()[0]) if _sxm_m >= 0 else 0; px = int(sxm.group(1)) if sxm else 0
+    _rm_idx = orig[-500:].rfind(b'/Root '); rn = int(orig[-500:][_rm_idx+6:].split()[0]) if _rm_idx >= 0 else root_objnum; rn = int(rm.group(1)) if rm else root_objnum
     upd += (b'trailer'+_NL+b'<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>'+_NL+b'startxref'+_NL+str(xo).encode()+_NL+b'%%EOF'+_NL)
     open(output_path,'wb').write(orig+upd)
     return len(pcup)
 
 _tmp_dir = os.path.dirname(output_path)
+# Debug: dump lines around the problematic section
+import inspect as _inspect
+_src = open(__file__).readlines()
+print('[DBG] lines 345-355:', repr(''.join(_src[344:355])), file=sys.stderr)
 try:
     _patched = _incremental_tag(output_path, output_path)
     _vp = pikepdf.open(output_path, suppress_warnings=True)
