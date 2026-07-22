@@ -810,7 +810,7 @@ except Exception as e:
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${originalName}-accessible.pdf"`);
       res.setHeader("X-Total-Pages", String(pageCount));
-      res.setHeader("X-Fixes-Made", JSON.stringify(fixes));
+      res.setHeader("X-Fixes-Made", Buffer.from(JSON.stringify(fixes)).toString("base64"));
       res.setHeader("X-Accessibility-Stats", JSON.stringify(stats));
       res.send(outBuf);
     } catch (err: any) {

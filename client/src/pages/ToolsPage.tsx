@@ -626,7 +626,7 @@ function ComplexPdfTab() {
       const blob = await resp.blob();
       const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
       let fixes: string[] = [];
-      try { fixes = JSON.parse(resp.headers.get("X-Fixes-Made") || "[]"); } catch { fixes = []; }
+      try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
       const baseName = file.name.replace(/\.pdf$/i, "");
       setResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
