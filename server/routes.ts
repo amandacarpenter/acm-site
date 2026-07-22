@@ -1106,20 +1106,24 @@ def _tag_streams(input_path, output_path):
     pp = pikepdf.open(input_path, suppress_warnings=True, allow_overwriting_input=True)
     patched = 0
     for pidx, page in enumerate(pp.pages):
-        # Add /Tabs /S to each page (required for Tab order check)
         page['/Tabs'] = pikepdf.Name('/S')
         cc = page.get('/Contents')
         if cc is None: continue
         sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
+        needs_tag = False
         for s in sl:
             rs = s.read_bytes().decode('latin-1', errors='replace')
-            if 'BT' not in rs: continue
-            tg = _tag_s(rs)
-            if tg != rs:
-                compressed = _zlib.compress(tg.encode('latin-1'), 9)
-                s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
-                patched += 1
-    # Ensure metadata (FPDF2 already sets most of these)
+            if 'BT' in rs and 'BDC' not in rs:
+                needs_tag = True; break
+        if needs_tag:
+            for s in sl:
+                rs = s.read_bytes().decode('latin-1', errors='replace')
+                if 'BT' not in rs: continue
+                tg = _tag_s(rs)
+                if tg != rs:
+                    compressed = _zlib.compress(tg.encode('latin-1'), 9)
+                    s.write(compressed, filter=pikepdf.Name('/FlateDecode'))
+                    patched += 1
     pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     if '/Lang' not in pp.Root:
         pp.Root['/Lang'] = pikepdf.String('en-US')
