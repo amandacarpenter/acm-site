@@ -1118,17 +1118,22 @@ def _incremental_tag(input_path, output_path):
         if tagged: pcup[pidx] = nn
     def _ser(v):
         if isinstance(v, pikepdf.Name): return str(v)
-        if hasattr(v,'objgen'): return str(v.objgen[0])+' 0 R'
+        if isinstance(v, pikepdf.String): return '('+str(v)+')'
+        if hasattr(v,'objgen') and v.objgen != (0,0): return str(v.objgen[0])+' 0 R'
         if isinstance(v, pikepdf.Array):
             its = []
             for it in v:
-                if hasattr(it,'objgen'): its.append(str(it.objgen[0])+' 0 R')
+                if hasattr(it,'objgen') and it.objgen != (0,0): its.append(str(it.objgen[0])+' 0 R')
+                elif isinstance(it, pikepdf.Name): its.append(str(it))
+                elif isinstance(it, pikepdf.String): its.append('('+str(it)+')')
                 else: its.append(str(it))
             return '['+' '.join(its)+']'
         if isinstance(v, pikepdf.Dictionary):
             inn = '<<'
             for k2,v2 in v.items():
-                if hasattr(v2,'objgen'): inn += ' '+k2+' '+str(v2.objgen[0])+' 0 R'
+                if hasattr(v2,'objgen') and v2.objgen != (0,0): inn += ' '+k2+' '+str(v2.objgen[0])+' 0 R'
+                elif isinstance(v2, pikepdf.Name): inn += ' '+k2+' '+str(v2)
+                elif isinstance(v2, pikepdf.String): inn += ' '+k2+' ('+str(v2)+')'
                 else: inn += ' '+k2+' '+str(v2)
             return inn+'>>'
         return str(v)
@@ -1144,7 +1149,7 @@ def _incremental_tag(input_path, output_path):
     else:
         oln = next_obj; next_obj += 1
         aobjs.append((oln, str(oln).encode()+b' 0 obj'+_NL+b'<< /Type /Outlines /Count 0 >>'+_NL+b'endobj'+_NL))
-    rd += ' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines '+str(oln)+' 0 R /Tabs /S>>'
+    rd += ' /MarkInfo << /Marked true >> /ViewerPreferences << /DisplayDocTitle true >> /Outlines '+str(oln)+' 0 R /Tabs /S /Lang (en-US)>>'
     aobjs.append((root_objnum, str(root_objnum).encode()+b' 0 obj'+_NL+rd.encode('latin-1')+_NL+b'endobj'+_NL))
     pp.close()
     base = len(orig); upd = b''; offs = {}
@@ -1154,7 +1159,8 @@ def _incremental_tag(input_path, output_path):
     for on in sorted(offs.keys()): upd += (str(on)+' 1').encode()+_NL+(('%010d' % offs[on])+' 00000 n ').encode()+_NL
     _sxm_m = orig[-200:].rfind(b'startxref'); px = int(orig[-200:][_sxm_m+9:].strip().split()[0]) if _sxm_m >= 0 else 0
     _rm_idx = orig[-500:].rfind(b'/Root '); rn = int(orig[-500:][_rm_idx+6:].split()[0]) if _rm_idx >= 0 else root_objnum
-    upd += (b'trailer'+_NL+b'<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R /Prev '+str(px).encode()+b' >>'+_NL+b'startxref'+_NL+str(xo).encode()+_NL+b'%%EOF'+_NL)
+    _ii_idx = orig[-500:].rfind(b'/Info '); _ii_str = (b' /Info '+orig[-500:][_ii_idx+6:].split()[0]+b' 0 R') if _ii_idx >= 0 else b''
+    upd += (b'trailer'+_NL+b'<< /Size '+str(next_obj).encode()+b' /Root '+str(rn).encode()+b' 0 R'+_ii_str+b' /Prev '+str(px).encode()+b' >>'+_NL+b'startxref'+_NL+str(xo).encode()+_NL+b'%%EOF'+_NL)
     open(output_path,'wb').write(orig+upd)
     return len(pcup)
 
