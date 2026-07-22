@@ -1160,7 +1160,6 @@ def _tag_decoded_stream(raw_bytes):
     out = []
     depth = 0
     i = 0
-    _dbg_logged = False
     while i < len(tokens):
         tok = tokens[i]
         if tok in (b'BDC', b'BMC'):
@@ -1174,9 +1173,6 @@ def _tag_decoded_stream(raw_bytes):
                 while j < len(tokens) and tokens[j] != b'ET':
                     inner_parts.append(tokens[j]); j += 1
                 inner = b''.join(inner_parts)
-                if not _dbg_logged:
-                    _dbg_logged = True
-                    print(f'[TAG-DBG] first_BT tok={i} inner_len={len(inner)} Tj_in_inner={b"Tj" in inner} inner_first50={repr(inner[:50])}', file=sys.stderr)
                 if _TEXT_OPS_B.search(inner):
                     out.append(b'/P <</MCID ' + str(next_mcid).encode() + b'>> BDC' + chr(10).encode() + b'BT')
                     new_mcids.append(next_mcid); next_mcid += 1
@@ -1197,34 +1193,9 @@ def _tag_decoded_stream(raw_bytes):
 import zlib as _zlib, tempfile as _tmpmod
 
 def _raw_patch_streams(input_path, output_path):
-    _TEXT_OPS_B2 = _re.compile(b'Tj')
     _pp = pikepdf.open(input_path, allow_overwriting_input=True, suppress_warnings=True)
-    _patched = 0
-    for _page in _pp.pages:
-        _contents = _page.get('/Contents')
-        if _contents is None:
-            continue
-        _slist = list(_contents) if isinstance(_contents, pikepdf.Array) else [_contents]
-        _new_streams = []
-        for _s in _slist:
-            _decoded = _s.read_bytes()
-
-            if b'BT' in _decoded and b'Tj' in _decoded:
-                _modified, _new_mcids = _tag_decoded_stream(_decoded)
-                print(f'[STREAM] obj={_s.objgen[0]} BT={_decoded.count(b"BT")} Tj={_decoded.count(b"Tj")} mcids={len(_new_mcids)}', file=sys.stderr)
-                if _new_mcids:
-                    _patched += 1
-                    _ns = pikepdf.Stream(_pp, _modified)
-                    _new_streams.append(_pp.make_indirect(_ns))
-                else:
-                    _new_streams.append(_pp.make_indirect(_s))
-            else:
-                _new_streams.append(_pp.make_indirect(_s))
-        if len(_new_streams) == 1:
-            _page['/Contents'] = _new_streams[0]
-        else:
-            _page['/Contents'] = pikepdf.Array(_new_streams)
-    print(f'[RAW-PATCH] patching {_patched} streams', file=sys.stderr)
+    _sp = _tag_page_streams(_pp, None, 0, None)
+    print(f'[RAW-PATCH] tag_page_streams done sp={_sp}', file=sys.stderr)
     if '/MarkInfo' not in _pp.Root:
         _pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     else:
