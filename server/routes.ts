@@ -783,7 +783,7 @@ try:
                 a['/StructParent'] = pikepdf.Integer(sp_key)
                 if not a.is_indirect: a = pp.make_indirect(a)
                 _objr = pp.make_indirect(pikepdf.Dictionary(
-                    Type=pikepdf.Name('/OBJR'), Pg=page, Obj=a
+                    Type=pikepdf.Name('/OBJR'), Obj=a
                 ))
                 _link_elem = pp.make_indirect(pikepdf.Dictionary(
                     Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/Link'),
