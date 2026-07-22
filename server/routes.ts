@@ -1195,10 +1195,19 @@ import zlib as _zlib, tempfile as _tmpmod
 def _raw_patch_streams(input_path, output_path):
     _pp = pikepdf.open(input_path, allow_overwriting_input=True, suppress_warnings=True)
     _sp = _tag_page_streams(_pp, None, 0, None)
-    _vs_pre = _pp.pages[0].get('/Contents')
-    if isinstance(_vs_pre, pikepdf.Array): _vs_pre = list(_vs_pre)[0]
-    _vr_pre = _vs_pre.read_bytes()
-    print(f'[RAW-PATCH] tag_page_streams done sp={_sp} pre_save_BDC={_vr_pre.count(b"BDC")}', file=sys.stderr)
+    # Save to temp first, re-open to verify, then handle metadata
+    import tempfile as _tf2
+    _tmp2 = _tf2.mktemp(suffix='.pdf', dir=_tmp_dir)
+    _pp.save(_tmp2, linearize=False)
+    _pp.close()
+    _pp_check = pikepdf.open(_tmp2, suppress_warnings=True)
+    _vs_check = _pp_check.pages[0].get('/Contents')
+    if isinstance(_vs_check, pikepdf.Array): _vs_check = list(_vs_check)[0]
+    _vr_check = _vs_check.read_bytes()
+    print(f'[RAW-PATCH] after_save BDC={_vr_check.count(b"BDC")} len={len(_vr_check)}', file=sys.stderr)
+    _pp_check.close()
+    # Now open the temp for metadata and final save
+    _pp = pikepdf.open(_tmp2, allow_overwriting_input=True, suppress_warnings=True)
     if '/MarkInfo' not in _pp.Root:
         _pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
     else:
