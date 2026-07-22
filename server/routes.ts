@@ -940,8 +940,8 @@ try:
         _streams = list(_cc) if isinstance(_cc, pikepdf.Array) else [_cc]
         for _s in _streams:
             _raw = _s.read_bytes().decode('latin-1', errors='replace')
-            _bdc_ranges = [(m.start(), m.end()) for m in re.finditer(r'(?:BDC|BMC).*?EMC', _raw, re.DOTALL)]
-            _do_matches = list(re.finditer(r'/\w+\s+Do', _raw))
+            _bdc_ranges = [(m.start(), m.end()) for m in re.finditer('(?:BDC|BMC).*?EMC', _raw, re.DOTALL)]
+            _do_matches = list(re.finditer('/[A-Za-z0-9_]+ Do', _raw))
             _needs_fix = any(not any(a <= m.start() <= b for a, b in _bdc_ranges) for m in _do_matches)
             if not _needs_fix: continue
             _parts = []
