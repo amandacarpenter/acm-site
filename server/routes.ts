@@ -1069,24 +1069,35 @@ import pikepdf, re as _re, zlib as _zlib
 
 
 def _tag_s(raw):
-    # FPDF2 already generates /P BDC...EMC for text. We just wrap untagged segments with /Artifact.
-    # Split on tagged blocks (BDC/BMC ... EMC) — keep separators
-    _re_seg = _re.compile('((?:/[A-Za-z]+[ \t]*(?:<<[^>]*>>)?[ \t]*)?(?:BDC|BMC).*?EMC)', _re.DOTALL)
-    parts = _re_seg.split(raw)
-    out = []
-    for part in parts:
-        stripped = part.strip()
-        if not stripped:
-            out.append(part)
-        elif 'BDC' in part or 'BMC' in part:
-            out.append(part)
-        else:
-            # Check for drawable PDF operators (untagged graphics)
-            has_draw = bool(_re.search('(?:^| )(m|l|c|re|S|s|f|F|B|b|n|W|Do|BI)(?= |$|'+chr(10)+'|'+chr(13)+')', stripped))
-            if has_draw:
-                out.append('/Artifact BMC'+chr(10)+part+chr(10)+'EMC'+chr(10))
+    _re_tok = _re.compile('(BDC|BMC|EMC|BT|ET)')
+    _TX = _re.compile('Tj|TJ')
+    toks = _re_tok.split(raw)
+    out = []; mcid = 0; i = 0
+    while i < len(toks):
+        tok = toks[i]
+        if tok == 'BT':
+            j = i+1; inner = []
+            while j < len(toks) and toks[j] != 'ET': inner.append(toks[j]); j += 1
+            inn = ''.join(inner)
+            if _TX.search(inn):
+                out.append('/P <</MCID '+str(mcid)+'>> BDC'+chr(10)+'BT'+inn+'ET'+chr(10)+'EMC'+chr(10))
+                mcid += 1
             else:
-                out.append(part)
+                out.append('BT'+inn+'ET')
+            i = j+1
+        elif tok in ('BDC','BMC'):
+            j = i+1; depth = 1; inner = []
+            while j < len(toks) and depth > 0:
+                if toks[j] in ('BDC','BMC'): depth += 1
+                elif toks[j] == 'EMC': depth -= 1
+                if depth > 0: inner.append(toks[j])
+                j += 1
+            out.append('/Artifact BMC'+chr(10)+''.join(inner)+chr(10)+'EMC'+chr(10))
+            i = j
+        elif tok == 'EMC':
+            i += 1
+        else:
+            out.append(tok); i += 1
     return ''.join(out)
 
 
@@ -1102,6 +1113,7 @@ def _tag_streams(input_path, output_path):
         sl = list(cc) if isinstance(cc, pikepdf.Array) else [cc]
         for s in sl:
             rs = s.read_bytes().decode('latin-1', errors='replace')
+            if 'BT' not in rs: continue
             tg = _tag_s(rs)
             if tg != rs:
                 compressed = _zlib.compress(tg.encode('latin-1'), 9)
