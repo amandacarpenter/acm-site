@@ -681,19 +681,22 @@ def fix_table_headers(st):
                 th_fixed += 1
     return th_fixed
 
-def fix_figures(obj, depth=0, count=None):
+def fix_figures(obj, doc_title='', depth=0, count=None):
     if count is None: count = [0]
     if depth > 20: return count[0]
     if isinstance(obj, pikepdf.Dictionary):
         s = str(obj.get('/S', ''))
         if s in ('/Figure', '/Formula'):
             if '/Alt' not in obj:
-                obj['/Alt'] = pikepdf.String('Figure')
+                n = count[0] + 1
+                label = 'Chemical formula' if s == '/Formula' else 'Figure'
+                alt = f'{label} {n}' + (f' from {doc_title}' if doc_title else '')
+                obj['/Alt'] = pikepdf.String(alt)
                 count[0] += 1
         k = obj.get('/K')
-        if k: fix_figures(k, depth+1, count)
+        if k: fix_figures(k, doc_title, depth+1, count)
     elif isinstance(obj, pikepdf.Array):
-        for item in list(obj): fix_figures(item, depth, count)
+        for item in list(obj): fix_figures(item, doc_title, depth, count)
     return count[0]
 
 def fix_headings(st):
@@ -744,20 +747,69 @@ try:
     # Struct tree fixes
     if '/StructTreeRoot' in pp.Root:
         st = pp.Root['/StructTreeRoot']
-        stats['figures_alt_added'] = fix_figures(st)
+        _doc_title = str(info.get('/Title', '')) if info else ''
+        stats['figures_alt_added'] = fix_figures(st, _doc_title)
         stats['th_headers_fixed'] = fix_table_headers(st)
         stats['headings_remapped'] = fix_headings(st)
 
-    # Tagged annotations — add /Contents to untagged link annots
+    # Tagged annotations — add proper LINK struct elements to StructTree + ParentTree
     annot_fixed = 0
-    for page in pp.pages:
-        annots = page.get('/Annots')
-        if not annots: continue
-        for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
-            if not isinstance(a, pikepdf.Dictionary): continue
-            if '/StructParent' not in a and '/Contents' not in a:
-                a['/Contents'] = pikepdf.String('Link')
+    if '/StructTreeRoot' in pp.Root:
+        _st = pp.Root['/StructTreeRoot']
+        _next_key = int(str(_st.get('/ParentTreeNextKey', 3)))
+        _pt = _st.get('/ParentTree')
+        _nums = list(_pt['/Nums']) if _pt and '/Nums' in _pt else []
+        # Find doc root for attaching new LINK elements
+        _sk = _st.get('/K')
+        _roots = list(_sk) if isinstance(_sk, pikepdf.Array) else ([_sk] if _sk else [])
+        _doc_root = None
+        for _r in _roots:
+            if isinstance(_r, pikepdf.Dictionary) and str(_r.get('/S','')) in ('/Document',''):
+                _doc_root = _r; break
+        if _doc_root is None and _roots:
+            _doc_root = _roots[0]
+        if _doc_root is not None and not _doc_root.is_indirect:
+            _doc_root = pp.make_indirect(_doc_root)
+        _new_links = []
+        for page in pp.pages:
+            annots = page.get('/Annots')
+            if not annots: continue
+            for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
+                if not isinstance(a, pikepdf.Dictionary): continue
+                if a.get('/StructParent') is not None: continue
+                if '/Contents' not in a:
+                    a['/Contents'] = pikepdf.String('Link')
+                sp_key = _next_key; _next_key += 1
+                a['/StructParent'] = pikepdf.Integer(sp_key)
+                if not a.is_indirect: a = pp.make_indirect(a)
+                _objr = pp.make_indirect(pikepdf.Dictionary(
+                    Type=pikepdf.Name('/OBJR'), Pg=page, Obj=a
+                ))
+                _link_elem = pp.make_indirect(pikepdf.Dictionary(
+                    Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/Link'),
+                    P=_doc_root, K=pikepdf.Array([_objr])
+                ))
+                _nums.append(pikepdf.Integer(sp_key))
+                _nums.append(_link_elem)
+                _new_links.append(_link_elem)
                 annot_fixed += 1
+        if _pt and _new_links:
+            _pt['/Nums'] = pikepdf.Array(_nums)
+            _st['/ParentTreeNextKey'] = pikepdf.Integer(_next_key)
+            if _doc_root is not None:
+                _ek = _doc_root.get('/K')
+                if _ek is None: _doc_root['/K'] = pikepdf.Array(_new_links)
+                elif isinstance(_ek, pikepdf.Array): _doc_root['/K'] = pikepdf.Array(list(_ek) + _new_links)
+                else: _doc_root['/K'] = pikepdf.Array([_ek] + _new_links)
+    else:
+        for page in pp.pages:
+            annots = page.get('/Annots')
+            if not annots: continue
+            for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
+                if not isinstance(a, pikepdf.Dictionary): continue
+                if '/StructParent' not in a and '/Contents' not in a:
+                    a['/Contents'] = pikepdf.String('Link')
+                    annot_fixed += 1
     stats['annotations_tagged'] = annot_fixed
 
     # Tagged content + /Tabs /S per page
