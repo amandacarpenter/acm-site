@@ -793,8 +793,24 @@ except Exception as e:
 
       const outBuf = await readFile(tmpOut);
       const originalName = req.file.originalname.replace(/\.pdf$/i, "");
+      // Build human-readable fixes list
+      const fixes: string[] = [];
+      if (stats.bookmarks_count > 0) fixes.push(`Bookmarks: set count to ${stats.bookmarks_count}`);
+      if (stats.figures_alt_added > 0) fixes.push(`Alt text added to ${stats.figures_alt_added} figure${stats.figures_alt_added !== 1 ? "s" : ""}`);
+      if (stats.th_headers_fixed > 0) fixes.push(`Table headers: ${stats.th_headers_fixed} cell${stats.th_headers_fixed !== 1 ? "s" : ""} marked as TH`);
+      if (stats.headings_remapped > 0) fixes.push(`Heading levels remapped (removed gaps in H1–H6 nesting)`);
+      if (stats.annotations_tagged > 0) fixes.push(`${stats.annotations_tagged} link annotation${stats.annotations_tagged !== 1 ? "s" : ""} tagged for screen readers`);
+      if (stats.streams_patched > 0) fixes.push(`Untagged content wrapped on ${stats.streams_patched} page${stats.streams_patched !== 1 ? "s" : ""}`);
+      fixes.push("Language set to en-US");
+      fixes.push("Document title set in metadata");
+      fixes.push("Tab order set to structure order on all pages");
+
+      const pageCount = outBuf.toString("latin1").match(/\/Type\s*\/Page[^s]/g)?.length ?? 0;
+
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${originalName}-accessible.pdf"`);
+      res.setHeader("X-Total-Pages", String(pageCount));
+      res.setHeader("X-Fixes-Made", JSON.stringify(fixes));
       res.setHeader("X-Accessibility-Stats", JSON.stringify(stats));
       res.send(outBuf);
     } catch (err: any) {
