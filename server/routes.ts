@@ -664,9 +664,6 @@ def fix_table_headers(st):
             if not isinstance(child, pikepdf.Dictionary): continue
             s = str(child.get('/S', ''))
             if s == '/TR': first_row = child; break
-            elif s == '/NonStruct':
-                child['/S'] = pikepdf.Name('/TR')
-                first_row = child; break
             elif s in ('/THead', '/TBody', '/TFoot'):
                 rowk = child.get('/K')
                 if rowk:
@@ -678,12 +675,10 @@ def fix_table_headers(st):
         cells = first_row.get('/K')
         if not cells: continue
         for cell in (list(cells) if isinstance(cells, pikepdf.Array) else [cells]):
-            if isinstance(cell, pikepdf.Dictionary):
-                cs = str(cell.get('/S',''))
-                if cs in ('/TD', '/NonStruct'):
-                    cell['/S'] = pikepdf.Name('/TH')
-                    cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
-                    th_fixed += 1
+            if isinstance(cell, pikepdf.Dictionary) and str(cell.get('/S','')) == '/TD':
+                cell['/S'] = pikepdf.Name('/TH')
+                cell['/A'] = pikepdf.Dictionary(O=pikepdf.Name('/Table'), Scope=pikepdf.Name('/Column'))
+                th_fixed += 1
     return th_fixed
 
 def collect_figures(obj, depth=0, results=None):
@@ -822,6 +817,17 @@ def fix_figures_with_vision(st, pp, anthropic_key):
     for i, fig in enumerate(figs):
         fig['/Alt'] = pikepdf.String(results.get(i, 'Figure'))
     fix_nested_alt(st)
+    def set_empty_alt(obj, depth=0):
+        if depth > 25: return
+        if isinstance(obj, pikepdf.Dictionary):
+            s = str(obj.get('/S',''))
+            if s in ('/Figure', '/Formula') and '/Alt' not in obj:
+                obj['/Alt'] = pikepdf.String('')
+            k = obj.get('/K')
+            if k: set_empty_alt(k, depth+1)
+        elif isinstance(obj, pikepdf.Array):
+            for i in list(obj): set_empty_alt(i, depth)
+    set_empty_alt(st)
     return len(figs)
 
 def fix_headings(st):
@@ -877,22 +883,21 @@ try:
         stats['th_headers_fixed'] = fix_table_headers(st)
         stats['headings_remapped'] = fix_headings(st)
 
-    # Tagged annotations — add proper LINK struct elements to StructTree + ParentTree
+    # Tagged annotations — add proper LINK struct elements (skip boilerplate header/footer links)
+    _BOILERPLATE = ['libretexts.org/', 'creativecommons.org/licenses', '?pdf']
     annot_fixed = 0
     if '/StructTreeRoot' in pp.Root:
         _st = pp.Root['/StructTreeRoot']
         _next_key = int(str(_st.get('/ParentTreeNextKey', 3)))
         _pt = _st.get('/ParentTree')
         _nums = list(_pt['/Nums']) if _pt and '/Nums' in _pt else []
-        # Find doc root for attaching new LINK elements
         _sk = _st.get('/K')
         _roots = list(_sk) if isinstance(_sk, pikepdf.Array) else ([_sk] if _sk else [])
         _doc_root = None
         for _r in _roots:
             if isinstance(_r, pikepdf.Dictionary) and str(_r.get('/S','')) in ('/Document',''):
                 _doc_root = _r; break
-        if _doc_root is None and _roots:
-            _doc_root = _roots[0]
+        if _doc_root is None and _roots: _doc_root = _roots[0]
         if _doc_root is not None and not _doc_root.is_indirect:
             _doc_root = pp.make_indirect(_doc_root)
         _new_links = []
@@ -902,14 +907,13 @@ try:
             for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
                 if not isinstance(a, pikepdf.Dictionary): continue
                 if a.get('/StructParent') is not None: continue
-                if '/Contents' not in a:
-                    a['/Contents'] = pikepdf.String('Link')
+                _action = a.get('/A')
+                _uri = str(_action.get('/URI','')) if isinstance(_action, pikepdf.Dictionary) else ''
+                if any(_b in _uri for _b in _BOILERPLATE): continue
                 sp_key = _next_key; _next_key += 1
                 a['/StructParent'] = pikepdf.Integer(sp_key)
                 if not a.is_indirect: a = pp.make_indirect(a)
-                _objr = pp.make_indirect(pikepdf.Dictionary(
-                    Type=pikepdf.Name('/OBJR'), Obj=a
-                ))
+                _objr = pp.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name('/OBJR'), Obj=a))
                 _link_elem = pp.make_indirect(pikepdf.Dictionary(
                     Type=pikepdf.Name('/StructElem'), S=pikepdf.Name('/Link'),
                     P=_doc_root, K=pikepdf.Array([_objr])
@@ -926,16 +930,34 @@ try:
                 if _ek is None: _doc_root['/K'] = pikepdf.Array(_new_links)
                 elif isinstance(_ek, pikepdf.Array): _doc_root['/K'] = pikepdf.Array(list(_ek) + _new_links)
                 else: _doc_root['/K'] = pikepdf.Array([_ek] + _new_links)
-    else:
-        for page in pp.pages:
-            annots = page.get('/Annots')
-            if not annots: continue
-            for a in (list(annots) if isinstance(annots, pikepdf.Array) else [annots]):
-                if not isinstance(a, pikepdf.Dictionary): continue
-                if '/StructParent' not in a and '/Contents' not in a:
-                    a['/Contents'] = pikepdf.String('Link')
-                    annot_fixed += 1
     stats['annotations_tagged'] = annot_fixed
+
+    # Tagged content — wrap untagged XObject Do calls as /Artifact
+    _content_fixed = 0
+    for _page in pp.pages:
+        _cc = _page.get('/Contents')
+        if not _cc: continue
+        _streams = list(_cc) if isinstance(_cc, pikepdf.Array) else [_cc]
+        for _s in _streams:
+            _raw = _s.read_bytes().decode('latin-1', errors='replace')
+            _bdc_ranges = [(m.start(), m.end()) for m in re.finditer(r'(?:BDC|BMC).*?EMC', _raw, re.DOTALL)]
+            _do_matches = list(re.finditer(r'/\w+\s+Do', _raw))
+            _needs_fix = any(not any(a <= m.start() <= b for a, b in _bdc_ranges) for m in _do_matches)
+            if not _needs_fix: continue
+            _parts = []
+            _pos = 0
+            for _m in _do_matches:
+                _inside = any(a <= _m.start() <= b for a, b in _bdc_ranges)
+                if not _inside:
+                    _parts.append(_raw[_pos:_m.start()])
+                    _parts.append('/Artifact BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
+                    _pos = _m.end()
+            _parts.append(_raw[_pos:])
+            _fixed = ''.join(_parts)
+            if _fixed != _raw:
+                _s.write(_fixed.encode('latin-1', errors='replace'))
+                _content_fixed += 1
+    stats['content_streams_fixed'] = _content_fixed
 
     # /Tabs /S per page
     for page in pp.pages:
