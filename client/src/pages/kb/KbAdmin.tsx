@@ -105,7 +105,7 @@ function EditModal({ article, onClose, onSaved, token }: {
               <h2 id="edit-modal-title" className="text-gray-900 font-semibold text-lg leading-snug mt-0.5">{article.title}</h2>
             </div>
             <button onClick={onClose} className="text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488] rounded" aria-label="Close">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
 

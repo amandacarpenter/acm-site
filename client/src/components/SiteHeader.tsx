@@ -36,39 +36,49 @@ export default function SiteHeader() {
 
         {/* Desktop nav */}
         <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
-          {NAV_LINKS.map((link) => (
-            <Link key={link.href} href={link.href}>
-              <span
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                  location === link.href
-                    ? "text-[#0d9488] bg-[#0d9488]/10"
-                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                }`}
-              >
-                {link.label}
-              </span>
-            </Link>
-          ))}
-          <SignedOut>
-            <Link href="/login">
-              <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
-                Log in
-              </span>
-            </Link>
-            <Link href="/signup">
-              <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-                Get Started
-              </span>
-            </Link>
-          </SignedOut>
-          <SignedIn>
-            <Link href="/dashboard">
-              <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
-                Dashboard
-              </span>
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
+          <ul className="flex items-center gap-1 list-none p-0 m-0">
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href}>
+                  <span
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                      location === link.href
+                        ? "text-[#0d9488] bg-[#0d9488]/10"
+                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              </li>
+            ))}
+            <SignedOut>
+              <li>
+                <Link href="/login">
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                    Log in
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/signup">
+                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                    Get Started
+                  </span>
+                </Link>
+              </li>
+            </SignedOut>
+            <SignedIn>
+              <li>
+                <Link href="/dashboard">
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                    Dashboard
+                  </span>
+                </Link>
+              </li>
+              <li><UserButton afterSignOutUrl="/" /></li>
+            </SignedIn>
+          </ul>
         </nav>
 
         {/* Mobile hamburger */}

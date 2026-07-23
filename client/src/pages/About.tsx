@@ -74,7 +74,7 @@ export default function About() {
             Accessibility shouldn't require a specialist for every document. Every faculty member, every instructional designer, every institution should have the tools to make their materials accessible — without it taking all day.
           </p>
           <p className="text-lg text-gray-300 leading-relaxed">
-            Remedy508 is operated by <a href="https://leftcoastlearningllc.com" target="_blank" rel="noopener" className="text-white font-semibold underline underline-offset-2 hover:text-teal-400 transition-colors">Left Coast Learning LLC</a>, a California company focused on building practical accessibility tools for higher education.
+            Remedy508 is operated by <a href="https://leftcoastlearningllc.com" target="_blank" rel="noopener noreferrer" aria-label="Left Coast Learning LLC website (opens in new tab)" className="text-white font-semibold underline underline-offset-2 hover:text-teal-400 transition-colors">Left Coast Learning LLC</a>, a California company focused on building practical accessibility tools for higher education.
           </p>
         </div>
       </section>

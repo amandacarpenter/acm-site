@@ -433,7 +433,7 @@ export default function Home() {
 
           <p className="text-center text-xs text-white/80 mt-6">
             Source:{" "}
-            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-[#5eead4] transition">
+            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" aria-label="W3C WCAG 2.1 Specification (opens in new tab)" className="underline underline-offset-2 hover:text-[#5eead4] transition">
               W3C WCAG 2.1 Specification
             </a>
           </p>
