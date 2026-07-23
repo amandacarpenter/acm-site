@@ -622,20 +622,20 @@ def tag_untagged(raw):
     markers = list(re.finditer(r'(?:(?:/[\\w]+(?:\\s*<<[^>]*>>)?)\\s*)?(?:BDC|BMC).*?EMC', raw, re.DOTALL))
     if not markers:
         if re.search(r'\\b(Tj|TJ|m|l|S|f|re|B|Do|BI)\\b', raw.strip()):
-            return '<</Type /Artifact /Subtype /Pagination>> BMC' + chr(10) + raw + chr(10) + 'EMC' + chr(10)
+            return '/Artifact BMC' + chr(10) + raw + chr(10) + 'EMC' + chr(10)
         return raw
     out = []; pos = 0
     for m in markers:
         before = raw[pos:m.start()]
         if before.strip() and re.search(r'\\b(re|m|l|S|f|B|W|Do|BI)\\b', before):
-            out.append('<</Type /Artifact /Subtype /Pagination>> BMC' + chr(10) + before + chr(10) + 'EMC' + chr(10))
+            out.append('/Artifact BMC' + chr(10) + before + chr(10) + 'EMC' + chr(10))
         else:
             out.append(before)
         out.append(m.group(0))
         pos = m.end()
     after = raw[pos:]
     if after.strip() and re.search(r'\\b(re|m|l|S|f|B|W|Tj|TJ|Do|BI)\\b', after):
-        out.append('<</Type /Artifact /Subtype /Pagination>> BMC' + chr(10) + after + chr(10) + 'EMC' + chr(10))
+        out.append('/Artifact BMC' + chr(10) + after + chr(10) + 'EMC' + chr(10))
     else:
         out.append(after)
     return ''.join(out)
@@ -995,7 +995,7 @@ try:
                 _inside = any(a <= _m.start() <= b for a, b in _bdc_ranges)
                 if not _inside:
                     _parts.append(_raw[_pos:_m.start()])
-                    _parts.append('<</Type /Artifact /Subtype /Pagination>> BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
+                    _parts.append('/Artifact BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
                     _pos = _m.end()
                     _changed = True
             _parts.append(_raw[_pos:])
@@ -1011,7 +1011,7 @@ try:
                 _has_tj = re.search(' Tj', _m.group())
                 if not _inside and not _has_bdc_inside and _has_tj:
                     _parts2.append(_raw[_pos2:_m.start()])
-                    _parts2.append('<</Type /Artifact /Subtype /Pagination>> BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
+                    _parts2.append('/Artifact BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
                     _pos2 = _m.end()
                     _changed = True
             _parts2.append(_raw[_pos2:])
