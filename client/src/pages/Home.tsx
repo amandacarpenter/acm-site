@@ -1,9 +1,12 @@
-import { Link } from "wouter";
-import SiteHeader from "@/components/SiteHeader";
+import { Link, useLocation } from "wouter";
+import { useState } from "react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SiteFooter from "@/components/SiteFooter";
 import teaserVideo from "@/assets/teaser.mp4";
 import teaserCaptions from "@/assets/teaser.vtt";
 import phoneFrame from "@/assets/phone-frame.png";
+import heroPerson from "@/assets/hero-person.png";
+import logoUrl from "@/assets/logo.png";
 import {
   Accordion,
   AccordionContent,
@@ -12,7 +15,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   FileText, FileSearch, Video, Code2, ImageIcon, ArrowRight,
-  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
+  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 // Note: tool cards on homepage are display-only, not linked
 
@@ -30,59 +33,145 @@ const STATS = [
   { value: "1 in 4", label: "college students has a disability", source: "NCES" },
 ];
 
+const NAV_LINKS = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/kb", label: "Knowledge Base" },
+  { href: "/pricing", label: "Plans & Pricing" },
+];
+
 export default function Home() {
+  const [location] = useLocation();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
-      <SiteHeader />
 
-      {/* ── HERO ── */}
-      <section className="bg-[#3a485b]" aria-labelledby="hero-heading">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-20 pb-24 sm:pt-28 sm:pb-32">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-8">
-            <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-            Not Accessible, Not Acceptable™
-          </div>
+      {/* ── HERO — full-viewport split panel ── */}
+      <section className="relative flex flex-col lg:flex-row min-h-screen" aria-labelledby="hero-heading">
 
-          <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white max-w-3xl mb-4 leading-tight">
-            <span className="text-white">Accessibility</span>{" "}
-            <span className="text-white">Made Easy</span>
-          </h1>
+        {/* LEFT — dark navy panel */}
+        <div className="relative z-10 flex flex-col bg-[#3a485b] lg:w-[42%] px-8 sm:px-10 lg:px-14">
 
-          <p className="text-xl text-white max-w-xl mb-3 leading-relaxed font-medium">
-            Create compliant content, no expertise required.
-          </p>
-          <p className="text-base text-white max-w-2xl mb-10 leading-relaxed">
-            Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
-          </p>
+          {/* Inline nav — only on homepage hero */}
+          <header role="banner">
+            <div className="flex items-center justify-between h-20">
+              <Link href="/" className="flex items-center gap-3 no-underline">
+                <img src={logoUrl} alt="Remedy508 logo" style={{ height: 44, width: "auto" }} />
+              </Link>
+              {/* Mobile hamburger */}
+              <button
+                className="lg:hidden p-2 rounded-lg text-white/70 hover:text-white"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              >
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+            {/* Desktop nav — horizontal, sits inside left panel */}
+            <nav className="hidden lg:flex items-center gap-1 flex-wrap pb-2" aria-label="Main navigation">
+              {NAV_LINKS.map((link) => (
+                <Link key={link.href} href={link.href}>
+                  <span className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    location === link.href
+                      ? "text-white bg-white/15"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}>{link.label}</span>
+                </Link>
+              ))}
+              <SignedOut>
+                <Link href="/login">
+                  <span className="px-3 py-1.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
+                </Link>
+                <Link href="/signup">
+                  <span className="ml-1 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started →</span>
+                </Link>
+              </SignedOut>
+              <SignedIn>
+                <Link href="/dashboard">
+                  <span className="px-3 py-1.5 rounded-lg text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
+                </Link>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </nav>
+            {/* Mobile dropdown */}
+            {mobileOpen && (
+              <nav className="lg:hidden pb-4 space-y-1" aria-label="Mobile navigation">
+                {NAV_LINKS.map((link) => (
+                  <Link key={link.href} href={link.href}>
+                    <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">{link.label}</span>
+                  </Link>
+                ))}
+                <SignedOut>
+                  <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium text-white/80 hover:bg-white/10 rounded-lg cursor-pointer">Log in</span></Link>
+                  <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold bg-[#0d9488] text-white rounded-lg text-center cursor-pointer">Get Started</span></Link>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm text-white/80 hover:bg-white/10 rounded-lg cursor-pointer">Dashboard</span></Link>
+                  <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
+                </SignedIn>
+              </nav>
+            )}
+          </header>
 
-          <div className="flex flex-wrap gap-3">
-            <Link href="/signup">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm" data-testid="hero-cta">
-                <Zap className="w-4 h-4" aria-hidden="true" />
-                Get Started
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </span>
-            </Link>
-            <Link href="/pricing">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition cursor-pointer">
-                See Pricing
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
-              </span>
-            </Link>
-          </div>
+          {/* Hero copy — vertically centered in remaining space */}
+          <div className="flex flex-col justify-center flex-1 py-16 lg:py-0">
+            <p className="text-[#0d9488] text-sm font-semibold tracking-widest uppercase mb-4">Not Accessible, Not Acceptable™</p>
 
-          {/* Stats */}
-          <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 pt-10 border-t border-white/20">
-            {STATS.map((stat) => (
-              <div key={stat.label}>
-                <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-sm text-white/80">{stat.label}</div>
-                <div className="text-xs text-white/50 mt-0.5">{stat.source}</div>
-              </div>
-            ))}
+            <h1 id="hero-heading" className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-6">
+              Accessibility<br />Made Easy.
+            </h1>
+
+            <p className="text-white/80 text-base leading-relaxed mb-10 max-w-sm">
+              Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
+            </p>
+
+            <div className="flex flex-wrap gap-3">
+              <Link href="/signup">
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm" data-testid="hero-cta">
+                  <Zap className="w-4 h-4" aria-hidden="true" />
+                  Get Started
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </span>
+              </Link>
+              <Link href="/pricing">
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/30 text-white font-medium text-sm hover:bg-white/10 transition cursor-pointer">
+                  See Pricing
+                  <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                </span>
+              </Link>
+            </div>
+
+            {/* Stats row */}
+            <div className="mt-14 pt-10 border-t border-white/20 grid grid-cols-3 gap-4">
+              {STATS.map((stat) => (
+                <div key={stat.label}>
+                  <div className="text-2xl font-bold text-white mb-0.5">{stat.value}</div>
+                  <div className="text-xs text-white/70 leading-snug">{stat.label}</div>
+                  <div className="text-[10px] text-white/40 mt-0.5">{stat.source}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* RIGHT — full-bleed photo panel */}
+        <div className="relative lg:flex-1 min-h-[50vw] lg:min-h-0">
+          <img
+            src={heroPerson}
+            alt="Professional smiling while working on a laptop in a modern office"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          {/* Big watermark text over the photo, bottom-left */}
+          <div className="absolute bottom-10 left-8 right-8 pointer-events-none select-none" aria-hidden="true">
+            <span className="text-white font-extrabold leading-none drop-shadow-2xl"
+              style={{ fontSize: "clamp(3rem, 8vw, 7rem)", opacity: 0.92, lineHeight: 1 }}>
+              Accessibility<br />Made Easy.
+            </span>
+          </div>
+        </div>
+
       </section>
 
       {/* ── HOW IT WORKS ── */}
