@@ -105,7 +105,7 @@ export default function Home() {
             <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
               {/* Mobile logo — logo-hero.jpg blends into the solid dark bar above */}
               <Link href="/" className="flex lg:hidden items-center no-underline">
-                <img src={logoHero} alt="Remedy508" style={{ height: 38, width: "auto" }} />
+                <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
               <div className="hidden lg:block" />
