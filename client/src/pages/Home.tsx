@@ -50,7 +50,7 @@ export default function Home() {
     <div className="min-h-screen bg-white" data-testid="home-page">
 
       {/* ── HERO ── */}
-      <section className="relative flex flex-col lg:flex-row" style={{ minHeight: "100svh" }} aria-labelledby="hero-heading">
+      <section className="relative flex flex-col lg:flex-row lg:[min-height:100svh]" aria-labelledby="hero-heading">
 
         {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
         <div className="hidden lg:flex flex-col bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
