@@ -1,7 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
-import { useUser, useAuth, RedirectToSignIn } from "@clerk/clerk-react";
+import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
 import { CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
@@ -21,12 +21,8 @@ const TOOLS = [
 ];
 
 export default function Dashboard() {
-  const { isLoaded, isSignedIn } = useAuth();
   const { user } = useUser();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
-
-  if (!isLoaded) return <div className="min-h-screen bg-gray-50" />;
-  if (!isSignedIn) return <RedirectToSignIn />;
 
   const meta = (user?.publicMetadata || {}) as any;
   const plan: string = meta.plan || "individual";
