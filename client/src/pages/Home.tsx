@@ -7,6 +7,7 @@ import teaserCaptions from "@/assets/teaser.vtt";
 import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
+import logoWhite from "@/assets/logo-white.jpg";
 import {
   Accordion,
   AccordionContent,
@@ -48,103 +49,99 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
 
-      {/* ── HERO — full-viewport, photo behind everything ── */}
-      <section className="relative min-h-screen flex flex-col lg:flex-row" aria-labelledby="hero-heading">
+      {/* ── HERO ── */}
+      <section className="relative flex flex-col" style={{ minHeight: "100svh" }} aria-labelledby="hero-heading">
 
-        {/* Full-bleed background photo — sits behind both panels */}
+        {/* ─ Full-bleed background photo behind everything ─ */}
         <div className="absolute inset-0 z-0">
           <img
             src={heroPerson}
             alt=""
             aria-hidden="true"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "60% center" }}
           />
         </div>
 
-        {/* LEFT — dark solid panel over the photo, full height */}
-        <div className="relative z-10 flex flex-col bg-[#111827] lg:w-[42%] min-h-screen px-8 sm:px-10 lg:px-14">
+        {/* ─ Nav — overlaid across the full width, same style as SiteHeader but white ─ */}
+        <header
+          role="banner"
+          className="relative z-20 w-full"
+          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+            <Link href="/" className="flex items-center no-underline flex-shrink-0">
+              <img src={logoWhite} alt="Remedy508" style={{ height: 50, width: "auto" }} />
+            </Link>
 
-          {/* Nav row inside the dark panel */}
-          <header role="banner">
-            <div className="flex items-center justify-between h-20">
-              {/* White logo: icon stays teal, wordmark text goes white via brightness filter */}
-              <Link href="/" className="flex items-center gap-3 no-underline flex-shrink-0">
-                <img
-                  src={logoUrl}
-                  alt="Remedy508"
-                  style={{ height: 42, width: "auto", filter: "brightness(0) invert(1)" }}
-                />
-              </Link>
-              {/* Mobile hamburger */}
-              <button
-                className="lg:hidden p-2 rounded-lg text-white/80 hover:text-white"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {/* Desktop nav links — all white */}
-            <nav className="hidden lg:flex items-center gap-0.5 flex-wrap pb-3" aria-label="Main navigation">
+            {/* Desktop nav */}
+            <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
               {NAV_LINKS.map((link) => (
                 <Link key={link.href} href={link.href}>
-                  <span className={`px-2.5 py-1.5 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                    location === link.href ? "text-white" : "text-white/70 hover:text-white hover:bg-white/10"
+                  <span className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                    location === link.href ? "text-white" : "text-white/80 hover:text-white hover:bg-white/10"
                   }`}>{link.label}</span>
                 </Link>
               ))}
-              <span className="mx-1 text-white/30">|</span>
               <SignedOut>
                 <Link href="/login">
-                  <span className="px-2.5 py-1.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-md transition cursor-pointer">Login</span>
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
                 </Link>
                 <Link href="/signup">
-                  <span className="ml-1 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-                    Get Started →
-                  </span>
+                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
                 </Link>
               </SignedOut>
               <SignedIn>
                 <Link href="/dashboard">
-                  <span className="px-2.5 py-1.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-md transition cursor-pointer">Dashboard</span>
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
                 </Link>
                 <UserButton afterSignOutUrl="/" />
               </SignedIn>
             </nav>
 
-            {/* Mobile dropdown */}
-            {mobileOpen && (
-              <nav className="lg:hidden pb-4 space-y-1" aria-label="Mobile navigation">
+            {/* Mobile hamburger */}
+            <button
+              className="sm:hidden p-2 rounded-lg text-white/80 hover:text-white"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {/* Mobile dropdown */}
+          {mobileOpen && (
+            <div className="sm:hidden bg-[#111827]/95 border-t border-white/10">
+              <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
                 {NAV_LINKS.map((link) => (
                   <Link key={link.href} href={link.href}>
-                    <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 rounded-lg cursor-pointer">{link.label}</span>
+                    <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
                   </Link>
                 ))}
                 <SignedOut>
-                  <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm text-white/70 hover:bg-white/10 rounded-lg cursor-pointer">Login</span></Link>
-                  <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-bold bg-[#0d9488] text-white rounded-lg text-center cursor-pointer">Get Started</span></Link>
+                  <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Log in</span></Link>
+                  <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
                 </SignedOut>
                 <SignedIn>
-                  <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm text-white/70 hover:bg-white/10 rounded-lg cursor-pointer">Dashboard</span></Link>
+                  <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
                   <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
                 </SignedIn>
               </nav>
-            )}
-          </header>
+            </div>
+          )}
+        </header>
 
-          {/* Hero copy — vertically centered */}
-          <div className="flex flex-col justify-center flex-1 py-16 lg:py-0">
-            <p className="text-[#0d9488] text-xs font-bold tracking-widest uppercase mb-5">Not Accessible, Not Acceptable™</p>
+        {/* ─ Split body: left copy panel (desktop only) + right photo area ─ */}
+        <div className="relative z-10 flex flex-col lg:flex-row flex-1">
 
-            <h1 id="hero-heading" className="text-4xl sm:text-5xl xl:text-6xl font-extrabold text-white leading-tight mb-6">
+          {/* LEFT — dark copy panel, hidden on mobile */}
+          <div className="hidden lg:flex flex-col justify-center bg-[#111827] lg:w-[42%] px-10 xl:px-14 py-20">
+            <h1 id="hero-heading" className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-6">
               Not Accessible,<br />Not Acceptable™
             </h1>
-
-            <p className="text-white/75 text-sm sm:text-base leading-relaxed mb-8 max-w-sm">
+            <p className="text-white/75 text-base leading-relaxed mb-8 max-w-sm">
               Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
             </p>
-
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer" data-testid="hero-cta">
@@ -159,17 +156,43 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
+          {/* RIGHT — transparent area (shows photo), overlay text bottom-left */}
+          {/* On mobile this is full-screen; on desktop it fills remaining space */}
+          <div className="flex-1 flex items-end p-6 sm:p-10 lg:p-14" style={{ minHeight: "calc(100svh - 80px)" }}>
+            {/* "Accessibility Made Easy." — visible on all sizes, prominent on mobile */}
+            <p
+              className="text-white font-black leading-none"
+              style={{ fontSize: "clamp(2.4rem, 8vw, 6.5rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              aria-hidden="true"
+            >
+              Accessibility<br />Made Easy.
+            </p>
+          </div>
+
         </div>
 
-        {/* RIGHT — transparent, shows the photo behind; overlay text at bottom */}
-        <div className="relative z-10 flex-1 flex items-end p-8 lg:p-14 min-h-[50vw] lg:min-h-0">
-          <p
-            className="text-white font-black leading-none drop-shadow-2xl"
-            style={{ fontSize: "clamp(2.8rem, 7vw, 7rem)", textShadow: "0 2px 40px rgba(0,0,0,0.5)" }}
-            aria-hidden="true"
-          >
-            Accessibility<br />Made Easy.
+        {/* Mobile-only copy block — below the full-screen photo */}
+        <div className="lg:hidden relative z-10 bg-[#111827] px-6 py-12">
+          <h1 id="hero-heading-mobile" className="text-3xl font-extrabold text-white leading-tight mb-5">
+            Not Accessible,<br />Not Acceptable™
+          </h1>
+          <p className="text-white/75 text-sm leading-relaxed mb-7">
+            Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
           </p>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/signup">
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer">
+                <Zap className="w-4 h-4" aria-hidden="true" />
+                Get Started →
+              </span>
+            </Link>
+            <Link href="/pricing">
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
+                See Pricing ›
+              </span>
+            </Link>
+          </div>
         </div>
 
       </section>
