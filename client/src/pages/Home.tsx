@@ -57,8 +57,7 @@ export default function Home() {
           {/* Logo row at very top */}
           <div className="pt-6 pb-4">
             <Link href="/" className="flex items-center gap-3 no-underline">
-              <img src={logoIcon} alt="" aria-hidden="true" style={{ height: 40, width: "auto" }} />
-              <span className="text-white font-bold text-xl tracking-tight">Remedy508</span>
+              <img src={logoUrl} alt="Remedy508" style={{ height: 52, width: "auto", filter: "brightness(0) invert(1)" }} />
             </Link>
           </div>
 
@@ -67,10 +66,10 @@ export default function Home() {
             <h1 id="hero-heading" className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-5">
               Not Accessible,<br />Not Acceptable™
             </h1>
-            <p className="text-white/70 text-sm leading-relaxed mb-8">
+            <p className="text-white/90 text-base leading-relaxed mb-8">
               Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-3">
               <Link href="/signup">
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer" data-testid="hero-cta">
                   <Zap className="w-4 h-4" aria-hidden="true" />
@@ -78,7 +77,7 @@ export default function Home() {
                 </span>
               </Link>
               <Link href="/pricing">
-                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/40 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
                   See Pricing ›
                 </span>
               </Link>
@@ -106,8 +105,7 @@ export default function Home() {
             <div className="h-20 flex items-center justify-between px-6 sm:px-8">
               {/* On mobile, show logo here. On desktop it's in the left panel. */}
               <Link href="/" className="flex lg:hidden items-center gap-2 no-underline">
-                <img src={logoIcon} alt="" aria-hidden="true" style={{ height: 36, width: "auto" }} />
-                <span className="text-white font-bold text-lg">Remedy508</span>
+                <img src={logoUrl} alt="Remedy508" style={{ height: 40, width: "auto", filter: "brightness(0) invert(1)" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
               <div className="hidden lg:block" />
@@ -116,22 +114,22 @@ export default function Home() {
               <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
                 {NAV_LINKS.map((link) => (
                   <Link key={link.href} href={link.href}>
-                    <span className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                      location === link.href ? "text-white" : "text-white/80 hover:text-white hover:bg-white/10"
+                    <span className={`px-3 py-2 rounded-lg text-base font-semibold transition-colors cursor-pointer ${
+                      location === link.href ? "text-white" : "text-white hover:text-white hover:bg-white/10"
                     }`}>{link.label}</span>
                   </Link>
                 ))}
                 <SignedOut>
                   <Link href="/login">
-                    <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
+                    <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
                   </Link>
                   <Link href="/signup">
-                    <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
                   </Link>
                 </SignedOut>
                 <SignedIn>
                   <Link href="/dashboard">
-                    <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
+                    <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
                   </Link>
                   <UserButton afterSignOutUrl="/" />
                 </SignedIn>
@@ -169,8 +167,8 @@ export default function Home() {
             )}
           </header>
 
-          {/* "Accessibility Made Easy." overlay — mid-bottom of photo */}
-          <div className="relative z-10 flex-1 flex items-end px-6 sm:px-10 pb-16">
+          {/* "Accessibility Made Easy." overlay — mid-photo, over the guy's body */}
+          <div className="relative z-10 flex-1 flex items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
               style={{ fontSize: "clamp(2.4rem, 6vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
