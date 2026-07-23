@@ -639,9 +639,6 @@ function ComplexPdfTab() {
 
   return (
     <div className="space-y-5">
-      <div className="p-3 rounded-lg bg-[#3a485b]/5 border border-[#3a485b]/20 text-sm text-[#3a485b]">
-        <strong>Complex PDF</strong> uses Remedy508 to read each page — ideal for chemistry diagrams, math equations, charts, and mixed layouts. Processing takes 30–90 seconds per document.
-      </div>
       <FileDropZone
         accept=".pdf"
         onFile={setFile}
