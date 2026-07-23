@@ -3,8 +3,17 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
-import { CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
+import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
+
+const TOOLS = [
+  { label: "Document Fixer", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
+  { label: "Complex PDF", desc: "Scanned & complex PDFs", icon: FileSearch, tab: "complexpdf", color: "bg-blue-50 text-blue-600" },
+  { label: "Video Transcription", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
+  { label: "Canvas HTML Fixer", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
+  { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
+];
 
 export default function Dashboard() {
   const { user } = useUser();
