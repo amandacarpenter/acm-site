@@ -54,7 +54,7 @@ export default function App() {
         <Router base="">
           <ScrollToTop />
           <Switch>
-            <Route path="/" component={ComingSoon} />
+            <Route path="/" component={Home} />
             <Route path="/home" component={Home} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
