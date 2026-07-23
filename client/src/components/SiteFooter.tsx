@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import logoWhite from "@/assets/logo-white.jpg";
 
 const footerLinks = [
   { href: "/privacy", label: "Privacy Policy" },
@@ -38,46 +39,55 @@ const FLAG_SVG = (
 
 export default function SiteFooter() {
   return (
-    <footer className="bg-gray-900 py-10" role="contentinfo">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col gap-6">
+    <footer className="bg-gray-900 py-12" role="contentinfo">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col gap-8">
 
-        {/* Row 1 — Social icons (centered mobile, right-aligned desktop) */}
-        <div className="flex items-center justify-center sm:justify-end gap-4">
-          <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on LinkedIn (opens in new tab)" className="text-gray-400 hover:text-white transition">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
-          </a>
-          <a href="https://www.instagram.com/remedy508app/" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on Instagram (opens in new tab)" className="text-gray-400 hover:text-white transition">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-          </a>
-          <a href="https://www.youtube.com/@Remedy508" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on YouTube (opens in new tab)" className="text-gray-400 hover:text-white transition">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-          </a>
+        {/* Row 1 — Logo */}
+        <div className="flex justify-center sm:justify-start">
+          <Link href="/" aria-label="Remedy508 home">
+            <img src={logoWhite} alt="Remedy508" style={{ height: 48, width: "auto" }} />
+          </Link>
         </div>
 
-        {/* Row 2 — Nav links (centered mobile, left-aligned desktop) */}
-        <nav aria-label="Footer navigation">
-          <ul className="flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2 list-none p-0 m-0">
-            {footerLinks.map(({ href, label }) => (
-              <li key={href}>
-                <Link href={href}>
-                  <span className="text-sm text-gray-400 hover:text-white transition cursor-pointer whitespace-nowrap">
-                    {label}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        {/* Row 2 — Nav links + Social icons side by side on desktop */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+          <nav aria-label="Footer navigation">
+            <ul className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-3 list-none p-0 m-0">
+              {footerLinks.map(({ href, label }) => (
+                <li key={href}>
+                  <Link href={href}>
+                    <span className="text-base font-bold text-white hover:text-[#5eead4] transition cursor-pointer whitespace-nowrap">
+                      {label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Social icons */}
+          <div className="flex items-center justify-center sm:justify-end gap-5">
+            <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on LinkedIn (opens in new tab)" className="text-white hover:text-[#5eead4] transition">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
+            </a>
+            <a href="https://www.instagram.com/remedy508app/" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on Instagram (opens in new tab)" className="text-white hover:text-[#5eead4] transition">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+            </a>
+            <a href="https://www.youtube.com/@Remedy508" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on YouTube (opens in new tab)" className="text-white hover:text-[#5eead4] transition">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+            </a>
+          </div>
+        </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-800" />
+        <div className="border-t border-gray-700" />
 
-        {/* Row 3 — Copyright + flag/attribution (centered mobile, space-between desktop) */}
-        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-0">
-          <span className="text-sm text-gray-300">© 2026 Remedy508</span>
-          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
+        {/* Row 3 — Copyright + flag/attribution */}
+        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+          <span className="text-base font-bold text-white">© 2026 Remedy508</span>
+          <div className="flex flex-col sm:flex-row items-center gap-1.5">
             {FLAG_SVG}
-            <span className="text-sm text-gray-400 text-center sm:text-left">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
+            <span className="text-sm font-semibold text-gray-300 text-center sm:text-left">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>
           </div>
         </div>
 
