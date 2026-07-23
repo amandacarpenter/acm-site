@@ -53,7 +53,9 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0d9488] focus:text-white focus:rounded-lg focus:font-semibold">Skip to main content</a>
 
+      <main id="main-content">
       {/* ── HERO ── */}
       <section className="relative flex flex-col lg:flex-row lg:[min-height:100svh]" aria-labelledby="hero-heading">
 
@@ -231,7 +233,7 @@ export default function Home() {
 
           {/* Section header */}
           <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-xs font-semibold text-[#0d9488] mb-4 border border-[#0d9488]/20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/20 text-xs font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
               <Sparkles className="w-3 h-3" aria-hidden="true" />
               How It Works
             </div>
@@ -274,7 +276,7 @@ export default function Home() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-[#3a485b] text-sm">{tool.title}</h3>
-                        <span className="px-2 py-0.5 rounded-full bg-gray-200 text-gray-500 text-[10px] font-medium">{tool.tag}</span>
+                        <span className="px-2 py-0.5 rounded-full bg-gray-300 text-gray-700 text-[10px] font-medium">{tool.tag}</span>
                       </div>
                       <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
                     </div>
@@ -314,7 +316,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Perceivable</div>
-                    <div className="text-xs text-gray-400 font-normal">Information must be presentable in ways users can perceive</div>
+                    <div className="text-xs text-gray-600 font-normal">Information must be presentable in ways users can perceive</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -345,7 +347,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Operable</div>
-                    <div className="text-xs text-gray-400 font-normal">Interface components must be operable by all users</div>
+                    <div className="text-xs text-gray-600 font-normal">Interface components must be operable by all users</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -377,7 +379,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Understandable</div>
-                    <div className="text-xs text-gray-400 font-normal">Content and operation must be understandable</div>
+                    <div className="text-xs text-gray-600 font-normal">Content and operation must be understandable</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -408,7 +410,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Robust</div>
-                    <div className="text-xs text-gray-400 font-normal">Content must be interpreted by assistive technologies</div>
+                    <div className="text-xs text-gray-600 font-normal">Content must be interpreted by assistive technologies</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -430,9 +432,9 @@ export default function Home() {
 
           </Accordion>
 
-          <p className="text-center text-xs text-white/40 mt-6">
+          <p className="text-center text-xs text-white/80 mt-6">
             Source:{" "}
-            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" className="underline hover:text-[#0d9488] transition">
+            <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-[#5eead4] transition">
               W3C WCAG 2.1 Specification
             </a>
           </p>
@@ -496,6 +498,7 @@ export default function Home() {
         </div>
       </section>
 
+      </main>
       {/* ── FOOTER ── */}
       <SiteFooter />
     </div>

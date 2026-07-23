@@ -762,6 +762,7 @@ export default function ToolsPage() {
     <div className="min-h-screen bg-gray-50" data-testid="tools-page">
       <SiteHeader />
 
+      <main id="main-content">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm">
@@ -824,11 +825,12 @@ export default function ToolsPage() {
           </div>
         </Tabs>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-400 py-4">
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4">
           <Shield className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
           WCAG 2.1 AA Compliant — All processing is Remedy508-powered
         </div>
       </div>
+      </main>
     </div>
   );
 }
