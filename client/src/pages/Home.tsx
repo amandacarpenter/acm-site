@@ -7,7 +7,7 @@ import teaserCaptions from "@/assets/teaser.vtt";
 import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
-import logoWhite from "@/assets/logo-white.jpg";
+import logoIcon from "@/assets/logo-icon.png";
 import {
   Accordion,
   AccordionContent,
@@ -50,99 +50,27 @@ export default function Home() {
     <div className="min-h-screen bg-white" data-testid="home-page">
 
       {/* ── HERO ── */}
-      <section className="relative flex flex-col" style={{ minHeight: "100svh" }} aria-labelledby="hero-heading">
+      <section className="relative flex flex-col lg:flex-row" style={{ minHeight: "100svh" }} aria-labelledby="hero-heading">
 
-        {/* ─ Full-bleed background photo behind everything ─ */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src={heroPerson}
-            alt=""
-            aria-hidden="true"
-            className="w-full h-full object-cover"
-            style={{ objectPosition: "60% center" }}
-          />
-        </div>
-
-        {/* ─ Nav — overlaid across the full width, same style as SiteHeader but white ─ */}
-        <header
-          role="banner"
-          className="relative z-20 w-full"
-          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
-        >
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-            <Link href="/" className="flex items-center no-underline flex-shrink-0">
-              <img src={logoUrl} alt="Remedy508" style={{ height: 54, width: "auto", filter: "brightness(0) invert(1)" }} />
+        {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
+        <div className="hidden lg:flex flex-col bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
+          {/* Logo row at very top */}
+          <div className="pt-6 pb-4">
+            <Link href="/" className="flex items-center gap-3 no-underline">
+              <img src={logoIcon} alt="" aria-hidden="true" style={{ height: 40, width: "auto" }} />
+              <span className="text-white font-bold text-xl tracking-tight">Remedy508</span>
             </Link>
-
-            {/* Desktop nav */}
-            <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
-              {NAV_LINKS.map((link) => (
-                <Link key={link.href} href={link.href}>
-                  <span className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
-                    location === link.href ? "text-white" : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}>{link.label}</span>
-                </Link>
-              ))}
-              <SignedOut>
-                <Link href="/login">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
-                </Link>
-                <Link href="/signup">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
-                </Link>
-              </SignedOut>
-              <SignedIn>
-                <Link href="/dashboard">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
-                </Link>
-                <UserButton afterSignOutUrl="/" />
-              </SignedIn>
-            </nav>
-
-            {/* Mobile hamburger */}
-            <button
-              className="sm:hidden p-2 rounded-lg text-white/80 hover:text-white"
-              onClick={() => setMobileOpen(!mobileOpen)}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            >
-              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
           </div>
 
-          {/* Mobile dropdown */}
-          {mobileOpen && (
-            <div className="sm:hidden bg-[#111827]/95 border-t border-white/10">
-              <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
-                {NAV_LINKS.map((link) => (
-                  <Link key={link.href} href={link.href}>
-                    <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
-                  </Link>
-                ))}
-                <SignedOut>
-                  <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                  <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
-                  <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
-                </SignedIn>
-              </nav>
-            </div>
-          )}
-        </header>
-
-        {/* ─ Split body: left copy panel (desktop only) + right photo area ─ */}
-        <div className="relative z-10 flex flex-col lg:flex-row flex-1">
-
-          {/* LEFT — dark copy panel, hidden on mobile */}
-          <div className="hidden lg:flex flex-col justify-center bg-[#111827] lg:w-[42%] px-10 xl:px-14 py-20">
-            <h1 id="hero-heading" className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-6">
+          {/* Copy — centered vertically in remaining space */}
+          <div className="flex flex-col justify-center flex-1 pb-16">
+            <h1 id="hero-heading" className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-5">
               Not Accessible,<br />Not Acceptable™
             </h1>
-            <p className="text-white/75 text-base leading-relaxed mb-8 max-w-sm">
+            <p className="text-white/70 text-sm leading-relaxed mb-8">
               Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
             </p>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-3">
               <Link href="/signup">
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer" data-testid="hero-cta">
                   <Zap className="w-4 h-4" aria-hidden="true" />
@@ -156,28 +84,109 @@ export default function Home() {
               </Link>
             </div>
           </div>
+        </div>
 
-          {/* RIGHT — transparent area (shows photo), overlay text bottom-left */}
-          {/* On mobile this is full-screen; on desktop it fills remaining space */}
-          <div className="flex-1 flex items-end p-6 sm:p-10 lg:p-14" style={{ minHeight: "calc(100svh - 80px)" }}>
-            {/* "Accessibility Made Easy." — visible on all sizes, prominent on mobile */}
+        {/* ─ RIGHT: full-bleed photo + nav overlaid on top + overlay text ─ */}
+        <div className="relative flex-1 flex flex-col" style={{ minHeight: "100svh" }}>
+
+          {/* Photo fills the entire right column, object-position shows face */}
+          <img
+            src={heroPerson}
+            alt="Professional smiling while working on a laptop in a modern office"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ objectPosition: "50% 20%" }}
+          />
+
+          {/* Nav bar — overlaid on the photo, spans full width of right column */}
+          <header
+            role="banner"
+            className="relative z-20 w-full"
+            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }}
+          >
+            <div className="h-20 flex items-center justify-between px-6 sm:px-8">
+              {/* On mobile, show logo here. On desktop it's in the left panel. */}
+              <Link href="/" className="flex lg:hidden items-center gap-2 no-underline">
+                <img src={logoIcon} alt="" aria-hidden="true" style={{ height: 36, width: "auto" }} />
+                <span className="text-white font-bold text-lg">Remedy508</span>
+              </Link>
+              {/* Spacer on desktop so nav sits right */}
+              <div className="hidden lg:block" />
+
+              {/* Desktop nav */}
+              <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
+                {NAV_LINKS.map((link) => (
+                  <Link key={link.href} href={link.href}>
+                    <span className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer ${
+                      location === link.href ? "text-white" : "text-white/80 hover:text-white hover:bg-white/10"
+                    }`}>{link.label}</span>
+                  </Link>
+                ))}
+                <SignedOut>
+                  <Link href="/login">
+                    <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
+                  </Link>
+                  <Link href="/signup">
+                    <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
+                  </Link>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/dashboard">
+                    <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
+                  </Link>
+                  <UserButton afterSignOutUrl="/" />
+                </SignedIn>
+              </nav>
+
+              {/* Mobile hamburger */}
+              <button
+                className="sm:hidden p-2 rounded-lg text-white/80 hover:text-white"
+                onClick={() => setMobileOpen(!mobileOpen)}
+                aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              >
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
+
+            {/* Mobile dropdown */}
+            {mobileOpen && (
+              <div className="sm:hidden bg-[#111827]/95 border-t border-white/10">
+                <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
+                  {NAV_LINKS.map((link) => (
+                    <Link key={link.href} href={link.href}>
+                      <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
+                    </Link>
+                  ))}
+                  <SignedOut>
+                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Log in</span></Link>
+                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
+                  </SignedOut>
+                  <SignedIn>
+                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
+                    <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
+                  </SignedIn>
+                </nav>
+              </div>
+            )}
+          </header>
+
+          {/* "Accessibility Made Easy." overlay — mid-bottom of photo */}
+          <div className="relative z-10 flex-1 flex items-end px-6 sm:px-10 pb-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(2.4rem, 8vw, 6.5rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(2.4rem, 6vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
             </p>
           </div>
-
         </div>
 
         {/* Mobile-only copy block — below the full-screen photo */}
-        <div className="lg:hidden relative z-10 bg-[#111827] px-6 py-12">
-          <h1 id="hero-heading-mobile" className="text-3xl font-extrabold text-white leading-tight mb-5">
+        <div className="lg:hidden bg-[#111827] px-6 py-12">
+          <h1 id="hero-heading" className="text-3xl font-extrabold text-white leading-tight mb-5">
             Not Accessible,<br />Not Acceptable™
           </h1>
-          <p className="text-white/75 text-sm leading-relaxed mb-7">
+          <p className="text-white/70 text-sm leading-relaxed mb-7">
             Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
           </p>
           <div className="flex flex-wrap gap-3">
