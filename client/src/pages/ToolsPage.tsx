@@ -808,8 +808,8 @@ export default function ToolsPage() {
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center gap-2 py-3 px-1 h-auto" data-testid={`tab-${tab.id}`}>
                 <img src={tab.icon} alt="" aria-hidden="true" className="w-12 h-12 object-contain" />
-                <span className="font-semibold text-xs flex items-center gap-1">
-                  {tab.label}
+                <span className="font-semibold text-xs text-center leading-tight flex flex-col items-center gap-0.5">
+                  <span className="break-words w-full text-center">{tab.label}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
                 </span>
               </TabsTrigger>
