@@ -61,7 +61,7 @@ export default function App() {
             <Route path="/login/:rest*" component={LoginPage} />
             <Route path="/signup" component={SignupPage} />
             <Route path="/signup/:rest*" component={SignupPage} />
-            <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
+            <Route path="/dashboard" component={() => <ProtectedRoute component={Dashboard} />} />
             <Route path="/privacy" component={Privacy} />
             <Route path="/terms" component={Terms} />
             <Route path="/accessibility" component={Accessibility} />
