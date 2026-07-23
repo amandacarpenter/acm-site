@@ -93,7 +93,7 @@ export default function Home() {
             src={heroPerson}
             alt="Professional smiling while working on a laptop in a modern office"
             className="absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "50% 20%" }}
+            style={{ objectPosition: "50% 10%" }}
           />
 
           {/* Nav bar — mobile: solid #111827 (logo blends); desktop: gradient over photo */}
@@ -151,7 +151,7 @@ export default function Home() {
                 <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
                   {NAV_LINKS.map((link) => (
                     <Link key={link.href} href={link.href}>
-                      <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
+                      <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
                     </Link>
                   ))}
                   <SignedOut>
@@ -159,7 +159,7 @@ export default function Home() {
                     <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
                   </SignedOut>
                   <SignedIn>
-                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
+                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
                     <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
                   </SignedIn>
                 </nav>
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="relative z-10 flex-1 flex items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(3.8rem, 10vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(2.6rem, 7.5vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
