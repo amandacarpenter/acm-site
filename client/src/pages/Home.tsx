@@ -71,7 +71,7 @@ export default function Home() {
         >
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
             <Link href="/" className="flex items-center no-underline flex-shrink-0">
-              <img src={logoWhite} alt="Remedy508" style={{ height: 50, width: "auto" }} />
+              <img src={logoUrl} alt="Remedy508" style={{ height: 54, width: "auto", filter: "brightness(0) invert(1)" }} />
             </Link>
 
             {/* Desktop nav */}
