@@ -98,8 +98,8 @@ export default function Home() {
 
           {/* Nav bar — mobile: solid #111827 (logo blends); desktop: gradient over photo */}
           <header role="banner" className="relative z-20 w-full">
-            {/* Mobile bg strip — solid dark, hidden on desktop */}
-            <div className="absolute inset-0 bg-[#111827] lg:hidden" />
+            {/* Mobile bg strip — covers only the top bar (h-20), hidden on desktop */}
+            <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827] lg:hidden" />
             {/* Desktop bg strip — gradient, hidden on mobile */}
             <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
             <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
