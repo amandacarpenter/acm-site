@@ -155,8 +155,8 @@ export default function Home() {
                     </Link>
                   ))}
                   <SignedOut>
-                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-medium text-white/80 hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
+                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Log in</span></Link>
+                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
                   </SignedOut>
                   <SignedIn>
                     <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="relative z-10 flex-1 flex items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(2.6rem, 7.5vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(3rem, 9vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
