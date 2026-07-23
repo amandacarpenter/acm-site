@@ -207,3 +207,13 @@
     linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
   background-size: 60px 60px;
 }
+
+/* SiteHeader mobile menu — bold, readable text */
+@media (max-width: 639px) {
+  header nav a span,
+  header nav span {
+    font-weight: 700 !important;
+    font-size: 1rem !important;
+    color: #111827 !important;
+  }
+}
