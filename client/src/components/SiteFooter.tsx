@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import logoWhite from "@/assets/logo-white.jpg";
+import logoHero from "@/assets/logo-hero.jpg";
 
 const footerLinks = [
   { href: "/privacy", label: "Privacy Policy" },
@@ -45,7 +45,7 @@ export default function SiteFooter() {
         {/* Row 1 — Logo */}
         <div className="flex justify-center sm:justify-start">
           <Link href="/" aria-label="Remedy508 home">
-            <img src={logoWhite} alt="Remedy508" style={{ height: 48, width: "auto" }} />
+            <img src={logoHero} alt="Remedy508" style={{ height: 48, width: "auto" }} />
           </Link>
         </div>
 
