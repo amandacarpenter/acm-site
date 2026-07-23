@@ -99,7 +99,7 @@ export default function Home() {
           {/* Nav bar — mobile: solid #111827 (logo blends); desktop: gradient over photo */}
           <header role="banner" className="relative z-20 w-full">
             {/* Mobile bg strip — covers only the top bar (h-20), hidden on desktop */}
-            <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827] lg:hidden" />
+            <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827]/70 backdrop-blur-sm lg:hidden" />
             {/* Desktop bg strip — gradient, hidden on mobile */}
             <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
             <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
@@ -147,7 +147,7 @@ export default function Home() {
 
             {/* Mobile dropdown */}
             {mobileOpen && (
-              <div className="sm:hidden bg-[#111827]/95 border-t border-white/10">
+              <div className="sm:hidden bg-[#111827]/70 backdrop-blur-sm border-t border-white/10">
                 <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
                   {NAV_LINKS.map((link) => (
                     <Link key={link.href} href={link.href}>
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="relative z-10 flex-1 flex items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(3.2rem, 8vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(3.8rem, 10vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
