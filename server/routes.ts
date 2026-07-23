@@ -821,8 +821,10 @@ def fix_figures_with_vision(st, pp, anthropic_key):
         if depth > 25: return
         if isinstance(obj, pikepdf.Dictionary):
             s = str(obj.get('/S',''))
-            if s in ('/Figure', '/Formula') and '/Alt' not in obj:
-                obj['/Alt'] = pikepdf.String('')
+            if s in ('/Figure', '/Formula'):
+                _alt = obj.get('/Alt')
+                if _alt is None or str(_alt).strip() == '':
+                    obj['/Alt'] = pikepdf.String(' ')
             k = obj.get('/K')
             if k: set_empty_alt(k, depth+1)
         elif isinstance(obj, pikepdf.Array):
@@ -909,7 +911,9 @@ try:
                 if a.get('/StructParent') is not None: continue
                 _action = a.get('/A')
                 _uri = str(_action.get('/URI','')) if isinstance(_action, pikepdf.Dictionary) else ''
-                if any(_b in _uri for _b in _BOILERPLATE): continue
+                if any(_b in _uri for _b in _BOILERPLATE):
+                    a['/F'] = pikepdf.Integer(6)
+                    continue
                 sp_key = _next_key; _next_key += 1
                 a['/StructParent'] = pikepdf.Integer(sp_key)
                 if not a.is_indirect: a = pp.make_indirect(a)
@@ -932,7 +936,7 @@ try:
                 else: _doc_root['/K'] = pikepdf.Array([_ek] + _new_links)
     stats['annotations_tagged'] = annot_fixed
 
-    # Tagged content — wrap untagged XObject Do calls as /Artifact
+    # Tagged content — wrap untagged BT blocks AND Do calls as /Artifact
     _content_fixed = 0
     for _page in pp.pages:
         _cc = _page.get('/Contents')
@@ -941,20 +945,37 @@ try:
         for _s in _streams:
             _raw = _s.read_bytes().decode('latin-1', errors='replace')
             _bdc_ranges = [(m.start(), m.end()) for m in re.finditer('(?:BDC|BMC).*?EMC', _raw, re.DOTALL)]
-            _do_matches = list(re.finditer('/[A-Za-z0-9_]+ Do', _raw))
-            _needs_fix = any(not any(a <= m.start() <= b for a, b in _bdc_ranges) for m in _do_matches)
-            if not _needs_fix: continue
+            _changed = False
             _parts = []
             _pos = 0
+            # Wrap untagged Do operators
+            _do_matches = list(re.finditer('/[A-Za-z0-9_]+ Do', _raw))
             for _m in _do_matches:
                 _inside = any(a <= _m.start() <= b for a, b in _bdc_ranges)
                 if not _inside:
                     _parts.append(_raw[_pos:_m.start()])
                     _parts.append('/Artifact BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
                     _pos = _m.end()
+                    _changed = True
             _parts.append(_raw[_pos:])
-            _fixed = ''.join(_parts)
-            if _fixed != _raw:
+            _raw = ''.join(_parts)
+            # Wrap untagged BT...ET blocks (header/footer text with no MCID)
+            _bdc_ranges2 = [(m.start(), m.end()) for m in re.finditer('(?:BDC|BMC).*?EMC', _raw, re.DOTALL)]
+            _bt_matches = list(re.finditer('BT.*?ET', _raw, re.DOTALL))
+            _parts2 = []
+            _pos2 = 0
+            for _m in _bt_matches:
+                _inside = any(a <= _m.start() <= b for a, b in _bdc_ranges2)
+                _has_bdc_inside = re.search('(?:BDC|BMC)', _m.group())
+                _has_tj = re.search(' Tj', _m.group())
+                if not _inside and not _has_bdc_inside and _has_tj:
+                    _parts2.append(_raw[_pos2:_m.start()])
+                    _parts2.append('/Artifact BMC' + chr(10) + _m.group() + chr(10) + 'EMC')
+                    _pos2 = _m.end()
+                    _changed = True
+            _parts2.append(_raw[_pos2:])
+            _fixed = ''.join(_parts2)
+            if _changed:
                 _s.write(_fixed.encode('latin-1', errors='replace'))
                 _content_fixed += 1
     stats['content_streams_fixed'] = _content_fixed
