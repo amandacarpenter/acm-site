@@ -7,7 +7,7 @@ import teaserCaptions from "@/assets/teaser.vtt";
 import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
-import logoIcon from "@/assets/logo-icon.png";
+import logoHero from "@/assets/logo-hero.png";
 import {
   Accordion,
   AccordionContent,
@@ -57,7 +57,7 @@ export default function Home() {
           {/* Logo row at very top */}
           <div className="pt-6 pb-4">
             <Link href="/" className="flex items-center gap-3 no-underline">
-              <img src={logoUrl} alt="Remedy508" style={{ height: 52, width: "auto", filter: "brightness(0) invert(1)" }} />
+              <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
             </Link>
           </div>
 
@@ -105,7 +105,7 @@ export default function Home() {
             <div className="h-20 flex items-center justify-between px-6 sm:px-8">
               {/* On mobile, show logo here. On desktop it's in the left panel. */}
               <Link href="/" className="flex lg:hidden items-center gap-2 no-underline">
-                <img src={logoUrl} alt="Remedy508" style={{ height: 40, width: "auto", filter: "brightness(0) invert(1)" }} />
+                <img src={logoHero} alt="Remedy508" style={{ height: 40, width: "auto" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
               <div className="hidden lg:block" />
