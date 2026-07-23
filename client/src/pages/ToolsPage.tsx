@@ -720,11 +720,11 @@ function ComplexPdfTab() {
 
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 const TAB_META = [
-  { id: "document", label: "Document Fixer", icon: iconDocument, desc: "Fix .docx & .pdf", badge: ".docx & .pdf", title: "Document Fixer", blurb: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure." },
+  { id: "document", label: "Document\nFixer", icon: iconDocument, desc: "Fix .docx & .pdf", badge: ".docx & .pdf", title: "Document Fixer", blurb: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure." },
   { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams", beta: true, badge: "Complex .pdf", title: "Complex PDF", blurb: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF." },
-  { id: "video", label: "Video Transcription", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Video Transcription", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
-  { id: "canvas", label: "Canvas HTML Fixer", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Canvas HTML Fixer", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
-  { id: "alttext", label: "Alt Text Generator", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Alt Text Generator", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
+  { id: "video", label: "Video\nTranscription", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Video Transcription", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
+  { id: "canvas", label: "Canvas HTML\nFixer", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Canvas HTML Fixer", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
+  { id: "alttext", label: "Alt Text\nGenerator", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Alt Text Generator", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
 ];
 
 export default function ToolsPage() {
@@ -808,7 +808,7 @@ export default function ToolsPage() {
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[96px]" data-testid={`tab-${tab.id}`}>
                 <img src={tab.icon} alt="" aria-hidden="true" className="w-10 h-10 object-contain shrink-0" />
-                <span className="font-semibold text-[10px] sm:text-xs text-center leading-tight break-words w-full">{tab.label}</span>
+                <span className="font-semibold text-[10px] sm:text-xs text-center leading-tight whitespace-pre-line w-full">{tab.label}</span>
                 {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
               </TabsTrigger>
             ))}
