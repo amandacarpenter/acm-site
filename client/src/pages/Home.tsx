@@ -96,16 +96,16 @@ export default function Home() {
             style={{ objectPosition: "50% 20%" }}
           />
 
-          {/* Nav bar — overlaid on the photo, spans full width of right column */}
-          <header
-            role="banner"
-            className="relative z-20 w-full"
-            style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }}
-          >
-            <div className="h-20 flex items-center justify-between px-6 sm:px-8">
-              {/* On mobile, show logo here. On desktop it's in the left panel. */}
-              <Link href="/" className="flex lg:hidden items-center gap-2 no-underline">
-                <img src={logoUrl} alt="Remedy508" style={{ height: 38, width: "auto", filter: "brightness(0) invert(1)" }} />
+          {/* Nav bar — mobile: solid #111827 (logo blends); desktop: gradient over photo */}
+          <header role="banner" className="relative z-20 w-full">
+            {/* Mobile bg strip — solid dark, hidden on desktop */}
+            <div className="absolute inset-0 bg-[#111827] lg:hidden" />
+            {/* Desktop bg strip — gradient, hidden on mobile */}
+            <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
+            <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
+              {/* Mobile logo — logo-hero.jpg blends into the solid dark bar above */}
+              <Link href="/" className="flex lg:hidden items-center no-underline">
+                <img src={logoHero} alt="Remedy508" style={{ height: 38, width: "auto" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
               <div className="hidden lg:block" />
