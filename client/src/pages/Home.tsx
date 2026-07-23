@@ -136,7 +136,7 @@ export default function Home() {
                   <Link href="/dashboard">
                     <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
                   </Link>
-                  <UserButton afterSignOutUrl="/" />
+                  <UserButton afterSignOutUrl="/home" />
                 </SignedIn>
               </nav>
 
@@ -165,7 +165,7 @@ export default function Home() {
                   </SignedOut>
                   <SignedIn>
                     <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
-                    <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
+                    <div className="px-3 py-2"><UserButton afterSignOutUrl="/home" /></div>
                   </SignedIn>
                 </nav>
               </div>

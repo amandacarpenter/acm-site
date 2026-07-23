@@ -67,7 +67,7 @@ export default function SiteHeader() {
                 Dashboard
               </span>
             </Link>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton afterSignOutUrl="/home" />
           </SignedIn>
         </nav>
 
@@ -115,7 +115,7 @@ export default function SiteHeader() {
                 </span>
               </Link>
               <div className="px-3 py-2">
-                <UserButton afterSignOutUrl="/" />
+                <UserButton afterSignOutUrl="/home" />
               </div>
             </SignedIn>
           </nav>

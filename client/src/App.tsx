@@ -47,7 +47,7 @@ export default function App() {
       publishableKey={PUBLISHABLE_KEY}
       signInUrl="/login"
       signUpUrl="/signup"
-      afterSignOutUrl="/"
+      afterSignOutUrl="/home"
       clerkJSUrl="https://clerk.remedy508.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
     >
       <QueryClientProvider client={queryClient}>
