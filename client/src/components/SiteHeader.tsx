@@ -15,7 +15,7 @@ function Logo() {
 }
 
 const NAV_LINKS = [
-  { href: "/home", label: "Home" },
+  { href: "/", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
   { href: "/kb", label: "Knowledge Base" },
@@ -30,7 +30,7 @@ export default function SiteHeader() {
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/home" className="flex items-center gap-3 no-underline">
+        <Link href="/" className="flex items-center gap-3 no-underline">
           <Logo />
         </Link>
 
@@ -67,7 +67,7 @@ export default function SiteHeader() {
                 Dashboard
               </span>
             </Link>
-            <UserButton afterSignOutUrl="/home" />
+            <UserButton afterSignOutUrl="/" />
           </SignedIn>
         </nav>
 
@@ -115,7 +115,7 @@ export default function SiteHeader() {
                 </span>
               </Link>
               <div className="px-3 py-2">
-                <UserButton afterSignOutUrl="/home" />
+                <UserButton afterSignOutUrl="/" />
               </div>
             </SignedIn>
           </nav>

@@ -3,21 +3,16 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
-import { CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
-import iconDocument from "@/assets/icon-document.png";
-import iconComplexpdf from "@/assets/icon-complexpdf.png";
-import iconVideo from "@/assets/icon-video.png";
-import iconCanvas from "@/assets/icon-canvas.png";
-import iconAlttext from "@/assets/icon-alttext.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
 const TOOLS = [
-  { label: "Document Fixer", desc: "Word & PDF", icon: iconDocument, tab: "document" },
-  { label: "Complex PDF", desc: "Scanned & complex PDFs", icon: iconComplexpdf, tab: "complexpdf" },
-  { label: "Video Transcription", desc: "MP4, MOV, MP3", icon: iconVideo, tab: "video" },
-  { label: "Canvas HTML Fixer", desc: "Canvas LMS", icon: iconCanvas, tab: "canvas" },
-  { label: "Alt Text Generator", desc: "Images & charts", icon: iconAlttext, tab: "alttext" },
+  { label: "Document Fixer", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
+  { label: "Complex PDF", desc: "Scanned & complex PDFs", icon: FileSearch, tab: "complexpdf", color: "bg-blue-50 text-blue-600" },
+  { label: "Video Transcription", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
+  { label: "Canvas HTML Fixer", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
+  { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
 ];
 
 export default function Dashboard() {
@@ -51,7 +46,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50" role="banner">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/home">
+          <Link href="/">
             <img src={logoUrl} alt="Remedy508" style={{ height: 40, width: "auto" }} />
           </Link>
           <div className="flex items-center gap-4">
@@ -171,8 +166,8 @@ export default function Dashboard() {
             {TOOLS.map((tool) => (
               <Link key={tool.tab} href={`/tools/${tool.tab}`}>
                 <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 hover:shadow-md hover:border-[#0d9488]/30 transition cursor-pointer group">
-                  <div className="mb-3">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-10 h-10 object-contain" />
+                  <div className={`w-8 h-8 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
+                    <tool.icon className="w-4 h-4" />
                   </div>
                   <p className="text-xs font-semibold text-[#3a485b] leading-tight group-hover:text-[#0d9488] transition">{tool.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{tool.desc}</p>

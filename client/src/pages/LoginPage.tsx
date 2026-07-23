@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (isSignedIn) navigate("/dashboard");
+    if (isSignedIn) navigate("/");
   }, [isSignedIn]);
 
   return (
@@ -20,7 +20,7 @@ export default function LoginPage() {
           routing="path"
           path="/login"
           signUpUrl="/signup"
-          fallbackRedirectUrl="/dashboard"
+          afterSignInUrl="/"
           appearance={{
             variables: {
               colorPrimary: "#0d9488",
