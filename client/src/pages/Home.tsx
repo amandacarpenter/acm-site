@@ -104,8 +104,8 @@ export default function Home() {
           >
             <div className="h-20 flex items-center justify-between px-6 sm:px-8">
               {/* On mobile, show logo here. On desktop it's in the left panel. */}
-              <Link href="/" className="flex lg:hidden items-center no-underline">
-                <img src={logoHero} alt="Remedy508" style={{ height: 40, width: "auto" }} />
+              <Link href="/" className="flex lg:hidden items-center gap-2 no-underline">
+                <img src={logoUrl} alt="Remedy508" style={{ height: 38, width: "auto", filter: "brightness(0) invert(1)" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
               <div className="hidden lg:block" />
@@ -171,7 +171,7 @@ export default function Home() {
           <div className="relative z-10 flex-1 flex items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(2.4rem, 6vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(3.2rem, 8vw, 6rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
