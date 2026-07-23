@@ -40,7 +40,7 @@ const STATS = [
 ];
 
 const NAV_LINKS = [
-  { href: "/", label: "Home" },
+  { href: "/home", label: "Home" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
   { href: "/kb", label: "Knowledge Base" },
@@ -61,7 +61,7 @@ export default function Home() {
         <div className="hidden lg:flex flex-col bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
           {/* Logo row at very top */}
           <div className="pt-6 pb-4">
-            <Link href="/" className="flex items-center no-underline">
+            <Link href="/home" className="flex items-center no-underline">
               <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
             </Link>
           </div>
@@ -109,7 +109,7 @@ export default function Home() {
             <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
             <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
               {/* Mobile logo — logo-hero.jpg blends into the solid dark bar above */}
-              <Link href="/" className="flex lg:hidden items-center no-underline">
+              <Link href="/home" className="flex lg:hidden items-center no-underline">
                 <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
               </Link>
               {/* Spacer on desktop so nav sits right */}
@@ -270,7 +270,7 @@ export default function Home() {
               {TOOLS.map((tool) => (
                 <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-12 h-12 object-contain shrink-0" />
+                    <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-[#3a485b] text-sm">{tool.title}</h3>
