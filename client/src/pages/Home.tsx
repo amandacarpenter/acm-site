@@ -8,6 +8,11 @@ import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
 import logoHero from "@/assets/logo-hero.jpg";
+import iconDocument from "@/assets/icon-document.png";
+import iconComplexpdf from "@/assets/icon-complexpdf.png";
+import iconVideo from "@/assets/icon-video.png";
+import iconCanvas from "@/assets/icon-canvas.png";
+import iconAlttext from "@/assets/icon-alttext.png";
 import {
   Accordion,
   AccordionContent,
@@ -15,17 +20,17 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  FileText, FileSearch, Video, Code2, ImageIcon, ArrowRight,
+  ArrowRight,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
-  { icon: FileText, title: "Document Fixer", desc: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
-  { icon: FileSearch, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
-  { icon: Video, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
-  { icon: Code2, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
-  { icon: ImageIcon, title: "Alt Text Generator", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
+  { icon: iconDocument, title: "Document Fixer", desc: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
+  { icon: iconComplexpdf, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
+  { icon: iconVideo, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
+  { icon: iconCanvas, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
+  { icon: iconAlttext, title: "Alt Text Generator", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
 ];
 
 const STATS = [
@@ -265,9 +270,7 @@ export default function Home() {
               {TOOLS.map((tool) => (
                 <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#3a485b] flex items-center justify-center shrink-0">
-                      <tool.icon className="w-4 h-4 text-white" aria-hidden="true" />
-                    </div>
+                    <img src={tool.icon} alt="" aria-hidden="true" className="w-12 h-12 object-contain shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-[#3a485b] text-sm">{tool.title}</h3>
