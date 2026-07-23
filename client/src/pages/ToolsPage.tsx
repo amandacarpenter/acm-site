@@ -81,9 +81,9 @@ function DownloadBtn({ content, filename, testId }: { content: string; filename:
 
 function IssueBadge({ type }: { type: string }) {
   const t = type?.toLowerCase();
-  if (t?.includes("error") || t?.includes("missing")) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-[10px] font-semibold uppercase">Error</span>;
-  if (t?.includes("warn") || t?.includes("contrast")) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-semibold uppercase">Warning</span>;
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-[10px] font-semibold uppercase">Info</span>;
+  if (t?.includes("error") || t?.includes("missing")) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-semibold uppercase">Error</span>;
+  if (t?.includes("warn") || t?.includes("contrast")) return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-semibold uppercase">Warning</span>;
+  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-semibold uppercase">Info</span>;
 }
 
 function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
@@ -794,7 +794,7 @@ export default function ToolsPage() {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="font-bold text-[#3a485b] text-base">{tab.title}</span>
                   <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tab.badge}</span>
-                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">BETA</span>}
+                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">BETA</span>}
                 </div>
                 <p className="text-sm text-gray-500 leading-snug">{tab.blurb}</p>
               </div>
@@ -810,7 +810,7 @@ export default function ToolsPage() {
                 <img src={tab.icon} alt="" aria-hidden="true" className="w-12 h-12 object-contain" />
                 <span className="font-semibold text-xs flex items-center gap-1">
                   {tab.label}
-                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
+                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
                 </span>
               </TabsTrigger>
             ))}

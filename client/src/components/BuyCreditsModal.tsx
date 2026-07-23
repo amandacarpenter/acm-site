@@ -100,7 +100,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                   ${(p.qty * PRICE_PER_DOC).toFixed(2)}
                 </p>
                 {p.qty === 25 && (
-                  <span className="absolute -top-2 -right-2 bg-[#0d9488] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  <span className="absolute -top-2 -right-2 bg-[#0d9488] text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                     Popular
                   </span>
                 )}
