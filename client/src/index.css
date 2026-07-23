@@ -208,12 +208,11 @@
   background-size: 60px 60px;
 }
 
-/* SiteHeader mobile menu — bold, readable text */
+/* Homepage mobile menu — bold white text */
 @media (max-width: 639px) {
-  header nav a span,
-  header nav span {
+  .mobile-menu-item {
     font-weight: 700 !important;
     font-size: 1rem !important;
-    color: #111827 !important;
+    color: #ffffff !important;
   }
 }

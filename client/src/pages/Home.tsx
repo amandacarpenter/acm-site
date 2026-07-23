@@ -85,30 +85,22 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ─ RIGHT: full-bleed photo + nav overlaid on top + overlay text ─ */}
+        {/* ─ RIGHT: full-bleed photo + nav + overlay text ─ */}
         <div className="relative flex-1 flex flex-col lg:min-h-svh">
 
-          {/* Photo: on mobile flows below nav (not absolute), on desktop fills entire column */}
+          {/* Desktop: photo fills entire column absolutely */}
           <img
             src={heroPerson}
             alt="Professional smiling while working on a laptop in a modern office"
             className="hidden lg:block absolute inset-0 w-full h-full object-cover"
             style={{ objectPosition: "50% 10%" }}
           />
-          {/* Mobile-only photo — flows in document, sits below nav bar */}
-          <img
-            src={heroPerson}
-            alt=""
-            aria-hidden="true"
-            className="lg:hidden w-full object-cover"
-            style={{ height: "55vw", minHeight: 220, maxHeight: 340, objectPosition: "50% 15%" }}
-          />
 
-          {/* Nav bar — mobile: solid #111827 (logo blends); desktop: gradient over photo */}
+          {/* Nav bar — always on top */}
           <header role="banner" className="relative z-20 w-full lg:absolute lg:top-0 lg:left-0 lg:right-0">
-            {/* Mobile bg strip — solid dark bar, hidden on desktop */}
+            {/* Mobile bg — solid dark bar */}
             <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827] lg:hidden" />
-            {/* Desktop bg strip — gradient, hidden on mobile */}
+            {/* Desktop bg — gradient over photo */}
             <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
             <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
               {/* Mobile logo — logo-hero.jpg blends into the solid dark bar above */}
@@ -175,7 +167,23 @@ export default function Home() {
             )}
           </header>
 
-          {/* "Accessibility Made Easy." overlay — desktop only (on mobile photo is not absolute) */}
+          {/* Mobile: photo below nav with Accessibility Made Easy overlaid */}
+          <div className="lg:hidden relative">
+            <img
+              src={heroPerson}
+              alt=""
+              aria-hidden="true"
+              className="w-full object-cover"
+              style={{ height: "65vw", minHeight: 240, maxHeight: 360, objectPosition: "50% 15%" }}
+            />
+            <div className="absolute inset-0 flex items-end px-5 pb-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%)" }}>
+              <p className="text-white font-black leading-none" style={{ fontSize: "clamp(2.2rem, 9vw, 3rem)", textShadow: "0 2px 20px rgba(0,0,0,0.7)" }}>
+                Accessibility<br />Made Easy.
+              </p>
+            </div>
+          </div>
+
+          {/* Desktop: Accessibility Made Easy overlay */}
           <div className="hidden lg:flex relative z-10 flex-1 items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
@@ -189,7 +197,6 @@ export default function Home() {
 
         {/* Mobile-only copy block — below the photo */}
         <div className="lg:hidden bg-[#111827] px-6 py-10">
-          <p className="text-white font-black leading-none mb-4" style={{ fontSize: "clamp(2.4rem, 10vw, 3.5rem)" }}>Accessibility<br />Made Easy.</p>
           <h1 id="hero-heading" className="text-2xl font-extrabold text-white leading-tight mb-4">
             Not Accessible,<br />Not Acceptable™
           </h1>
