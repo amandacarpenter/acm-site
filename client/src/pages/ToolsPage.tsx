@@ -723,11 +723,11 @@ function ComplexPdfTab() {
 
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 const TAB_META = [
-  { id: "document", label: "Documents", icon: iconDocument, desc: "Fix .docx & .pdf" },
-  { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams" },
-  { id: "video", label: "Video", icon: iconVideo, desc: "Timecoded transcripts" },
-  { id: "canvas", label: "Canvas", icon: iconCanvas, desc: "LMS page fixer", beta: true },
-  { id: "alttext", label: "Alt Text", icon: iconAlttext, desc: "Image descriptions" },
+  { id: "document", label: "Documents", icon: iconDocument, desc: "Fix .docx & .pdf", badge: ".docx & .pdf", title: "Document Fixer", blurb: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure." },
+  { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams", beta: true, badge: "Complex .pdf", title: "Complex PDF", blurb: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF." },
+  { id: "video", label: "Video", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Video Transcription", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
+  { id: "canvas", label: "Canvas", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Canvas HTML Fixer", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
+  { id: "alttext", label: "Alt Text", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Alt Text Generator", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
 ];
 
 export default function ToolsPage() {
@@ -783,17 +783,37 @@ export default function ToolsPage() {
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — Remedy508 handles the accessibility fixes.</p>
         </div>
 
+        {/* Tool breakdown cards */}
+        <div className="space-y-3 mb-6">
+          {TAB_META.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => { window.history.pushState({}, "", `/tools/${tab.id}`); window.dispatchEvent(new PopStateEvent("popstate")); }}
+              className="w-full flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-[#0d9488] hover:shadow-md transition text-left"
+            >
+              <img src={tab.icon} alt="" aria-hidden="true" className="w-14 h-14 object-contain flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <span className="font-bold text-[#3a485b] text-base">{tab.title}</span>
+                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tab.badge}</span>
+                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">BETA</span>}
+                </div>
+                <p className="text-sm text-gray-500 leading-snug">{tab.blurb}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
         {/* Tab interface */}
         <Tabs defaultValue={initialTab} className="space-y-4" data-testid="tool-tabs">
           <TabsList className="grid grid-cols-5 w-full h-auto p-1 gap-1">
             {TAB_META.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center gap-1 py-2 px-1 h-auto text-xs" data-testid={`tab-${tab.id}`}>
-                <img src={tab.icon} alt="" aria-hidden="true" className="w-9 h-9 object-contain" />
-                <span className="font-semibold flex items-center gap-1">
+              <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center gap-2 py-3 px-1 h-auto" data-testid={`tab-${tab.id}`}>
+                <img src={tab.icon} alt="" aria-hidden="true" className="w-12 h-12 object-contain" />
+                <span className="font-semibold text-xs flex items-center gap-1">
                   {tab.label}
-                  {tab.beta && <span className="bg-[#0d9488] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
+                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>}
                 </span>
-                <span className="text-[10px] text-muted-foreground hidden sm:block">{tab.desc}</span>
               </TabsTrigger>
             ))}
           </TabsList>
