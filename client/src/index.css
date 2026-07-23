@@ -208,11 +208,10 @@
   background-size: 60px 60px;
 }
 
-/* Homepage mobile menu — bold white text */
+/* SiteHeader mobile menu — bold, larger text */
 @media (max-width: 639px) {
-  .mobile-menu-item {
+  .border-t.border-gray-100.bg-white nav span {
     font-weight: 700 !important;
     font-size: 1rem !important;
-    color: #ffffff !important;
   }
 }

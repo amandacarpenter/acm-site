@@ -86,7 +86,7 @@ export default function Home() {
         </div>
 
         {/* ─ RIGHT: full-bleed photo + nav + overlay text ─ */}
-        <div className="relative flex-1 flex flex-col lg:min-h-svh">
+        <div className="relative lg:flex-1 flex flex-col lg:min-h-svh">
 
           {/* Desktop: photo fills entire column absolutely */}
           <img
