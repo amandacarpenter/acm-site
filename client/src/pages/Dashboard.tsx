@@ -3,17 +3,8 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useState } from "react";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
-import logoUrl from "@/assets/logo.png";
+import { CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
-
-const TOOLS = [
-  { label: "Document Fixer", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
-  { label: "Complex PDF", desc: "Scanned & complex PDFs", icon: FileSearch, tab: "complexpdf", color: "bg-blue-50 text-blue-600" },
-  { label: "Video Transcription", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
-  { label: "Canvas HTML Fixer", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
-  { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
-];
 
 export default function Dashboard() {
   const { user } = useUser();
@@ -44,21 +35,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50" role="banner">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/">
-            <img src={logoUrl} alt="Remedy508" style={{ height: 40, width: "auto" }} />
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/tools">
-              <span className="text-sm font-medium text-gray-500 hover:text-gray-900 transition cursor-pointer">Tools</span>
-            </Link>
-            <Link href="/pricing">
-              <span className="text-sm font-medium text-gray-500 hover:text-gray-900 transition cursor-pointer">Plans</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full">
         <div className="mb-8">
@@ -159,22 +136,14 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Quick access tools */}
+        {/* Tools CTA */}
         <div className="mb-8">
-          <h2 className="text-sm font-semibold text-[#3a485b] mb-3">Quick Access</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {TOOLS.map((tool) => (
-              <Link key={tool.tab} href={`/tools/${tool.tab}`}>
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 hover:shadow-md hover:border-[#0d9488]/30 transition cursor-pointer group">
-                  <div className={`w-8 h-8 rounded-lg ${tool.color} flex items-center justify-center mb-3`}>
-                    <tool.icon className="w-4 h-4" />
-                  </div>
-                  <p className="text-xs font-semibold text-[#3a485b] leading-tight group-hover:text-[#0d9488] transition">{tool.label}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{tool.desc}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <Link href="/tools">
+            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
+              <Zap className="w-4 h-4" />
+              Access the Tools
+            </button>
+          </Link>
         </div>
 
         {/* Recent activity */}
