@@ -9,7 +9,7 @@ export default function LoginPage() {
   const [, navigate] = useLocation();
 
   useEffect(() => {
-    if (isSignedIn) navigate("/");
+    if (isSignedIn) navigate("/dashboard");
   }, [isSignedIn]);
 
   return (
