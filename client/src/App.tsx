@@ -35,7 +35,7 @@ if (!PUBLISHABLE_KEY) {
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { isLoaded, isSignedIn } = useAuth();
   if (!isLoaded) return <div className="min-h-screen bg-gray-50" />;
-  if (!isSignedIn) return <RedirectToSignIn redirectUrl={window.location.pathname} />;
+  if (!isSignedIn) return <RedirectToSignIn />;
   return <Component />;
 }
 
@@ -46,6 +46,8 @@ export default function App() {
       signInUrl="/login"
       signUpUrl="/signup"
       afterSignOutUrl="/home"
+      signInFallbackRedirectUrl="/dashboard"
+      signUpFallbackRedirectUrl="/dashboard"
       clerkJSUrl="https://clerk.remedy508.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
     >
       <QueryClientProvider client={queryClient}>
