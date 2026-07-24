@@ -765,263 +765,86 @@ CRITICAL RULES:
       });
 
       const pyPdf = `
-import sys, json, os
-from fpdf import FPDF
-from fpdf.enums import Align
-from fpdf.fonts import FontFace
+import sys, json, os, re, base64
 from bs4 import BeautifulSoup
-
-_bundled = os.path.join('/app', 'fonts')
-_font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
-_regular = None
-_bold = None
-_italic = None
-for _fd in _font_dirs:
-    _r = os.path.join(_fd, 'DejaVuSans.ttf')
-    if os.path.exists(_r):
-        _regular = _r
-        _b = os.path.join(_fd, 'DejaVuSans-Bold.ttf')
-        if os.path.exists(_b): _bold = _b
-        _o = os.path.join(_fd, 'DejaVuSans-Oblique.ttf')
-        if os.path.exists(_o): _italic = _o
-        break
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
 
-NAVY       = (0, 0, 0)
-TEAL       = (0, 0, 0)
-LIGHT_TEAL = (240, 240, 240)
-GRAY       = (85, 85, 85)
-LIGHT_GRAY = (209, 213, 219)
-WHITE      = (255, 255, 255)
-ROW_ALT    = (249, 250, 251)
-
-MARGIN = 25.4
-MAX_IMG_W = 88.9
-MAX_IMG_H = 88.9
-
-class AccessiblePDF(FPDF):
-    def __init__(self, title):
-        super().__init__()
-        self.set_margins(MARGIN, MARGIN, MARGIN)
-        self.set_auto_page_break(True, margin=MARGIN)
-        self.set_lang('en-US')
-        self.set_title(title)
-        self.set_author('Remedy508')
-        self.set_subject('WCAG 2.1 AA Accessible Document')
-        if _regular:
-            self.add_font('DejaVu', fname=_regular)
-            if _bold:   self.add_font('DejaVu', style='B', fname=_bold)
-            if _italic: self.add_font('DejaVu', style='I', fname=_italic)
-            self._fn = 'DejaVu'
-        else:
-            self._fn = 'Helvetica'
-        self._body_size = 11
-        self._line_h = 6
-
-    def set_body(self, bold=False, italic=False, size=None):
-        sz = size or self._body_size
-        style = ('B' if bold else '') + ('I' if italic else '')
-        self.set_font(self._fn, style=style, size=sz)
-
-    def draw_h1(self, text):
-        self.ln(4)
-        self.set_body(bold=True, size=18)
-        self.set_text_color(*NAVY)
-        self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
-        self.set_draw_color(*TEAL)
-        self.set_line_width(0.5)
-        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
-        self.ln(3)
-        self.set_text_color(0, 0, 0)
-
-    def draw_h2(self, text):
-        self.ln(3)
-        self.set_body(bold=True, size=14)
-        self.set_text_color(*NAVY)
-        self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
-        self.ln(2)
-        self.set_text_color(0, 0, 0)
-
-    def draw_h3(self, text):
-        self.ln(2)
-        self.set_body(bold=True, size=12)
-        self.set_text_color(*TEAL)
-        self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
-        self.ln(1)
-        self.set_text_color(0, 0, 0)
-
-    def draw_body(self, text):
-        self.set_body()
-        self.set_text_color(0, 0, 0)
-        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
-        self.ln(1)
-
-    def draw_equation(self, text):
-        self.set_body(italic=True)
-        self.set_text_color(*NAVY)
-        self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
-        self.ln(1)
-        self.set_text_color(0, 0, 0)
-
-    def draw_blockquote(self, text):
-        self.set_body()
-        self.set_text_color(*NAVY)
-        self.set_left_margin(MARGIN + 10)
-        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
-        self.set_left_margin(MARGIN)
-        self.ln(1)
-        self.set_text_color(0, 0, 0)
-
-    def draw_li(self, text, ordered=False, num=0):
-        self.set_body()
-        prefix = (str(num) + '. ') if ordered else '\u2022 '
-        self.set_left_margin(MARGIN + 8)
-        self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
-        self.set_left_margin(MARGIN)
-
-    def draw_hr(self):
-        self.ln(2)
-        self.set_draw_color(*LIGHT_GRAY)
-        self.set_line_width(0.3)
-        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
-        self.ln(3)
-
-    def draw_image(self, img_path, alt_text, orig_w, orig_h):
-        try:
-            px_to_mm = 25.4 / 96.0
-            w_mm = orig_w * px_to_mm
-            h_mm = orig_h * px_to_mm
-            avail = self.w - 2 * MARGIN
-            if w_mm > MAX_IMG_W:
-                scale = MAX_IMG_W / w_mm
-                w_mm = MAX_IMG_W
-                h_mm = h_mm * scale
-            if h_mm > MAX_IMG_H:
-                scale = MAX_IMG_H / h_mm
-                h_mm = MAX_IMG_H
-                w_mm = w_mm * scale
-            x = MARGIN + (avail - w_mm) / 2
-            self.ln(3)
-            self.image(img_path, x=x, y=None, w=w_mm, h=h_mm, alt_text=alt_text)
-            self.ln(3)
-        except Exception as ex:
-            self.set_body(italic=True)
-            self.set_text_color(*GRAY)
-            self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
-            self.set_text_color(0, 0, 0)
-
-    def draw_table(self, tag):
-        caption = tag.find('caption')
-        rows = tag.find_all('tr')
-        if not rows: return
-        if caption:
-            self.set_body(bold=True, size=10)
-            self.set_text_color(*NAVY)
-            self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
-            self.set_text_color(0, 0, 0)
-            self.ln(1)
-        n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
-        heading_style = FontFace(family=self._fn, emphasis='B', color=NAVY, fill_color=LIGHT_TEAL)
-        self.set_font(self._fn, size=10)
-        with self.table(
-            borders_layout='ALL',
-            cell_fill_color=ROW_ALT,
-            cell_fill_mode='ROWS',
-            line_height=6,
-            text_align='LEFT',
-        ) as tbl:
-            for ridx, row in enumerate(rows):
-                cells = row.find_all(['th','td'])
-                is_header = ridx == 0 or all(c.name == 'th' for c in cells)
-                tbl_row = tbl.row()
-                for cell in cells:
-                    txt = cell.get_text(separator=' ').strip()
-                    if is_header:
-                        tbl_row.cell(txt, style=heading_style)
-                    else:
-                        tbl_row.cell(txt)
-        self.ln(3)
-        self.set_text_color(0, 0, 0)
-
-def safe_text(tag):
-    return (tag.get_text(separator=' ') if tag else '').strip()
-
-pdf = AccessiblePDF(doc_title)
-pdf.add_page()
-
-def process(tag, page_images_iter):
-    name = tag.name if hasattr(tag, 'name') and tag.name else ''
-    if name in ['html', 'body', 'div', 'section', 'article', 'header', 'main']:
-        for c in tag.children:
-            if hasattr(c, 'name') and c.name:
-                process(c, page_images_iter)
-    elif name == 'h1':
-        pdf.draw_h1(safe_text(tag))
-    elif name == 'h2':
-        pdf.draw_h2(safe_text(tag))
-    elif name in ['h3','h4','h5','h6']:
-        pdf.draw_h3(safe_text(tag))
-    elif name == 'p':
-        cls = tag.get('class', [])
-        el_id = tag.get('id', '')
-        if 'equation' in cls or el_id.startswith('eq-'):
-            pdf.draw_equation(safe_text(tag))
-        else:
-            pdf.draw_body(safe_text(tag))
-    elif name == 'figure':
-        figcaption = tag.find('figcaption')
-        alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
-        img_info = next(page_images_iter, None)
-        img_path = img_info['path'] if isinstance(img_info, dict) else (img_info or '')
+def clean_html(raw_html, page_images):
+    soup = BeautifulSoup(raw_html, 'html.parser')
+    for tag in soup.find_all(['style', 'script']): tag.decompose()
+    for img_info in page_images:
+        img_path = img_info.get('path', '')
         if img_path and os.path.exists(img_path):
-            orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
-            orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
-            pdf.draw_image(img_path, alt_text, orig_w, orig_h)
-        else:
-            pdf.set_body(italic=True)
-            pdf.set_text_color(*GRAY)
-            pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
-            pdf.set_text_color(0, 0, 0)
-    elif name == 'blockquote':
-        pdf.draw_blockquote(safe_text(tag))
-    elif name in ['ul', 'ol']:
-        items_li = tag.find_all('li', recursive=False)
-        for idx, li in enumerate(items_li, 1):
-            pdf.draw_li(safe_text(li), ordered=(name == 'ol'), num=idx)
-        pdf.ln(2)
-    elif name == 'table':
-        pdf.draw_table(tag)
-    elif name == 'hr':
-        pdf.draw_hr()
+            try:
+                with open(img_path, 'rb') as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                alt = img_info.get('alt', 'Figure')
+                for img_tag in soup.find_all('img', src=img_path):
+                    img_tag['src'] = 'data:image/png;base64,' + b64
+                    if not img_tag.get('alt'): img_tag['alt'] = alt
+            except Exception:
+                pass
+    return str(soup)
 
-for page_info in pages:
-    html = page_info['html']
-    img_files = page_info['images']
-    soup = BeautifulSoup(html, 'html.parser')
-    page_images_iter = iter(img_files)
-    for child in soup.children:
-        if hasattr(child, 'name') and child.name:
-            process(child, page_images_iter)
-    pdf.ln(4)
+html_parts = []
+for pg in pages:
+    page_html = pg.get('html', '')
+    page_images = pg.get('images', [])
+    html_parts.append('<div class="page">' + clean_html(page_html, page_images) + '</div>')
 
-pdf.output(output_path)
+css_rules = [
+    '@page { size: letter; margin: 1in; }',
+    'body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; }',
+    'h1 { font-size: 18pt; font-weight: bold; margin: 12pt 0 6pt 0; }',
+    'h2 { font-size: 15pt; font-weight: bold; margin: 10pt 0 5pt 0; }',
+    'h3 { font-size: 13pt; font-weight: bold; margin: 8pt 0 4pt 0; }',
+    'h4, h5, h6 { font-size: 11pt; font-weight: bold; margin: 6pt 0 3pt 0; }',
+    'p { margin: 0 0 6pt 0; }',
+    'ul, ol { margin: 4pt 0 4pt 18pt; padding: 0; }',
+    'li { margin-bottom: 2pt; }',
+    'table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }',
+    'th { background: #f0f0f0; border: 1px solid #999; padding: 4pt 6pt; text-align: left; font-weight: bold; }',
+    'td { border: 1px solid #ccc; padding: 4pt 6pt; vertical-align: top; }',
+    'blockquote { margin: 6pt 0 6pt 24pt; border-left: 2pt solid #999; padding-left: 8pt; }',
+    'figure { margin: 8pt 0; }',
+    'figcaption { font-size: 9pt; color: #555; margin-top: 3pt; }',
+    'img { max-width: 100%; height: auto; }',
+    '.equation { font-style: italic; }',
+]
+css = '\n'.join(css_rules)
 
-# Post-pass: fix Title, Tab order, Tagged content
+full_html = (
+    '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>'
+    '<title>' + doc_title + '</title>'
+    '<style>' + css + '</style></head><body>'
+    + ''.join(html_parts)
+    + '</body></html>'
+)
+
+tmp_html = output_path + '.html'
+with open(tmp_html, 'w', encoding='utf-8') as f:
+    f.write(full_html)
+
+try:
+    from weasyprint import HTML
+    HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
+    os.unlink(tmp_html)
+except Exception as wp_err:
+    try: os.unlink(tmp_html)
+    except: pass
+    raise RuntimeError('WeasyPrint failed: ' + str(wp_err))
+
+# Post-pass: set DisplayDocTitle via pikepdf
 try:
     import pikepdf
     pp = pikepdf.open(output_path, allow_overwriting_input=True)
     if '/ViewerPreferences' not in pp.Root:
         pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
     pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-    if '/MarkInfo' not in pp.Root:
-        pp.Root['/MarkInfo'] = pikepdf.Dictionary()
-    pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
-    for page in pp.pages:
-        page['/Tabs'] = pikepdf.Name('/S')
     if '/Info' not in pp.trailer:
         pp.trailer['/Info'] = pikepdf.Dictionary()
     pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)

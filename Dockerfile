@@ -13,7 +13,7 @@ FROM node:20-slim
 WORKDIR /app
 
 # Install Python + pip
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv ffmpeg curl tesseract-ocr fonts-dejavu-core libjpeg-dev zlib1g-dev libpng-dev --no-install-recommends && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y python3 python3-pip python3-venv ffmpeg curl tesseract-ocr fonts-dejavu-core libjpeg-dev zlib1g-dev libpng-dev libpango-1.0-0 libpangoft2-1.0-0 libffi-dev libgdk-pixbuf2.0-0 shared-mime-info --no-install-recommends && rm -rf /var/lib/apt/lists/* \
     && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
