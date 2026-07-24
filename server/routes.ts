@@ -772,7 +772,7 @@ CRITICAL RULES:
 
       const pyPdf = `
 import sys, json, os
-from fpdf import FPDF
+from fpdf import FPDF, ViewerPreferences
 from fpdf.enums import Align
 from fpdf.fonts import FontFace
 from bs4 import BeautifulSoup
@@ -815,6 +815,7 @@ class AccessiblePDF(FPDF):
         self.set_margins(MARGIN, MARGIN, MARGIN)
         self.set_auto_page_break(True, margin=MARGIN)
         self.set_lang('en-US')
+        self.viewer_preferences = ViewerPreferences(display_doc_title=True)
         self.set_title(title)
         self.set_author('Remedy508')
         self.set_subject('WCAG 2.1 AA Accessible Document')
@@ -837,6 +838,7 @@ class AccessiblePDF(FPDF):
         self.ln(4)
         self.set_body(bold=True, size=18)
         self.set_text_color(*NAVY)
+        self._add_marked_content(struct_type='H1')
         self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
         self.set_draw_color(*TEAL)
         self.set_line_width(0.5)
@@ -848,6 +850,7 @@ class AccessiblePDF(FPDF):
         self.ln(3)
         self.set_body(bold=True, size=14)
         self.set_text_color(*NAVY)
+        self._add_marked_content(struct_type='H2')
         self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(2)
         self.set_text_color(0, 0, 0)
@@ -856,6 +859,7 @@ class AccessiblePDF(FPDF):
         self.ln(2)
         self.set_body(bold=True, size=12)
         self.set_text_color(*TEAL)
+        self._add_marked_content(struct_type='H3')
         self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
@@ -863,12 +867,14 @@ class AccessiblePDF(FPDF):
     def draw_body(self, text):
         self.set_body()
         self.set_text_color(0, 0, 0)
+        self._add_marked_content(struct_type='P')
         self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
 
     def draw_equation(self, text):
         self.set_body(italic=True)
         self.set_text_color(*NAVY)
+        self._add_marked_content(struct_type='P')
         self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
@@ -877,6 +883,7 @@ class AccessiblePDF(FPDF):
         self.set_body()
         self.set_text_color(*NAVY)
         self.set_left_margin(MARGIN + 10)
+        self._add_marked_content(struct_type='BlockQuote')
         self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
         self.ln(1)
@@ -886,6 +893,7 @@ class AccessiblePDF(FPDF):
         self.set_body()
         prefix = (str(num) + '. ') if ordered else '\u2022 '
         self.set_left_margin(MARGIN + 8)
+        self._add_marked_content(struct_type='LI')
         self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
 
@@ -917,6 +925,7 @@ class AccessiblePDF(FPDF):
         except Exception as ex:
             self.set_body(italic=True)
             self.set_text_color(*GRAY)
+            self._add_marked_content(struct_type='Figure', alt_text=alt_text)
             self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
 
@@ -990,6 +999,7 @@ def process(tag, page_images_iter):
         else:
             pdf.set_body(italic=True)
             pdf.set_text_color(*GRAY)
+            pdf._add_marked_content(struct_type='Figure', alt_text=alt_text)
             pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
             pdf.set_text_color(0, 0, 0)
     elif name == 'blockquote':
@@ -1015,6 +1025,42 @@ for page_info in pages:
     pdf.ln(4)
 
 pdf.output(output_path)
+
+# ── pikepdf post-pass: fix Title display + Tab order + Tagged content flag ──
+try:
+    import pikepdf
+    pp = pikepdf.open(output_path, allow_overwriting_input=True)
+
+    # Force document title to show in viewer title bar
+    if '/ViewerPreferences' not in pp.Root:
+        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
+    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+
+    # Ensure MarkInfo/Marked = true (tagged PDF)
+    if '/MarkInfo' not in pp.Root:
+        pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
+    else:
+        pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
+
+    # Set /Lang on Root if not present
+    if '/Lang' not in pp.Root:
+        pp.Root['/Lang'] = pikepdf.String('en-US')
+
+    # Set Tab order to structure order on every page
+    for page in pp.pages:
+        page['/Tabs'] = pikepdf.Name('/S')
+
+    # Ensure document info title matches
+    if '/Info' not in pp.trailer:
+        pp.trailer['/Info'] = pikepdf.Dictionary()
+    pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
+
+    pp.save(output_path)
+    pp.close()
+except Exception as e:
+    import sys
+    print('pikepdf post-pass warning:', e, file=sys.stderr)
+
 print('ok')
 `;
 
