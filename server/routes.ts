@@ -775,6 +775,7 @@ CRITICAL RULES:
 
       const pyPdf = `
 import sys, json, os
+from contextlib import contextmanager
 from fpdf import FPDF, ViewerPreferences
 from fpdf.enums import Align
 from fpdf.fonts import FontFace
@@ -841,12 +842,30 @@ class AccessiblePDF(FPDF):
         style = ('B' if bold else '') + ('I' if italic else '')
         self.set_font(self._fn, style=style, size=sz)
 
+    @contextmanager
+    def tagged(self, struct_type='P', alt_text=None):
+        """Write BDC/EMC markers to page stream AND register struct element."""
+        mcid = self.struct_builder.next_mcid_for_page(self.page)
+        kwargs = {}
+        if alt_text:
+            kwargs['alt_text'] = alt_text
+        struct_elem, spid = self.struct_builder.add_marked_content(
+            page_number=self.page, struct_type=struct_type, mcid=mcid, **kwargs
+        )
+        self.pages[self.page].struct_parents = spid
+        self._set_min_pdf_version('1.4')
+        start_page = self.page
+        self._out(f'/{struct_type} <</MCID {mcid}>> BDC')
+        yield struct_elem
+        if self.page == start_page:
+            self._out('EMC')
+
     def draw_h1(self, text):
         self.ln(4)
         self.set_body(bold=True, size=18)
         self.set_text_color(*NAVY)
-        self._add_marked_content(struct_type='H1')
-        self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('H1'):
+            self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
         self.set_draw_color(*TEAL)
         self.set_line_width(0.5)
         self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
@@ -857,8 +876,8 @@ class AccessiblePDF(FPDF):
         self.ln(3)
         self.set_body(bold=True, size=14)
         self.set_text_color(*NAVY)
-        self._add_marked_content(struct_type='H2')
-        self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('H2'):
+            self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(2)
         self.set_text_color(0, 0, 0)
 
@@ -866,23 +885,23 @@ class AccessiblePDF(FPDF):
         self.ln(2)
         self.set_body(bold=True, size=12)
         self.set_text_color(*TEAL)
-        self._add_marked_content(struct_type='H3')
-        self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('H3'):
+            self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
 
     def draw_body(self, text):
         self.set_body()
         self.set_text_color(0, 0, 0)
-        self._add_marked_content(struct_type='P')
-        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('P'):
+            self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
 
     def draw_equation(self, text):
         self.set_body(italic=True)
         self.set_text_color(*NAVY)
-        self._add_marked_content(struct_type='P')
-        self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('P'):
+            self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
 
@@ -890,8 +909,8 @@ class AccessiblePDF(FPDF):
         self.set_body()
         self.set_text_color(*NAVY)
         self.set_left_margin(MARGIN + 10)
-        self._add_marked_content(struct_type='BlockQuote')
-        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('BlockQuote'):
+            self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
         self.ln(1)
         self.set_text_color(0, 0, 0)
@@ -900,8 +919,8 @@ class AccessiblePDF(FPDF):
         self.set_body()
         prefix = (str(num) + '. ') if ordered else '\u2022 '
         self.set_left_margin(MARGIN + 8)
-        self._add_marked_content(struct_type='LI')
-        self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
+        with self.tagged('LI'):
+            self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
 
     def draw_hr(self):
@@ -927,42 +946,38 @@ class AccessiblePDF(FPDF):
                 w_mm = w_mm * scale
             x = MARGIN + (avail - w_mm) / 2
             self.ln(3)
+            # image() with alt_text calls _marked_sequence internally — writes BDC/EMC + /Figure struct elem
             self.image(img_path, x=x, y=None, w=w_mm, h=h_mm, alt_text=alt_text)
             self.ln(3)
         except Exception as ex:
             self.set_body(italic=True)
             self.set_text_color(*GRAY)
-            self._add_marked_content(struct_type='Figure', alt_text=alt_text)
-            self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
+            with self.tagged('Figure', alt_text=alt_text):
+                self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
 
     def draw_table(self, tag):
         caption = tag.find('caption')
         rows = tag.find_all('tr')
         if not rows: return
-        # Tagged caption
         if caption:
             self.set_body(bold=True, size=10)
             self.set_text_color(*NAVY)
-            self._add_marked_content(struct_type='Caption')
-            self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
+            with self.tagged('Caption'):
+                self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
             self.ln(1)
-        # Calculate equal column widths
         n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
         avail = self.w - 2 * MARGIN
         col_w = avail / n_cols
-        row_h = 7  # mm per row
+        row_h = 7
         self.set_font(self._fn, size=10)
-        # Draw each row manually so we can tag every cell
         for ridx, row in enumerate(rows):
             cells = row.find_all(['th','td'])
             is_header = ridx == 0 or all(c.name == 'th' for c in cells)
-            # Check if row fits on page
             if self.get_y() + row_h > self.page_break_trigger:
                 self.add_page()
             row_y = self.get_y()
-            # Draw cell backgrounds first
             for cidx in range(n_cols):
                 cx = MARGIN + cidx * col_w
                 if is_header:
@@ -972,12 +987,10 @@ class AccessiblePDF(FPDF):
                 else:
                     self.set_fill_color(255, 255, 255)
                 self.rect(cx, row_y, col_w, row_h, style='F')
-            # Draw borders
             self.set_draw_color(*LIGHT_GRAY)
             self.set_line_width(0.2)
             for cidx in range(n_cols):
                 self.rect(MARGIN + cidx * col_w, row_y, col_w, row_h)
-            # Draw tagged text in each cell
             for cidx, cell in enumerate(cells[:n_cols]):
                 txt = cell.get_text(separator=' ').strip()
                 cx = MARGIN + cidx * col_w + 2
@@ -985,12 +998,13 @@ class AccessiblePDF(FPDF):
                 if is_header:
                     self.set_font(self._fn, style='B', size=10)
                     self.set_text_color(255, 255, 255)
-                    self._add_marked_content(struct_type='TH')
+                    with self.tagged('TH'):
+                        self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
                 else:
                     self.set_font(self._fn, size=10)
                     self.set_text_color(*NAVY)
-                    self._add_marked_content(struct_type='TD')
-                self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
+                    with self.tagged('TD'):
+                        self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
             self.set_xy(MARGIN, row_y + row_h)
         self.ln(3)
         self.set_text_color(0, 0, 0)
