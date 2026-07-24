@@ -731,13 +731,9 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}> }> = [];
-
-      for (let i = 0; i < pageData.length; i++) {
-        const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
-        const imgBuffer = require("fs").readFileSync(screenshot);
-        const imgBase64 = imgBuffer.toString("base64");
-
+      // Run all Claude Vision calls in parallel — turns N×25s into ~25s total
+      const pageResults = await Promise.all(pageData.map(async ({ page: pageNum, screenshot, images: extractedImages }) => {
+        const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
         const visionResp = await anthropic.messages.create({
           model: "claude-sonnet-4-6",
           max_tokens: 8192,
@@ -750,15 +746,13 @@ CRITICAL RULES:
             ],
           }],
         });
-
         let pageHtml = (visionResp.content[0] as any).text.trim();
         if (pageHtml.startsWith("```")) {
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
-
-        pageResults.push({ html: pageHtml, images: extractedImages });
         await unlink(screenshot).catch(() => {});
-      }
+        return { html: pageHtml, images: extractedImages };
+      }));
 
       // ── Step 3: Build accessible PDF with images embedded + alt text (fpdf2) ──
       const pdfInput = JSON.stringify({
