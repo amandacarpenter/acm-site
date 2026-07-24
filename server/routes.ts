@@ -720,10 +720,7 @@ CRITICAL RULES:
 - Read EVERY piece of text visible on the page exactly as written
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
-- For EACH diagram, figure, chart, illustration, or structural formula you see: output a <figure> element with TWO attributes:
-  - data-ytop="NN" — the approximate top of the figure as a percentage (0-100) of the page height
-  - data-ybot="NN" — the approximate bottom of the figure as a percentage (0-100) of the page height
-  Inside the figure, put a <figcaption> with a thorough alt-text description (colors, labels, arrows, values, what concept it illustrates, all data values). Must be detailed enough to replace the image for someone who cannot see it.
+- For EACH diagram, figure, chart, illustration, or structural formula you see: output a <figure> element with a <figcaption> containing a thorough alt-text description (colors, labels, arrows, values, what concept it illustrates, all data values). Must be detailed enough to replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
@@ -733,7 +730,7 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}>; screenshot: string }> = [];
+      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}>; screenshot?: string }> = [];
 
       for (let i = 0; i < pageData.length; i++) {
         const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
@@ -759,7 +756,7 @@ CRITICAL RULES:
         }
 
         pageResults.push({ html: pageHtml, images: extractedImages, screenshot });
-        // Keep screenshot — used for figure cropping in Step 3
+        await unlink(screenshot).catch(() => {});
       }
 
       // ── Step 3: Build accessible PDF with images embedded + alt text (fpdf2) ──
@@ -767,7 +764,6 @@ CRITICAL RULES:
         pages: pageResults.map((p, i) => ({
           html: p.html,
           images: p.images,
-          screenshot: p.screenshot,
           pageNum: i + 1,
         })),
         title: req.file!.originalname.replace(/\.pdf$/i, ""),
@@ -780,10 +776,7 @@ from fpdf import FPDF, ViewerPreferences
 from fpdf.enums import Align
 from fpdf.fonts import FontFace
 from bs4 import BeautifulSoup
-try:
-    from PIL import Image as PILImage
-except ImportError:
-    PILImage = None
+
 
 _bundled = os.path.join('/app', 'fonts')
 _font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
@@ -1015,12 +1008,12 @@ def safe_text(tag):
 pdf = AccessiblePDF(doc_title)
 pdf.add_page()
 
-def process(tag, page_images_iter, page_screenshot=None):
+def process(tag, page_images_iter):
     name = tag.name if hasattr(tag, 'name') and tag.name else ''
     if name in ['html', 'body', 'div', 'section', 'article', 'header', 'main']:
         for c in tag.children:
             if hasattr(c, 'name') and c.name:
-                process(c, page_images_iter, page_screenshot)
+                process(c, page_images_iter)
     elif name == 'h1':
         pdf.draw_h1(safe_text(tag))
     elif name == 'h2':
@@ -1037,44 +1030,21 @@ def process(tag, page_images_iter, page_screenshot=None):
     elif name == 'figure':
         figcaption = tag.find('figcaption')
         alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
-        img_path = None
-        orig_w, orig_h = 400, 300
-        # Try cropping from full-page screenshot using Claude's bounding-box hints
-        ytop_pct = tag.get('data-ytop')
-        ybot_pct = tag.get('data-ybot')
-        if ytop_pct and ybot_pct and page_screenshot and os.path.exists(page_screenshot) and PILImage:
-            try:
-                ytop = max(0, int(ytop_pct)) / 100.0
-                ybot = min(100, int(ybot_pct)) / 100.0
-                # Add 2% padding
-                ytop = max(0, ytop - 0.02)
-                ybot = min(1.0, ybot + 0.02)
-                if ybot > ytop + 0.03:  # at least 3% tall
-                    with PILImage.open(page_screenshot) as im:
-                        pw, ph = im.size
-                        top_px = int(ytop * ph)
-                        bot_px = int(ybot * ph)
-                        crop = im.crop((0, top_px, pw, bot_px))
-                        crop_path = page_screenshot + '_crop_%s_%s.png' % (ytop_pct, ybot_pct)
-                        crop.save(crop_path)
-                        img_path = crop_path
-                        orig_w, orig_h = crop.width, crop.height
-            except Exception as e:
-                img_path = None
-        # Fall back to pre-extracted raster images
-        if not img_path:
-            img_info = next(page_images_iter, None)
-            if img_info:
-                img_path = img_info['path'] if isinstance(img_info, dict) else img_info
-                orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
-                orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
-        if img_path and os.path.exists(img_path):
-            pdf.draw_image(img_path, alt_text, orig_w, orig_h)
-        else:
+        # Use pre-extracted raster images from fitz (the only reliable source)
+        img_info = next(page_images_iter, None)
+        if img_info:
+            img_path = img_info['path'] if isinstance(img_info, dict) else img_info
+            orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
+            orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
+            if img_path and os.path.exists(img_path):
+                pdf.draw_image(img_path, alt_text, orig_w, orig_h)
+                return
+        # No raster image available (vector graphic) — render alt text as accessible paragraph
+        if alt_text:
             pdf.set_body(italic=True)
             pdf.set_text_color(*GRAY)
-            pdf._add_marked_content(struct_type='Figure', alt_text=alt_text)
-            pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
+            with pdf.tagged('P'):
+                pdf.multi_cell(0, 6, '[Figure: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
             pdf.set_text_color(0, 0, 0)
     elif name == 'blockquote':
         pdf.draw_blockquote(safe_text(tag))
@@ -1091,12 +1061,11 @@ def process(tag, page_images_iter, page_screenshot=None):
 for page_info in pages:
     html = page_info['html']
     img_files = page_info['images']
-    page_screenshot = page_info.get('screenshot', '')
     soup = BeautifulSoup(html, 'html.parser')
     page_images_iter = iter(img_files)
     for child in soup.children:
         if hasattr(child, 'name') and child.name:
-            process(child, page_images_iter, page_screenshot)
+            process(child, page_images_iter)
     pdf.ln(4)
 
 pdf.output(output_path)
@@ -1136,15 +1105,6 @@ except Exception as e:
     import sys
     print('pikepdf post-pass warning:', e, file=sys.stderr)
 
-# Clean up screenshot crop files
-for page_info in pages:
-    sc = page_info.get('screenshot', '')
-    if sc:
-        import glob as _glob
-        for cf in _glob.glob(sc + '_crop_*.png'):
-            try: os.remove(cf)
-            except: pass
-
 print('ok')
 `;
 
@@ -1166,12 +1126,11 @@ print('ok')
 
       await unlink(tmpPdfScript).catch(() => {});
 
-      // Clean up extracted images and screenshots
+      // Clean up extracted images
       for (const p of pageResults) {
         for (const imgFile of p.images) {
           await unlink(imgFile.path).catch(() => {});
         }
-        await unlink(p.screenshot).catch(() => {});
       }
       try { require("fs").rmdirSync(tmpWorkDir); } catch {}
 
