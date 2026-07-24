@@ -623,6 +623,7 @@ function ComplexPdfTab() {
     try {
       const fd = new FormData();
       fd.append("file", file);
+      if (complexPdfUser?.id) fd.append("clerkUserId", complexPdfUser.id);
       const resp = await fetch("/api/complexpdf/fix", { method: "POST", body: fd });
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({ error: "Unknown error" }));
