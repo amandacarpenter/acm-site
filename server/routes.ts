@@ -802,7 +802,7 @@ for _fd in _font_dirs:
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 pages = data['pages']
-doc_title = data['title']
+doc_title = data.get('title', 'Accessible Document') or 'Accessible Document'
 
 NAVY       = (58, 72, 91)
 TEAL       = (13, 148, 136)
@@ -1008,8 +1008,48 @@ class AccessiblePDF(FPDF):
         self.ln(3)
         self.set_text_color(0, 0, 0)
 
+# Characters that Helvetica (latin-1) cannot encode — map to safe ASCII equivalents
+_CHAR_MAP = {
+    '\u2212': '-',   # minus sign
+    '\u2013': '-',   # en dash
+    '\u2014': '--',  # em dash
+    '\u2018': "'",   # left single quote
+    '\u2019': "'",   # right single quote
+    '\u201c': '"',   # left double quote
+    '\u201d': '"',   # right double quote
+    '\u2026': '...', # ellipsis
+    '\u00d7': 'x',   # multiplication sign
+    '\u00f7': '/',   # division sign
+    '\u2192': '->',  # right arrow
+    '\u2190': '<-',  # left arrow
+    '\u2194': '<->', # left-right arrow
+    '\u21cc': '<=>',  # equilibrium arrow
+    '\u0394': 'Delta', # Greek capital delta
+    '\u03b1': 'alpha', '\u03b2': 'beta', '\u03b3': 'gamma',
+    '\u03c3': 'sigma', '\u03c0': 'pi', '\u03bc': 'mu',
+    '\u2081': '1', '\u2082': '2', '\u2083': '3',  # subscripts
+    '\u00b0': 'deg', '\u00b1': '+/-', '\u2248': '~=',
+    '\u2265': '>=', '\u2264': '<=', '\u2260': '!=',
+    '\u00e9': 'e', '\u00e8': 'e', '\u00ea': 'e',  # accented e
+}
+
 def safe_text(tag):
-    return (tag.get_text(separator=' ') if tag else '').strip()
+    text = (tag.get_text(separator=' ') if tag else '').strip()
+    return sanitize(text)
+
+def sanitize(text):
+    """Replace characters Helvetica can't encode; keep latin-1 safe chars."""
+    result = []
+    for ch in text:
+        if ch in _CHAR_MAP:
+            result.append(_CHAR_MAP[ch])
+        else:
+            try:
+                ch.encode('latin-1')
+                result.append(ch)
+            except (UnicodeEncodeError, ValueError):
+                result.append('?')
+    return ''.join(result)
 
 pdf = AccessiblePDF(doc_title)
 pdf.add_page()
@@ -1035,7 +1075,7 @@ def process(tag, page_images_iter):
             pdf.draw_body(safe_text(tag))
     elif name == 'figure':
         figcaption = tag.find('figcaption')
-        alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
+        alt_text = sanitize(safe_text(figcaption) if figcaption else safe_text(tag))
         # Use pre-extracted raster images from fitz (the only reliable source)
         img_info = next(page_images_iter, None)
         if img_info:
