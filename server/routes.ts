@@ -720,8 +720,10 @@ CRITICAL RULES:
 - Read EVERY piece of text visible on the page exactly as written
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
-- For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
-  Inside it put: a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates). This description MUST be detailed enough to fully replace the image for someone who cannot see it.
+- For EACH diagram, figure, chart, illustration, or structural formula you see: output a <figure> element with TWO attributes:
+  - data-ytop="NN" — the approximate top of the figure as a percentage (0-100) of the page height
+  - data-ybot="NN" — the approximate bottom of the figure as a percentage (0-100) of the page height
+  Inside the figure, put a <figcaption> with a thorough alt-text description (colors, labels, arrows, values, what concept it illustrates, all data values). Must be detailed enough to replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
@@ -731,7 +733,7 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}> }> = [];
+      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}>; screenshot: string }> = [];
 
       for (let i = 0; i < pageData.length; i++) {
         const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
@@ -756,8 +758,8 @@ CRITICAL RULES:
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
 
-        pageResults.push({ html: pageHtml, images: extractedImages });
-        await unlink(screenshot).catch(() => {});
+        pageResults.push({ html: pageHtml, images: extractedImages, screenshot });
+        // Keep screenshot — used for figure cropping in Step 3
       }
 
       // ── Step 3: Build accessible PDF with images embedded + alt text (fpdf2) ──
@@ -765,6 +767,7 @@ CRITICAL RULES:
         pages: pageResults.map((p, i) => ({
           html: p.html,
           images: p.images,
+          screenshot: p.screenshot,
           pageNum: i + 1,
         })),
         title: req.file!.originalname.replace(/\.pdf$/i, ""),
@@ -776,6 +779,10 @@ from fpdf import FPDF, ViewerPreferences
 from fpdf.enums import Align
 from fpdf.fonts import FontFace
 from bs4 import BeautifulSoup
+try:
+    from PIL import Image as PILImage
+except ImportError:
+    PILImage = None
 
 _bundled = os.path.join('/app', 'fonts')
 _font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
@@ -933,32 +940,58 @@ class AccessiblePDF(FPDF):
         caption = tag.find('caption')
         rows = tag.find_all('tr')
         if not rows: return
+        # Tagged caption
         if caption:
             self.set_body(bold=True, size=10)
             self.set_text_color(*NAVY)
+            self._add_marked_content(struct_type='Caption')
             self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
             self.ln(1)
+        # Calculate equal column widths
         n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
-        heading_style = FontFace(family=self._fn, emphasis='B', color=NAVY, fill_color=LIGHT_TEAL)
+        avail = self.w - 2 * MARGIN
+        col_w = avail / n_cols
+        row_h = 7  # mm per row
         self.set_font(self._fn, size=10)
-        with self.table(
-            borders_layout='ALL',
-            cell_fill_color=ROW_ALT,
-            cell_fill_mode='ROWS',
-            line_height=6,
-            text_align='LEFT',
-        ) as tbl:
-            for ridx, row in enumerate(rows):
-                cells = row.find_all(['th','td'])
-                is_header = ridx == 0 or all(c.name == 'th' for c in cells)
-                tbl_row = tbl.row()
-                for cell in cells:
-                    txt = cell.get_text(separator=' ').strip()
-                    if is_header:
-                        tbl_row.cell(txt, style=heading_style)
-                    else:
-                        tbl_row.cell(txt)
+        # Draw each row manually so we can tag every cell
+        for ridx, row in enumerate(rows):
+            cells = row.find_all(['th','td'])
+            is_header = ridx == 0 or all(c.name == 'th' for c in cells)
+            # Check if row fits on page
+            if self.get_y() + row_h > self.page_break_trigger:
+                self.add_page()
+            row_y = self.get_y()
+            # Draw cell backgrounds first
+            for cidx in range(n_cols):
+                cx = MARGIN + cidx * col_w
+                if is_header:
+                    self.set_fill_color(*NAVY)
+                elif ridx % 2 == 0:
+                    self.set_fill_color(*ROW_ALT)
+                else:
+                    self.set_fill_color(255, 255, 255)
+                self.rect(cx, row_y, col_w, row_h, style='F')
+            # Draw borders
+            self.set_draw_color(*LIGHT_GRAY)
+            self.set_line_width(0.2)
+            for cidx in range(n_cols):
+                self.rect(MARGIN + cidx * col_w, row_y, col_w, row_h)
+            # Draw tagged text in each cell
+            for cidx, cell in enumerate(cells[:n_cols]):
+                txt = cell.get_text(separator=' ').strip()
+                cx = MARGIN + cidx * col_w + 2
+                self.set_xy(cx, row_y + 1.5)
+                if is_header:
+                    self.set_font(self._fn, style='B', size=10)
+                    self.set_text_color(255, 255, 255)
+                    self._add_marked_content(struct_type='TH')
+                else:
+                    self.set_font(self._fn, size=10)
+                    self.set_text_color(*NAVY)
+                    self._add_marked_content(struct_type='TD')
+                self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
+            self.set_xy(MARGIN, row_y + row_h)
         self.ln(3)
         self.set_text_color(0, 0, 0)
 
@@ -968,12 +1001,12 @@ def safe_text(tag):
 pdf = AccessiblePDF(doc_title)
 pdf.add_page()
 
-def process(tag, page_images_iter):
+def process(tag, page_images_iter, page_screenshot=None):
     name = tag.name if hasattr(tag, 'name') and tag.name else ''
     if name in ['html', 'body', 'div', 'section', 'article', 'header', 'main']:
         for c in tag.children:
             if hasattr(c, 'name') and c.name:
-                process(c, page_images_iter)
+                process(c, page_images_iter, page_screenshot)
     elif name == 'h1':
         pdf.draw_h1(safe_text(tag))
     elif name == 'h2':
@@ -990,11 +1023,38 @@ def process(tag, page_images_iter):
     elif name == 'figure':
         figcaption = tag.find('figcaption')
         alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
-        img_info = next(page_images_iter, None)
-        img_path = img_info['path'] if isinstance(img_info, dict) else (img_info or '')
+        img_path = None
+        orig_w, orig_h = 400, 300
+        # Try cropping from full-page screenshot using Claude's bounding-box hints
+        ytop_pct = tag.get('data-ytop')
+        ybot_pct = tag.get('data-ybot')
+        if ytop_pct and ybot_pct and page_screenshot and os.path.exists(page_screenshot) and PILImage:
+            try:
+                ytop = max(0, int(ytop_pct)) / 100.0
+                ybot = min(100, int(ybot_pct)) / 100.0
+                # Add 2% padding
+                ytop = max(0, ytop - 0.02)
+                ybot = min(1.0, ybot + 0.02)
+                if ybot > ytop + 0.03:  # at least 3% tall
+                    with PILImage.open(page_screenshot) as im:
+                        pw, ph = im.size
+                        top_px = int(ytop * ph)
+                        bot_px = int(ybot * ph)
+                        crop = im.crop((0, top_px, pw, bot_px))
+                        crop_path = page_screenshot + '_crop_%s_%s.png' % (ytop_pct, ybot_pct)
+                        crop.save(crop_path)
+                        img_path = crop_path
+                        orig_w, orig_h = crop.width, crop.height
+            except Exception as e:
+                img_path = None
+        # Fall back to pre-extracted raster images
+        if not img_path:
+            img_info = next(page_images_iter, None)
+            if img_info:
+                img_path = img_info['path'] if isinstance(img_info, dict) else img_info
+                orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
+                orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
         if img_path and os.path.exists(img_path):
-            orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
-            orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
             pdf.draw_image(img_path, alt_text, orig_w, orig_h)
         else:
             pdf.set_body(italic=True)
@@ -1017,11 +1077,12 @@ def process(tag, page_images_iter):
 for page_info in pages:
     html = page_info['html']
     img_files = page_info['images']
+    page_screenshot = page_info.get('screenshot', '')
     soup = BeautifulSoup(html, 'html.parser')
     page_images_iter = iter(img_files)
     for child in soup.children:
         if hasattr(child, 'name') and child.name:
-            process(child, page_images_iter)
+            process(child, page_images_iter, page_screenshot)
     pdf.ln(4)
 
 pdf.output(output_path)
@@ -1061,6 +1122,15 @@ except Exception as e:
     import sys
     print('pikepdf post-pass warning:', e, file=sys.stderr)
 
+# Clean up screenshot crop files
+for page_info in pages:
+    sc = page_info.get('screenshot', '')
+    if sc:
+        import glob as _glob
+        for cf in _glob.glob(sc + '_crop_*.png'):
+            try: os.remove(cf)
+            except: pass
+
 print('ok')
 `;
 
@@ -1082,11 +1152,12 @@ print('ok')
 
       await unlink(tmpPdfScript).catch(() => {});
 
-      // Clean up extracted images
+      // Clean up extracted images and screenshots
       for (const p of pageResults) {
         for (const imgFile of p.images) {
           await unlink(imgFile.path).catch(() => {});
         }
+        await unlink(p.screenshot).catch(() => {});
       }
       try { require("fs").rmdirSync(tmpWorkDir); } catch {}
 
