@@ -75,12 +75,12 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-white/80 text-sm mt-1">One-time purchase · $0.30 per document · No expiration</p>
+          <p className="text-white text-base mt-1">One-time purchase · $0.30 per document · No expiration</p>
         </div>
 
         <div className="p-6">
           {/* Preset chips */}
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Choose a pack</p>
+          <p className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Choose a pack</p>
           <div className="grid grid-cols-2 gap-2 mb-4">
             {PRESETS.map((p) => (
               <button
@@ -95,8 +95,8 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                 <p className={`text-sm font-bold ${selected === p.qty && !custom ? "text-[#0d9488]" : "text-[#3a485b]"}`}>
                   {p.label}
                 </p>
-                <p className="text-xs text-gray-400">{p.note}</p>
-                <p className={`text-xs font-semibold mt-1 ${selected === p.qty && !custom ? "text-[#0d9488]" : "text-gray-500"}`}>
+                <p className="text-sm text-gray-700">{p.note}</p>
+                <p className={`text-sm font-semibold mt-1 ${selected === p.qty && !custom ? "text-[#0d9488]" : "text-gray-700"}`}>
                   ${(p.qty * PRICE_PER_DOC).toFixed(2)}
                 </p>
                 {p.qty === 25 && (
@@ -110,7 +110,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
 
           {/* Custom input */}
           <div className="mb-5">
-            <label htmlFor="custom-qty" className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-2">
+            <label htmlFor="custom-qty" className="text-sm font-semibold text-gray-900 uppercase tracking-wide block mb-2">
               Or enter a custom amount (min 10)
             </label>
             <div className="relative">
@@ -147,12 +147,12 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           )}
 
           {/* Policy note */}
-          <p className="text-xs text-gray-400 mb-4">
+          <p className="text-sm text-gray-700 mb-4">
             Credits are added to your account immediately after payment. They never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
+            <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">
               {error}
             </p>
           )}

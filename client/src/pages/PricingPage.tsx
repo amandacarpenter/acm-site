@@ -120,12 +120,12 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-[#3a485b]">
                       {annual ? "$12" : "$19"}
                     </span>
-                    <span className="mb-2 text-sm text-gray-700">/mo</span>
+                    <span className="mb-2 text-base text-gray-900">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-sm text-gray-700">$149/year — billed annually, non-refundable</p>
+                    <p className="text-base text-gray-900">$149/year — billed annually, non-refundable</p>
                   ) : (
-                    <p className="text-sm text-gray-700">or $149/yr — save 35%</p>
+                    <p className="text-base text-gray-900">or $149/yr — save 35%</p>
                   )}
                 </div>
 
@@ -137,7 +137,7 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   50 documents / month
                 </div>
-                <p className="text-xs mb-6 pl-1 text-gray-700">Individual use only — one seat per account</p>
+                <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account</p>
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
@@ -169,9 +169,9 @@ export default function PricingPage() {
                   <p className="text-2xl font-bold text-white mb-4">Team</p>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-5xl font-bold text-white">$149</span>
-                    <span className="mb-2 text-sm text-white">/seat/yr</span>
+                    <span className="mb-2 text-base text-white">/seat/yr</span>
                   </div>
-                  <p className="text-sm text-white">Annual only · 2+ seats · non-refundable</p>
+                  <p className="text-base text-white">Annual only · 2+ seats · non-refundable</p>
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-white">
@@ -182,7 +182,7 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   75 documents / month per seat, pooled
                 </div>
-                <p className="text-xs mb-6 pl-1 text-white">2+ seats — annual plan</p>
+                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (

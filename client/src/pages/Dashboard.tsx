@@ -49,7 +49,7 @@ export default function Dashboard() {
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-10 w-full">
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-[#3a485b]">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Here's what's happening with your account.</p>
+          <p className="text-gray-900 text-base mt-1">Here's what's happening with your account.</p>
         </div>
 
         {/* Top row — Usage + Plan */}
@@ -62,11 +62,11 @@ export default function Dashboard() {
                 <Zap className="w-4 h-4 text-[#0d9488]" />
                 <span className="font-semibold text-[#3a485b] text-sm">Document Usage</span>
               </div>
-              <span className="text-xs text-gray-400">Resets {resetDateStr}</span>
+              <span className="text-sm text-gray-700">Resets {resetDateStr}</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
               <span className="text-4xl font-bold text-[#3a485b]">{docsUsed}</span>
-              <span className="text-gray-400 text-sm mb-1">/ {docsLimit} docs this month</span>
+              <span className="text-gray-900 text-base mb-1">/ {docsLimit} docs this month</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
               <div
@@ -80,7 +80,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-3">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <p className="text-xs text-amber-700 font-medium">
+                  <p className="text-sm text-amber-700 font-medium">
                     {docsLimit - docsUsed <= 0
                       ? "Monthly limit reached. Purchase credits to continue."
                       : `Only ${docsLimit - docsUsed} doc${docsLimit - docsUsed === 1 ? "" : "s"} remaining this month.`}
@@ -96,13 +96,13 @@ export default function Dashboard() {
               </div>
             )}
 
-            <p className="text-xs text-gray-400">{docsLimit - docsUsed > 0 ? docsLimit - docsUsed : 0} documents remaining — Document Fixer &amp; Complex PDF count toward this limit.</p>
+            <p className="text-sm text-gray-700">{docsLimit - docsUsed > 0 ? docsLimit - docsUsed : 0} documents remaining — Document Fixer &amp; Complex PDF count toward this limit.</p>
 
             {/* Purchased credits balance */}
             {purchasedCredits > 0 && (
               <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-100 rounded-xl">
                 <ShoppingCart className="w-3.5 h-3.5 text-[#0d9488] shrink-0" />
-                <p className="text-xs text-[#0d9488] font-medium">
+                <p className="text-sm text-[#0d9488] font-medium">
                   {purchasedCredits} purchased credit{purchasedCredits !== 1 ? "s" : ""} available — used after your monthly pool runs out.
                 </p>
               </div>
@@ -120,13 +120,13 @@ export default function Dashboard() {
                 {plan === "team" ? "Team" : "Individual"}
               </span>
               {meta.stripeCustomerId && (
-                <span className="text-xs text-gray-400">Active</span>
+                <span className="text-sm text-gray-700">Active</span>
               )}
             </div>
             {billingCycle && (
-              <p className="text-xs text-gray-400 mb-2">Member since {billingCycle}</p>
+              <p className="text-sm text-gray-700 mb-2">Member since {billingCycle}</p>
             )}
-            <p className="text-xs text-gray-400 mb-4">{planLabel} · {docsLimit} docs/mo</p>
+            <p className="text-sm text-gray-700 mb-4">{planLabel} · {docsLimit} docs/mo</p>
 
             <div className="mt-auto flex flex-col gap-2">
               <button
@@ -166,8 +166,8 @@ export default function Dashboard() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
               <FileText className="w-8 h-8 text-gray-200 mb-3" />
-              <p className="text-sm font-medium text-gray-400">No activity yet</p>
-              <p className="text-xs text-gray-300 mt-1">Your processed files will appear here</p>
+              <p className="text-sm font-medium text-gray-700">No activity yet</p>
+              <p className="text-sm text-gray-600 mt-1">Your processed files will appear here</p>
             </div>
           </div>
         </div>
