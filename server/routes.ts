@@ -663,9 +663,10 @@ for page_idx, page in enumerate(doc):
     screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
     pix.save(screenshot_path)
 
-    # Extract embedded raster images from this page
+    # Extract embedded raster images from this page, sorted top-to-bottom by Y position
+    # so order matches Claude's top-to-bottom HTML figure output
     img_list = page.get_images(full=True)
-    page_images = []
+    page_images_unsorted = []
     for img_idx, img_info in enumerate(img_list):
         xref = img_info[0]
         try:
@@ -676,18 +677,23 @@ for page_idx, page in enumerate(doc):
             img_h = base_image.get('height', 0)
             if len(img_bytes) < 5120:
                 continue
-            if img_w > 0 and (img_h / img_w) > 5.0:
+            if img_w > 0 and (img_h / img_w) > 3.0:
                 continue
             img_hash = hashlib.md5(img_bytes).hexdigest()
             if hash_page_count.get(img_hash, 0) >= 2:
                 continue
+            # Get Y position of this image on the page for sorting
+            rects = page.get_image_rects(xref)
+            y_pos = rects[0].y0 if rects else 9999
             img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
                 f.write(img_bytes)
-            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
+            page_images_unsorted.append({'path': img_path, 'width': img_w, 'height': img_h, 'y': y_pos})
         except Exception:
             continue
+    # Sort by Y position (top to bottom) to match Claude's reading order
+    page_images = sorted(page_images_unsorted, key=lambda x: x['y'])
 
     result.append({
         'page': page_num,
