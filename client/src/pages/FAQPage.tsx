@@ -104,7 +104,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
-        <span className="text-sm font-semibold text-[#3a485b] group-hover:text-[#0d9488] transition-colors leading-snug">
+        <span className="text-base font-bold text-[#3a485b] group-hover:text-[#0d9488] transition-colors leading-snug">
           {item.q}
         </span>
         <ChevronDown
@@ -113,7 +113,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
         />
       </button>
       {open && (
-        <p className="pb-5 text-sm text-gray-500 leading-relaxed pr-8">
+        <p className="pb-5 text-base text-gray-900 leading-relaxed pr-8">
           {item.a}
         </p>
       )}
@@ -169,7 +169,7 @@ export default function FAQPage() {
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Still have questions?
           </h2>
-          <p className="text-white/70 mb-8">
+          <p className="text-white mb-8 text-lg">
             We're happy to walk you through anything — especially for institution inquiries.
           </p>
           <a

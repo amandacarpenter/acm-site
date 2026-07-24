@@ -129,7 +129,7 @@ export default function PricingPage() {
                   )}
                 </div>
 
-                <p className="text-sm leading-relaxed mb-6 text-gray-900">
+                <p className="text-base leading-relaxed mb-6 text-gray-900">
                   One seat. All five tools. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
@@ -141,7 +141,7 @@ export default function PricingPage() {
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-900">
+                    <li key={f} className="flex items-start gap-2.5 text-base text-gray-900">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
@@ -174,7 +174,7 @@ export default function PricingPage() {
                   <p className="text-sm text-white">Annual only · 2+ seats · non-refundable</p>
                 </div>
 
-                <p className="text-sm leading-relaxed mb-6 text-white">
+                <p className="text-base leading-relaxed mb-6 text-white">
                   Built for accessibility teams, colleges, universities, government agencies, and healthcare organizations.
                 </p>
 
@@ -186,7 +186,7 @@ export default function PricingPage() {
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-white">
+                    <li key={f} className="flex items-start gap-2.5 text-base text-white">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
@@ -220,8 +220,8 @@ export default function PricingPage() {
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">
-                <h3 className="font-semibold text-gray-900 mb-2 text-sm">{q}</h3>
-                <p className="text-sm text-gray-900 leading-relaxed">{a}</p>
+                <h3 className="font-bold text-gray-900 mb-2 text-base">{q}</h3>
+                <p className="text-base text-gray-900 leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
