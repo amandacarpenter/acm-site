@@ -11,7 +11,7 @@ const footerLinks = [
 ];
 
 const FLAG_SVG = (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" role="img" aria-label="American flag" className="shrink-0 rounded-sm">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 11" width="22" height="12" aria-hidden="true" focusable="false" className="shrink-0 rounded-sm">
     <rect width="20" height="11" fill="#B22234"/>
     <rect y="0.846" width="20" height="0.846" fill="white"/>
     <rect y="1.692" width="20" height="0.846" fill="#B22234"/>

@@ -82,7 +82,7 @@ export default function Home() {
                   Get Started →
                 </span>
               </Link>
-              <Link href="/pricing">
+              <Link href="/pricing" aria-label="See Pricing — view plans and features">
                 <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/40 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
                   See Pricing ›
                 </span>
@@ -216,7 +216,7 @@ export default function Home() {
                 Get Started →
               </span>
             </Link>
-            <Link href="/pricing">
+            <Link href="/pricing" aria-label="See Pricing — compare individual and team plans">
               <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
                 See Pricing ›
               </span>
@@ -488,7 +488,7 @@ export default function Home() {
                 Get Started →
               </span>
             </Link>
-            <Link href="/pricing">
+            <Link href="/pricing" aria-label="See Pricing — choose a plan">
               <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
                 See Pricing
               </span>
