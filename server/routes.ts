@@ -791,9 +791,9 @@ output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
 
-NAVY       = (58, 72, 91)
-TEAL       = (13, 148, 136)
-LIGHT_TEAL = (232, 245, 244)
+NAVY       = (0, 0, 0)
+TEAL       = (0, 0, 0)
+LIGHT_TEAL = (240, 240, 240)
 GRAY       = (85, 85, 85)
 LIGHT_GRAY = (209, 213, 219)
 WHITE      = (255, 255, 255)
