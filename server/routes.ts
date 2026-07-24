@@ -183,6 +183,18 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
+  // TEMP DEBUG: retrieve the exact HTML that triggered the last WeasyPrint
+  // "Table wrapper without a table" failure, for direct inspection. Remove
+  // once the root cause is confirmed and fixed.
+  app.get("/api/debug/last-table-failure", (_req, res) => {
+    const fs = require("fs");
+    const p = "/tmp/last_table_wrapper_failure.html";
+    if (fs.existsSync(p)) {
+      res.type("text/plain").send(fs.readFileSync(p, "utf-8"));
+    } else {
+      res.status(404).send("No table-wrapper failure captured yet.");
+    }
+  });
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -958,6 +970,11 @@ except ValueError as wp_val_err:
     # no StructTreeRoot at all, which is worse than failing loudly. Surface
     # the real cause so it can be fixed at the source instead of masked.
     culprit = _find_table_wrapper_culprit(full_html) if 'table' in str(wp_val_err).lower() else None
+    try:
+        with open('/tmp/last_table_wrapper_failure.html', 'w', encoding='utf-8') as _dbgf:
+            _dbgf.write(full_html)
+    except Exception:
+        pass
     try: os.unlink(tmp_html)
     except: pass
     detail = (' Suspect table fragment: ' + culprit) if culprit else ''
