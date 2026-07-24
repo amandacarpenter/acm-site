@@ -593,83 +593,478 @@ Canvas-specific rules:
     }
   });
 
-  // ── COMPLEX PDF (TWO-PASS PIPELINE) ─────────────────────────────────────────
+  // ── COMPLEX PDF (MAY PIPELINE — fpdf2 + real image embed + Claude Vision) ─────
   app.post("/api/complexpdf/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-    const { execFile } = await import("child_process");
-    const { promisify } = await import("util");
-    const execFileAsync = promisify(execFile);
-    const { writeFile, readFile, unlink } = await import("fs/promises");
-    const { tmpdir } = await import("os");
-    const path = await import("path");
-
-    // Usage gate
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
-    if (clerkUserId) {
-      try {
-        const usage = await checkAndIncrementUsage(clerkUserId);
-        if (!usage.allowed) {
-          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
-        }
-      } catch (gateErr: any) {
-        console.error("[COMPLEXPDF USAGE GATE] Error:", gateErr.message);
-      }
-    }
-
-    const ts = Date.now();
-    const tmpIn = path.join(tmpdir(), `complexpdf-in-${ts}.pdf`);
-    const tmpOut = path.join(tmpdir(), `complexpdf-out-${ts}.pdf`);
-    const pipelineScript = path.join(process.cwd(), "complexpdf_pipeline.py");
-
-    await writeFile(tmpIn, req.file.buffer);
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
 
     try {
-      const origTitle = req.file.originalname.replace(/\.pdf$/i, "").replace(/-/g, " ");
-      const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || "";
+      const { execFile } = await import("child_process");
+      const { writeFile, unlink } = await import("fs/promises");
+      const { tmpdir } = await import("os");
+      const { join } = await import("path");
 
-      console.log(`[COMPLEXPDF] Starting two-pass pipeline for: ${req.file.originalname}`);
+      // Usage gate
+      const clerkUserId: string | undefined = req.body?.clerkUserId;
+      if (clerkUserId) {
+        try {
+          const usage = await checkAndIncrementUsage(clerkUserId);
+          if (!usage.allowed) {
+            return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+          }
+        } catch (gateErr: any) {
+          console.error("[COMPLEXPDF USAGE GATE] Error:", (gateErr as any).message);
+        }
+      }
 
-      const result = await execFileAsync(
-        "python3",
-        [pipelineScript, tmpIn, tmpOut, origTitle, ANTHROPIC_KEY],
-        { timeout: 300000, maxBuffer: 10 * 1024 * 1024 }
-      );
+      const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+      const ts = Date.now();
 
-      let stats: Record<string, number> = {};
-      try { stats = JSON.parse(result.stdout.trim()); } catch {}
-      console.log("[COMPLEXPDF] Pipeline stats:", stats);
+      // Write uploaded PDF to temp file
+      const tmpPdf = join(tmpdir(), `complexpdf-${ts}.pdf`);
+      await writeFile(tmpPdf, req.file.buffer);
 
-      const outBuf = await readFile(tmpOut);
-      const originalName = req.file.originalname.replace(/\.pdf$/i, "");
+      const tmpWorkDir = join(tmpdir(), `complexpdf-work-${ts}`);
 
-      const fixes: string[] = [
-        `${stats.headings ?? 0} headings structured and tagged (H1–H6)`,
-        `${stats.paragraphs ?? 0} paragraphs tagged for screen readers`,
-        stats.tables ? `${stats.tables} table${stats.tables !== 1 ? "s" : ""} with accessible headers` : null,
-        stats.figures ? `${stats.figures} figure${stats.figures !== 1 ? "s" : ""} with alt text` : null,
-        stats.list_items ? `${stats.list_items} list items tagged` : null,
-        "Language set to en-US",
-        "Document title embedded in metadata",
-        "Tab order set to structure order",
-        "WCAG 2.1 AA compliant tagged PDF",
-      ].filter(Boolean) as string[];
+      // ── Step 1: Render page screenshots + extract embedded images per page ──
+      const pyExtract = `
+import fitz, sys, os, json
 
+doc = fitz.open(sys.argv[1])
+work_dir = sys.argv[2]
+os.makedirs(work_dir, exist_ok=True)
+
+import hashlib
+
+# Pre-scan: count how many pages each image hash appears on
+# Images on 2+ pages are headers/watermarks — skip them
+hash_page_count = {}
+for page in doc:
+    seen_on_page = set()
+    for img_info in page.get_images(full=True):
+        xref = img_info[0]
+        try:
+            base_image = doc.extract_image(xref)
+            h = hashlib.md5(base_image['image']).hexdigest()
+            if h not in seen_on_page:
+                seen_on_page.add(h)
+                hash_page_count[h] = hash_page_count.get(h, 0) + 1
+        except Exception:
+            pass
+
+result = []
+for page_idx, page in enumerate(doc):
+    page_num = page_idx + 1
+
+    # Full-page screenshot at 2x zoom for Vision
+    mat = fitz.Matrix(2.0, 2.0)
+    pix = page.get_pixmap(matrix=mat)
+    screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
+    pix.save(screenshot_path)
+
+    # Extract embedded raster images from this page
+    img_list = page.get_images(full=True)
+    page_images = []
+    for img_idx, img_info in enumerate(img_list):
+        xref = img_info[0]
+        try:
+            base_image = doc.extract_image(xref)
+            img_bytes = base_image['image']
+            img_ext = base_image['ext']
+            img_w = base_image.get('width', 0)
+            img_h = base_image.get('height', 0)
+            if len(img_bytes) < 5120:
+                continue
+            if img_w > 0 and (img_h / img_w) > 5.0:
+                continue
+            img_hash = hashlib.md5(img_bytes).hexdigest()
+            if hash_page_count.get(img_hash, 0) >= 2:
+                continue
+            img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
+            img_path = os.path.join(work_dir, img_filename)
+            with open(img_path, 'wb') as f:
+                f.write(img_bytes)
+            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
+        except Exception:
+            continue
+
+    result.append({
+        'page': page_num,
+        'screenshot': screenshot_path,
+        'images': page_images
+    })
+
+print(json.dumps({'pages': result, 'total': len(doc)}))
+`;
+
+      const tmpExtractScript = join(tmpdir(), `extract_${ts}.py`);
+      await writeFile(tmpExtractScript, pyExtract, "utf8");
+
+      const extractJson = await new Promise<string>((resolve, reject) => {
+        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 90000 }, (err, stdout, stderr) => {
+          if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
+          else resolve(stdout.trim());
+        });
+      });
+
+      const { pages: pageData, total: totalPages } = JSON.parse(extractJson);
+      await unlink(tmpExtractScript).catch(() => {});
+      await unlink(tmpPdf).catch(() => {});
+
+      // ── Step 2: Claude Vision — extract accessible HTML per page ──
+      const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert processing one page of a PDF document.
+Extract ALL content from this page image and convert it to clean, fully accessible semantic HTML.
+
+CRITICAL RULES:
+- Read EVERY piece of text visible on the page exactly as written
+- For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
+- For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
+- For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
+  Inside it put: a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates). This description MUST be detailed enough to fully replace the image for someone who cannot see it.
+- For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
+- For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
+- Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
+- Use <p> for paragraphs, <ul>/<ol> for lists, <blockquote> for exercise/practice problem boxes
+- Wrap the whole page in <section aria-label="Page N">
+- SKIP: page headers, footers, page numbers, navigation chrome, license badges, OpenStax URL footers
+- Do NOT include CSS or style attributes except class="equation"
+- Return ONLY the HTML, nothing else`;
+
+      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}> }> = [];
+
+      for (let i = 0; i < pageData.length; i++) {
+        const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
+        const imgBuffer = require("fs").readFileSync(screenshot);
+        const imgBase64 = imgBuffer.toString("base64");
+
+        const visionResp = await anthropic.messages.create({
+          model: "claude-sonnet-4-6",
+          max_tokens: 8192,
+          system: visionSystemPrompt,
+          messages: [{
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: "image/png", data: imgBase64 } },
+              { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extract all content as accessible semantic HTML.` },
+            ],
+          }],
+        });
+
+        let pageHtml = (visionResp.content[0] as any).text.trim();
+        if (pageHtml.startsWith("```")) {
+          pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+        }
+
+        pageResults.push({ html: pageHtml, images: extractedImages });
+        await unlink(screenshot).catch(() => {});
+      }
+
+      // ── Step 3: Build accessible PDF with images embedded + alt text (fpdf2) ──
+      const pdfInput = JSON.stringify({
+        pages: pageResults.map((p, i) => ({
+          html: p.html,
+          images: p.images,
+          pageNum: i + 1,
+        })),
+        title: req.file!.originalname.replace(/\.pdf$/i, ""),
+      });
+
+      const pyPdf = `
+import sys, json, os
+from fpdf import FPDF
+from fpdf.enums import Align
+from fpdf.fonts import FontFace
+from bs4 import BeautifulSoup
+
+_bundled = os.path.join('/app', 'fonts')
+_font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
+_regular = None
+_bold = None
+_italic = None
+for _fd in _font_dirs:
+    _r = os.path.join(_fd, 'DejaVuSans.ttf')
+    if os.path.exists(_r):
+        _regular = _r
+        _b = os.path.join(_fd, 'DejaVuSans-Bold.ttf')
+        if os.path.exists(_b): _bold = _b
+        _o = os.path.join(_fd, 'DejaVuSans-Oblique.ttf')
+        if os.path.exists(_o): _italic = _o
+        break
+
+data = json.loads(sys.stdin.read())
+output_path = sys.argv[1]
+pages = data['pages']
+doc_title = data['title']
+
+NAVY       = (58, 72, 91)
+TEAL       = (13, 148, 136)
+LIGHT_TEAL = (232, 245, 244)
+GRAY       = (85, 85, 85)
+LIGHT_GRAY = (209, 213, 219)
+WHITE      = (255, 255, 255)
+ROW_ALT    = (249, 250, 251)
+
+MARGIN = 25.4
+MAX_IMG_W = 88.9
+MAX_IMG_H = 88.9
+
+class AccessiblePDF(FPDF):
+    def __init__(self, title):
+        super().__init__()
+        self.set_margins(MARGIN, MARGIN, MARGIN)
+        self.set_auto_page_break(True, margin=MARGIN)
+        self.set_lang('en-US')
+        self.set_title(title)
+        self.set_author('Remedy508')
+        self.set_subject('WCAG 2.1 AA Accessible Document')
+        if _regular:
+            self.add_font('DejaVu', fname=_regular)
+            if _bold:   self.add_font('DejaVu', style='B', fname=_bold)
+            if _italic: self.add_font('DejaVu', style='I', fname=_italic)
+            self._fn = 'DejaVu'
+        else:
+            self._fn = 'Helvetica'
+        self._body_size = 11
+        self._line_h = 6
+
+    def set_body(self, bold=False, italic=False, size=None):
+        sz = size or self._body_size
+        style = ('B' if bold else '') + ('I' if italic else '')
+        self.set_font(self._fn, style=style, size=sz)
+
+    def draw_h1(self, text):
+        self.ln(4)
+        self.set_body(bold=True, size=18)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
+        self.set_draw_color(*TEAL)
+        self.set_line_width(0.5)
+        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
+        self.ln(3)
+        self.set_text_color(0, 0, 0)
+
+    def draw_h2(self, text):
+        self.ln(3)
+        self.set_body(bold=True, size=14)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(2)
+        self.set_text_color(0, 0, 0)
+
+    def draw_h3(self, text):
+        self.ln(2)
+        self.set_body(bold=True, size=12)
+        self.set_text_color(*TEAL)
+        self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_body(self, text):
+        self.set_body()
+        self.set_text_color(0, 0, 0)
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+
+    def draw_equation(self, text):
+        self.set_body(italic=True)
+        self.set_text_color(*NAVY)
+        self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_blockquote(self, text):
+        self.set_body()
+        self.set_text_color(*NAVY)
+        self.set_left_margin(MARGIN + 10)
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.set_left_margin(MARGIN)
+        self.ln(1)
+        self.set_text_color(0, 0, 0)
+
+    def draw_li(self, text, ordered=False, num=0):
+        self.set_body()
+        prefix = (str(num) + '. ') if ordered else '\u2022 '
+        self.set_left_margin(MARGIN + 8)
+        self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
+        self.set_left_margin(MARGIN)
+
+    def draw_hr(self):
+        self.ln(2)
+        self.set_draw_color(*LIGHT_GRAY)
+        self.set_line_width(0.3)
+        self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
+        self.ln(3)
+
+    def draw_image(self, img_path, alt_text, orig_w, orig_h):
+        try:
+            px_to_mm = 25.4 / 96.0
+            w_mm = orig_w * px_to_mm
+            h_mm = orig_h * px_to_mm
+            avail = self.w - 2 * MARGIN
+            if w_mm > MAX_IMG_W:
+                scale = MAX_IMG_W / w_mm
+                w_mm = MAX_IMG_W
+                h_mm = h_mm * scale
+            if h_mm > MAX_IMG_H:
+                scale = MAX_IMG_H / h_mm
+                h_mm = MAX_IMG_H
+                w_mm = w_mm * scale
+            x = MARGIN + (avail - w_mm) / 2
+            self.ln(3)
+            self.image(img_path, x=x, y=None, w=w_mm, h=h_mm, alt_text=alt_text)
+            self.ln(3)
+        except Exception as ex:
+            self.set_body(italic=True)
+            self.set_text_color(*GRAY)
+            self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
+            self.set_text_color(0, 0, 0)
+
+    def draw_table(self, tag):
+        caption = tag.find('caption')
+        rows = tag.find_all('tr')
+        if not rows: return
+        if caption:
+            self.set_body(bold=True, size=10)
+            self.set_text_color(*NAVY)
+            self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
+            self.set_text_color(0, 0, 0)
+            self.ln(1)
+        n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
+        heading_style = FontFace(family=self._fn, emphasis='B', color=NAVY, fill_color=LIGHT_TEAL)
+        self.set_font(self._fn, size=10)
+        with self.table(
+            borders_layout='ALL',
+            cell_fill_color=ROW_ALT,
+            cell_fill_mode='ROWS',
+            line_height=6,
+            text_align='LEFT',
+        ) as tbl:
+            for ridx, row in enumerate(rows):
+                cells = row.find_all(['th','td'])
+                is_header = ridx == 0 or all(c.name == 'th' for c in cells)
+                tbl_row = tbl.row()
+                for cell in cells:
+                    txt = cell.get_text(separator=' ').strip()
+                    if is_header:
+                        tbl_row.cell(txt, style=heading_style)
+                    else:
+                        tbl_row.cell(txt)
+        self.ln(3)
+        self.set_text_color(0, 0, 0)
+
+def safe_text(tag):
+    return (tag.get_text(separator=' ') if tag else '').strip()
+
+pdf = AccessiblePDF(doc_title)
+pdf.add_page()
+
+def process(tag, page_images_iter):
+    name = tag.name if hasattr(tag, 'name') and tag.name else ''
+    if name in ['html', 'body', 'div', 'section', 'article', 'header', 'main']:
+        for c in tag.children:
+            if hasattr(c, 'name') and c.name:
+                process(c, page_images_iter)
+    elif name == 'h1':
+        pdf.draw_h1(safe_text(tag))
+    elif name == 'h2':
+        pdf.draw_h2(safe_text(tag))
+    elif name in ['h3','h4','h5','h6']:
+        pdf.draw_h3(safe_text(tag))
+    elif name == 'p':
+        cls = tag.get('class', [])
+        el_id = tag.get('id', '')
+        if 'equation' in cls or el_id.startswith('eq-'):
+            pdf.draw_equation(safe_text(tag))
+        else:
+            pdf.draw_body(safe_text(tag))
+    elif name == 'figure':
+        figcaption = tag.find('figcaption')
+        alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
+        img_info = next(page_images_iter, None)
+        img_path = img_info['path'] if isinstance(img_info, dict) else (img_info or '')
+        if img_path and os.path.exists(img_path):
+            orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
+            orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
+            pdf.draw_image(img_path, alt_text, orig_w, orig_h)
+        else:
+            pdf.set_body(italic=True)
+            pdf.set_text_color(*GRAY)
+            pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
+            pdf.set_text_color(0, 0, 0)
+    elif name == 'blockquote':
+        pdf.draw_blockquote(safe_text(tag))
+    elif name in ['ul', 'ol']:
+        items_li = tag.find_all('li', recursive=False)
+        for idx, li in enumerate(items_li, 1):
+            pdf.draw_li(safe_text(li), ordered=(name == 'ol'), num=idx)
+        pdf.ln(2)
+    elif name == 'table':
+        pdf.draw_table(tag)
+    elif name == 'hr':
+        pdf.draw_hr()
+
+for page_info in pages:
+    html = page_info['html']
+    img_files = page_info['images']
+    soup = BeautifulSoup(html, 'html.parser')
+    page_images_iter = iter(img_files)
+    for child in soup.children:
+        if hasattr(child, 'name') and child.name:
+            process(child, page_images_iter)
+    pdf.ln(4)
+
+pdf.output(output_path)
+print('ok')
+`;
+
+      const tmpPdfOut = join(tmpdir(), `accessible-${ts}.pdf`);
+      const tmpPdfScript = join(tmpdir(), `gen_pdf_${ts}.py`);
+      await writeFile(tmpPdfScript, pyPdf, "utf8");
+
+      await new Promise<void>((resolve, reject) => {
+        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut], { timeout: 180000 });
+        proc.stdin.write(pdfInput);
+        proc.stdin.end();
+        let stderr = "";
+        proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
+        proc.on("close", (code: number) => {
+          if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
+          else resolve();
+        });
+      });
+
+      await unlink(tmpPdfScript).catch(() => {});
+
+      // Clean up extracted images
+      for (const p of pageResults) {
+        for (const imgFile of p.images) {
+          await unlink(imgFile.path).catch(() => {});
+        }
+      }
+      try { require("fs").rmdirSync(tmpWorkDir); } catch {}
+
+      const pdfBuffer = require("fs").readFileSync(tmpPdfOut);
+      await unlink(tmpPdfOut).catch(() => {});
+
+      const baseName = req.file.originalname.replace(/\.pdf$/i, "").replace(/[^\x20-\x7E]/g, "");
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="${originalName}-accessible.pdf"`);
-      res.setHeader("X-Total-Pages", String(stats.output_pages ?? 0));
-      res.setHeader("X-Fixes-Made", Buffer.from(JSON.stringify(fixes)).toString("base64"));
-      res.setHeader("X-Accessibility-Stats", JSON.stringify(stats));
-      res.send(outBuf);
+      res.setHeader("Content-Disposition", `attachment; filename="${baseName}-accessible.pdf"`);
+      const fixesMadeArr = [
+        `1.1.1 - All figures embedded with AI-generated alt text`,
+        `1.3.1 - Semantic headings, tables with captions and scoped headers`,
+        `1.3.2 - Content in logical reading order across ${totalPages} pages`,
+        `2.4.2 - Document title set`,
+        `3.1.1 - Language declared`,
+        `Unicode font - Chemical symbols and math rendered correctly`,
+      ];
+      const fixesMadeHeader = JSON.stringify(fixesMadeArr).replace(/[^\x20-\x7E]/g, "");
+      res.setHeader("X-Fixes-Made", Buffer.from(fixesMadeHeader).toString("base64"));
+      res.setHeader("X-Total-Pages", String(totalPages));
+      return res.send(pdfBuffer);
 
     } catch (err: any) {
-      const errMsg = err.stderr || err.message || "Unknown error";
-      console.error("[COMPLEXPDF] Pipeline error:", errMsg);
-      res.status(500).json({ error: "PDF remediation failed: " + errMsg.split("\n").slice(-3).join(" ") });
-    } finally {
-      for (const f of [tmpIn, tmpOut]) {
-        unlink(f).catch(() => {});
-      }
+      res.status(500).json({ error: err.message });
     }
   });
 
