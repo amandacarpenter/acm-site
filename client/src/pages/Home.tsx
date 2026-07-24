@@ -130,7 +130,7 @@ export default function Home() {
                     <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
                   </Link>
                   <Link href="/signup">
-                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started →</span>
                   </Link>
                 </SignedOut>
                 <SignedIn>
@@ -162,7 +162,7 @@ export default function Home() {
                   ))}
                   <SignedOut>
                     <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0d9488] text-white text-center cursor-pointer">Get Started</span></Link>
+                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0d9488] text-white text-center cursor-pointer">Get Started →</span></Link>
                   </SignedOut>
                   <SignedIn>
                     <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
@@ -485,7 +485,7 @@ export default function Home() {
             <Link href="/signup">
               <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm">
                 <Zap className="w-4 h-4" aria-hidden="true" />
-                Get Started
+                Get Started →
               </span>
             </Link>
             <Link href="/pricing">

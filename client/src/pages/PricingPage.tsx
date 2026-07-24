@@ -120,16 +120,16 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-[#3a485b]">
                       {annual ? "$12" : "$19"}
                     </span>
-                    <span className="mb-2 text-sm text-gray-400">/mo</span>
+                    <span className="mb-2 text-sm text-gray-700">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-sm text-gray-400">$149/year — billed annually, non-refundable</p>
+                    <p className="text-sm text-gray-700">$149/year — billed annually, non-refundable</p>
                   ) : (
-                    <p className="text-sm text-gray-400">or $149/yr — save 35%</p>
+                    <p className="text-sm text-gray-700">or $149/yr — save 35%</p>
                   )}
                 </div>
 
-                <p className="text-sm leading-relaxed mb-6 text-gray-500">
+                <p className="text-sm leading-relaxed mb-6 text-gray-900">
                   One seat. All five tools. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
@@ -137,11 +137,11 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   50 documents / month
                 </div>
-                <p className="text-xs mb-6 pl-1 text-gray-400">Individual use only — one seat per account</p>
+                <p className="text-xs mb-6 pl-1 text-gray-700">Individual use only — one seat per account</p>
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-gray-900">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
@@ -154,7 +154,7 @@ export default function PricingPage() {
                     disabled={loading}
                     className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting…</> : "Get Started"}
+                    {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting…</> : "Get Started →"}
                   </button>
                 </div>
               </div>
@@ -169,12 +169,12 @@ export default function PricingPage() {
                   <p className="text-2xl font-bold text-white mb-4">Team</p>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-5xl font-bold text-white">$149</span>
-                    <span className="mb-2 text-sm text-white/50">/seat/yr</span>
+                    <span className="mb-2 text-sm text-white">/seat/yr</span>
                   </div>
-                  <p className="text-sm text-white/50">Annual only · 2+ seats · non-refundable</p>
+                  <p className="text-sm text-white">Annual only · 2+ seats · non-refundable</p>
                 </div>
 
-                <p className="text-sm leading-relaxed mb-6 text-white/70">
+                <p className="text-sm leading-relaxed mb-6 text-white">
                   Built for accessibility teams, colleges, universities, government agencies, and healthcare organizations.
                 </p>
 
@@ -182,11 +182,11 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   75 documents / month per seat, pooled
                 </div>
-                <p className="text-xs mb-6 pl-1 text-white/40">2+ seats — annual plan</p>
+                <p className="text-xs mb-6 pl-1 text-white">2+ seats — annual plan</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-white/80">
+                    <li key={f} className="flex items-start gap-2.5 text-sm text-white">
                       <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                       {f}
                     </li>
@@ -221,7 +221,7 @@ export default function PricingPage() {
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">
                 <h3 className="font-semibold text-gray-900 mb-2 text-sm">{q}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{a}</p>
+                <p className="text-sm text-gray-900 leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
