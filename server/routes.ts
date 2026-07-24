@@ -1015,6 +1015,27 @@ for page_info in pages:
     pdf.ln(4)
 
 pdf.output(output_path)
+
+# Post-pass: fix Title, Tab order, Tagged content
+try:
+    import pikepdf
+    pp = pikepdf.open(output_path, allow_overwriting_input=True)
+    if '/ViewerPreferences' not in pp.Root:
+        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
+    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+    if '/MarkInfo' not in pp.Root:
+        pp.Root['/MarkInfo'] = pikepdf.Dictionary()
+    pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
+    for page in pp.pages:
+        page['/Tabs'] = pikepdf.Name('/S')
+    if '/Info' not in pp.trailer:
+        pp.trailer['/Info'] = pikepdf.Dictionary()
+    pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
+    pp.save(output_path)
+except Exception as e:
+    import sys as _sys
+    print('pikepdf warning:', e, file=_sys.stderr)
+
 print('ok')
 `;
 
