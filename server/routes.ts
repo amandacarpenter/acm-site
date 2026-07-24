@@ -776,6 +776,20 @@ doc_title = data['title']
 def clean_html(raw_html, page_images):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
+    # Strip table sub-elements that have no row/cell content, and unwrap
+    # any table that ends up with no actual rows -- WeasyPrint's tagged-PDF
+    # box-tree walker raises 'Table wrapper without a table' when a table
+    # display box has no TableBox child (e.g. a table left with only a
+    # caption/colgroup after a page-split repair, or entirely empty).
+    for table in soup.find_all('table'):
+        if not table.find_all('tr'):
+            table.unwrap()
+    # Orphaned row/cell fragments outside any table (can appear when a table
+    # spans two Claude-extracted pages and each half is parsed independently)
+    # also trip the same WeasyPrint code path -- drop them defensively.
+    for orphan in soup.find_all(['tr', 'thead', 'tbody', 'tfoot', 'td', 'th']):
+        if not orphan.find_parent('table'):
+            orphan.unwrap()
     for img_info in page_images:
         img_path = img_info.get('path', '')
         if img_path and os.path.exists(img_path):
@@ -829,14 +843,28 @@ tmp_html = output_path + '.html'
 with open(tmp_html, 'w', encoding='utf-8') as f:
     f.write(full_html)
 
+from weasyprint import HTML
 try:
-    from weasyprint import HTML
     HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
-    os.unlink(tmp_html)
+except ValueError as wp_val_err:
+    # 'Table wrapper without a table' is a rare WeasyPrint box-tree edge
+    # case in the tagged-PDF code path, usually from residual malformed
+    # table markup our sanitizer didn't catch. Don't fail the whole job --
+    # fall back to an untagged render so the user still gets a PDF; the
+    # pikepdf post-pass below still sets basic accessibility metadata.
+    if 'table' in str(wp_val_err).lower():
+        HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=False)
+    else:
+        try: os.unlink(tmp_html)
+        except: pass
+        raise RuntimeError('WeasyPrint failed: ' + str(wp_val_err))
 except Exception as wp_err:
     try: os.unlink(tmp_html)
     except: pass
     raise RuntimeError('WeasyPrint failed: ' + str(wp_err))
+finally:
+    try: os.unlink(tmp_html)
+    except: pass
 
 # Post-pass: set DisplayDocTitle via pikepdf
 try:
