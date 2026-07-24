@@ -100,16 +100,16 @@ export default function PricingPage() {
                     <div className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-1.5 py-1">
                       <button
                         onClick={() => setAnnual(false)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                          !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                        className={`px-3 py-1 rounded-full text-sm font-semibold transition ${
+                          !annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-600"
                         }`}
                       >
                         Monthly
                       </button>
                       <button
                         onClick={() => setAnnual(true)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold transition ${
-                          annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-400"
+                        className={`px-3 py-1 rounded-full text-sm font-semibold transition ${
+                          annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-600"
                         }`}
                       >
                         Annual <span className="text-[#0d9488]">−35%</span>
