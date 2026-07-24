@@ -685,7 +685,8 @@ for page_idx, page in enumerate(doc):
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
                 f.write(img_bytes)
-            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
+            img_id = 'img-p%d-%d' % (page_num, img_idx)
+            page_images.append({'id': img_id, 'path': img_path, 'width': img_w, 'height': img_h})
         except Exception:
             continue
 
@@ -721,7 +722,8 @@ CRITICAL RULES:
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
-  Inside it put: a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates). This description MUST be detailed enough to fully replace the image for someone who cannot see it.
+  If an extracted-image ID is provided for this page (listed below) and it corresponds to this figure, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using the exact ID given. If no ID matches (e.g. the figure is a hand-drawn diagram fitz could not extract as a raster image), omit the <img> and rely on the <figcaption> alone.
+  Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
@@ -734,6 +736,7 @@ CRITICAL RULES:
       // Run all Claude Vision calls in parallel — turns N×25s into ~25s total
       const pageResults = await Promise.all(pageData.map(async ({ page: pageNum, screenshot, images: extractedImages }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
+        const imageIdList = (extractedImages || []).map((img: any) => img.id).join(", ") || "none";
         const visionResp = await anthropic.messages.create({
           model: "claude-sonnet-4-6",
           max_tokens: 8192,
@@ -742,7 +745,7 @@ CRITICAL RULES:
             role: "user",
             content: [
               { type: "image", source: { type: "base64", media_type: "image/png", data: imgBase64 } },
-              { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extract all content as accessible semantic HTML.` },
+              { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extracted raster image IDs available for this page: ${imageIdList}. Extract all content as accessible semantic HTML.` },
             ],
           }],
         });
@@ -773,6 +776,10 @@ output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
 
+# 1x1 transparent PNG, used as a placeholder image so caption-only figures
+# still get a real <img> element (WeasyPrint only tags <img> as PDF /Figure).
+TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+
 def clean_html(raw_html, page_images):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
@@ -790,18 +797,79 @@ def clean_html(raw_html, page_images):
     for orphan in soup.find_all(['tr', 'thead', 'tbody', 'tfoot', 'td', 'th']):
         if not orphan.find_parent('table'):
             orphan.unwrap()
-    for img_info in page_images:
-        img_path = img_info.get('path', '')
-        if img_path and os.path.exists(img_path):
+    # Acrobat's 'Regularity' check fails if rows in the same table don't all
+    # have the same number of columns (very common with real-world tables
+    # that have merged/missing cells in the source PDF). Pad short rows with
+    # empty <td> cells so every row in a table matches the widest row's
+    # column count. Cells with colspan count toward the total.
+    for table in soup.find_all('table'):
+        rows = table.find_all('tr')
+        if not rows:
+            continue
+        def row_width(row):
+            width = 0
+            for cell in row.find_all(['td', 'th'], recursive=False):
+                try:
+                    width += int(cell.get('colspan', 1))
+                except (TypeError, ValueError):
+                    width += 1
+            return width
+        widths = [row_width(r) for r in rows]
+        max_width = max(widths) if widths else 0
+        for row, w in zip(rows, widths):
+            for _ in range(max_width - w):
+                filler = soup.new_tag('td')
+                filler.string = ''
+                row.append(filler)
+        # Acrobat's 'Headers' check fails if a table has no <th> cells at all.
+        # If Claude omitted a header row, promote the first row's <td>s to
+        # <th scope="col"> so the table has a real header association.
+        if not table.find('th'):
+            first_row = rows[0]
+            for cell in first_row.find_all('td'):
+                cell.name = 'th'
+                cell['scope'] = 'col'
+    # Match Claude's <img src="cid:IMAGE_ID"> references (see vision prompt) against
+    # the actual extracted image files by stable ID, and embed as base64 data URIs.
+    images_by_id = {img.get('id'): img for img in page_images if img.get('id')}
+    matched_ids = set()
+    for img_tag in soup.find_all('img'):
+        src = img_tag.get('src', '')
+        img_id = src[4:] if src.startswith('cid:') else None
+        info = images_by_id.get(img_id) if img_id else None
+        if info and os.path.exists(info['path']):
             try:
-                with open(img_path, 'rb') as f:
+                with open(info['path'], 'rb') as f:
                     b64 = base64.b64encode(f.read()).decode()
-                alt = img_info.get('alt', 'Figure')
-                for img_tag in soup.find_all('img', src=img_path):
-                    img_tag['src'] = 'data:image/png;base64,' + b64
-                    if not img_tag.get('alt'): img_tag['alt'] = alt
+                ext = os.path.splitext(info['path'])[1].lstrip('.').lower() or 'png'
+                mime = 'jpeg' if ext in ('jpg', 'jpeg') else ext
+                img_tag['src'] = 'data:image/' + mime + ';base64,' + b64
+                if not img_tag.get('alt'):
+                    img_tag['alt'] = 'Figure'
+                matched_ids.add(img_id)
+                continue
             except Exception:
                 pass
+        # No real image matched this <img> tag -- the src is a dangling cid:
+        # reference. Repoint it at the 1x1 placeholder (handled below) instead
+        # of leaving an unresolved src, which WeasyPrint's tagger flags as a
+        # missing-alt-description error.
+        img_tag['src'] = TRANSPARENT_PIXEL
+    # WeasyPrint only tags an actual <img> element as a PDF /Figure (a bare
+    # <figure>/<figcaption> with no <img> is tagged /NonStruct and never gets
+    # an Alt, which is exactly what caused every 'Alternate Text' failure).
+    # So any <figure> with a caption but no <img> gets a tiny transparent
+    # placeholder image whose alt text is the figcaption content -- this makes
+    # WeasyPrint emit a real /Figure tag with a proper /Alt description.
+    for fig in soup.find_all('figure'):
+        if not fig.find('img'):
+            cap = fig.find('figcaption')
+            cap_text = cap.get_text(strip=True) if cap else 'Figure'
+            placeholder = soup.new_tag('img', src=TRANSPARENT_PIXEL, alt=cap_text[:500])
+            if cap:
+                cap.insert_before(placeholder)
+            else:
+                fig.insert(0, placeholder)
     return str(soup)
 
 html_parts = []
@@ -809,6 +877,30 @@ for pg in pages:
     page_html = pg.get('html', '')
     page_images = pg.get('images', [])
     html_parts.append('<div class="page">' + clean_html(page_html, page_images) + '</div>')
+
+# Document-level heading normalization. Each page is extracted by Claude
+# independently, so heading levels are only consistent WITHIN a page --
+# concatenating pages can produce skips (e.g. one page ends at h2, the next
+# starts at h3 with no h2, or worse, jumps to h1). Acrobat's 'Appropriate
+# nesting' check fails on any level skip greater than 1. Walk all headings in
+# document order and clamp each one so it's never more than one level deeper
+# than the previous heading, while preserving same-level and shallower jumps.
+combined_for_headings = BeautifulSoup(''.join(html_parts), 'html.parser')
+prev_level = 1
+seen_h1 = False
+for h in combined_for_headings.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+    level = int(h.name[1])
+    if level == 1:
+        if seen_h1:
+            level = 2  # only the document's first h1 stays an h1
+            h.name = 'h2'
+        else:
+            seen_h1 = True
+    elif level > prev_level + 1:
+        level = prev_level + 1
+        h.name = 'h%d' % level
+    prev_level = level
+html_parts = [str(combined_for_headings)]
 
 css_rules = [
     '@page { size: letter; margin: 1in; }',
