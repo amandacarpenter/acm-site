@@ -27,15 +27,15 @@ export default function About() {
       {/* The Problem */}
       <section className="py-16 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
-          <h2 className="text-3xl font-bold text-[#3a485b] mb-6">The Problem</h2>
+          <h2 className="text-3xl font-bold text-[#3a485b] mb-6">Accessibility Made Easy</h2>
           <p className="text-gray-600 leading-relaxed mb-4 text-lg">
-            Higher education is drowning in inaccessible course materials. PDFs without tags. Videos without captions. Canvas pages that screen readers can't parse. Images with no alt text.
+            Creating accessible course materials shouldn't be complicated. But for too long, it has been — tagged PDFs, captioned videos, screen reader-friendly HTML, meaningful alt text. Each one a separate process. Each one taking time no one has.
           </p>
           <p className="text-gray-600 leading-relaxed mb-4 text-lg">
-            Instructional designers and faculty know this is a problem. They want to fix it. But manual remediation is slow, technical, and time-consuming — and most institutions don't have the staff to keep up with the volume.
+            We built Remedy508 to change that. Our tools handle the hard technical work so you can focus on what matters — creating great content that every student can access.
           </p>
           <p className="text-gray-600 leading-relaxed text-lg">
-            Meanwhile, the DOJ's ADA Title II rule is setting hard deadlines: April 2027 for larger universities, April 2028 for smaller colleges. The clock is ticking, and the backlog is enormous.
+            With ADA Title II deadlines approaching — April 2027 for larger universities, April 2028 for smaller colleges — there's no better time to make accessibility part of your everyday workflow, not a weekend project.
           </p>
         </div>
       </section>
@@ -71,7 +71,7 @@ export default function About() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Our Mission</h2>
           <p className="text-lg text-gray-300 leading-relaxed mb-6">
-            Accessibility shouldn't require a specialist for every document. Every faculty member, every instructional designer, every institution should have the tools to make their materials accessible — without it taking all day.
+            Accessibility shouldn't be hard. Everyone creating content — at any skill level, at any institution — deserves tools that make it simple to do the right thing without it consuming their day.
           </p>
           <p className="text-lg text-gray-300 leading-relaxed">
             Remedy508 is operated by <a href="https://leftcoastlearningllc.com" target="_blank" rel="noopener noreferrer" aria-label="Left Coast Learning LLC website (opens in new tab)" className="text-white font-semibold underline underline-offset-2 hover:text-teal-400 transition-colors">Left Coast Learning LLC</a>, a California company focused on building practical accessibility tools for higher education.
