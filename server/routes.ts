@@ -194,7 +194,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // ── DOCUMENT ACCESSIBILITY ──────────────────────────────────────────────────
-  app.post("/api/document/fix", upload.single("file"), async (req, res) => {
+  app.post("/api/document/fix", upload.single("file"), (req, res, next) => { req.setTimeout(300000); res.setTimeout(300000); next(); }, async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
 
@@ -256,7 +256,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         // Use venv python3 if available (Railway), fall back to system python3
         const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
         rawText = await new Promise<string>((resolve, reject) => {
-          execFile(python3, ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024 }, (err, stdout) => {
+          execFile(python3, ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024, timeout: 120000 }, (err, stdout) => {
             if (err) reject(err); else resolve(stdout);
           });
         });

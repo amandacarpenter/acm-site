@@ -193,7 +193,7 @@ function DocumentTab() {
             return new TableCell({
               borders: allBorders,
               width: { size: colWidth, type: WidthType.DXA },
-              shading: isHeader ? { fill: "EDF2F7", type: ShadingType.CLEAR } : undefined,
+              shading: isHeader ? { fill: "F5F5F5", type: ShadingType.CLEAR } : undefined,
               margins: { top: 60, bottom: 60, left: 100, right: 100 },
               children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader })] })],
             });
@@ -284,10 +284,10 @@ function DocumentTab() {
         styles: {
           default: { document: { run: { font: "Calibri", size: 24 } } },
           paragraphStyles: [
-            { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 280, after: 140 }, outlineLevel: 0 } },
-            { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 28, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 220, after: 110 }, outlineLevel: 1 } },
-            { id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, font: "Calibri", color: "1e1b4b" }, paragraph: { spacing: { before: 180, after: 80 }, outlineLevel: 2 } },
-            { id: "Heading4", name: "Heading 4", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, italics: true, font: "Calibri", color: "333333" }, paragraph: { spacing: { before: 140, after: 60 }, outlineLevel: 3 } },
+            { id: "Heading1", name: "Heading 1", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 36, bold: true, font: "Calibri", color: "000000" }, paragraph: { spacing: { before: 280, after: 140 }, outlineLevel: 0 } },
+            { id: "Heading2", name: "Heading 2", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 28, bold: true, font: "Calibri", color: "000000" }, paragraph: { spacing: { before: 220, after: 110 }, outlineLevel: 1 } },
+            { id: "Heading3", name: "Heading 3", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, font: "Calibri", color: "000000" }, paragraph: { spacing: { before: 180, after: 80 }, outlineLevel: 2 } },
+            { id: "Heading4", name: "Heading 4", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, italics: true, font: "Calibri", color: "222222" }, paragraph: { spacing: { before: 140, after: 60 }, outlineLevel: 3 } },
           ],
         },
         sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children: docChildren }],
