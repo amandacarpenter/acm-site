@@ -935,43 +935,65 @@ tmp_html = output_path + '.html'
 with open(tmp_html, 'w', encoding='utf-8') as f:
     f.write(full_html)
 
+import traceback as _tb
+
+def _find_table_wrapper_culprit(html_source):
+    # Best-effort localization: find which <table>...</table> block in the
+    # source HTML has zero real <tr> rows post-render, which is the only
+    # known trigger for WeasyPrint's box-tree 'Table wrapper without a
+    # table' error. Returns a short excerpt for the error message.
+    for m in re.finditer(r'<table[^>]*>.*?</table>', html_source, re.DOTALL):
+        frag = m.group(0)
+        if not re.search(r'<tr[\s>]', frag):
+            return frag[:300]
+    return None
+
 from weasyprint import HTML
 try:
     HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
 except ValueError as wp_val_err:
-    # 'Table wrapper without a table' is a rare WeasyPrint box-tree edge
-    # case in the tagged-PDF code path, usually from residual malformed
-    # table markup our sanitizer didn't catch. Don't fail the whole job --
-    # fall back to an untagged render so the user still gets a PDF; the
-    # pikepdf post-pass below still sets basic accessibility metadata.
-    if 'table' in str(wp_val_err).lower():
-        HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=False)
-    else:
-        try: os.unlink(tmp_html)
-        except: pass
-        raise RuntimeError('WeasyPrint failed: ' + str(wp_val_err))
+    # 'Table wrapper without a table' is a WeasyPrint box-tree edge case in
+    # the tagged-PDF code path. Do NOT silently fall back to an untagged
+    # render -- that ships a PDF that LOOKS successful (HTTP 200) but has
+    # no StructTreeRoot at all, which is worse than failing loudly. Surface
+    # the real cause so it can be fixed at the source instead of masked.
+    culprit = _find_table_wrapper_culprit(full_html) if 'table' in str(wp_val_err).lower() else None
+    try: os.unlink(tmp_html)
+    except: pass
+    detail = (' Suspect table fragment: ' + culprit) if culprit else ''
+    raise RuntimeError('WeasyPrint tagged-PDF generation failed: ' + str(wp_val_err) + detail)
 except Exception as wp_err:
     try: os.unlink(tmp_html)
     except: pass
-    raise RuntimeError('WeasyPrint failed: ' + str(wp_err))
-finally:
-    try: os.unlink(tmp_html)
-    except: pass
+    raise RuntimeError('WeasyPrint failed: ' + str(wp_err) + ' | ' + _tb.format_exc()[-500:])
 
-# Post-pass: set DisplayDocTitle via pikepdf
-try:
-    import pikepdf
-    pp = pikepdf.open(output_path, allow_overwriting_input=True)
-    if '/ViewerPreferences' not in pp.Root:
-        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
-    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-    if '/Info' not in pp.trailer:
-        pp.trailer['/Info'] = pikepdf.Dictionary()
-    pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
-    pp.save(output_path)
-except Exception as e:
-    import sys as _sys
-    print('pikepdf warning:', e, file=_sys.stderr)
+# Post-pass: set DisplayDocTitle, and VERIFY WeasyPrint actually produced a
+# real tagged structure. If pdf_tags=True silently produced a PDF with no
+# StructTreeRoot (no exception raised, but tagging didn't happen), fail
+# loudly here instead of returning an untagged PDF as if it succeeded --
+# that mismatch (HTTP 200 but no real tags) is exactly what caused the
+# 'same report every time' confusion. Better to error than lie.
+import pikepdf
+pp = pikepdf.open(output_path, allow_overwriting_input=True)
+if '/StructTreeRoot' not in pp.Root:
+    pp.close()
+    raise RuntimeError(
+        'WeasyPrint produced a PDF with no StructTreeRoot (tagging silently '
+        'did not happen despite pdf_tags=True and no exception). This PDF '
+        'would fail every Acrobat tag check. Aborting instead of returning '
+        'a falsely-successful untagged file.'
+    )
+if '/ViewerPreferences' not in pp.Root:
+    pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
+pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+if '/MarkInfo' not in pp.Root:
+    pp.Root['/MarkInfo'] = pikepdf.Dictionary()
+pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
+if '/Info' not in pp.trailer:
+    pp.trailer['/Info'] = pikepdf.Dictionary()
+pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
+pp.save(output_path)
+pp.close()
 
 print('ok')
 `;
