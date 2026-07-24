@@ -81,7 +81,7 @@ export default function TeamCheckout() {
             {/* Features */}
             <ul className="space-y-3 mb-8">
               {TEAM_FEATURES.map((f) => (
-                <li key={f} className="flex items-start gap-2.5 text-sm text-gray-600">
+                <li key={f} className="flex items-start gap-2.5 text-base text-gray-900">
                   <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
                   {f}
                 </li>
@@ -118,8 +118,8 @@ export default function TeamCheckout() {
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-gray-400 mb-1">Minimum 2 seats</p>
-              <p className="text-sm text-gray-400 mb-1">
+              <p className="text-sm text-gray-700 mb-1">Minimum 2 seats</p>
+              <p className="text-sm text-gray-700 mb-1">
                 75 documents/month per seat, pooled across your team
               </p>
 
@@ -129,7 +129,7 @@ export default function TeamCheckout() {
                   {seats} seat{seats !== 1 ? "s" : ""} × $149 ={" "}
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
-                <p className="text-xs text-gray-400 mt-1">
+                <p className="text-sm text-gray-700 mt-1">
                   {seats * 75} documents/month pooled · Billed annually · Non-refundable
                 </p>
               </div>
@@ -153,7 +153,7 @@ export default function TeamCheckout() {
                       <CreditCard className="w-4 h-4 text-[#0d9488]" aria-hidden="true" />
                       <span className="font-semibold text-sm text-[#3a485b]">Pay by credit card</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">Instant access after checkout</p>
+                    <p className="text-sm text-gray-700 mt-0.5">Instant access after checkout</p>
                   </div>
                 </label>
 
@@ -171,7 +171,7 @@ export default function TeamCheckout() {
                       <FileText className="w-4 h-4 text-[#0d9488]" aria-hidden="true" />
                       <span className="font-semibold text-sm text-[#3a485b]">Pay by invoice / PO</span>
                     </div>
-                    <p className="text-xs text-gray-400 mt-0.5">Perfect for institutions, government agencies, and healthcare organizations</p>
+                    <p className="text-sm text-gray-700 mt-0.5">Perfect for institutions, government agencies, and healthcare organizations</p>
                   </div>
                 </label>
               </div>
