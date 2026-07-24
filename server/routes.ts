@@ -1044,7 +1044,7 @@ print('ok')
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
       await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut], { timeout: 180000 });
+        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut], { timeout: 480000 });
         proc.stdin.write(pdfInput);
         proc.stdin.end();
         let stderr = "";
