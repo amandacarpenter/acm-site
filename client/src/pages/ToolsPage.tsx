@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import SiteHeader from "@/components/SiteHeader";
+import SiteFooter from "@/components/SiteFooter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import iconDocument from "@/assets/icon-document.png";
 import iconComplexpdf from "@/assets/icon-complexpdf.png";
@@ -829,6 +830,7 @@ export default function ToolsPage() {
         </div>
       </div>
       </main>
+      <SiteFooter />
     </div>
   );
 }
