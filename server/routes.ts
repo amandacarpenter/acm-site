@@ -663,10 +663,9 @@ for page_idx, page in enumerate(doc):
     screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
     pix.save(screenshot_path)
 
-    # Extract embedded raster images from this page, sorted top-to-bottom by Y position
-    # so order matches Claude's top-to-bottom HTML figure output
+    # Extract embedded raster images from this page
     img_list = page.get_images(full=True)
-    page_images_unsorted = []
+    page_images = []
     for img_idx, img_info in enumerate(img_list):
         xref = img_info[0]
         try:
@@ -677,23 +676,18 @@ for page_idx, page in enumerate(doc):
             img_h = base_image.get('height', 0)
             if len(img_bytes) < 5120:
                 continue
-            if img_w > 0 and (img_h / img_w) > 3.0:
+            if img_w > 0 and (img_h / img_w) > 5.0:
                 continue
             img_hash = hashlib.md5(img_bytes).hexdigest()
             if hash_page_count.get(img_hash, 0) >= 2:
                 continue
-            # Get Y position of this image on the page for sorting
-            rects = page.get_image_rects(xref)
-            y_pos = rects[0].y0 if rects else 9999
             img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
                 f.write(img_bytes)
-            page_images_unsorted.append({'path': img_path, 'width': img_w, 'height': img_h, 'y': y_pos})
+            page_images.append({'path': img_path, 'width': img_w, 'height': img_h})
         except Exception:
             continue
-    # Sort by Y position (top to bottom) to match Claude's reading order
-    page_images = sorted(page_images_unsorted, key=lambda x: x['y'])
 
     result.append({
         'page': page_num,
@@ -726,7 +720,8 @@ CRITICAL RULES:
 - Read EVERY piece of text visible on the page exactly as written
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
-- For EACH diagram, figure, chart, illustration, or structural formula you see: output a <figure> element with a <figcaption> containing a thorough alt-text description (colors, labels, arrows, values, what concept it illustrates, all data values). Must be detailed enough to replace the image for someone who cannot see it.
+- For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
+  Inside it put: a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates). This description MUST be detailed enough to fully replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
@@ -736,7 +731,7 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}>; screenshot?: string }> = [];
+      const pageResults: Array<{ html: string; images: Array<{path: string; width: number; height: number}> }> = [];
 
       for (let i = 0; i < pageData.length; i++) {
         const { page: pageNum, screenshot, images: extractedImages } = pageData[i];
@@ -761,7 +756,7 @@ CRITICAL RULES:
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
 
-        pageResults.push({ html: pageHtml, images: extractedImages, screenshot });
+        pageResults.push({ html: pageHtml, images: extractedImages });
         await unlink(screenshot).catch(() => {});
       }
 
@@ -777,12 +772,10 @@ CRITICAL RULES:
 
       const pyPdf = `
 import sys, json, os
-from contextlib import contextmanager
-from fpdf import FPDF, ViewerPreferences
+from fpdf import FPDF
 from fpdf.enums import Align
 from fpdf.fonts import FontFace
 from bs4 import BeautifulSoup
-
 
 _bundled = os.path.join('/app', 'fonts')
 _font_dirs = [_bundled, '/usr/share/fonts/truetype/dejavu', '/usr/share/fonts/dejavu']
@@ -802,7 +795,7 @@ for _fd in _font_dirs:
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 pages = data['pages']
-doc_title = data.get('title', 'Accessible Document') or 'Accessible Document'
+doc_title = data['title']
 
 NAVY       = (58, 72, 91)
 TEAL       = (13, 148, 136)
@@ -822,7 +815,6 @@ class AccessiblePDF(FPDF):
         self.set_margins(MARGIN, MARGIN, MARGIN)
         self.set_auto_page_break(True, margin=MARGIN)
         self.set_lang('en-US')
-        self.viewer_preferences = ViewerPreferences(display_doc_title=True)
         self.set_title(title)
         self.set_author('Remedy508')
         self.set_subject('WCAG 2.1 AA Accessible Document')
@@ -841,30 +833,11 @@ class AccessiblePDF(FPDF):
         style = ('B' if bold else '') + ('I' if italic else '')
         self.set_font(self._fn, style=style, size=sz)
 
-    @contextmanager
-    def tagged(self, struct_type='P', alt_text=None):
-        """Write BDC/EMC markers to page stream AND register struct element."""
-        mcid = self.struct_builder.next_mcid_for_page(self.page)
-        kwargs = {}
-        if alt_text:
-            kwargs['alt_text'] = alt_text
-        struct_elem, spid = self.struct_builder.add_marked_content(
-            page_number=self.page, struct_type=struct_type, mcid=mcid, **kwargs
-        )
-        self.pages[self.page].struct_parents = spid
-        self._set_min_pdf_version('1.4')
-        start_page = self.page
-        self._out(f'/{struct_type} <</MCID {mcid}>> BDC')
-        yield struct_elem
-        if self.page == start_page:
-            self._out('EMC')
-
     def draw_h1(self, text):
         self.ln(4)
         self.set_body(bold=True, size=18)
         self.set_text_color(*NAVY)
-        with self.tagged('H1'):
-            self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, 9, text, new_x='LMARGIN', new_y='NEXT')
         self.set_draw_color(*TEAL)
         self.set_line_width(0.5)
         self.line(MARGIN, self.get_y(), self.w - MARGIN, self.get_y())
@@ -875,8 +848,7 @@ class AccessiblePDF(FPDF):
         self.ln(3)
         self.set_body(bold=True, size=14)
         self.set_text_color(*NAVY)
-        with self.tagged('H2'):
-            self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, 8, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(2)
         self.set_text_color(0, 0, 0)
 
@@ -884,23 +856,20 @@ class AccessiblePDF(FPDF):
         self.ln(2)
         self.set_body(bold=True, size=12)
         self.set_text_color(*TEAL)
-        with self.tagged('H3'):
-            self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, 7, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
 
     def draw_body(self, text):
         self.set_body()
         self.set_text_color(0, 0, 0)
-        with self.tagged('P'):
-            self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
 
     def draw_equation(self, text):
         self.set_body(italic=True)
         self.set_text_color(*NAVY)
-        with self.tagged('P'):
-            self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, self._line_h, text, align='C', new_x='LMARGIN', new_y='NEXT')
         self.ln(1)
         self.set_text_color(0, 0, 0)
 
@@ -908,8 +877,7 @@ class AccessiblePDF(FPDF):
         self.set_body()
         self.set_text_color(*NAVY)
         self.set_left_margin(MARGIN + 10)
-        with self.tagged('BlockQuote'):
-            self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, self._line_h, text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
         self.ln(1)
         self.set_text_color(0, 0, 0)
@@ -918,8 +886,7 @@ class AccessiblePDF(FPDF):
         self.set_body()
         prefix = (str(num) + '. ') if ordered else '\u2022 '
         self.set_left_margin(MARGIN + 8)
-        with self.tagged('LI'):
-            self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
+        self.multi_cell(0, self._line_h, prefix + text, new_x='LMARGIN', new_y='NEXT')
         self.set_left_margin(MARGIN)
 
     def draw_hr(self):
@@ -945,14 +912,12 @@ class AccessiblePDF(FPDF):
                 w_mm = w_mm * scale
             x = MARGIN + (avail - w_mm) / 2
             self.ln(3)
-            # image() with alt_text calls _marked_sequence internally — writes BDC/EMC + /Figure struct elem
             self.image(img_path, x=x, y=None, w=w_mm, h=h_mm, alt_text=alt_text)
             self.ln(3)
         except Exception as ex:
             self.set_body(italic=True)
             self.set_text_color(*GRAY)
-            with self.tagged('Figure', alt_text=alt_text):
-                self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
+            self.multi_cell(0, self._line_h, '[Image: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
 
     def draw_table(self, tag):
@@ -962,94 +927,34 @@ class AccessiblePDF(FPDF):
         if caption:
             self.set_body(bold=True, size=10)
             self.set_text_color(*NAVY)
-            with self.tagged('Caption'):
-                self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
+            self.multi_cell(0, 5, caption.get_text().strip(), new_x='LMARGIN', new_y='NEXT')
             self.set_text_color(0, 0, 0)
             self.ln(1)
         n_cols = max(len(r.find_all(['th','td'])) for r in rows) or 1
-        avail = self.w - 2 * MARGIN
-        col_w = avail / n_cols
-        row_h = 7
+        heading_style = FontFace(family=self._fn, emphasis='B', color=NAVY, fill_color=LIGHT_TEAL)
         self.set_font(self._fn, size=10)
-        for ridx, row in enumerate(rows):
-            cells = row.find_all(['th','td'])
-            is_header = ridx == 0 or all(c.name == 'th' for c in cells)
-            if self.get_y() + row_h > self.page_break_trigger:
-                self.add_page()
-            row_y = self.get_y()
-            for cidx in range(n_cols):
-                cx = MARGIN + cidx * col_w
-                if is_header:
-                    self.set_fill_color(*NAVY)
-                elif ridx % 2 == 0:
-                    self.set_fill_color(*ROW_ALT)
-                else:
-                    self.set_fill_color(255, 255, 255)
-                self.rect(cx, row_y, col_w, row_h, style='F')
-            self.set_draw_color(*LIGHT_GRAY)
-            self.set_line_width(0.2)
-            for cidx in range(n_cols):
-                self.rect(MARGIN + cidx * col_w, row_y, col_w, row_h)
-            for cidx, cell in enumerate(cells[:n_cols]):
-                txt = cell.get_text(separator=' ').strip()
-                cx = MARGIN + cidx * col_w + 2
-                self.set_xy(cx, row_y + 1.5)
-                if is_header:
-                    self.set_font(self._fn, style='B', size=10)
-                    self.set_text_color(255, 255, 255)
-                    with self.tagged('TH'):
-                        self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
-                else:
-                    self.set_font(self._fn, size=10)
-                    self.set_text_color(*NAVY)
-                    with self.tagged('TD'):
-                        self.cell(col_w - 4, row_h - 3, txt[:40], new_x='RIGHT', new_y='TOP')
-            self.set_xy(MARGIN, row_y + row_h)
+        with self.table(
+            borders_layout='ALL',
+            cell_fill_color=ROW_ALT,
+            cell_fill_mode='ROWS',
+            line_height=6,
+            text_align='LEFT',
+        ) as tbl:
+            for ridx, row in enumerate(rows):
+                cells = row.find_all(['th','td'])
+                is_header = ridx == 0 or all(c.name == 'th' for c in cells)
+                tbl_row = tbl.row()
+                for cell in cells:
+                    txt = cell.get_text(separator=' ').strip()
+                    if is_header:
+                        tbl_row.cell(txt, style=heading_style)
+                    else:
+                        tbl_row.cell(txt)
         self.ln(3)
         self.set_text_color(0, 0, 0)
 
-# Characters that Helvetica (latin-1) cannot encode — map to safe ASCII equivalents
-_CHAR_MAP = {
-    '\u2212': '-',   # minus sign
-    '\u2013': '-',   # en dash
-    '\u2014': '--',  # em dash
-    '\u2018': "'",   # left single quote
-    '\u2019': "'",   # right single quote
-    '\u201c': '"',   # left double quote
-    '\u201d': '"',   # right double quote
-    '\u2026': '...', # ellipsis
-    '\u00d7': 'x',   # multiplication sign
-    '\u00f7': '/',   # division sign
-    '\u2192': '->',  # right arrow
-    '\u2190': '<-',  # left arrow
-    '\u2194': '<->', # left-right arrow
-    '\u21cc': '<=>',  # equilibrium arrow
-    '\u0394': 'Delta', # Greek capital delta
-    '\u03b1': 'alpha', '\u03b2': 'beta', '\u03b3': 'gamma',
-    '\u03c3': 'sigma', '\u03c0': 'pi', '\u03bc': 'mu',
-    '\u2081': '1', '\u2082': '2', '\u2083': '3',  # subscripts
-    '\u00b0': 'deg', '\u00b1': '+/-', '\u2248': '~=',
-    '\u2265': '>=', '\u2264': '<=', '\u2260': '!=',
-    '\u00e9': 'e', '\u00e8': 'e', '\u00ea': 'e',  # accented e
-}
-
 def safe_text(tag):
-    text = (tag.get_text(separator=' ') if tag else '').strip()
-    return sanitize(text)
-
-def sanitize(text):
-    """Replace characters Helvetica can't encode; keep latin-1 safe chars."""
-    result = []
-    for ch in text:
-        if ch in _CHAR_MAP:
-            result.append(_CHAR_MAP[ch])
-        else:
-            try:
-                ch.encode('latin-1')
-                result.append(ch)
-            except (UnicodeEncodeError, ValueError):
-                result.append('?')
-    return ''.join(result)
+    return (tag.get_text(separator=' ') if tag else '').strip()
 
 pdf = AccessiblePDF(doc_title)
 pdf.add_page()
@@ -1075,22 +980,17 @@ def process(tag, page_images_iter):
             pdf.draw_body(safe_text(tag))
     elif name == 'figure':
         figcaption = tag.find('figcaption')
-        alt_text = sanitize(safe_text(figcaption) if figcaption else safe_text(tag))
-        # Use pre-extracted raster images from fitz (the only reliable source)
+        alt_text = safe_text(figcaption) if figcaption else safe_text(tag)
         img_info = next(page_images_iter, None)
-        if img_info:
-            img_path = img_info['path'] if isinstance(img_info, dict) else img_info
+        img_path = img_info['path'] if isinstance(img_info, dict) else (img_info or '')
+        if img_path and os.path.exists(img_path):
             orig_w = img_info.get('width', 400) if isinstance(img_info, dict) else 400
             orig_h = img_info.get('height', 300) if isinstance(img_info, dict) else 300
-            if img_path and os.path.exists(img_path):
-                pdf.draw_image(img_path, alt_text, orig_w, orig_h)
-                return
-        # No raster image available (vector graphic) — render alt text as accessible paragraph
-        if alt_text:
+            pdf.draw_image(img_path, alt_text, orig_w, orig_h)
+        else:
             pdf.set_body(italic=True)
             pdf.set_text_color(*GRAY)
-            with pdf.tagged('P'):
-                pdf.multi_cell(0, 6, '[Figure: ' + alt_text + ']', new_x='LMARGIN', new_y='NEXT')
+            pdf.multi_cell(0, 6, 'Figure: ' + alt_text, new_x='LMARGIN', new_y='NEXT')
             pdf.set_text_color(0, 0, 0)
     elif name == 'blockquote':
         pdf.draw_blockquote(safe_text(tag))
@@ -1115,42 +1015,6 @@ for page_info in pages:
     pdf.ln(4)
 
 pdf.output(output_path)
-
-# ── pikepdf post-pass: fix Title display + Tab order + Tagged content flag ──
-try:
-    import pikepdf
-    pp = pikepdf.open(output_path, allow_overwriting_input=True)
-
-    # Force document title to show in viewer title bar
-    if '/ViewerPreferences' not in pp.Root:
-        pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
-    pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
-
-    # Ensure MarkInfo/Marked = true (tagged PDF)
-    if '/MarkInfo' not in pp.Root:
-        pp.Root['/MarkInfo'] = pikepdf.Dictionary(Marked=pikepdf.Boolean(True))
-    else:
-        pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
-
-    # Set /Lang on Root if not present
-    if '/Lang' not in pp.Root:
-        pp.Root['/Lang'] = pikepdf.String('en-US')
-
-    # Set Tab order to structure order on every page
-    for page in pp.pages:
-        page['/Tabs'] = pikepdf.Name('/S')
-
-    # Ensure document info title matches
-    if '/Info' not in pp.trailer:
-        pp.trailer['/Info'] = pikepdf.Dictionary()
-    pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
-
-    pp.save(output_path)
-    pp.close()
-except Exception as e:
-    import sys
-    print('pikepdf post-pass warning:', e, file=sys.stderr)
-
 print('ok')
 `;
 
