@@ -820,15 +820,6 @@ export default function ToolsPage() {
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — Remedy508 handles the accessibility fixes.</p>
         </div>
 
-        {/* Document Fixer vs Complex PDF guidance */}
-        <div className="rounded-xl border border-[#0d9488]/20 bg-[#0d9488]/5 p-4">
-          <p className="text-sm font-semibold text-[#3a485b] mb-1.5">Not sure which tool to use?</p>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            <span className="font-medium text-[#3a485b]">Document Fixer</span> is for everyday text documents — syllabi, handouts, and Word/PDF course materials up to ~50 pages.{" "}
-            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
-          </p>
-        </div>
-
         {/* Tool breakdown cards */}
         <div className="space-y-3 mb-6">
           {TAB_META.map((tab) => (
@@ -848,6 +839,15 @@ export default function ToolsPage() {
               </div>
             </button>
           ))}
+        </div>
+
+        {/* Document Fixer vs Complex PDF guidance */}
+        <div className="rounded-xl border border-[#0d9488]/20 bg-[#0d9488]/5 p-4">
+          <p className="text-sm font-semibold text-[#3a485b] mb-1.5">Not sure which tool to use?</p>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <span className="font-medium text-[#3a485b]">Document Fixer</span> is for everyday text documents — syllabi, handouts, and Word/PDF course materials up to ~50 pages.{" "}
+            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
+          </p>
         </div>
 
         {/* Tab interface */}

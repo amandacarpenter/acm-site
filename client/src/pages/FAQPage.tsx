@@ -85,7 +85,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "Can I cancel my plan?",
-        a: "Monthly Individual plans can be cancelled at any time — you won't be billed again. Annual plans (Individual and Team) are billed upfront for the year and aren't eligible for refunds, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
+        a: "Monthly Individual plans can be cancelled at any time — you won't be billed again. Annual plans (Individual and Team) are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period.",
       },
       {
         q: "Do you offer invoice or PO billing?",
