@@ -22,6 +22,27 @@ import {
 import { Link } from "wouter";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
+
+// Safely parses a fetch Response as JSON. If the server (or a proxy in front of it,
+// e.g. on a timeout) returns HTML/plain text instead of JSON, this throws a clear,
+// human-readable error instead of letting `resp.json()` throw a cryptic
+// "Unexpected token '<' ... is not valid JSON" error.
+async function parseApiResponse(resp: Response): Promise<any> {
+  const raw = await resp.text();
+  try {
+    return JSON.parse(raw);
+  } catch {
+    if (!resp.ok) {
+      throw new Error(
+        resp.status === 413
+          ? "That file is too large or took too long to process. Try a smaller file or fewer pages."
+          : "Something went wrong on our end processing that file. Please try again in a moment."
+      );
+    }
+    throw new Error("Received an unexpected response. Please try again in a moment.");
+  }
+}
+
 function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId, resetKey }: {
   accept: string; onFile: (f: File) => void; label: string; sublabel: string; icon: any; testId: string; resetKey?: number;
 }) {
@@ -170,7 +191,7 @@ function DocumentTab() {
       const fd = new FormData(); fd.append("file", file);
       if (documentUser?.id) fd.append("clerkUserId", documentUser.id);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
-      const data = await resp.json();
+      const data = await parseApiResponse(resp);
       if (!resp.ok) throw new Error(data.error);
 
       // Build the .docx right here in the browser — no server-side bundling issues
@@ -428,7 +449,7 @@ function VideoTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       const resp = await fetch("/api/video/transcribe", { method: "POST", body: fd });
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error);
+      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error);
       setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
@@ -503,7 +524,7 @@ function CanvasTab() {
     setLoading(true); setError(""); setResult(null);
     try {
       const resp = await fetch("/api/canvas/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ html }) });
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error); setResult(data);
+      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error); setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -586,7 +607,7 @@ function AltTextTab() {
       if (imageUrl) fd.append("imageUrl", imageUrl);
       fd.append("context", context);
       const resp = await fetch("/api/alttext/generate", { method: "POST", body: fd });
-      const data = await resp.json(); if (!resp.ok) throw new Error(data.error); setResult(data);
+      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error); setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -660,7 +681,7 @@ function ComplexPdfTab() {
       if (complexPdfUser?.id) fd.append("clerkUserId", complexPdfUser.id);
       const resp = await fetch("/api/complexpdf/fix", { method: "POST", body: fd });
       if (!resp.ok) {
-        const errData = await resp.json().catch(() => ({ error: "Unknown error" }));
+        const errData = await parseApiResponse(resp).catch((e) => ({ error: e.message }));
         throw new Error(errData.error || `Server error ${resp.status}`);
       }
       // Response is binary PDF
