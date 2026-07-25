@@ -198,12 +198,37 @@ function DocumentTab() {
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
     setLoading(true); setError(""); setErrorCode(""); setResult(null);
+    let chargedJobId: number | null = null;
     try {
       const fd = new FormData(); fd.append("file", file);
       if (documentUser?.id) fd.append("clerkUserId", documentUser.id);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
-      const data = await parseApiResponse(resp);
+      let data: any;
+      try {
+        data = await parseApiResponse(resp);
+      } catch (parseErr: any) {
+        // If the HTTP status was ok, the server almost certainly already ran the
+        // job and charged credits — we just couldn't read the response body. Try
+        // to refund by filename since we have no jobId in this case.
+        if (resp.ok && documentUser?.id) {
+          try {
+            await fetch("/api/document/refund", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ inputName: file.name, clerkUserId: documentUser.id }),
+            });
+            throw new Error(parseErr.message + " Your credits for this attempt have been refunded.");
+          } catch (refundErr: any) {
+            throw refundErr;
+          }
+        }
+        throw parseErr;
+      }
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
+      // From this point on, the server has already charged credits for this job.
+      // If anything below fails, we must refund — the user should never pay for
+      // a result they didn't receive.
+      chargedJobId = data.jobId ?? null;
 
       // Build the .docx right here in the browser — no server-side bundling issues
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
@@ -345,7 +370,25 @@ function DocumentTab() {
 
       const blob = await Packer.toBlob(doc);
       setResult({ fixesMade, issues, blob, filename });
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
+    } catch (e: any) {
+      setError(e.message);
+      // Auto-refund: the server already charged for this job, but the browser
+      // failed to deliver a usable result (e.g. the .docx build threw). Never
+      // let the user pay for nothing.
+      if (chargedJobId && documentUser?.id) {
+        try {
+          await fetch("/api/document/refund", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ jobId: chargedJobId, clerkUserId: documentUser.id }),
+          });
+          setError(e.message + " Your credits for this attempt have been refunded.");
+        } catch {
+          // Refund call itself failed silently — surface the original error only;
+          // this is logged server-side and can be reconciled manually if needed.
+        }
+      }
+    } finally { setLoading(false); }
   };
 
   return (

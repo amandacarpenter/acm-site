@@ -123,6 +123,30 @@ async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ 
   return { creditsRemaining };
 }
 
+// Reverses a deductCredits() call — used when a job was charged server-side but the
+// client never actually received a usable result (e.g. the browser-side .docx build
+// failed after a successful API response). Restores monthly credits first (since
+// deductCredits spends monthly credits before purchased ones), mirroring the deduction
+// order so a refund exactly undoes the matching charge.
+async function refundCredits(clerkUserId: string, pagesToRefund: number): Promise<{ creditsRemaining: number }> {
+  const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+  const newMonthlyUsed = Math.max(0, monthlyUsed - pagesToRefund);
+  const actuallyRefundedFromMonthly = monthlyUsed - newMonthlyUsed;
+  const remainderToPurchased = pagesToRefund - actuallyRefundedFromMonthly;
+  const newPurchasedCredits = purchasedCredits + Math.max(0, remainderToPurchased);
+
+  await clerkClient.users.updateUserMetadata(clerkUserId, {
+    publicMetadata: {
+      ...meta,
+      monthlyCreditsUsed: newMonthlyUsed,
+      purchasedCredits: newPurchasedCredits,
+    },
+  });
+
+  const creditsRemaining = Math.max(0, monthlyLimit - newMonthlyUsed) + newPurchasedCredits;
+  return { creditsRemaining };
+}
+
 // Helper: call Claude for text tasks
 // Simple usage accumulator object — a plain { input, output } counter that a
 // route handler creates locally and passes into every Claude call it makes.
@@ -610,10 +634,11 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
 
       // ── Deduct credits + log job (text-only pipeline: 1 credit per page, min 1) ──
       const docCreditsUsed = Math.max(1, docPageCount);
+      let docJobId: number | null = null;
       if (clerkUserId) {
         try {
           await deductCredits(clerkUserId, docCreditsUsed);
-          storage.createJob({
+          const job = storage.createJob({
             type: "document",
             status: "completed",
             inputName: req.file.originalname,
@@ -626,6 +651,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
             inputTokens: docUsage.input,
             outputTokens: docUsage.output,
           });
+          docJobId = job.id;
         } catch (creditErr: any) {
           console.error("[CREDIT DEDUCT] Error:", creditErr.message);
         }
@@ -634,6 +660,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       return res.json({
         success: true,
         filename: req.file.originalname,
+        jobId: docJobId,
         rawText,
         htmlContent,
         structuredHtml: cleanHtml,
@@ -641,6 +668,40 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         fixesMade,
       });
     } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/document/refund", async (req, res) => {
+    try {
+      const { jobId, clerkUserId, inputName } = req.body || {};
+      if (!clerkUserId || (!jobId && !inputName)) {
+        return res.status(400).json({ error: "clerkUserId and either jobId or inputName are required" });
+      }
+      let job = jobId ? storage.getJob(Number(jobId)) : undefined;
+      // Fallback: if the client never received a parseable response (e.g. the body
+      // was truncated in transit) it won't have a jobId. In that case, match the
+      // most recent completed job for this user with the same filename — this is
+      // the job that was almost certainly just charged for this exact attempt.
+      if (!job && inputName) {
+        const recent = storage.getRecentJobsForUser(clerkUserId, 5);
+        job = recent.find((j) => j.inputName === inputName && j.status === "completed");
+      }
+      if (!job || job.clerkUserId !== clerkUserId) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      if (job.status === "refunded") {
+        return res.json({ success: true, alreadyRefunded: true });
+      }
+      if (job.status !== "completed" || !job.creditsUsed) {
+        return res.status(400).json({ error: "Job is not eligible for refund" });
+      }
+      await refundCredits(clerkUserId, job.creditsUsed);
+      storage.updateJob(job.id, { status: "refunded" });
+      console.log("[REFUND] Job " + job.id + " (" + job.inputName + ") refunded " + job.creditsUsed + " credits to " + clerkUserId);
+      return res.json({ success: true });
+    } catch (err: any) {
+      console.error("[REFUND] Error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });
