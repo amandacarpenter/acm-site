@@ -1015,6 +1015,107 @@ pp.Root['/MarkInfo']['/Marked'] = pikepdf.Boolean(True)
 if '/Info' not in pp.trailer:
     pp.trailer['/Info'] = pikepdf.Dictionary()
 pp.trailer['/Info']['/Title'] = pikepdf.String(doc_title)
+
+# ---------------------------------------------------------------------------
+# Table Headers repair pass (fixes Acrobat "Headers" check under Tables).
+#
+# WeasyPrint's tagged-PDF builder (pdf/tags.py) computes each table's
+# TH->TD /Headers associations PER STRUCT-TREE Table FRAGMENT: when one HTML
+# <table> is split across a page boundary (or its own <thead> lives in a
+# different fragment than data rows further down), the header-row lookup
+# only sees the rows present in that fragment. Rows in a later fragment --
+# or rows following an in-body "section label" row like
+# <th colspan="3" scope="rowgroup">Section Title</th> -- end up with a TD
+# /Headers array present but EMPTY, since no TH shares that fragment. Acrobat
+# correctly flags this as a failed Headers check even though TH/TD tagging
+# itself is otherwise correct.
+#
+# Fix: walk the struct tree in document order maintaining a running map of
+# "current column headers" (col_idx -> TH /ID). Refresh the map whenever a
+# TR is encountered whose cells are ALL /TH (a genuine multi-column header
+# row, e.g. from <thead>). Any /TD encountered afterwards (in any table
+# fragment) with an empty /Headers array gets backfilled from the running
+# map, matched by its position among sibling cells in its own row. This
+# survives WeasyPrint splitting one HTML table into multiple sibling /Table
+# struct elements, since the header row and the orphaned data rows are still
+# visited in the same document order.
+# ---------------------------------------------------------------------------
+def _pp_get_S(elem):
+    s = elem.get('/S')
+    return str(s) if s is not None else None
+
+def _pp_get_kids(elem):
+    kids = elem.get('/K')
+    if kids is None:
+        return []
+    if isinstance(kids, pikepdf.Array):
+        return [k for k in kids if isinstance(k, pikepdf.Dictionary)]
+    if isinstance(kids, pikepdf.Dictionary):
+        return [kids]
+    return []
+
+def _pp_get_attr(elem, create=False):
+    attrs = elem.get('/A')
+    if attrs is None:
+        if create:
+            d = pikepdf.Dictionary({'/O': pikepdf.Name('/Table'), '/Headers': pikepdf.Array([])})
+            elem['/A'] = d
+            return elem['/A']
+        return None
+    if isinstance(attrs, pikepdf.Array):
+        for a in attrs:
+            if isinstance(a, pikepdf.Dictionary):
+                return a
+        if create:
+            d = pikepdf.Dictionary({'/O': pikepdf.Name('/Table'), '/Headers': pikepdf.Array([])})
+            attrs.append(d)
+            return attrs[-1]
+        return None
+    if isinstance(attrs, pikepdf.Dictionary):
+        return attrs
+    return None
+
+_pp_current_headers = {}
+_pp_headers_fixed = 0
+
+def _pp_visit(elem):
+    global _pp_current_headers, _pp_headers_fixed
+    s = _pp_get_S(elem)
+    if s == '/TR':
+        cells = _pp_get_kids(elem)
+        tags = [_pp_get_S(c) for c in cells]
+        if cells and len(cells) > 1 and all(t == '/TH' for t in tags):
+            new_map = {}
+            for ci, c in enumerate(cells):
+                idv = c.get('/ID')
+                if idv is not None:
+                    new_map[ci] = str(idv)
+            if new_map:
+                _pp_current_headers = new_map
+        else:
+            for ci, c in enumerate(cells):
+                if _pp_get_S(c) != '/TD':
+                    continue
+                attrs = _pp_get_attr(c)
+                current = attrs.get('/Headers') if attrs else None
+                current_len = len(current) if current is not None else 0
+                if current_len > 0:
+                    continue
+                th_id = _pp_current_headers.get(ci)
+                if th_id is None:
+                    continue
+                attrs = _pp_get_attr(c, create=True)
+                attrs['/Headers'] = pikepdf.Array([pikepdf.String(th_id)])
+                _pp_headers_fixed += 1
+        return
+    for k in _pp_get_kids(elem):
+        _pp_visit(k)
+
+_pp_st = pp.Root['/StructTreeRoot']
+for _pp_k in _pp_get_kids(_pp_st):
+    _pp_visit(_pp_k)
+print(f'headers-repair: fixed {_pp_headers_fixed} TD elements', file=sys.stderr)
+
 pp.save(output_path)
 pp.close()
 
