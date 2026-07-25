@@ -69,19 +69,19 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "Individual plans are $19/month or $149/year (save 35%). Team plans are $149/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
+        a: "Individual plans are $19/month or $179/year (save 21%). Team plans are $209/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 50 documents per month across Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only.",
+        a: "The Individual plan gives you 150 page credits per month across Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only.",
       },
       {
         q: "What does the Team plan include?",
-        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 75 documents/seat/month pooled across your team. Pay by credit card or invoice/PO.",
+        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 175 page credits/seat/month pooled across your team. Pay by credit card or invoice/PO.",
       },
       {
-        q: "What counts as a document?",
-        a: "Each file you upload and process counts as one document, regardless of page count. The monthly limit applies to Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on all paid plans.",
+        q: "What counts as a page credit?",
+        a: "1 credit = 1 page processed. A 10-page PDF run through Document Fixer or Complex PDF uses 10 credits. Credits apply to Document Fixer and Complex PDF; Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on all paid plans. Individual documents are capped at 100 pages. Need more credits? You can top up anytime with a page-credit pack.",
       },
       {
         q: "Can I cancel my plan?",

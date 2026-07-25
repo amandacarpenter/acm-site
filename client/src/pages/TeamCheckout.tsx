@@ -5,7 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
 
-const TEAM_PRICE_ANNUAL = "price_1TqdJpAaDElV6hZx2kEMey6p";
+const TEAM_PRICE_ANNUAL = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat
 
 const TEAM_FEATURES = [
   "Everything in Individual",
@@ -24,7 +24,7 @@ export default function TeamCheckout() {
   const { isSignedIn, userId } = useAuth();
   const [, navigate] = useLocation();
 
-  const total = seats * 149;
+  const total = seats * 209;
 
   function adjustSeats(delta: number) {
     setSeats((s) => Math.max(2, s + delta));
@@ -70,7 +70,7 @@ export default function TeamCheckout() {
           <h1 id="team-heading" className="text-4xl font-bold text-white mb-3">
             Team Plan
           </h1>
-          <p className="text-white/70 text-lg">$149/seat/year — annual only</p>
+          <p className="text-white/70 text-lg">$209/seat/year — annual only</p>
         </div>
       </section>
 
@@ -120,17 +120,17 @@ export default function TeamCheckout() {
               </div>
               <p className="text-sm text-gray-700 mb-1">Minimum 2 seats</p>
               <p className="text-sm text-gray-700 mb-1">
-                75 documents/month per seat, pooled across your team
+                175 page credits/month per seat, pooled across your team
               </p>
 
               {/* Live total */}
               <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">
                 <p className="text-lg font-bold text-[#3a485b]">
-                  {seats} seat{seats !== 1 ? "s" : ""} × $149 ={" "}
+                  {seats} seat{seats !== 1 ? "s" : ""} × $209 ={" "}
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  {seats * 75} documents/month pooled · Billed annually · Non-refundable
+                  {seats * 175} page credits/month pooled · Billed annually · Non-refundable
                 </p>
               </div>
             </div>

@@ -37,12 +37,12 @@ export default function Terms() {
           <Section title="4. Subscription Plans and Billing">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
-                <p className="font-semibold text-[#3a485b]">Individual — $19/month or $149/year</p>
-                <p className="text-sm">Up to 50 documents per month via Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
+                <p className="font-semibold text-[#3a485b]">Individual — $19/month or $179/year</p>
+                <p className="text-sm">150 page credits per month via Document Fixer and Complex PDF (1 credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
               </div>
               <div>
-                <p className="font-semibold text-[#3a485b]">Team — $149/seat/year (annual only, 2+ seats)</p>
-                <p className="text-sm">75 documents/seat/month pooled across the organization via Document Fixer and Complex PDF. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO. Invoice/PO option is provided at Remedy508’s discretion; misuse may result in account suspension.</p>
+                <p className="font-semibold text-[#3a485b]">Team — $209/seat/year (annual only, 2+ seats)</p>
+                <p className="text-sm">175 page credits/seat/month pooled across the organization via Document Fixer and Complex PDF (1 credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO. Invoice/PO option is provided at Remedy508’s discretion; misuse may result in account suspension.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">
