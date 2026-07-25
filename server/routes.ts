@@ -124,14 +124,33 @@ async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ 
 }
 
 // Helper: call Claude for text tasks
-async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384): Promise<string> {
+// Simple usage accumulator object — a plain { input, output } counter that a
+// route handler creates locally and passes into every Claude call it makes.
+// This avoids any shared/global state, so concurrent requests can never cross-
+// contaminate each other's token counts (each handler owns its own object).
+type UsageCounter = { input: number; output: number };
+function newUsageCounter(): UsageCounter { return { input: 0, output: 0 }; }
+
+async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384, usage?: UsageCounter): Promise<string> {
   const msg = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     messages: [{ role: "user", content: userContent }],
     system: systemPrompt,
   });
+  if (usage) {
+    usage.input += msg.usage?.input_tokens || 0;
+    usage.output += msg.usage?.output_tokens || 0;
+  }
   return (msg.content[0] as any).text;
+}
+
+// Real Claude Sonnet 4.6 pricing (per Anthropic's published rates) — used to
+// convert logged token counts into an exact dollar cost for reporting.
+const CLAUDE_INPUT_PER_MTOK = 3.00;
+const CLAUDE_OUTPUT_PER_MTOK = 15.00;
+function tokenCostUsd(inputTokens: number, outputTokens: number): number {
+  return (inputTokens / 1_000_000) * CLAUDE_INPUT_PER_MTOK + (outputTokens / 1_000_000) * CLAUDE_OUTPUT_PER_MTOK;
 }
 
 // Helper: transcribe audio using local Whisper (no API key needed)
@@ -261,7 +280,39 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
-  // ── Recent job activity (for Dashboard) ──────────────────────────────────
+  // Real per-page cost summary (owner-only, gated by ADMIN_STATS_KEY env var).
+  // Reports EXACT Anthropic-billed token usage logged at job-completion time,
+  // not an estimate. Query with ?key=<ADMIN_STATS_KEY>&sinceDays=30
+  app.get("/api/admin/cost-summary", (req, res) => {
+    const key = req.query.key as string | undefined;
+    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      const sinceDays = req.query.sinceDays ? parseInt(req.query.sinceDays as string, 10) : undefined;
+      const sinceMs = sinceDays ? Date.now() - sinceDays * 24 * 60 * 60 * 1000 : undefined;
+      const summary = storage.getCostSummary(sinceMs);
+      const totalCost = tokenCostUsd(summary.totalInputTokens, summary.totalOutputTokens);
+      const byTypeWithCost = Object.fromEntries(
+        Object.entries(summary.byType).map(([type, t]) => {
+          const cost = tokenCostUsd(t.inputTokens, t.outputTokens);
+          return [type, { ...t, costUsd: Number(cost.toFixed(4)), costPerPageUsd: t.pages > 0 ? Number((cost / t.pages).toFixed(5)) : null }];
+        })
+      );
+      res.json({
+        ...summary,
+        totalCostUsd: Number(totalCost.toFixed(4)),
+        avgCostPerPageUsd: summary.totalPages > 0 ? Number((totalCost / summary.totalPages).toFixed(5)) : null,
+        byType: byTypeWithCost,
+        pricingUsed: { model: "claude-sonnet-4-6", inputPerMTok: CLAUDE_INPUT_PER_MTOK, outputPerMTok: CLAUDE_OUTPUT_PER_MTOK },
+        note: "Only includes jobs completed after token-usage logging was added; earlier jobs are excluded, not zero-cost.",
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Recent job activity (for Dashboard)
   app.get("/api/jobs/recent", (req, res) => {
     const clerkUserId = req.query.clerkUserId as string | undefined;
     if (!clerkUserId) return res.status(400).json({ error: "clerkUserId required" });
@@ -483,10 +534,11 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
 - Do not include any CSS, style, or class attributes
 - Return ONLY the HTML content inside the <div lang="en"> wrapper, nothing else`;
 
-      // Run both calls in parallel
+      // Run both calls in parallel, tracking real Claude token usage for this job
+      const docUsage = newUsageCounter();
       const [auditResponse, structuredHtml] = await Promise.all([
-        callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`),
-        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`),
+        callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage),
+        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`, 16384, docUsage),
       ]);
 
       let parsed: any;
@@ -550,6 +602,8 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
             clerkUserId,
             pageCount: docPageCount,
             creditsUsed: docCreditsUsed,
+            inputTokens: docUsage.input,
+            outputTokens: docUsage.output,
           });
         } catch (creditErr: any) {
           console.error("[CREDIT DEDUCT] Error:", creditErr.message);
@@ -873,6 +927,7 @@ CRITICAL RULES:
 - Return ONLY the HTML, nothing else`;
 
       // Run all Claude Vision calls in parallel — turns N×25s into ~25s total
+      const pdfUsage = newUsageCounter();
       const pageResults = await Promise.all(pageData.map(async ({ page: pageNum, screenshot, images: extractedImages }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
         const imageIdList = (extractedImages || []).map((img: any) => img.id).join(", ") || "none";
@@ -888,6 +943,9 @@ CRITICAL RULES:
             ],
           }],
         });
+        // Accumulate real token usage across all parallel per-page Vision calls
+        pdfUsage.input += visionResp.usage?.input_tokens || 0;
+        pdfUsage.output += visionResp.usage?.output_tokens || 0;
         let pageHtml = (visionResp.content[0] as any).text.trim();
         if (pageHtml.startsWith("```")) {
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
@@ -1316,6 +1374,8 @@ print('ok')
             clerkUserId,
             pageCount: totalPages,
             creditsUsed: totalPages,
+            inputTokens: pdfUsage.input,
+            outputTokens: pdfUsage.output,
           });
         } catch (jobErr: any) {
           console.error("[JOB LOG] Error:", jobErr.message);
