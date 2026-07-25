@@ -27,7 +27,7 @@ import {
 
 const TOOLS = [
   { icon: iconDocument, title: "Document Fixer", desc: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
-  { icon: iconComplexpdf, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF.", tag: "Complex .pdf", tab: "complexpdf" },
+  { icon: iconComplexpdf, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged PDF built toward WCAG 2.1 AA.", tag: "Complex .pdf", tab: "complexpdf" },
   { icon: iconVideo, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
   { icon: iconCanvas, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
   { icon: iconAlttext, title: "Alt Text Generator", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
@@ -315,7 +315,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Perceivable</div>
-                    <div className="text-xs text-gray-600 font-normal">Information must be presentable in ways users can perceive</div>
+                    <div className="text-sm text-gray-600 font-normal">Information must be presentable in ways users can perceive</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -331,8 +331,8 @@ export default function Home() {
                     { code: "1.4.4", name: "Resize Text", desc: "Text must be resizable up to 200% without loss of content or functionality." },
                   ].map((item) => (
                     <div key={item.code}>
-                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                      <span className="text-sm text-gray-500">{item.desc}</span>
+                      <span className="text-base font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-base text-gray-600">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -346,7 +346,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Operable</div>
-                    <div className="text-xs text-gray-600 font-normal">Interface components must be operable by all users</div>
+                    <div className="text-sm text-gray-600 font-normal">Interface components must be operable by all users</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -363,8 +363,8 @@ export default function Home() {
                     { code: "2.4.7", name: "Focus Visible", desc: "Keyboard focus must be visually visible at all times — users must see where they are on the page." },
                   ].map((item) => (
                     <div key={item.code}>
-                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                      <span className="text-sm text-gray-500">{item.desc}</span>
+                      <span className="text-base font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-base text-gray-600">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -378,7 +378,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Understandable</div>
-                    <div className="text-xs text-gray-600 font-normal">Content and operation must be understandable</div>
+                    <div className="text-sm text-gray-600 font-normal">Content and operation must be understandable</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -394,8 +394,8 @@ export default function Home() {
                     { code: "3.3.3", name: "Error Suggestion", desc: "If an error is detected and a correction is known, a suggestion must be provided (e.g., 'Enter a valid email address')." },
                   ].map((item) => (
                     <div key={item.code}>
-                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                      <span className="text-sm text-gray-500">{item.desc}</span>
+                      <span className="text-base font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-base text-gray-600">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -409,7 +409,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Robust</div>
-                    <div className="text-xs text-gray-600 font-normal">Content must be interpreted by assistive technologies</div>
+                    <div className="text-sm text-gray-600 font-normal">Content must be interpreted by assistive technologies</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -421,8 +421,8 @@ export default function Home() {
                     { code: "4.1.3", name: "Status Messages", desc: "Dynamic status updates (like 'Form submitted' or 'File uploading') must be communicated to screen readers without requiring focus." },
                   ].map((item) => (
                     <div key={item.code}>
-                      <span className="text-sm font-semibold text-[#3a485b]">{item.name} — </span>
-                      <span className="text-sm text-gray-500">{item.desc}</span>
+                      <span className="text-base font-semibold text-[#3a485b]">{item.name} — </span>
+                      <span className="text-base text-gray-600">{item.desc}</span>
                     </div>
                   ))}
                 </div>
@@ -431,7 +431,7 @@ export default function Home() {
 
           </Accordion>
 
-          <p className="text-center text-xs text-white/80 mt-6">
+          <p className="text-center text-sm text-white/80 mt-6">
             Source:{" "}
             <a href="https://www.w3.org/TR/WCAG21/" target="_blank" rel="noopener noreferrer" aria-label="W3C WCAG 2.1 Specification (opens in new tab)" className="underline underline-offset-2 hover:text-[#5eead4] transition">
               W3C WCAG 2.1 Specification

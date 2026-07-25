@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import SiteHeader from "@/components/SiteHeader";
@@ -17,17 +17,22 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   FileText, Video, Code2, ImageIcon, Upload, CheckCircle2, AlertCircle,
-  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft
+  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw
 } from "lucide-react";
 import { Link } from "wouter";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
-function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId }: {
-  accept: string; onFile: (f: File) => void; label: string; sublabel: string; icon: any; testId: string;
+function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId, resetKey }: {
+  accept: string; onFile: (f: File) => void; label: string; sublabel: string; icon: any; testId: string; resetKey?: number;
 }) {
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setSelected(null);
+    if (inputRef.current) inputRef.current.value = "";
+  }, [resetKey]);
 
   return (
     <div
@@ -130,6 +135,14 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
   );
 }
 
+function StartOverButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button variant="outline" size="sm" onClick={onClick} data-testid="btn-start-over">
+      <RotateCcw className="w-3.5 h-3.5 mr-1.5" />Start Over
+    </Button>
+  );
+}
+
 function ErrorAlert({ message }: { message: string }) {
   return (
     <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert">
@@ -144,8 +157,11 @@ function DocumentTab() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: documentUser } = useUser();
+
+  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
@@ -302,7 +318,7 @@ function DocumentTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" />
+      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and PDF files supported</p>
         <p>✓ Digital PDFs process in seconds — scanned PDFs use OCR and may take longer</p>
@@ -315,8 +331,10 @@ function DocumentTab() {
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="doc-result">
+          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially any images, tables, or math.</p>
             {result.fixesMade?.length > 0 ? (
               <ul className="space-y-1">
                 {result.fixesMade.slice(0, 8).map((s: string, i: number) => (
@@ -399,7 +417,10 @@ function VideoTab() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
   const [view, setView] = useState<"timecoded" | "plain">("timecoded");
+  const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
+
+  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }
@@ -414,7 +435,7 @@ function VideoTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" />
+      <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" resetKey={resetKey} />
 
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
@@ -423,10 +444,13 @@ function VideoTab() {
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="video-result">
-          <div className="flex items-center gap-2 flex-wrap">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            <span className="text-sm font-medium">Transcribed: {result.filename}</span>
-            {result.language && <Badge variant="secondary">{result.language?.toUpperCase()}</Badge>}
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+              <span className="text-sm font-medium">Transcribed: {result.filename}</span>
+              {result.language && <Badge variant="secondary">{result.language?.toUpperCase()}</Badge>}
+            </div>
+            <StartOverButton onClick={startOver} />
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant={view === "timecoded" ? "default" : "outline"} onClick={() => setView("timecoded")}>Timecoded</Button>
@@ -491,7 +515,7 @@ function CanvasTab() {
         <Textarea id="canvas-input" placeholder="<p>Paste your Canvas HTML here...</p>" className="font-mono text-xs min-h-[180px] resize-y" value={html} onChange={(e) => setHtml(e.target.value)} data-testid="canvas-input" />
         <div className="flex justify-between items-center">
           <span className="text-xs text-muted-foreground">{html.length} characters</span>
-          {html && <Button variant="ghost" size="sm" onClick={() => { setHtml(""); setResult(null); }}><X className="w-3.5 h-3.5 mr-1" />Clear</Button>}
+          {(html || result) && <Button variant="ghost" size="sm" onClick={() => { setHtml(""); setResult(null); setError(""); }}><X className="w-3.5 h-3.5 mr-1" />Clear</Button>}
         </div>
       </div>
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
@@ -501,6 +525,7 @@ function CanvasTab() {
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="canvas-result">
+          <div className="flex items-center justify-end"><StartOverButton onClick={() => { setHtml(""); setResult(null); setError(""); }} /></div>
           {result.score && (
             <div className="grid grid-cols-2 gap-3">
               <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-center">
@@ -545,9 +570,12 @@ function AltTextTab() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
 
   const handleFile = (f: File) => { setFile(f); setImageUrl(""); setPreviewUrl(URL.createObjectURL(f)); };
+
+  const startOver = () => { setFile(null); setImageUrl(""); setContext(""); setPreviewUrl(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file && !imageUrl.trim()) { toast({ title: "No image", variant: "destructive" }); return; }
@@ -564,7 +592,7 @@ function AltTextTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept="image/*" onFile={handleFile} label="Upload Image" sublabel="PNG, JPG, GIF, WebP — or paste a URL below" icon={ImageIcon} testId="img-upload" />
+      <FileDropZone accept="image/*" onFile={handleFile} label="Upload Image" sublabel="PNG, JPG, GIF, WebP — or paste a URL below" icon={ImageIcon} testId="img-upload" resetKey={resetKey} />
       {previewUrl && <div className="rounded-xl overflow-hidden border max-h-48"><img src={previewUrl} alt="Preview of uploaded image" className="w-full h-full object-contain bg-muted" /></div>}
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="img-url">Or enter image URL</label>
@@ -580,6 +608,7 @@ function AltTextTab() {
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="alt-result">
+          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
           {result.isDecorative ? (
             <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center gap-2 mb-1"><Eye className="w-4 h-4 text-blue-600" /><span className="font-semibold text-blue-800 dark:text-blue-300 text-sm">Decorative Image</span></div>
@@ -616,8 +645,11 @@ function ComplexPdfTab() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
   const [error, setError] = useState("");
+  const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: complexPdfUser } = useUser();
+
+  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }
@@ -650,11 +682,12 @@ function ComplexPdfTab() {
         sublabel="PDFs with diagrams, equations, or complex layouts"
         icon={FileText}
         testId="complexpdf-upload"
+        resetKey={resetKey}
       />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Best for science, math, or diagram-heavy PDFs</p>
         <p>✓ Remedy508 reads each page as an image — handles equations and charts</p>
-        <p>✓ Output is a fully tagged accessible PDF (WCAG 2.1 AA)</p>
+        <p>✓ Output is a tagged PDF built toward WCAG 2.1 AA — review before publishing</p>
         <p>⏱ Allow 30–90 seconds for a typical document</p>
       </div>
       <Button
@@ -684,13 +717,15 @@ function ComplexPdfTab() {
       {error && <ErrorAlert message={error} />}
       {result && (
         <div className="space-y-4" data-testid="complexpdf-result">
+          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
-                {result.pages > 0 ? `${result.pages}-page` : ""} accessible PDF ready
+                {result.pages > 0 ? `${result.pages}-page` : ""} tagged PDF ready
               </span>
             </div>
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
             {result.fixes.length > 0 ? (
               <ul className="space-y-1">
                 {result.fixes.slice(0, 8).map((s, i) => (
@@ -725,7 +760,7 @@ function ComplexPdfTab() {
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 const TAB_META = [
   { id: "document", label: "Document\nFixer", icon: iconDocument, desc: "Fix .docx & .pdf", badge: ".docx & .pdf", title: "Document Fixer", blurb: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure." },
-  { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams", beta: true, badge: "Complex .pdf", title: "Complex PDF", blurb: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged, WCAG 2.1 AA compliant PDF." },
+  { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams", beta: true, badge: "Complex .pdf", title: "Complex PDF", blurb: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged PDF built toward WCAG 2.1 AA." },
   { id: "video", label: "Video\nTranscription", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Video Transcription", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
   { id: "canvas", label: "Canvas HTML\nFixer", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Canvas HTML Fixer", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
   { id: "alttext", label: "Alt Text\nGenerator", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Alt Text Generator", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
@@ -785,6 +820,15 @@ export default function ToolsPage() {
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — Remedy508 handles the accessibility fixes.</p>
         </div>
 
+        {/* Document Fixer vs Complex PDF guidance */}
+        <div className="rounded-xl border border-[#0d9488]/20 bg-[#0d9488]/5 p-4">
+          <p className="text-sm font-semibold text-[#3a485b] mb-1.5">Not sure which tool to use?</p>
+          <p className="text-sm text-gray-700 leading-relaxed">
+            <span className="font-medium text-[#3a485b]">Document Fixer</span> is for everyday text documents — syllabi, handouts, and Word/PDF course materials up to ~50 pages.{" "}
+            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
+          </p>
+        </div>
+
         {/* Tool breakdown cards */}
         <div className="space-y-3 mb-6">
           {TAB_META.map((tab) => (
@@ -827,9 +871,9 @@ export default function ToolsPage() {
           </div>
         </Tabs>
 
-        <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4">
-          <Shield className="w-3.5 h-3.5 text-[#0d9488]" aria-hidden="true" />
-          WCAG 2.1 AA Compliant — All processing is Remedy508-powered
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4 text-center">
+          <Shield className="w-3.5 h-3.5 text-[#0d9488] shrink-0" aria-hidden="true" />
+          Built toward WCAG 2.1 AA — always review results before publishing, since no automated tool can guarantee 100% compliance
         </div>
       </div>
       </main>

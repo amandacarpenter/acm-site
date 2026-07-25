@@ -133,7 +133,7 @@ export default function ComingSoon() {
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
           {SOCIAL_ICONS}
           <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "0.75rem" }}>
-            © {new Date().getFullYear()} Remedy508 — Left Coast Learning LLC
+            © {new Date().getFullYear()} Remedy508 — Left Coast Learning LLC. All rights reserved.
           </p>
         </div>
       </div>

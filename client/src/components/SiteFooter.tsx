@@ -84,7 +84,7 @@ export default function SiteFooter() {
 
         {/* Row 3 — Copyright + flag/attribution */}
         <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-          <span className="text-base font-bold text-white">© 2026 Remedy508</span>
+          <span className="text-base font-bold text-white">© 2026 Remedy508. All rights reserved.</span>
           <div className="flex flex-col sm:flex-row items-center gap-1.5">
             {FLAG_SVG}
             <span className="text-sm font-semibold text-gray-300 text-center sm:text-left">Remedy508 is a product of Left Coast Learning LLC, California, USA</span>

@@ -15,7 +15,7 @@ const TEAM_FEATURES = [
   "Priority email support",
   "Free onboarding call for your team",
   "Pay by credit card or invoice/PO",
-  "Annual plan (non-refundable)",
+  "Annual plan (billed upfront, no refunds)",
 ];
 
 export default function TeamCheckout() {
@@ -131,7 +131,7 @@ export default function TeamCheckout() {
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  {seats * 175} Credits/month pooled · Billed annually · Non-refundable
+                  {seats * 175} Credits/month pooled · Billed annually · No refunds
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
                   Includes a free onboarding call to help your team get set up

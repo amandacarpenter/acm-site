@@ -45,7 +45,7 @@ export default function About() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <h2 className="text-3xl font-bold text-[#3a485b] mb-6">What We Built</h2>
           <p className="text-gray-600 leading-relaxed mb-8 text-lg">
-            Remedy508 automates the remediation work that used to take hours and turns it into seconds. Upload a PDF, paste Canvas HTML, submit a video — and get back content that meets WCAG 2.1 Level AA standards.
+            Remedy508 automates the remediation work that used to take hours and turns it into seconds. Upload a PDF, paste Canvas HTML, submit a video — and get back content built toward WCAG 2.1 Level AA standards, ready for a final human review.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[

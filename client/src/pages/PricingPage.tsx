@@ -26,7 +26,7 @@ const TEAM_FEATURES = [
   "Priority email support",
   "Free onboarding call for your team",
   "Pay by credit card or invoice/PO",
-  "Annual plan (non-refundable)",
+  "Annual plan (billed upfront, no refunds)",
 ];
 
 export default function PricingPage() {
@@ -124,7 +124,7 @@ export default function PricingPage() {
                     <span className="mb-2 text-base text-gray-900">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-base text-gray-900">$179/year — billed annually, non-refundable</p>
+                    <p className="text-base text-gray-900">$179/year — billed annually, no refunds</p>
                   ) : (
                     <p className="text-base text-gray-900">or $179/yr — save 21%</p>
                   )}
@@ -172,7 +172,7 @@ export default function PricingPage() {
                     <span className="text-5xl font-bold text-white">$209</span>
                     <span className="mb-2 text-base text-white">/seat/yr</span>
                   </div>
-                  <p className="text-base text-white">Annual only · 2+ seats · non-refundable</p>
+                  <p className="text-base text-white">Annual only · 2+ seats · billed upfront, no refunds</p>
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-white">
@@ -215,7 +215,7 @@ export default function PricingPage() {
           <div className="space-y-6">
             {[
               { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Document Fixer or Complex PDF — so a 10-page PDF uses 10 Credits. Credits reset on the 1st of each month, and Alt Text Generator, Canvas HTML Fixer, and Video Transcription don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
-              { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
+              { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront for the year and aren't eligible for refunds, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
               { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard, pooled Credits, and a free onboarding call for the whole group." },
               { q: "How does the Team plan work?", a: "Team plans are $209/seat/year, billed annually. Credits are pooled across your team at 175/seat/month, and every Team plan includes a free onboarding call to help your group get set up. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
