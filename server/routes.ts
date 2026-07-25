@@ -376,6 +376,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           "import fitz, sys, re",
           "doc = fitz.open(sys.argv[1])",
           "text = ''",
+          "ocr_pages = 0",
           "for page in doc:",
           "    blocks = page.get_text('blocks')",
           "    seen = set()",
@@ -390,10 +391,12 @@ export function registerRoutes(httpServer: Server, app: Express) {
           "            lines.append(line)",
           "    page_text = '\\n'.join(lines)",
           "    if len(page_text.strip()) < 50:",
+          "        ocr_pages += 1",
           "        tp = page.get_textpage_ocr(language='eng', dpi=300)",
           "        page_text = page.get_text(textpage=tp).strip()",
           "    text += page_text + '\\n'",
           "print('___PAGECOUNT___' + str(len(doc)))",
+          "print('___OCRPAGES___' + str(ocr_pages))",
           "print(text)",
         ].join("\n");
         // Use venv python3 if available (Railway), fall back to system python3
@@ -407,13 +410,31 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
         const pageCountMatch = rawOutput.match(/___PAGECOUNT___(\d+)\n/);
         docPageCount = pageCountMatch ? parseInt(pageCountMatch[1], 10) : 1;
-        rawText = pageCountMatch ? rawOutput.slice(pageCountMatch[0].length) : rawOutput;
+        const ocrPagesMatch = rawOutput.match(/___OCRPAGES___(\d+)\n/);
+        const ocrPages = ocrPagesMatch ? parseInt(ocrPagesMatch[1], 10) : 0;
+        rawText = ocrPagesMatch
+          ? rawOutput.slice(rawOutput.indexOf(ocrPagesMatch[0]) + ocrPagesMatch[0].length)
+          : (pageCountMatch ? rawOutput.slice(pageCountMatch[0].length) : rawOutput);
 
         // ── Page cap — checked as soon as the real page count is known, before further processing ──
         const capCheck = checkPageCap(docPageCount);
         if (!capCheck.allowed) {
           return res.status(413).json({ error: capCheck.reason, code: "PAGE_CAP_EXCEEDED" });
         }
+
+        // Wrong-tool gate: if most pages needed OCR fallback (i.e. little/no real text layer),
+        // this is almost certainly a scanned or image-heavy PDF that Complex PDF handles far
+        // better (it reads each page visually instead of relying on extracted text). Catching
+        // this here is fast (right after extraction) and avoids a slow, failure-prone run
+        // through the full text pipeline below.
+        const ocrRatio = docPageCount > 0 ? ocrPages / docPageCount : 0;
+        if (ocrRatio >= 0.5 && rawText.trim().length < 200 * docPageCount) {
+          return res.status(422).json({
+            error: "This looks like a scanned or image-heavy PDF, which Document Fixer isn't built for. Try the Complex PDF tool instead — it reads each page visually and handles images, tables, and scanned content.",
+            code: "WRONG_TOOL_COMPLEX_PDF",
+          });
+        }
+
         htmlContent = `<div>${rawText.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</div>`;
       } else {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });

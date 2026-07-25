@@ -164,10 +164,18 @@ function StartOverButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function ErrorAlert({ message }: { message: string }) {
+function ErrorAlert({ message, actionLabel, onAction }: { message: string; actionLabel?: string; onAction?: () => void }) {
   return (
     <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert">
-      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />{message}
+      <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+      <div className="flex-1">
+        <p>{message}</p>
+        {actionLabel && onAction && (
+          <button onClick={onAction} className="mt-2 inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 hover:no-underline">
+            {actionLabel}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -178,21 +186,24 @@ function DocumentTab() {
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: documentUser } = useUser();
 
-  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
+  const startOver = () => { setFile(null); setResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
+
+  const goToComplexPdf = () => { window.history.pushState({}, "", "/tools/complexpdf"); window.dispatchEvent(new PopStateEvent("popstate")); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setResult(null);
     try {
       const fd = new FormData(); fd.append("file", file);
       if (documentUser?.id) fd.append("clerkUserId", documentUser.id);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
       const data = await parseApiResponse(resp);
-      if (!resp.ok) throw new Error(data.error);
+      if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
 
       // Build the .docx right here in the browser — no server-side bundling issues
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
@@ -341,15 +352,21 @@ function DocumentTab() {
     <div className="space-y-5">
       <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
-        <p>✓ Word (.docx) and PDF files supported</p>
-        <p>✓ Digital PDFs process in seconds — scanned PDFs use OCR and may take longer</p>
+        <p>✓ Word (.docx) and digital PDF files supported</p>
         <p>✓ Best for syllabi, course documents, and handouts (up to ~50 pages)</p>
+        <p>⚠ Scanned or image-heavy PDF? Use <button type="button" onClick={goToComplexPdf} className="underline font-medium text-[#0d9488] hover:no-underline">Complex PDF</button> instead — it reads each page visually.</p>
       </div>
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Identifying accessibility issues…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {error && <ErrorAlert message={error} />}
+      {error && (
+        <ErrorAlert
+          message={error}
+          actionLabel={errorCode === "WRONG_TOOL_COMPLEX_PDF" ? "Switch to Complex PDF →" : undefined}
+          onAction={errorCode === "WRONG_TOOL_COMPLEX_PDF" ? goToComplexPdf : undefined}
+        />
+      )}
       {result && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
@@ -867,7 +884,7 @@ export default function ToolsPage() {
           <p className="text-sm font-semibold text-[#3a485b] mb-1.5">Not sure which tool to use?</p>
           <p className="text-sm text-gray-700 leading-relaxed">
             <span className="font-medium text-[#3a485b]">Document Fixer</span> is for everyday text documents — syllabi, handouts, and Word/PDF course materials up to ~50 pages.{" "}
-            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
+            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for scanned or photographed pages, and PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
           </p>
         </div>
 
