@@ -112,7 +112,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-2 mb-3">
               <span className="text-4xl font-bold text-[#3a485b]">{loadingUsage ? "—" : monthlyUsed}</span>
-              <span className="text-gray-900 text-base mb-1">/ {monthlyLimit} page credits this month</span>
+              <span className="text-gray-900 text-base mb-1">/ {monthlyLimit} Credits this month</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
               <div
@@ -128,8 +128,8 @@ export default function Dashboard() {
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                   <p className="text-sm text-amber-700 font-medium">
                     {monthlyLimit - monthlyUsed <= 0 && purchasedCredits <= 0
-                      ? "Monthly credits used up. Purchase more page credits to continue."
-                      : `Only ${Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits} credit${(Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits) === 1 ? "" : "s"} remaining this month.`}
+                      ? "Monthly Credits used up. Purchase more Credits to continue."
+                      : `Only ${Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits} Credit${(Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits) === 1 ? "" : "s"} remaining this month.`}
                   </p>
                 </div>
                 <button
@@ -143,7 +143,7 @@ export default function Dashboard() {
             )}
 
             <p className="text-sm text-gray-700">
-              1 credit = 1 page processed. Document Fixer &amp; Complex PDF both draw from this pool — larger documents use more credits, smaller ones use fewer.
+              A Credit is simply a page. 1 Credit = 1 page processed. Document Fixer &amp; Complex PDF both draw from this pool — larger documents use more Credits, smaller ones use fewer.
             </p>
 
             {/* Purchased credits balance */}
@@ -151,7 +151,7 @@ export default function Dashboard() {
               <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-100 rounded-xl">
                 <ShoppingCart className="w-3.5 h-3.5 text-[#0d9488] shrink-0" />
                 <p className="text-sm text-[#0d9488] font-medium">
-                  {purchasedCredits} purchased credit{purchasedCredits !== 1 ? "s" : ""} available — used after your monthly pool runs out.
+                  {purchasedCredits} purchased Credit{purchasedCredits !== 1 ? "s" : ""} available — used after your monthly pool runs out.
                 </p>
               </div>
             )}
@@ -174,7 +174,7 @@ export default function Dashboard() {
             {billingCycle && (
               <p className="text-sm text-gray-700 mb-2">Member since {billingCycle}</p>
             )}
-            <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} page credits/mo</p>
+            <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} Credits/mo</p>
 
             <div className="mt-auto flex flex-col gap-2">
               <button

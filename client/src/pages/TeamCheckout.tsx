@@ -13,6 +13,7 @@ const TEAM_FEATURES = [
   "Invite by link or email",
   "Per-user document history",
   "Priority email support",
+  "Free onboarding call for your team",
   "Pay by credit card or invoice/PO",
   "Annual plan (non-refundable)",
 ];
@@ -120,7 +121,7 @@ export default function TeamCheckout() {
               </div>
               <p className="text-sm text-gray-700 mb-1">Minimum 2 seats</p>
               <p className="text-sm text-gray-700 mb-1">
-                175 page credits/month per seat, pooled across your team
+                175 Credits/month per seat, pooled across your team
               </p>
 
               {/* Live total */}
@@ -130,7 +131,10 @@ export default function TeamCheckout() {
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  {seats * 175} page credits/month pooled · Billed annually · Non-refundable
+                  {seats * 175} Credits/month pooled · Billed annually · Non-refundable
+                </p>
+                <p className="text-sm text-gray-700 mt-1">
+                  Includes a free onboarding call to help your team get set up
                 </p>
               </div>
             </div>

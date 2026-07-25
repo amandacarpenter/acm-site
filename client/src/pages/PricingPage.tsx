@@ -24,6 +24,7 @@ const TEAM_FEATURES = [
   "Invite by link or email",
   "Per-user document history",
   "Priority email support",
+  "Free onboarding call for your team",
   "Pay by credit card or invoice/PO",
   "Annual plan (non-refundable)",
 ];
@@ -135,9 +136,9 @@ export default function PricingPage() {
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  150 page credits / month
+                  150 Credits / month
                 </div>
-                <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account · 1 credit = 1 page processed</p>
+                <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account · 1 Credit = 1 page processed</p>
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
@@ -180,9 +181,9 @@ export default function PricingPage() {
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-white/10 text-white">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  175 page credits / month per seat, pooled
+                  175 Credits / month per seat, pooled
                 </div>
-                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan</p>
+                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan · Free onboarding call included</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
@@ -213,10 +214,10 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What counts toward my 150 monthly credits?", a: "1 credit = 1 page processed. A 10-page PDF run through Document Fixer or Complex PDF uses 10 credits. Credits apply to Document Fixer and Complex PDF combined, and reset on the 1st of each month. Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited on the Individual plan. Need more? You can top up with page-credit packs anytime." },
+              { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Document Fixer or Complex PDF — so a 10-page PDF uses 10 Credits. Credits reset on the 1st of each month, and Alt Text Generator, Canvas HTML Fixer, and Video Transcription don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are billed upfront and are non-refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
-              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — requires a Team plan. Accounts found in violation may be suspended." },
-              { q: "How does the Team plan work?", a: "Team plans are $209/seat/year, billed annually. Page credits are pooled across your team at 175/seat/month. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
+              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard, pooled Credits, and a free onboarding call for the whole group." },
+              { q: "How does the Team plan work?", a: "Team plans are $209/seat/year, billed annually. Credits are pooled across your team at 175/seat/month, and every Team plan includes a free onboarding call to help your group get set up. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">

@@ -38,18 +38,18 @@ export default function Terms() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
                 <p className="font-semibold text-[#3a485b]">Individual — $19/month or $179/year</p>
-                <p className="text-sm">150 page credits per month via Document Fixer and Complex PDF (1 credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
+                <p className="text-sm">150 Credits per month via Document Fixer and Complex PDF (1 Credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
               </div>
               <div>
                 <p className="font-semibold text-[#3a485b]">Team — $209/seat/year (annual only, 2+ seats)</p>
-                <p className="text-sm">175 page credits/seat/month pooled across the organization via Document Fixer and Complex PDF (1 credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO. Invoice/PO option is provided at Remedy508’s discretion; misuse may result in account suspension.</p>
+                <p className="text-sm">175 Credits/seat/month pooled across the organization via Document Fixer and Complex PDF (1 Credit = 1 page processed; documents over 100 pages must be split). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Every Team plan includes a free onboarding call. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">
               <li><strong>Billing:</strong> Handled by Stripe. Subscriptions renew automatically at the end of each billing period.</li>
               <li><strong>Monthly plans:</strong> Cancel anytime through account settings or by emailing us. Cancellation takes effect at the end of the current billing period. No future charges.</li>
               <li><strong>Annual plans:</strong> Billed upfront and non-refundable. Cancel before your renewal date to stop future charges.</li>
-              <li><strong>Credit Packs:</strong> Document credits may be purchased as a one-time add-on at $0.30 per document (minimum 10). Credit packs are <strong>non-refundable</strong>. Purchased credits do not expire unless your account has been inactive (no login or document processing) for 12 or more consecutive months, after which unused credits are forfeited without notice or compensation. Credits are applied after your monthly subscription pool is exhausted. Credits are tied to your individual account and are non-transferable.</li>
+              <li><strong>Credit Packs:</strong> Additional Credits may be purchased as a one-time top-up in blocks of 25, 50, or 100. Credit packs are <strong>non-refundable</strong>. Purchased Credits do not expire unless your account has been inactive (no login or processing activity) for 12 or more consecutive months, after which unused Credits are forfeited without notice or compensation. Purchased Credits are applied after your monthly plan Credits are exhausted, and are tied to your account and non-transferable.</li>
               <li><strong>Price Changes:</strong> We may change pricing with at least 30 days' notice, applying to your next renewal.</li>
               <li><strong>Taxes:</strong> You are responsible for applicable taxes where we are not required to collect them.</li>
             </ul>

@@ -126,7 +126,7 @@ export default function InvoiceRequest() {
               <label htmlFor="seats" className={labelClass}>Number of seats needed *</label>
               <input id="seats" name="seats" type="number" min={2} required value={form.seats} onChange={handleChange} className={inputClass} />
               <p className="text-xs text-gray-400 mt-1">
-                {form.seats} seat{form.seats !== 1 ? "s" : ""} × $209 = ${(form.seats * 209).toLocaleString()}/year · {form.seats * 175} page credits/month pooled
+                {form.seats} seat{form.seats !== 1 ? "s" : ""} × $209 = ${(form.seats * 209).toLocaleString()}/year · {form.seats * 175} Credits/month pooled · includes a free onboarding call
               </p>
             </div>
 
@@ -159,7 +159,7 @@ export default function InvoiceRequest() {
             </button>
 
             <p className="text-xs text-gray-400 text-center">
-              By submitting, you confirm this request is for institutional use. Misuse may result in account suspension per our Terms of Service.
+              By submitting, you confirm this request is for institutional use as described in our <a href="/terms" className="text-[#0d9488] underline">Terms of Service</a>.
             </p>
           </form>
         </div>

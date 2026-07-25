@@ -58,7 +58,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
-              <h2 id="buy-credits-title" className="text-lg font-bold">Buy Page Credits</h2>
+              <h2 id="buy-credits-title" className="text-lg font-bold">Buy Credits</h2>
             </div>
             <button
               onClick={onClose}
@@ -68,7 +68,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-white text-base mt-1">One-time purchase · 1 credit = 1 page processed · No expiration</p>
+          <p className="text-white text-base mt-1">One-time purchase · 1 Credit = 1 page processed · No expiration</p>
         </div>
 
         <div className="p-6">
@@ -87,7 +87,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               >
                 <div>
                   <p className={`text-sm font-bold ${selected === p.id ? "text-[#0d9488]" : "text-[#3a485b]"}`}>
-                    {p.credits} page credits
+                    {p.credits} Credits
                   </p>
                   <p className="text-sm text-gray-700">{p.note} · {p.perCredit}</p>
                 </div>
@@ -107,14 +107,14 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-[#0d9488]" />
-              <span className="text-sm font-semibold text-[#3a485b]">{pack.credits} page credits</span>
+              <span className="text-sm font-semibold text-[#3a485b]">{pack.credits} Credits</span>
             </div>
             <span className="text-lg font-bold text-[#0d9488]">${pack.price.toFixed(2)}</span>
           </div>
 
           {/* Policy note */}
           <p className="text-sm text-gray-700 mb-4">
-            Credits are added to your account immediately after payment and are used only after your monthly plan credits run out. 1 credit covers 1 processed page (Document Fixer and Complex PDF both draw from the same pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
+            A Credit is simply a page. Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. 1 Credit covers 1 processed page (Document Fixer and Complex PDF both draw from the same pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (
