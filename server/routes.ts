@@ -183,18 +183,6 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
-  // TEMP DEBUG: retrieve the exact HTML that triggered the last WeasyPrint
-  // "Table wrapper without a table" failure, for direct inspection. Remove
-  // once the root cause is confirmed and fixed.
-  app.get("/api/debug/last-table-failure", (_req, res) => {
-    const fs = require("fs");
-    const p = "/tmp/last_table_wrapper_failure.html";
-    if (fs.existsSync(p)) {
-      res.type("text/plain").send(fs.readFileSync(p, "utf-8"));
-    } else {
-      res.status(404).send("No table-wrapper failure captured yet.");
-    }
-  });
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -961,6 +949,29 @@ def _find_table_wrapper_culprit(html_source):
     return None
 
 from weasyprint import HTML
+from weasyprint.formatting_structure import boxes as _wp_boxes
+
+# WeasyPrint bug workaround: when a table's rendered box tree is fragmented
+# across a page break in a certain way, the tagged-PDF builder's
+# get_wrapped_table() can find zero TableBox children on a wrapper box and
+# raise 'Table wrapper without a table' (a case the WeasyPrint authors
+# themselves marked '# pragma: no cover' as believed-impossible, but it is
+# reachable with real multi-table, multi-page documents). Rather than
+# aborting the whole render, patch this one lookup to fall back to a synthetic
+# empty TableBox for that fragment -- the table's actual rows are still fully
+# tagged wherever the real TableBox fragment lives; this only prevents the
+# crash on wrapper fragments that carry no rows of their own (e.g. a
+# continuation wrapper WeasyPrint created for pagination bookkeeping).
+def _patched_get_wrapped_table(self):
+    for child in self.children:
+        if isinstance(child, _wp_boxes.TableBox):
+            return child
+    synthetic = _wp_boxes.TableBox.anonymous_from(self, [])
+    synthetic.is_table_wrapper = False
+    return synthetic
+
+_wp_boxes.ParentBox.get_wrapped_table = _patched_get_wrapped_table
+
 try:
     HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
 except ValueError as wp_val_err:
@@ -970,11 +981,6 @@ except ValueError as wp_val_err:
     # no StructTreeRoot at all, which is worse than failing loudly. Surface
     # the real cause so it can be fixed at the source instead of masked.
     culprit = _find_table_wrapper_culprit(full_html) if 'table' in str(wp_val_err).lower() else None
-    try:
-        with open('/tmp/last_table_wrapper_failure.html', 'w', encoding='utf-8') as _dbgf:
-            _dbgf.write(full_html)
-    except Exception:
-        pass
     try: os.unlink(tmp_html)
     except: pass
     detail = (' Suspect table fragment: ' + culprit) if culprit else ''
