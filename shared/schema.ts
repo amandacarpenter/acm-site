@@ -10,6 +10,9 @@ export const jobs = sqliteTable("jobs", {
   result: text("result"),
   errorMessage: text("error_message"),
   createdAt: integer("created_at").notNull(),
+  clerkUserId: text("clerk_user_id"),
+  pageCount: integer("page_count"),
+  creditsUsed: integer("credits_used"),
 });
 
 export const insertJobSchema = createInsertSchema(jobs).omit({ id: true });

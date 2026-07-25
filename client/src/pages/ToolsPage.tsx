@@ -145,12 +145,14 @@ function DocumentTab() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { user: documentUser } = useUser();
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
     setLoading(true); setError(""); setResult(null);
     try {
       const fd = new FormData(); fd.append("file", file);
+      if (documentUser?.id) fd.append("clerkUserId", documentUser.id);
       const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);

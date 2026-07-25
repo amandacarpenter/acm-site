@@ -16,7 +16,11 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500
 const anthropic = new Anthropic();
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
-// ── Usage Helpers ────────────────────────────────────────
+// ── Usage / Credits Helpers ──────────────────────────────────
+
+const INDIVIDUAL_MONTHLY_CREDITS = 150; // 1 credit = 1 processed page
+const TEAM_CREDITS_PER_SEAT = 175;
+const MAX_PAGES_PER_DOCUMENT = 100; // hard cap — protects against runaway cost + server load on a single upload
 
 function getResetDate(): string {
   const now = new Date();
@@ -24,46 +28,99 @@ function getResetDate(): string {
   return next.toISOString();
 }
 
-async function checkAndIncrementUsage(clerkUserId: string): Promise<{ allowed: boolean; reason?: string }> {
-  const user = await clerkClient.users.getUser(clerkUserId);
-  const meta = (user.publicMetadata || {}) as any;
-
+function getMonthlyCreditLimit(meta: any): number {
   const plan: string = meta.plan || "individual";
-  const monthlyLimit: number = plan === "team" ? (meta.teamSeats || 1) * 75 : 50;
-  let monthlyUsed: number = meta.monthlyDocsUsed || 0;
-  let purchasedCredits: number = meta.purchasedCredits || 0;
+  if (plan === "team") return (meta.teamSeats || 1) * TEAM_CREDITS_PER_SEAT;
+  return INDIVIDUAL_MONTHLY_CREDITS;
+}
+
+// Reads current credit balance (monthly pool + purchased top-up pool) without mutating anything.
+// Also resets the monthly pool if the reset date has passed.
+async function getCreditBalance(clerkUserId: string): Promise<{
+  monthlyUsed: number;
+  monthlyLimit: number;
+  purchasedCredits: number;
+  meta: any;
+}> {
+  const user = await clerkClient.users.getUser(clerkUserId);
+  let meta = (user.publicMetadata || {}) as any;
+
+  const monthlyLimit = getMonthlyCreditLimit(meta);
+  let monthlyUsed: number = meta.monthlyCreditsUsed ?? meta.monthlyDocsUsed ?? 0;
+  const purchasedCredits: number = meta.purchasedCredits || 0;
   const resetDate: string = meta.usageResetDate || getResetDate();
 
-  // Check if monthly usage should be reset
   if (new Date() >= new Date(resetDate)) {
     monthlyUsed = 0;
-    await clerkClient.users.updateUserMetadata(clerkUserId, {
-      publicMetadata: { ...meta, monthlyDocsUsed: 0, usageResetDate: getResetDate() },
-    });
+    meta = { ...meta, monthlyCreditsUsed: 0, usageResetDate: getResetDate() };
+    await clerkClient.users.updateUserMetadata(clerkUserId, { publicMetadata: meta });
   }
 
-  // Consume monthly pool first
-  if (monthlyUsed < monthlyLimit) {
-    await clerkClient.users.updateUserMetadata(clerkUserId, {
-      publicMetadata: { ...meta, monthlyDocsUsed: monthlyUsed + 1, usageResetDate: resetDate },
-    });
+  return { monthlyUsed, monthlyLimit, purchasedCredits, meta };
+}
+
+// Pre-flight check, called BEFORE any processing starts. Only confirms the user has at least
+// 1 credit available — real per-page deduction happens after the true page count is known
+// (see deductCredits below). This prevents a zero-balance user from starting a job at all,
+// while avoiding the old bug where a flat "1 document" was charged regardless of page count.
+async function checkHasCredits(clerkUserId: string): Promise<{ allowed: boolean; reason?: string }> {
+  try {
+    const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+    const remaining = (monthlyLimit - monthlyUsed) + purchasedCredits;
+    if (remaining > 0) return { allowed: true };
+
+    const resetDate: string = meta.usageResetDate || getResetDate();
+    const resetStr = new Date(resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" });
+    return {
+      allowed: false,
+      reason: `You're out of credits (0 remaining). Your ${monthlyLimit}-credit monthly pool resets ${resetStr}. Need more now? Purchase additional page credits.`,
+    };
+  } catch (err: any) {
+    console.error("[CREDIT CHECK] Error:", err.message);
+    // Fail open — don't block if Clerk is temporarily unavailable
     return { allowed: true };
   }
+}
 
-  // Fall back to purchased credits
-  if (purchasedCredits > 0) {
-    await clerkClient.users.updateUserMetadata(clerkUserId, {
-      publicMetadata: { ...meta, purchasedCredits: purchasedCredits - 1 },
-    });
-    return { allowed: true };
+// Rejects documents that exceed the per-document page cap. Called AFTER page count is known
+// (from the real PDF/document extraction step) but BEFORE any Claude API calls are made, so a
+// disallowed document never spends a cent of API budget and never touches the user's credits.
+function checkPageCap(totalPages: number): { allowed: boolean; reason?: string } {
+  if (totalPages > MAX_PAGES_PER_DOCUMENT) {
+    return {
+      allowed: false,
+      reason: `This document has ${totalPages} pages, which exceeds the ${MAX_PAGES_PER_DOCUMENT}-page limit per document. Please split it into smaller files and process them separately.`,
+    };
   }
+  return { allowed: true };
+}
 
-  // Hard block
-  const resetStr = new Date(resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" });
-  return {
-    allowed: false,
-    reason: `You've used all ${monthlyLimit} documents this month. Documents reset on ${resetStr}. Need more? Purchase additional credits.`,
-  };
+// Real deduction, called AFTER the true page count is known and the page cap has passed.
+// Deducts exactly `pagesUsed` credits — monthly pool first, then purchased top-up credits.
+// This is the step that makes the credit system tamper-proof: cost is always tied to the
+// actual number of pages Claude processed, never to a flat "1 document" assumption.
+async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ creditsRemaining: number }> {
+  const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+  const resetDate: string = meta.usageResetDate || getResetDate();
+
+  const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
+  const fromMonthly = Math.min(monthlyRemaining, pagesUsed);
+  const fromPurchased = Math.max(0, pagesUsed - fromMonthly);
+
+  const newMonthlyUsed = monthlyUsed + fromMonthly;
+  const newPurchasedCredits = Math.max(0, purchasedCredits - fromPurchased);
+
+  await clerkClient.users.updateUserMetadata(clerkUserId, {
+    publicMetadata: {
+      ...meta,
+      monthlyCreditsUsed: newMonthlyUsed,
+      purchasedCredits: newPurchasedCredits,
+      usageResetDate: resetDate,
+    },
+  });
+
+  const creditsRemaining = Math.max(0, monthlyLimit - newMonthlyUsed) + newPurchasedCredits;
+  return { creditsRemaining };
 }
 
 // Helper: call Claude for text tasks
@@ -183,6 +240,39 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
+
+  // ── Credit usage status (for Dashboard) ──────────────────────────────────
+  app.get("/api/usage/status", async (req, res) => {
+    const clerkUserId = req.query.clerkUserId as string | undefined;
+    if (!clerkUserId) return res.status(400).json({ error: "clerkUserId required" });
+    try {
+      const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+      res.json({
+        monthlyUsed,
+        monthlyLimit,
+        purchasedCredits,
+        creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits,
+        resetDate: meta.usageResetDate || getResetDate(),
+        plan: meta.plan || "individual",
+        teamSeats: meta.teamSeats || 1,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Recent job activity (for Dashboard) ──────────────────────────────────
+  app.get("/api/jobs/recent", (req, res) => {
+    const clerkUserId = req.query.clerkUserId as string | undefined;
+    if (!clerkUserId) return res.status(400).json({ error: "clerkUserId required" });
+    try {
+      const jobs = storage.getRecentJobsForUser(clerkUserId, 15);
+      res.json({ jobs });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get("/api/debug/ytdlp", async (_req, res) => {
     const { exec } = await import("child_process");
     // Check node path and run a real yt-dlp title fetch to expose the actual error
@@ -198,11 +288,11 @@ export function registerRoutes(httpServer: Server, app: Express) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
 
-    // ── Usage gate ──────────────────────────────────────────────────────────
+    // ── Usage gate — pre-flight only, confirms user has ANY credits ─────────
     const clerkUserId: string | undefined = req.body?.clerkUserId;
     if (clerkUserId) {
       try {
-        const usage = await checkAndIncrementUsage(clerkUserId);
+        const usage = await checkHasCredits(clerkUserId);
         if (!usage.allowed) {
           return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
         }
@@ -215,6 +305,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       let rawText = "";
       let htmlContent = "";
+      let docPageCount = 1; // .docx has no page concept pre-render; treated as 1 page equivalent below
 
       if (ext === ".docx") {
         const mammoth = await import("mammoth");
@@ -251,16 +342,27 @@ export function registerRoutes(httpServer: Server, app: Express) {
           "        tp = page.get_textpage_ocr(language='eng', dpi=300)",
           "        page_text = page.get_text(textpage=tp).strip()",
           "    text += page_text + '\\n'",
+          "print('___PAGECOUNT___' + str(len(doc)))",
           "print(text)",
         ].join("\n");
         // Use venv python3 if available (Railway), fall back to system python3
         const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
-        rawText = await new Promise<string>((resolve, reject) => {
+        const rawOutput = await new Promise<string>((resolve, reject) => {
           execFile(python3, ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024, timeout: 120000 }, (err, stdout) => {
             if (err) reject(err); else resolve(stdout);
           });
         });
         await unlink(tmpIn).catch(() => {});
+
+        const pageCountMatch = rawOutput.match(/___PAGECOUNT___(\d+)\n/);
+        docPageCount = pageCountMatch ? parseInt(pageCountMatch[1], 10) : 1;
+        rawText = pageCountMatch ? rawOutput.slice(pageCountMatch[0].length) : rawOutput;
+
+        // ── Page cap — checked as soon as the real page count is known, before further processing ──
+        const capCheck = checkPageCap(docPageCount);
+        if (!capCheck.allowed) {
+          return res.status(413).json({ error: capCheck.reason, code: "PAGE_CAP_EXCEEDED" });
+        }
         htmlContent = `<div>${rawText.replace(/\n\n+/g, "</p><p>").replace(/\n/g, "<br>")}</div>`;
       } else {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
@@ -431,6 +533,27 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
           .map(chunk => `<p>${chunk}</p>`)
           .join("\n");
         cleanHtml = cleanHtml + "\n" + remainderAsParas;
+      }
+
+      // ── Deduct credits + log job (text-only pipeline: 1 credit per page, min 1) ──
+      const docCreditsUsed = Math.max(1, docPageCount);
+      if (clerkUserId) {
+        try {
+          await deductCredits(clerkUserId, docCreditsUsed);
+          storage.createJob({
+            type: "document",
+            status: "completed",
+            inputName: req.file.originalname,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: docPageCount,
+            creditsUsed: docCreditsUsed,
+          });
+        } catch (creditErr: any) {
+          console.error("[CREDIT DEDUCT] Error:", creditErr.message);
+        }
       }
 
       return res.json({
@@ -605,11 +728,12 @@ Canvas-specific rules:
       const { tmpdir } = await import("os");
       const { join } = await import("path");
 
-      // Usage gate
+      // Usage gate — pre-flight only, confirms user has ANY credits available.
+      // Real per-page deduction + page-cap enforcement happens below once totalPages is known.
       const clerkUserId: string | undefined = req.body?.clerkUserId;
       if (clerkUserId) {
         try {
-          const usage = await checkAndIncrementUsage(clerkUserId);
+          const usage = await checkHasCredits(clerkUserId);
           if (!usage.allowed) {
             return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
           }
@@ -712,6 +836,21 @@ print(json.dumps({'pages': result, 'total': len(doc)}))
       const { pages: pageData, total: totalPages } = JSON.parse(extractJson);
       await unlink(tmpExtractScript).catch(() => {});
       await unlink(tmpPdf).catch(() => {});
+
+      // ── Page cap — enforced the instant real page count is known, BEFORE any Claude Vision spend ──
+      const capCheck = checkPageCap(totalPages);
+      if (!capCheck.allowed) {
+        return res.status(413).json({ error: capCheck.reason, code: "PAGE_CAP_EXCEEDED" });
+      }
+
+      // ── Real credit deduction — exactly totalPages credits, tied to actual Vision-call cost ──
+      if (clerkUserId) {
+        try {
+          await deductCredits(clerkUserId, totalPages);
+        } catch (creditErr: any) {
+          console.error("[COMPLEXPDF CREDIT DEDUCT] Error:", creditErr.message);
+        }
+      }
 
       // ── Step 2: Claude Vision — extract accessible HTML per page ──
       const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert processing one page of a PDF document.
@@ -1165,6 +1304,23 @@ print('ok')
       const fixesMadeHeader = JSON.stringify(fixesMadeArr).replace(/[^\x20-\x7E]/g, "");
       res.setHeader("X-Fixes-Made", Buffer.from(fixesMadeHeader).toString("base64"));
       res.setHeader("X-Total-Pages", String(totalPages));
+      if (clerkUserId) {
+        try {
+          storage.createJob({
+            type: "complexpdf",
+            status: "completed",
+            inputName: req.file.originalname,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: totalPages,
+            creditsUsed: totalPages,
+          });
+        } catch (jobErr: any) {
+          console.error("[JOB LOG] Error:", jobErr.message);
+        }
+      }
       return res.send(pdfBuffer);
 
     } catch (err: any) {
@@ -1400,7 +1556,7 @@ Rules:
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { seats, clerkUserId } = req.body;
       const qty = Math.max(2, parseInt(seats) || 2);
-      const TEAM_PRICE = "price_1TqdJpAaDElV6hZx2kEMey6p";
+      const TEAM_PRICE = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat (175 credits/mo/seat)
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -1432,12 +1588,12 @@ Rules:
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const total = (parseInt(seats) || 2) * 149;
+      const total = (parseInt(seats) || 2) * 209;
       const body = [
         `Institution: ${institutionName}`,
         `Type: ${institutionType}`,
         `Contact: ${contactName} — ${contactEmail}${contactPhone ? ` — ${contactPhone}` : ""}`,
-        `Seats: ${seats} × $149 = $${total.toLocaleString()}/year`,
+        `Seats: ${seats} × $209 = $${total.toLocaleString()}/year (175 credits/seat/month)`,
         `PO Number: ${poNumber || "Not provided"}`,
         `Timeline: ${timeline}`,
         `Notes: ${notes || "None"}`,
@@ -1466,19 +1622,24 @@ Rules:
   app.post("/api/stripe/create-credits-checkout", async (req, res) => {
     try {
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
-      const { quantity, clerkUserId } = req.body;
-      const qty = Math.max(10, Math.min(10000, parseInt(quantity) || 10));
-      const CREDITS_PRICE = "price_1Tr16SAaDElV6hZx7u7chyLL";
+      const { pack, clerkUserId } = req.body;
+      // Page-credit blocks — quantity is fixed per pack (1 unit of the block price)
+      const CREDIT_PACKS: Record<string, { price: string; credits: number }> = {
+        "25": { price: "price_1Tx9hxAaDElV6hZxHqpBRDQ9", credits: 25 },
+        "50": { price: "price_1Tx9hyAaDElV6hZx3t25Cl8P", credits: 50 },
+        "100": { price: "price_1Tx9hyAaDElV6hZx0yAgsX4f", credits: 100 },
+      };
+      const selected = CREDIT_PACKS[String(pack)] || CREDIT_PACKS["50"];
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         payment_method_types: ["card"],
-        line_items: [{ price: CREDITS_PRICE, quantity: qty }],
+        line_items: [{ price: selected.price, quantity: 1 }],
         success_url: `${process.env.APP_URL || "https://remedy508.com"}/dashboard?credits=purchased`,
         cancel_url: `${process.env.APP_URL || "https://remedy508.com"}/dashboard`,
         allow_promotion_codes: true,
         client_reference_id: clerkUserId || undefined,
-        metadata: { plan: "credits", quantity: String(qty), clerkUserId: clerkUserId || "" },
+        metadata: { plan: "credits", quantity: String(selected.credits), clerkUserId: clerkUserId || "" },
       });
 
       res.json({ url: session.url });
@@ -1507,8 +1668,9 @@ Rules:
         process.env.STRIPE_PRICE_MONTHLY,
         process.env.STRIPE_PRICE_ANNUAL,
         // live mode prices
-        "price_1Thc2tAaDElV6hZxMwA0Wxgk",
-        "price_1Thc2sAaDElV6hZx3M4Ua1kM",
+        "price_1Thc2tAaDElV6hZxMwA0Wxgk", // $19/mo individual (150 credits/mo)
+        "price_1Tx9ixAaDElV6hZxZ6vb54pl", // $179/yr individual (150 credits/mo) — current
+        "price_1Thc2sAaDElV6hZx3M4Ua1kM", // old $149/yr — kept valid for legacy subscribers only
       ].filter(Boolean);
       if (!validPrices.includes(priceId)) {
         return res.status(400).json({ error: "Invalid priceId" });

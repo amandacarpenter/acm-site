@@ -7,36 +7,29 @@ interface Props {
   userId?: string;
 }
 
-const PRESETS = [
-  { qty: 10, label: "10 docs", note: "Great for a project" },
-  { qty: 25, label: "25 docs", note: "Most popular" },
-  { qty: 50, label: "50 docs", note: "Best per-doc value" },
-  { qty: 100, label: "100 docs", note: "Power user pack" },
+const PACKS = [
+  { id: "25", credits: 25, price: 3.0, note: "Great for a quick job", perCredit: "$0.12/credit" },
+  { id: "50", credits: 50, price: 5.5, note: "Most popular", perCredit: "$0.11/credit" },
+  { id: "100", credits: 100, price: 10.0, note: "Best value", perCredit: "$0.10/credit" },
 ];
 
-const PRICE_PER_DOC = 0.30;
-
 export default function BuyCreditsModal({ open, onClose, userId }: Props) {
-  const [selected, setSelected] = useState<number | null>(25);
-  const [custom, setCustom] = useState("");
+  const [selected, setSelected] = useState<string>("50");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   if (!open) return null;
 
-  const qty = custom ? parseInt(custom) || 0 : (selected ?? 0);
-  const total = (qty * PRICE_PER_DOC).toFixed(2);
-  const isValid = qty >= 10 && qty <= 10000;
+  const pack = PACKS.find((p) => p.id === selected) || PACKS[1];
 
   const handleBuy = async () => {
-    if (!isValid) return;
     setLoading(true);
     setError("");
     try {
       const resp = await fetch("/api/stripe/create-credits-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ quantity: qty, clerkUserId: userId }),
+        body: JSON.stringify({ pack: pack.id, clerkUserId: userId }),
       });
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error || "Something went wrong");
@@ -65,7 +58,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5" />
-              <h2 id="buy-credits-title" className="text-lg font-bold">Buy More Docs</h2>
+              <h2 id="buy-credits-title" className="text-lg font-bold">Buy Page Credits</h2>
             </div>
             <button
               onClick={onClose}
@@ -75,31 +68,33 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-white text-base mt-1">One-time purchase · $0.30 per document · No expiration</p>
+          <p className="text-white text-base mt-1">One-time purchase · 1 credit = 1 page processed · No expiration</p>
         </div>
 
         <div className="p-6">
-          {/* Preset chips */}
+          {/* Pack chips */}
           <p className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">Choose a pack</p>
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {PRESETS.map((p) => (
+          <div className="grid grid-cols-1 gap-2 mb-5">
+            {PACKS.map((p) => (
               <button
-                key={p.qty}
-                onClick={() => { setSelected(p.qty); setCustom(""); }}
-                className={`relative rounded-xl border-2 p-3 text-left transition ${
-                  selected === p.qty && !custom
+                key={p.id}
+                onClick={() => setSelected(p.id)}
+                className={`relative rounded-xl border-2 p-4 text-left transition flex items-center justify-between ${
+                  selected === p.id
                     ? "border-[#0d9488] bg-teal-50"
                     : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
-                <p className={`text-sm font-bold ${selected === p.qty && !custom ? "text-[#0d9488]" : "text-[#3a485b]"}`}>
-                  {p.label}
+                <div>
+                  <p className={`text-sm font-bold ${selected === p.id ? "text-[#0d9488]" : "text-[#3a485b]"}`}>
+                    {p.credits} page credits
+                  </p>
+                  <p className="text-sm text-gray-700">{p.note} · {p.perCredit}</p>
+                </div>
+                <p className={`text-lg font-bold ${selected === p.id ? "text-[#0d9488]" : "text-gray-700"}`}>
+                  ${p.price.toFixed(2)}
                 </p>
-                <p className="text-sm text-gray-700">{p.note}</p>
-                <p className={`text-sm font-semibold mt-1 ${selected === p.qty && !custom ? "text-[#0d9488]" : "text-gray-700"}`}>
-                  ${(p.qty * PRICE_PER_DOC).toFixed(2)}
-                </p>
-                {p.qty === 25 && (
+                {p.id === "50" && (
                   <span className="absolute -top-2 -right-2 bg-[#0d9488] text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
                     Popular
                   </span>
@@ -108,47 +103,18 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
             ))}
           </div>
 
-          {/* Custom input */}
-          <div className="mb-5">
-            <label htmlFor="custom-qty" className="text-sm font-semibold text-gray-900 uppercase tracking-wide block mb-2">
-              Or enter a custom amount (min 10)
-            </label>
-            <div className="relative">
-              <input
-                id="custom-qty"
-                type="number"
-                min={10}
-                max={10000}
-                placeholder="e.g. 75"
-                value={custom}
-                onChange={(e) => { setCustom(e.target.value); setSelected(null); }}
-                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
-              />
-              {custom && parseInt(custom) >= 10 && (
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-[#0d9488]">
-                  ${(parseInt(custom) * PRICE_PER_DOC).toFixed(2)}
-                </span>
-              )}
-            </div>
-            {custom && (parseInt(custom) < 10 || isNaN(parseInt(custom))) && (
-              <p className="text-xs text-red-500 mt-1">Minimum purchase is 10 documents.</p>
-            )}
-          </div>
-
           {/* Live total */}
-          {isValid && (
-            <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#0d9488]" />
-                <span className="text-sm font-semibold text-[#3a485b]">{qty} documents</span>
-              </div>
-              <span className="text-lg font-bold text-[#0d9488]">${total}</span>
+          <div className="bg-teal-50 border border-teal-100 rounded-xl px-4 py-3 mb-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Zap className="w-4 h-4 text-[#0d9488]" />
+              <span className="text-sm font-semibold text-[#3a485b]">{pack.credits} page credits</span>
             </div>
-          )}
+            <span className="text-lg font-bold text-[#0d9488]">${pack.price.toFixed(2)}</span>
+          </div>
 
           {/* Policy note */}
           <p className="text-sm text-gray-700 mb-4">
-            Credits are added to your account immediately after payment. They never expire unless your account is inactive for 12+ months. Non-refundable.
+            Credits are added to your account immediately after payment and are used only after your monthly plan credits run out. 1 credit covers 1 processed page (Document Fixer and Complex PDF both draw from the same pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (
@@ -160,7 +126,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           {/* CTA */}
           <button
             onClick={handleBuy}
-            disabled={!isValid || loading}
+            disabled={loading}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -168,7 +134,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
             ) : (
               <>
                 <ShoppingCart className="w-4 h-4" />
-                Buy {isValid ? qty : ""} Docs{isValid ? ` — $${total}` : ""}
+                Buy {pack.credits} Credits — ${pack.price.toFixed(2)}
                 <ChevronRight className="w-4 h-4" />
               </>
             )}

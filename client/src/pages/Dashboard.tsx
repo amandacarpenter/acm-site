@@ -2,8 +2,8 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
-import { useState } from "react";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
@@ -15,22 +15,68 @@ const TOOLS = [
   { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
 ];
 
+interface JobRow {
+  id: number;
+  type: string;
+  status: string;
+  inputName: string | null;
+  pageCount: number | null;
+  creditsUsed: number | null;
+  createdAt: number;
+}
+
+interface UsageStatus {
+  monthlyUsed: number;
+  monthlyLimit: number;
+  purchasedCredits: number;
+  creditsRemaining: number;
+  resetDate: string;
+  plan: string;
+  teamSeats: number;
+}
+
+const TOOL_LABELS: Record<string, string> = {
+  document: "Document Fixer",
+  complexpdf: "Complex PDF",
+};
+
 export default function Dashboard() {
   const { user } = useUser();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
+  const [usage, setUsage] = useState<UsageStatus | null>(null);
+  const [jobs, setJobs] = useState<JobRow[] | null>(null);
+  const [loadingUsage, setLoadingUsage] = useState(true);
+  const [loadingJobs, setLoadingJobs] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    fetch(`/api/usage/status?clerkUserId=${encodeURIComponent(user.id)}`)
+      .then((r) => r.json())
+      .then((data) => setUsage(data))
+      .catch(() => setUsage(null))
+      .finally(() => setLoadingUsage(false));
+
+    fetch(`/api/jobs/recent?clerkUserId=${encodeURIComponent(user.id)}`)
+      .then((r) => r.json())
+      .then((data) => setJobs(data.jobs || []))
+      .catch(() => setJobs([]))
+      .finally(() => setLoadingJobs(false));
+  }, [user?.id, buyCreditsOpen]);
 
   const meta = (user?.publicMetadata || {}) as any;
-  const plan: string = meta.plan || "individual";
-  const teamSeats: number = meta.teamSeats || 1;
-  const docsLimit: number = plan === "team" ? teamSeats * 75 : 50;
-  const docsUsed: number = meta.monthlyDocsUsed || 0;
-  const purchasedCredits: number = meta.purchasedCredits || 0;
-  const usagePct = Math.min(100, Math.round((docsUsed / docsLimit) * 100));
+  const plan: string = usage?.plan || meta.plan || "individual";
+  const teamSeats: number = usage?.teamSeats || meta.teamSeats || 1;
+
+  const monthlyLimit = usage?.monthlyLimit ?? (plan === "team" ? teamSeats * 175 : 150);
+  const monthlyUsed = usage?.monthlyUsed ?? 0;
+  const purchasedCredits = usage?.purchasedCredits ?? 0;
+  const creditsRemaining = usage?.creditsRemaining ?? Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits;
+  const usagePct = Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100));
   const isLow = usagePct >= 80;
 
-  // Format reset date
-  const resetDateStr = meta.usageResetDate
-    ? new Date(meta.usageResetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })
+  const resetDateStr = usage?.resetDate
+    ? new Date(usage.resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" })
     : (() => {
         const now = new Date();
         const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
@@ -60,13 +106,13 @@ export default function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-[#0d9488]" />
-                <span className="font-semibold text-[#3a485b] text-sm">Document Usage</span>
+                <span className="font-semibold text-[#3a485b] text-sm">Credit Usage</span>
               </div>
               <span className="text-sm text-gray-700">Resets {resetDateStr}</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
-              <span className="text-4xl font-bold text-[#3a485b]">{docsUsed}</span>
-              <span className="text-gray-900 text-base mb-1">/ {docsLimit} docs this month</span>
+              <span className="text-4xl font-bold text-[#3a485b]">{loadingUsage ? "—" : monthlyUsed}</span>
+              <span className="text-gray-900 text-base mb-1">/ {monthlyLimit} page credits this month</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
               <div
@@ -81,9 +127,9 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                   <p className="text-sm text-amber-700 font-medium">
-                    {docsLimit - docsUsed <= 0
-                      ? "Monthly limit reached. Purchase credits to continue."
-                      : `Only ${docsLimit - docsUsed} doc${docsLimit - docsUsed === 1 ? "" : "s"} remaining this month.`}
+                    {monthlyLimit - monthlyUsed <= 0 && purchasedCredits <= 0
+                      ? "Monthly credits used up. Purchase more page credits to continue."
+                      : `Only ${Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits} credit${(Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits) === 1 ? "" : "s"} remaining this month.`}
                   </p>
                 </div>
                 <button
@@ -91,12 +137,14 @@ export default function Dashboard() {
                   className="ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition"
                 >
                   <ShoppingCart className="w-3 h-3" />
-                  Buy More Docs
+                  Buy More Credits
                 </button>
               </div>
             )}
 
-            <p className="text-sm text-gray-700">{docsLimit - docsUsed > 0 ? docsLimit - docsUsed : 0} documents remaining — Document Fixer &amp; Complex PDF count toward this limit.</p>
+            <p className="text-sm text-gray-700">
+              1 credit = 1 page processed. Document Fixer &amp; Complex PDF both draw from this pool — larger documents use more credits, smaller ones use fewer.
+            </p>
 
             {/* Purchased credits balance */}
             {purchasedCredits > 0 && (
@@ -126,7 +174,7 @@ export default function Dashboard() {
             {billingCycle && (
               <p className="text-sm text-gray-700 mb-2">Member since {billingCycle}</p>
             )}
-            <p className="text-sm text-gray-700 mb-4">{planLabel} · {docsLimit} docs/mo</p>
+            <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} page credits/mo</p>
 
             <div className="mt-auto flex flex-col gap-2">
               <button
@@ -134,7 +182,7 @@ export default function Dashboard() {
                 className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
               >
                 <ShoppingCart className="w-3 h-3" />
-                Buy More Docs
+                Buy More Credits
               </button>
               <Link href="/pricing">
                 <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
@@ -164,11 +212,45 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-              <FileText className="w-8 h-8 text-gray-200 mb-3" />
-              <p className="text-sm font-medium text-gray-700">No activity yet</p>
-              <p className="text-sm text-gray-600 mt-1">Your processed files will appear here</p>
-            </div>
+            {loadingJobs ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <p className="text-sm text-gray-600">Loading activity...</p>
+              </div>
+            ) : !jobs || jobs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+                <FileText className="w-8 h-8 text-gray-200 mb-3" />
+                <p className="text-sm font-medium text-gray-700">No activity yet</p>
+                <p className="text-sm text-gray-600 mt-1">Your processed files will appear here</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-100">
+                {jobs.map((job) => (
+                  <li key={job.id} className="flex items-center justify-between px-5 py-3.5">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {job.status === "completed" ? (
+                        <CheckCircle2 className="w-4 h-4 text-[#0d9488] shrink-0" />
+                      ) : (
+                        <XCircle className="w-4 h-4 text-red-400 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-[#3a485b] truncate">
+                          {job.inputName || "Untitled document"}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {TOOL_LABELS[job.type] || job.type}
+                          {job.pageCount ? ` · ${job.pageCount} page${job.pageCount === 1 ? "" : "s"}` : ""}
+                          {job.creditsUsed ? ` · ${job.creditsUsed} credit${job.creditsUsed === 1 ? "" : "s"} used` : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-sm text-gray-600 shrink-0 ml-3">
+                      <Clock className="w-3.5 h-3.5" />
+                      {new Date(job.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </main>
