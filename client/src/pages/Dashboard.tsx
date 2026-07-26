@@ -223,7 +223,7 @@ export default function Dashboard() {
                 <p className="text-sm text-gray-600 mt-1">Your processed files will appear here</p>
               </div>
             ) : (
-              <ul className="divide-y divide-gray-100">
+              <ul className="divide-y divide-gray-100 max-h-[480px] overflow-y-auto">
                 {jobs.map((job) => (
                   <li key={job.id} className="flex items-center justify-between px-5 py-3.5">
                     <div className="flex items-center gap-3 min-w-0">

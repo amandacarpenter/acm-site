@@ -341,7 +341,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const clerkUserId = req.query.clerkUserId as string | undefined;
     if (!clerkUserId) return res.status(400).json({ error: "clerkUserId required" });
     try {
-      const jobs = storage.getRecentJobsForUser(clerkUserId, 15);
+      const jobs = storage.getRecentJobsForUser(clerkUserId, 50);
       res.json({ jobs });
     } catch (err: any) {
       res.status(500).json({ error: err.message });

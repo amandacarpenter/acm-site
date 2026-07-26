@@ -64,7 +64,7 @@ export class Storage implements IStorage {
   updateJob(id: number, updates: Partial<Job>): Job | undefined {
     return db.update(jobs).set(updates).where(eq(jobs.id, id)).returning().get();
   }
-  getRecentJobsForUser(clerkUserId: string, limit = 15): Job[] {
+  getRecentJobsForUser(clerkUserId: string, limit = 50): Job[] {
     return db
       .select()
       .from(jobs)
