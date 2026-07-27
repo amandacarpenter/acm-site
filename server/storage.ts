@@ -2,8 +2,16 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { jobs, type Job, type InsertJob } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
+import fs from "fs";
+import path from "path";
 
-const sqlite = new Database("acm.db");
+// On Railway, /data is a mounted persistent volume — files written there survive
+// deploys and restarts. Locally (and anywhere /data doesn't exist), fall back to
+// a plain file in the working directory so local dev keeps working unchanged.
+const DB_DIR = fs.existsSync("/data") ? "/data" : ".";
+const DB_PATH = path.join(DB_DIR, "acm.db");
+
+const sqlite = new Database(DB_PATH);
 const db = drizzle(sqlite);
 
 sqlite.exec(`

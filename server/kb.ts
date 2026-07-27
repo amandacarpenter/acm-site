@@ -1,8 +1,12 @@
 import Database from "better-sqlite3";
 import path from "path";
+import fs from "fs";
 
 // ── DB setup ─────────────────────────────────────────────────────────────────
-const db = new Database(path.resolve("acm.db"));
+// Must point at the SAME file as storage.ts. On Railway, /data is a
+// persistent volume mount; locally it falls back to the working directory.
+const KB_DB_DIR = fs.existsSync("/data") ? "/data" : ".";
+const db = new Database(path.resolve(KB_DB_DIR, "acm.db"));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS kb_articles (
