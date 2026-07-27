@@ -396,7 +396,7 @@ function DocumentTab() {
       <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and digital PDF files supported</p>
-        <p>✓ Best for syllabi, course documents, and handouts (up to ~50 pages)</p>
+        <p>✓ Best for syllabi, course documents, and handouts (typically ~50 pages, up to 100 max)</p>
         <p>⚠ Scanned or image-heavy PDF? Use <button type="button" onClick={goToComplexPdf} className="underline font-medium text-[#0d9488] hover:no-underline">Complex PDF</button> instead — it reads each page visually.</p>
       </div>
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
@@ -776,6 +776,7 @@ function ComplexPdfTab() {
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Best for science, math, or diagram-heavy PDFs</p>
         <p>✓ Remedy508 reads each page as an image — handles equations and charts</p>
+        <p>✓ Documents up to 100 pages</p>
         <p>⏱ Allow 30–90 seconds for a typical document</p>
       </div>
       <Button
