@@ -41,7 +41,7 @@ export default function SiteHeader() {
               <li key={link.href}>
                 <Link href={link.href}>
                   <span
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-lg text-base font-bold transition-colors cursor-pointer ${
                       location === link.href
                         ? "text-[#0d9488] bg-[#0d9488]/10"
                         : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
@@ -55,14 +55,14 @@ export default function SiteHeader() {
             <SignedOut>
               <li>
                 <Link href="/login">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-base font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
                     Log in
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/signup">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
                     Get Started →
                   </span>
                 </Link>
@@ -71,7 +71,7 @@ export default function SiteHeader() {
             <SignedIn>
               <li>
                 <Link href="/dashboard">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                  <span className="ml-1 px-3 py-1.5 rounded-lg text-base font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
                     Dashboard
                   </span>
                 </Link>

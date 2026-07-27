@@ -227,7 +227,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 sm:py-28 bg-white" aria-labelledby="how-heading">
+      <section className="py-20 sm:py-28 bg-gradient-to-b from-white via-gray-50 to-white" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           {/* Section header */}
@@ -247,7 +247,7 @@ export default function Home() {
 
             {/* Phone mockup */}
             <div className="flex-shrink-0 flex justify-center">
-              <div style={{ position: "relative", width: 300 }}>
+              <div style={{ position: "relative", width: 300, filter: "drop-shadow(0 20px 40px rgba(58, 72, 91, 0.25))" }}>
                 <img src={phoneFrame} alt="" aria-hidden="true"
                   style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
                 <div style={{
@@ -269,7 +269,7 @@ export default function Home() {
             {/* Tool cards — single column */}
             <div className="flex-1 flex flex-col gap-4">
               {TOOLS.map((tool) => (
-                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
+                <div key={tool.tab} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
                     <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
                     <div className="flex-1 min-w-0">

@@ -17,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   FileText, Video, Code2, ImageIcon, Upload, CheckCircle2, AlertCircle,
-  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw
+  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw, AlertTriangle
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -74,8 +74,8 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId, res
         </>
       ) : (
         <>
-          <div className="w-14 h-14 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
-            <Icon className="w-6 h-6 text-[#0d9488]" />
+          <div className="w-20 h-20 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
+            <Icon className="w-10 h-10 text-[#0d9488]" />
           </div>
           <div><p className="font-semibold">{label}</p><p className="text-sm text-muted-foreground">{sublabel}</p></div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground"><Upload className="w-3 h-3" />Drop file here or click to browse</div>
@@ -429,14 +429,22 @@ function DocumentTab() {
             )}
           </div>
           {result.blob && (
-            <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={() => {
-              const a = document.createElement("a");
-              a.href = URL.createObjectURL(result.blob);
-              a.download = result.filename;
-              a.click();
-            }}>
-              <Download className="w-4 h-4 mr-2" />Download {result.filename}
-            </Button>
+            <>
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
+                </p>
+              </div>
+              <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(result.blob);
+                a.download = result.filename;
+                a.click();
+              }}>
+                <Download className="w-4 h-4 mr-2" />Download {result.filename}
+              </Button>
+            </>
           )}
 
           {result.accessibleHtml && (
@@ -768,7 +776,6 @@ function ComplexPdfTab() {
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Best for science, math, or diagram-heavy PDFs</p>
         <p>✓ Remedy508 reads each page as an image — handles equations and charts</p>
-        <p>✓ Output is a tagged PDF built toward WCAG 2.1 AA — review before publishing</p>
         <p>⏱ Allow 30–90 seconds for a typical document</p>
       </div>
       <Button
@@ -819,8 +826,14 @@ function ComplexPdfTab() {
               <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied to all pages.</p>
             )}
           </div>
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
+            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
+            </p>
+          </div>
           <Button
-            className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold"
+            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
             onClick={() => {
               const url = URL.createObjectURL(result.blob);
               const a = document.createElement("a");
@@ -935,8 +948,8 @@ export default function ToolsPage() {
         <Tabs defaultValue={initialTab} className="space-y-4" data-testid="tool-tabs">
           <TabsList className="grid grid-cols-5 w-full h-auto p-1 gap-1">
             {TAB_META.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[96px]" data-testid={`tab-${tab.id}`}>
-                <img src={tab.icon} alt="" aria-hidden="true" className="w-10 h-10 object-contain shrink-0" />
+              <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px]" data-testid={`tab-${tab.id}`}>
+                <img src={tab.icon} alt="" aria-hidden="true" className="w-14 h-14 object-contain shrink-0" />
                 <span className="font-semibold text-[10px] sm:text-xs text-center leading-tight whitespace-pre-line w-full">{tab.label}</span>
                 {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
               </TabsTrigger>
