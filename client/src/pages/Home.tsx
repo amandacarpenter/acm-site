@@ -269,15 +269,20 @@ export default function Home() {
             {/* Tool cards — single column */}
             <div className="flex-1 flex flex-col gap-4">
               {TOOLS.map((tool) => (
-                <div key={tool.tab} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200" data-testid={`tool-card-${tool.tab}`}>
+                <div
+                  key={tool.tab}
+                  className="group relative bg-white rounded-2xl border border-gray-200 p-5 pl-6 shadow-[0_4px_16px_rgba(58,72,91,0.08)] hover:shadow-[0_16px_40px_rgba(13,148,136,0.18)] hover:border-[#0d9488]/40 hover:-translate-y-1 transition-all duration-300 overflow-hidden"
+                  data-testid={`tool-card-${tool.tab}`}
+                >
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#0d9488] to-[#0f766e] scale-y-0 group-hover:scale-y-100 origin-center transition-transform duration-300" />
                   <div className="flex items-start gap-4">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                    <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0 transition-transform duration-300 group-hover:scale-110" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-[#3a485b] text-sm">{tool.title}</h3>
+                        <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
                         <span className="px-2 py-0.5 rounded-full bg-gray-300 text-gray-700 text-xs font-medium">{tool.tag}</span>
                       </div>
-                      <p className="text-sm text-gray-500 leading-relaxed">{tool.desc}</p>
+                      <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
                     </div>
                   </div>
                 </div>
@@ -315,7 +320,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">1</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Perceivable</div>
-                    <div className="text-sm text-gray-600 font-normal">Information must be presentable in ways users can perceive</div>
+                    <div className="text-base text-gray-600 font-medium">Information must be presentable in ways users can perceive</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -346,7 +351,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Operable</div>
-                    <div className="text-sm text-gray-600 font-normal">Interface components must be operable by all users</div>
+                    <div className="text-base text-gray-600 font-medium">Interface components must be operable by all users</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -378,7 +383,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#3a485b] text-white text-xs font-bold flex items-center justify-center shrink-0">3</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Understandable</div>
-                    <div className="text-sm text-gray-600 font-normal">Content and operation must be understandable</div>
+                    <div className="text-base text-gray-600 font-medium">Content and operation must be understandable</div>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -409,7 +414,7 @@ export default function Home() {
                   <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Robust</div>
-                    <div className="text-sm text-gray-600 font-normal">Content must be interpreted by assistive technologies</div>
+                    <div className="text-base text-gray-600 font-medium">Content must be interpreted by assistive technologies</div>
                   </div>
                 </div>
               </AccordionTrigger>
