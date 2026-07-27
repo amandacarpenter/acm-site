@@ -43,8 +43,8 @@ async function parseApiResponse(resp: Response): Promise<any> {
   }
 }
 
-function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId, resetKey }: {
-  accept: string; onFile: (f: File) => void; label: string; sublabel: string; icon: any; testId: string; resetKey?: number;
+function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, testId, resetKey }: {
+  accept: string; onFile: (f: File) => void; label: string; sublabel: string; icon: any; iconImg?: string; testId: string; resetKey?: number;
 }) {
   const [dragging, setDragging] = useState(false);
   const [selected, setSelected] = useState<File | null>(null);
@@ -74,9 +74,13 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, testId, res
         </>
       ) : (
         <>
-          <div className="w-20 h-20 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
-            <Icon className="w-10 h-10 text-[#0d9488]" />
-          </div>
+          {iconImg ? (
+            <img src={iconImg} alt="" aria-hidden="true" className="w-20 h-20 object-contain" />
+          ) : (
+            <div className="w-20 h-20 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
+              <Icon className="w-10 h-10 text-[#0d9488]" />
+            </div>
+          )}
           <div><p className="font-semibold">{label}</p><p className="text-sm text-muted-foreground">{sublabel}</p></div>
           <div className="flex items-center gap-1 text-xs text-muted-foreground"><Upload className="w-3 h-3" />Drop file here or click to browse</div>
         </>
@@ -393,7 +397,7 @@ function DocumentTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} testId="doc-upload" resetKey={resetKey} />
+      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} iconImg={iconDocument} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and digital PDF files supported</p>
         <p>✓ Best for syllabi, course documents, and handouts (typically ~50 pages, up to 100 max)</p>
@@ -524,7 +528,7 @@ function VideoTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} testId="video-upload" resetKey={resetKey} />
+      <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} iconImg={iconVideo} testId="video-upload" resetKey={resetKey} />
 
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
@@ -681,7 +685,7 @@ function AltTextTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept="image/*" onFile={handleFile} label="Upload Image" sublabel="PNG, JPG, GIF, WebP — or paste a URL below" icon={ImageIcon} testId="img-upload" resetKey={resetKey} />
+      <FileDropZone accept="image/*" onFile={handleFile} label="Upload Image" sublabel="PNG, JPG, GIF, WebP — or paste a URL below" icon={ImageIcon} iconImg={iconAlttext} testId="img-upload" resetKey={resetKey} />
       {previewUrl && <div className="rounded-xl overflow-hidden border max-h-48"><img src={previewUrl} alt="Preview of uploaded image" className="w-full h-full object-contain bg-muted" /></div>}
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="img-url">Or enter image URL</label>
@@ -770,6 +774,7 @@ function ComplexPdfTab() {
         label="Upload PDF"
         sublabel="PDFs with diagrams, equations, or complex layouts"
         icon={FileText}
+        iconImg={iconComplexpdf}
         testId="complexpdf-upload"
         resetKey={resetKey}
       />
