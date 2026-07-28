@@ -999,7 +999,7 @@ CRITICAL RULES:
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
   If an extracted-image ID is provided for this page (listed below) and it corresponds to this figure, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using the exact ID given. If no ID matches (e.g. the figure is a hand-drawn diagram fitz could not extract as a raster image), omit the <img> and rely on the <figcaption> alone.
   Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
-- For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure
+- For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
 - Use <p> for paragraphs, <ul>/<ol> for lists, <blockquote> for exercise/practice problem boxes
@@ -1108,6 +1108,32 @@ def clean_html(raw_html, page_images):
             for cell in first_row.find_all('td'):
                 cell.name = 'th'
                 cell['scope'] = 'col'
+        # WeasyPrint's tagged-PDF builder only registers a <th> as a ROW
+        # header when it has scope="row" -- any <th> with no scope (or
+        # scope="col") is treated as a COLUMN header keyed by its column
+        # index. Claude sometimes marks first-column row-label cells as
+        # <th> (correctly identifying them as headers) but omits the scope
+        # attribute, which silently mis-tags them as column headers and
+        # breaks the Headers association Acrobat checks for. Fix up both
+        # directions here as a safety net:
+        #  1. Any <th> in the first column of a body row (not the header
+        #     row) with no scope -> scope="row".
+        #  2. Any <th> in the header row (first row of thead, or first row
+        #     of tbody when no thead) with no scope -> scope="col".
+        #  3. Any other <th> still missing scope -> default to "col" (safe
+        #     fallback matching WeasyPrint's own default behavior).
+        thead = table.find('thead')
+        header_row = thead.find('tr') if thead else rows[0]
+        for row in rows:
+            cells = row.find_all(['td', 'th'], recursive=False)
+            if not cells:
+                continue
+            first_cell = cells[0]
+            if first_cell.name == 'th' and not first_cell.get('scope') and row is not header_row:
+                first_cell['scope'] = 'row'
+        for th in table.find_all('th'):
+            if not th.get('scope'):
+                th['scope'] = 'col'
     # Match Claude's <img src="cid:IMAGE_ID"> references (see vision prompt) against
     # the actual extracted image files by stable ID, and embed as base64 data URIs.
     images_by_id = {img.get('id'): img for img in page_images if img.get('id')}

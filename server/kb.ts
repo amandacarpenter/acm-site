@@ -7,6 +7,10 @@ import fs from "fs";
 // persistent volume mount; locally it falls back to the working directory.
 const KB_DB_DIR = fs.existsSync("/data") ? "/data" : ".";
 const db = new Database(path.resolve(KB_DB_DIR, "acm.db"));
+// See storage.ts for why WAL mode is set here too (same underlying file,
+// separate connection object) -- enables concurrent reads/writes so job
+// activity and KB reads don't lock each other out under load.
+db.pragma("journal_mode = WAL");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS kb_articles (
