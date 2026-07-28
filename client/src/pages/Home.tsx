@@ -202,8 +202,9 @@ export default function Home() {
         </div>
 
         {/* Mobile-only copy block — below the photo */}
-        <div className="lg:hidden bg-[#111827] px-6 py-10">
-          <h1 id="hero-heading" className="text-2xl font-extrabold text-white leading-tight mb-4">
+        <div className="lg:hidden relative overflow-hidden bg-[#111827] px-6 py-10">
+          <HeroWatermark corner="right" />
+          <h1 id="hero-heading" className="relative text-2xl font-extrabold text-white leading-tight mb-4">
             Not Accessible,<br />Not Acceptable™
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-7">
