@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Loader2, CheckCircle2 } from "lucide-react";
 
+const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
+
 export default function InvoiceRequest() {
   const [, navigate] = useLocation();
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
-  const defaultSeats = parseInt(params.get("seats") || "2");
+  const defaultSeats = Math.min(MAX_TEAM_SEATS, parseInt(params.get("seats") || "2"));
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -25,7 +27,7 @@ export default function InvoiceRequest() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: name === "seats" ? Math.max(2, parseInt(value) || 2) : value }));
+    setForm((f) => ({ ...f, [name]: name === "seats" ? Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(value) || 2)) : value }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -124,10 +126,19 @@ export default function InvoiceRequest() {
 
             <div>
               <label htmlFor="seats" className={labelClass}>Number of seats needed *</label>
-              <input id="seats" name="seats" type="number" min={2} required value={form.seats} onChange={handleChange} className={inputClass} />
+              <input id="seats" name="seats" type="number" min={2} max={MAX_TEAM_SEATS} required value={form.seats} onChange={handleChange} className={inputClass} />
               <p className="text-xs text-gray-400 mt-1">
                 {form.seats} seat{form.seats !== 1 ? "s" : ""} × $209 = ${(form.seats * 209).toLocaleString()}/year · {form.seats * 175} Credits/month pooled · includes a free onboarding call
               </p>
+              {form.seats >= MAX_TEAM_SEATS && (
+                <p className="text-xs text-[#0d9488] mt-1">
+                  Need more than {MAX_TEAM_SEATS} seats?{" "}
+                  <Link href="/contact?topic=more-seats">
+                    <span className="underline font-medium cursor-pointer">Contact us</span>
+                  </Link>{" "}
+                  instead — we'll set up a larger team for you.
+                </p>
+              )}
             </div>
 
             <div>

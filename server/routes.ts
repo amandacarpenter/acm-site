@@ -20,6 +20,7 @@ const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY 
 
 const INDIVIDUAL_MONTHLY_CREDITS = 150; // 1 credit = 1 processed page
 const TEAM_CREDITS_PER_SEAT = 175;
+const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 const MAX_PAGES_PER_DOCUMENT = 100; // hard cap — protects against runaway cost + server load on a single upload
 
 function getResetDate(): string {
@@ -2039,10 +2040,12 @@ Rules:
               if (plan === "team") {
                 // Create a Clerk Organization for the buyer
                 const orgName = `Team (${new Date().toLocaleDateString()})`;
+                const cappedSeats = Math.min(MAX_TEAM_SEATS, seats);
                 const org = await clerkClient.organizations.createOrganization({
                   name: orgName,
                   createdBy: clerkUserId,
-                  publicMetadata: { plan: "team", seats },
+                  maxAllowedMemberships: cappedSeats,
+                  publicMetadata: { plan: "team", seats: cappedSeats },
                 });
                 await clerkClient.users.updateUserMetadata(clerkUserId, {
                   publicMetadata: {
@@ -2108,7 +2111,7 @@ Rules:
     try {
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { seats, clerkUserId } = req.body;
-      const qty = Math.max(2, parseInt(seats) || 2);
+      const qty = Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(seats) || 2));
       const TEAM_PRICE = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat (175 credits/mo/seat)
 
       const session = await stripe.checkout.sessions.create({

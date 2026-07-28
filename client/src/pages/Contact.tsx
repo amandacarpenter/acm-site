@@ -5,8 +5,14 @@ import { Mail, Clock, MessageSquare, Building2, CheckCircle2 } from "lucide-reac
 import { useState } from "react";
 
 export default function Contact() {
+  const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const topic = params.get("topic");
+  const prefill = topic === "more-seats"
+    ? { subject: "Team / Pricing Inquiry", message: "Hi, I'm interested in a Team plan with more than 20 seats. Can we talk about setting up a larger team?" }
+    : { subject: "General Question", message: "" };
+
   const [submitted, setSubmitted] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", subject: "General Question", message: "" });
+  const [form, setForm] = useState({ name: "", email: "", subject: prefill.subject, message: prefill.message });
   const [loading, setLoading] = useState(false);
 
   const subjects = [

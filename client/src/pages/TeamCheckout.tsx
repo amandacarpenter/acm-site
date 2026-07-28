@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
 
 const TEAM_PRICE_ANNUAL = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat
+const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 
 const TEAM_FEATURES = [
   "Everything in Individual",
@@ -28,7 +29,7 @@ export default function TeamCheckout() {
   const total = seats * 209;
 
   function adjustSeats(delta: number) {
-    setSeats((s) => Math.max(2, s + delta));
+    setSeats((s) => Math.min(MAX_TEAM_SEATS, Math.max(2, s + delta)));
   }
 
   async function handleCheckout() {
@@ -106,23 +107,34 @@ export default function TeamCheckout() {
                 <input
                   type="number"
                   min={2}
+                  max={MAX_TEAM_SEATS}
                   value={seats}
-                  onChange={(e) => setSeats(Math.max(2, parseInt(e.target.value) || 2))}
+                  onChange={(e) => setSeats(Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(e.target.value) || 2)))}
                   className="w-20 text-center text-2xl font-bold text-[#3a485b] border border-gray-200 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
                   aria-label="Seat count"
                 />
                 <button
                   onClick={() => adjustSeats(1)}
-                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition"
+                  disabled={seats >= MAX_TEAM_SEATS}
+                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                   aria-label="Add seat"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-gray-700 mb-1">Minimum 2 seats</p>
+              <p className="text-sm text-gray-700 mb-1">Minimum 2 seats, up to {MAX_TEAM_SEATS} per team</p>
               <p className="text-sm text-gray-700 mb-1">
                 175 Credits/month per seat, pooled across your team
               </p>
+              {seats >= MAX_TEAM_SEATS && (
+                <p className="text-sm text-[#0d9488] mb-1">
+                  Need more than {MAX_TEAM_SEATS} seats?{" "}
+                  <Link href="/contact?topic=more-seats">
+                    <span className="underline font-medium cursor-pointer">Contact us</span>
+                  </Link>{" "}
+                  — we can set up a larger team.
+                </p>
+              )}
 
               {/* Live total */}
               <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">
