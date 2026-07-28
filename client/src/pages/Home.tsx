@@ -227,7 +227,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 sm:py-28 bg-gradient-to-b from-white via-gray-50 to-white" aria-labelledby="how-heading">
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           {/* Section header */}
@@ -247,7 +247,7 @@ export default function Home() {
 
             {/* Phone mockup */}
             <div className="flex-shrink-0 flex justify-center">
-              <div style={{ position: "relative", width: 300, filter: "drop-shadow(0 20px 40px rgba(58, 72, 91, 0.25))" }}>
+              <div style={{ position: "relative", width: 300 }}>
                 <img src={phoneFrame} alt="" aria-hidden="true"
                   style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
                 <div style={{
@@ -267,28 +267,18 @@ export default function Home() {
             </div>
 
             {/* Tool cards — single column */}
-            <div className="flex-1 flex flex-col gap-5">
-              {TOOLS.map((tool, i) => (
-                <div
-                  key={tool.tab}
-                  className="group relative flex items-start gap-5 bg-gradient-to-br from-white to-gray-50/80 rounded-2xl border border-gray-200/80 p-5 pl-7 shadow-[0_8px_24px_-4px_rgba(58,72,91,0.14)] hover:shadow-[0_20px_44px_-8px_rgba(13,148,136,0.28)] hover:border-[#0d9488]/40 hover:-translate-y-1 transition-all duration-300"
-                  data-testid={`tool-card-${tool.tab}`}
-                >
-                  {/* Persistent accent bar, brightens on hover */}
-                  <div className="absolute left-0 top-4 bottom-4 w-1.5 rounded-full bg-gradient-to-b from-[#2dd4bf] via-[#0d9488] to-[#0f766e] opacity-70 group-hover:opacity-100 transition-opacity duration-300" />
-                  {/* Faint index numeral watermark for visual rhythm */}
-                  <span className="absolute right-4 top-2 text-5xl font-black text-[#0d9488]/[0.05] select-none leading-none" aria-hidden="true">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0d9488]/12 to-[#0d9488]/[0.03] ring-1 ring-[#0d9488]/15 flex items-center justify-center shrink-0 shadow-[inset_0_1px_2px_rgba(255,255,255,0.6)] transition-transform duration-300 group-hover:scale-105">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-11 h-11 object-contain" />
-                  </div>
-                  <div className="relative flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
-                      <span className="px-2 py-0.5 rounded-full bg-[#0d9488]/10 text-[#0f5f59] text-xs font-semibold border border-[#0d9488]/20">{tool.tag}</span>
+            <div className="flex-1 flex flex-col gap-4">
+              {TOOLS.map((tool) => (
+                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
+                  <div className="flex items-start gap-4">
+                    <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
+                        <span className="px-2 py-0.5 rounded-full bg-gray-300 text-gray-700 text-xs font-medium">{tool.tag}</span>
+                      </div>
+                      <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
                     </div>
-                    <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
                   </div>
                 </div>
               ))}
