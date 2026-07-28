@@ -269,7 +269,7 @@ export default function Home() {
               {TOOLS.map((tool) => (
                 <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                    <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
