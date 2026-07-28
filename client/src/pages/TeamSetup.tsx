@@ -1,8 +1,22 @@
 import { useOrganization, useOrganizationList, OrganizationProfile, useUser } from "@clerk/clerk-react";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Users, FileText, AlertCircle } from "lucide-react";
+
+interface TeamMemberUsage {
+  userId: string;
+  name: string;
+  email: string | null;
+  role: string;
+  monthlyUsed: number;
+  monthlyLimit: number;
+  purchasedCredits: number;
+  creditsRemaining: number;
+}
+
+const TEAM_CREDITS_PER_SEAT = 175; // must match server/routes.ts TEAM_CREDITS_PER_SEAT
 
 export default function TeamSetup() {
   const { user } = useUser();
@@ -11,11 +25,24 @@ export default function TeamSetup() {
 
   const meta = user?.publicMetadata as any;
   const seats: number = meta?.teamSeats || 0;
-  const orgUsage: number = meta?.orgDocUsage || 0;
-  const docCap = seats * 75;
   const resetDate = new Date();
   resetDate.setMonth(resetDate.getMonth() + 1, 1);
   const resetStr = resetDate.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+  const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number } | null>(null);
+  const [usageLoading, setUsageLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id || !organization?.id) return;
+    setUsageLoading(true);
+    fetch(`/api/team/usage?clerkUserId=${user.id}&orgId=${organization.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.members) setTeamUsage(data);
+      })
+      .catch((err) => console.error("Failed to load team usage:", err))
+      .finally(() => setUsageLoading(false));
+  }, [user?.id, organization?.id]);
 
   if (!organization) {
     return (
@@ -70,23 +97,68 @@ export default function TeamSetup() {
                 <div className="w-9 h-9 rounded-xl bg-[#3a485b] flex items-center justify-center">
                   <FileText className="w-4 h-4 text-white" aria-hidden="true" />
                 </div>
-                <p className="font-semibold text-[#3a485b] text-sm">Documents this month</p>
+                <p className="font-semibold text-[#3a485b] text-sm">Credits used this month</p>
               </div>
-              <p className="text-3xl font-bold text-[#3a485b]">{orgUsage} <span className="text-lg font-normal text-gray-400">of {docCap}</span></p>
-              {/* Usage bar */}
-              <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[#0d9488] rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (orgUsage / Math.max(1, docCap)) * 100)}%` }}
-                />
-              </div>
-              <p className="text-xs text-gray-400 mt-1">Resets {resetStr} · Pooled across team</p>
-              {orgUsage >= docCap && docCap > 0 && (
-                <p className="text-xs text-red-500 mt-1 font-semibold">
-                  Your team has used all {docCap} documents this month. Documents reset on {resetStr}. Need more? <button onClick={() => navigate("/team/seats")} className="underline">Add seats</button>
-                </p>
+              {usageLoading ? (
+                <p className="text-sm text-gray-400">Loading...</p>
+              ) : teamUsage ? (
+                <>
+                  <p className="text-3xl font-bold text-[#3a485b]">
+                    {teamUsage.totalUsed} <span className="text-lg font-normal text-gray-400">of {teamUsage.totalLimit}</span>
+                  </p>
+                  <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#0d9488] rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (teamUsage.totalUsed / Math.max(1, teamUsage.totalLimit)) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Resets {resetStr} · {TEAM_CREDITS_PER_SEAT} credits per seat, individually allotted (not pooled)
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400">No usage data yet.</p>
               )}
             </div>
+          </div>
+
+          {/* Per-seat usage breakdown */}
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="px-6 pt-6 pb-4">
+              <h2 className="text-lg font-bold text-[#3a485b] mb-1">Usage by teammate</h2>
+              <p className="text-sm text-gray-400">Each seat gets its own {TEAM_CREDITS_PER_SEAT} credits/month — usage does not carry over between teammates.</p>
+            </div>
+            {usageLoading ? (
+              <p className="px-6 pb-6 text-sm text-gray-400">Loading team usage...</p>
+            ) : teamUsage && teamUsage.members.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-t border-gray-200 text-left text-xs text-gray-400 uppercase tracking-wide">
+                      <th scope="col" className="px-6 py-3 font-semibold">Teammate</th>
+                      <th scope="col" className="px-6 py-3 font-semibold">Role</th>
+                      <th scope="col" className="px-6 py-3 font-semibold">Credits used</th>
+                      <th scope="col" className="px-6 py-3 font-semibold">Remaining</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {teamUsage.members.map((m) => (
+                      <tr key={m.userId} className="border-t border-gray-100">
+                        <td className="px-6 py-3">
+                          <p className="font-medium text-[#3a485b]">{m.name}</p>
+                          {m.email && <p className="text-xs text-gray-400">{m.email}</p>}
+                        </td>
+                        <td className="px-6 py-3 text-gray-500 capitalize">{m.role.replace("org:", "")}</td>
+                        <td className="px-6 py-3 text-gray-700">{m.monthlyUsed} of {m.monthlyLimit}</td>
+                        <td className="px-6 py-3 text-gray-700">{m.creditsRemaining}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="px-6 pb-6 text-sm text-gray-400">No teammates yet — invite below to see their usage here.</p>
+            )}
           </div>
 
           {/* Org member management */}

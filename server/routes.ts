@@ -45,6 +45,32 @@ async function getCreditBalance(clerkUserId: string): Promise<{
   const user = await clerkClient.users.getUser(clerkUserId);
   let meta = (user.publicMetadata || {}) as any;
 
+  // Auto-provision team credits: if this user has never had a plan set (brand new
+  // account, e.g. just accepted a team invite via Clerk Organizations) but belongs to
+  // an organization whose OWNER metadata marks it as a team org, grant them their own
+  // individual team allotment (175 credits/mo per seat model -- NOT pooled/multiplied,
+  // each teammate gets their own 175, consistent with the "per-seat individual
+  // allotments" decision). This avoids needing a separate Clerk webhook + dashboard
+  // config; provisioning happens lazily on first credit check instead.
+  if (!meta.plan) {
+    try {
+      const memberships = await clerkClient.users.getOrganizationMembershipList({ userId: clerkUserId });
+      const teamOrg = memberships.data.find((m: any) => m.organization?.publicMetadata?.plan === "team");
+      if (teamOrg) {
+        meta = {
+          ...meta,
+          plan: "team",
+          teamSeats: 1, // individual allotment, not the whole team's seat count
+          orgId: teamOrg.organization.id,
+        };
+        await clerkClient.users.updateUserMetadata(clerkUserId, { publicMetadata: meta });
+        console.log(`[TEAM] Auto-provisioned team credits for ${clerkUserId} in org ${teamOrg.organization.id}`);
+      }
+    } catch (err: any) {
+      console.error("[TEAM] Auto-provision check failed (non-fatal):", err.message);
+    }
+  }
+
   const monthlyLimit = getMonthlyCreditLimit(meta);
   let monthlyUsed: number = meta.monthlyCreditsUsed ?? meta.monthlyDocsUsed ?? 0;
   const purchasedCredits: number = meta.purchasedCredits || 0;
@@ -300,6 +326,49 @@ export function registerRoutes(httpServer: Server, app: Express) {
         teamSeats: meta.teamSeats || 1,
       });
     } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── Team usage breakdown (for /team/setup page) ───────────────────────────
+  // Returns each org member's individual credit usage this month. Requires the
+  // requester to actually be a member of the org they're asking about (prevents
+  // one team from viewing another team's usage by guessing an orgId).
+  app.get("/api/team/usage", async (req, res) => {
+    const clerkUserId = req.query.clerkUserId as string | undefined;
+    const orgId = req.query.orgId as string | undefined;
+    if (!clerkUserId || !orgId) return res.status(400).json({ error: "clerkUserId and orgId required" });
+    try {
+      const requesterMemberships = await clerkClient.users.getOrganizationMembershipList({ userId: clerkUserId });
+      const isMember = requesterMemberships.data.some((m: any) => m.organization?.id === orgId);
+      if (!isMember) return res.status(403).json({ error: "Not a member of this organization" });
+
+      const memberships = await clerkClient.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 100 });
+      const members = await Promise.all(
+        memberships.data.map(async (m: any) => {
+          const memberUserId = m.publicUserData?.userId;
+          if (!memberUserId) return null;
+          const { monthlyUsed, monthlyLimit, purchasedCredits } = await getCreditBalance(memberUserId);
+          return {
+            userId: memberUserId,
+            name: [m.publicUserData?.firstName, m.publicUserData?.lastName].filter(Boolean).join(" ") || m.publicUserData?.identifier || "Unknown",
+            email: m.publicUserData?.identifier || null,
+            role: m.role,
+            monthlyUsed,
+            monthlyLimit,
+            purchasedCredits,
+            creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits,
+          };
+        })
+      );
+      const validMembers = members.filter(Boolean);
+      res.json({
+        members: validMembers,
+        totalUsed: validMembers.reduce((sum: number, m: any) => sum + m.monthlyUsed, 0),
+        totalLimit: validMembers.reduce((sum: number, m: any) => sum + m.monthlyLimit, 0),
+      });
+    } catch (err: any) {
+      console.error("[TEAM] usage fetch error:", err.message);
       res.status(500).json({ error: err.message });
     }
   });
@@ -1658,6 +1727,7 @@ Rules:
                 const org = await clerkClient.organizations.createOrganization({
                   name: orgName,
                   createdBy: clerkUserId,
+                  publicMetadata: { plan: "team", seats },
                 });
                 await clerkClient.users.updateUserMetadata(clerkUserId, {
                   publicMetadata: {
