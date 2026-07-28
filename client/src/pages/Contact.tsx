@@ -8,7 +8,7 @@ export default function Contact() {
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const topic = params.get("topic");
   const prefill = topic === "more-seats"
-    ? { subject: "Team / Pricing Inquiry", message: "Hi, I'm interested in a Team plan with more than 20 seats. Can we talk about setting up a larger team?" }
+    ? { subject: "Team / Larger Team Inquiry", message: "Hi, I'm interested in a Team plan with more than 20 seats. Can we talk about setting up a larger team?" }
     : { subject: "General Question", message: "" };
 
   const [submitted, setSubmitted] = useState(false);
@@ -20,6 +20,7 @@ export default function Contact() {
     "Technical Support",
     "Accessibility Issue",
     "Team / Pricing Inquiry",
+    "Team / Larger Team Inquiry",
     "Partnership",
     "Other",
   ];

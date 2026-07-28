@@ -123,7 +123,7 @@ export default function TeamCheckout() {
                 </button>
               </div>
               <p className="text-sm text-gray-700 mb-1">
-                Minimum 2 seats, up to {MAX_TEAM_SEATS} per team — need more?{" "}
+                Minimum 2 seats, up to {MAX_TEAM_SEATS} per team — need more seats?{" "}
                 <Link href="/contact?topic=more-seats">
                   <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
                 </Link>

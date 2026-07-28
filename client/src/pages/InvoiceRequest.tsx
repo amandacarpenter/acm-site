@@ -131,7 +131,7 @@ export default function InvoiceRequest() {
                 {form.seats} seat{form.seats !== 1 ? "s" : ""} × $209 = ${(form.seats * 209).toLocaleString()}/year · {form.seats * 175} Credits/month pooled · includes a free onboarding call
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Up to {MAX_TEAM_SEATS} seats per team — need more?{" "}
+                Up to {MAX_TEAM_SEATS} seats per team — need more seats?{" "}
                 <Link href="/contact?topic=more-seats">
                   <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
                 </Link>
