@@ -2,6 +2,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link, useLocation } from "wouter";
 import { CheckCircle2, Zap, Users, Loader2, Building2 } from "lucide-react";
+import HeroWatermark from "@/components/HeroWatermark";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
@@ -65,8 +66,9 @@ export default function PricingPage() {
       <SiteHeader />
 
       {/* Header */}
-      <section className="bg-[#3a485b] py-20 sm:py-24" aria-labelledby="pricing-heading">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative overflow-hidden bg-[#3a485b] py-20 sm:py-24" aria-labelledby="pricing-heading">
+        <HeroWatermark corner="right" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-8">
             <Zap className="w-3.5 h-3.5" aria-hidden="true" />
             No hidden fees. No surprises.

@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Loader2, CheckCircle2 } from "lucide-react";
+import HeroWatermark from "@/components/HeroWatermark";
 
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 
@@ -77,8 +78,9 @@ export default function InvoiceRequest() {
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      <section className="bg-[#3a485b] py-16 sm:py-20" aria-labelledby="invoice-heading">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="invoice-heading">
+        <HeroWatermark corner="right" />
+        <div className="relative max-w-2xl mx-auto px-4 sm:px-6 text-center">
           <h1 id="invoice-heading" className="text-4xl font-bold text-white mb-3">
             Request an Invoice
           </h1>

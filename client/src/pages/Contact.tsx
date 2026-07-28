@@ -3,6 +3,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Mail, Clock, MessageSquare, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import HeroWatermark from "@/components/HeroWatermark";
 
 export default function Contact() {
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
@@ -47,8 +48,9 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <section className="bg-[#3a485b] py-16 sm:py-20">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
+        <HeroWatermark corner="left" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <Mail className="w-3.5 h-3.5" aria-hidden="true" />
             Support
