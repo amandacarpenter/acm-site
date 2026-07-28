@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Users, FileText, AlertCircle } from "lucide-react";
-import HeroWatermark from "@/components/HeroWatermark";
 
 interface TeamMemberUsage {
   userId: string;
@@ -68,9 +67,8 @@ export default function TeamSetup() {
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-dash-heading">
-        <HeroWatermark corner="left" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+      <section className="bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-dash-heading">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <h1 id="team-dash-heading" className="text-3xl font-bold text-white mb-1">
             {organization.name}
           </h1>

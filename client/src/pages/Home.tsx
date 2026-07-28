@@ -12,7 +12,6 @@ import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
 import logoHero from "@/assets/logo-hero.jpg";
-import HeroWatermark from "@/components/HeroWatermark";
 import {
   Accordion,
   AccordionContent,
@@ -58,8 +57,7 @@ export default function Home() {
       <section className="relative flex flex-col lg:flex-row lg:[min-height:100svh]" aria-labelledby="hero-heading">
 
         {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
-        <div className="hidden lg:flex flex-col relative overflow-hidden bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
-          <HeroWatermark corner="left" className="top-auto bottom-[-10%]" />
+        <div className="hidden lg:flex flex-col bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
           {/* Logo row at very top */}
           <div className="pt-6 pb-4">
             <Link href="/" className="flex items-center no-underline" aria-label="Remedy508 home">
@@ -289,9 +287,8 @@ export default function Home() {
       </section>
 
       {/* ── WCAG 2.1 AA SECTION ── */}
-      <section className="relative overflow-hidden py-20 sm:py-28 bg-[#3a485b]" aria-labelledby="wcag-heading">
-        <HeroWatermark corner="right" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+      <section className="py-20 sm:py-28 bg-[#3a485b]" aria-labelledby="wcag-heading">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-xs font-semibold text-white mb-4 border border-white/20">
               <BookOpen className="w-3 h-3" aria-hidden="true" />
@@ -474,9 +471,8 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="relative overflow-hidden py-20 bg-[#3a485b]" aria-labelledby="cta-heading">
-        <HeroWatermark corner="left" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <section className="py-20 bg-[#3a485b]" aria-labelledby="cta-heading">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 id="cta-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4">
             Ready to make your content accessible?
           </h2>

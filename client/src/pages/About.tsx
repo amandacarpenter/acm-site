@@ -1,7 +1,6 @@
 import { Link } from "wouter";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
-import HeroWatermark from "@/components/HeroWatermark";
 import { CheckCircle2, Target, Lightbulb, Heart, Info } from "lucide-react";
 
 export default function About() {
@@ -10,9 +9,8 @@ export default function About() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#3a485b] py-20">
-        <HeroWatermark corner="right" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <section className="bg-[#3a485b] py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <Info className="w-3.5 h-3.5" aria-hidden="true" />
             About
@@ -69,9 +67,8 @@ export default function About() {
       </section>
 
       {/* Mission */}
-      <section className="relative overflow-hidden py-16 bg-[#3a485b]">
-        <HeroWatermark corner="left" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <section className="py-16 bg-[#3a485b]">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-3xl font-bold text-white mb-6">Our Mission</h2>
           <p className="text-lg text-gray-300 leading-relaxed mb-6">
             Accessibility shouldn't be hard. Everyone creating content — at any skill level, at any institution — deserves tools that make it simple to do the right thing without it consuming their day.

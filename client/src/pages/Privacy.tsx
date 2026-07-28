@@ -3,15 +3,13 @@ import SiteHeader from "@/components/SiteHeader";
 import { ShieldCheck } from "lucide-react";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2 } from "lucide-react";
-import HeroWatermark from "@/components/HeroWatermark";
 
 export default function Privacy() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
-        <HeroWatermark corner="left" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
+      <section className="bg-[#3a485b] py-16 sm:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
             Legal

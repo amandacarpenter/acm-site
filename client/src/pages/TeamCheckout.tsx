@@ -4,7 +4,6 @@ import { useLocation, Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
-import HeroWatermark from "@/components/HeroWatermark";
 
 const TEAM_PRICE_ANNUAL = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
@@ -68,9 +67,8 @@ export default function TeamCheckout() {
     <div className="min-h-screen bg-white">
       <SiteHeader />
 
-      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-heading">
-        <HeroWatermark corner="right" />
-        <div className="relative max-w-2xl mx-auto px-4 sm:px-6 text-center">
+      <section className="bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-heading">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
           <h1 id="team-heading" className="text-4xl font-bold text-white mb-3">
             Team Plan
           </h1>

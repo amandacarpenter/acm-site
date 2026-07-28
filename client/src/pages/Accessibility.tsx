@@ -2,15 +2,13 @@ import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Mail } from "lucide-react";
-import HeroWatermark from "@/components/HeroWatermark";
 
 export default function Accessibility() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
-      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
-        <HeroWatermark corner="right" />
-        <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
+      <section className="bg-[#3a485b] py-16 sm:py-20">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
             Accessibility
