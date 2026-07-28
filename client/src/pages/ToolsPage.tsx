@@ -5,7 +5,6 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import iconDocument from "@/assets/icon-document.png";
-import iconComplexpdf from "@/assets/icon-complexpdf.png";
 import iconVideo from "@/assets/icon-video.png";
 import iconCanvas from "@/assets/icon-canvas.png";
 import iconAlttext from "@/assets/icon-alttext.png";
@@ -185,41 +184,65 @@ function ErrorAlert({ message, actionLabel, onAction }: { message: string; actio
 }
 
 // ── Document Tab ─────────────────────────────────────────────────────────────
-function DocumentTab() {
+// ── Remedy Docs Tab ──────────────────────────────────────────────────────────
+// Merges the old "Document Fixer" (fast text pipeline) and "Complex PDF" (Claude
+// Vision per-page pipeline) into a single upload. The backend (/api/remedy-docs/fix)
+// auto-detects which pipeline to run and tells us via the X-Remedy-Docs-Route
+// response header; the two pipelines still return different response shapes
+// (JSON with rawText/HTML for the fast path, a raw PDF binary for the vision path)
+// so this component branches on Content-Type to render the correct result UI --
+// each branch reuses the exact, unchanged result-handling logic from the two
+// original tabs (docx-building for fast, blob-download for vision).
+function RemedyDocsTab() {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<any>(null);
+  const [fastResult, setFastResult] = useState<any>(null);
+  const [visionResult, setVisionResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
-  const { user: documentUser } = useUser();
+  const { user: docsUser } = useUser();
 
-  const startOver = () => { setFile(null); setResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
-
-  const goToComplexPdf = () => { window.history.pushState({}, "", "/tools/complexpdf"); window.dispatchEvent(new PopStateEvent("popstate")); };
+  const startOver = () => { setFile(null); setFastResult(null); setVisionResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setErrorCode(""); setResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
     let chargedJobId: number | null = null;
     try {
       const fd = new FormData(); fd.append("file", file);
-      if (documentUser?.id) fd.append("clerkUserId", documentUser.id);
-      const resp = await fetch("/api/document/fix", { method: "POST", body: fd });
+      if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
+      const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
+      const contentType = resp.headers.get("Content-Type") || "";
+
+      if (contentType.includes("application/pdf")) {
+        // ── Vision pipeline result: raw PDF binary ──────────────────────────
+        if (!resp.ok) {
+          const errData = await parseApiResponse(resp).catch((e) => ({ error: e.message }));
+          throw new Error(errData.error || `Server error ${resp.status}`);
+        }
+        const blob = await resp.blob();
+        const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
+        let fixes: string[] = [];
+        try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
+        const baseName = file.name.replace(/\.pdf$/i, "");
+        setVisionResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
+        setLoading(false);
+        return;
+      }
+
+      // ── Fast pipeline result: JSON ───────────────────────────────────────
       let data: any;
       try {
         data = await parseApiResponse(resp);
       } catch (parseErr: any) {
-        // If the HTTP status was ok, the server almost certainly already ran the
-        // job and charged credits — we just couldn't read the response body. Try
-        // to refund by filename since we have no jobId in this case.
-        if (resp.ok && documentUser?.id) {
+        if (resp.ok && docsUser?.id) {
           try {
             await fetch("/api/document/refund", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ inputName: file.name, clerkUserId: documentUser.id }),
+              body: JSON.stringify({ inputName: file.name, clerkUserId: docsUser.id }),
             });
             throw new Error(parseErr.message + " Your credits for this attempt have been refunded.");
           } catch (refundErr: any) {
@@ -229,12 +252,8 @@ function DocumentTab() {
         throw parseErr;
       }
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
-      // From this point on, the server has already charged credits for this job.
-      // If anything below fails, we must refund — the user should never pay for
-      // a result they didn't receive.
       chargedJobId = data.jobId ?? null;
 
-      // Build the .docx right here in the browser — no server-side bundling issues
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
               Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import("docx");
       const fixesMade: string[] = data.fixesMade || [];
@@ -243,17 +262,14 @@ function DocumentTab() {
       const baseName = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
       const filename = baseName + "-accessible.docx";
 
-      // ── Use Claude’s structured HTML if available, fall back to mammoth HTML ────────────
       const html: string = data.structuredHtml || data.htmlContent || "";
       const parser = new DOMParser();
       const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
 
       const docChildren: any[] = [];
 
-      // Strip leading ** and *** markdown artifacts from text
       const cleanText = (raw: string) => raw.replace(/^\*{2,3}\s*/, "").trim();
 
-      // Build a proper docx Table from an HTML <table> element
       const buildTable = (tableNode: Element) => {
         const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: "B0B0B0" };
         const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
@@ -261,7 +277,6 @@ function DocumentTab() {
         if (rows.length === 0) return;
         const maxCols = rows.reduce((m: number, r: Element) => Math.max(m, r.querySelectorAll("td,th").length), 0);
         if (maxCols === 0) return;
-        // Full printable width for US Letter with 1" margins
         const tableWidth = 9360;
         const colWidth = Math.floor(tableWidth / maxCols);
         const docxRows = rows.map((row: Element) => {
@@ -277,7 +292,6 @@ function DocumentTab() {
               children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader })] })],
             });
           });
-          // Pad to maxCols if needed
           while (docxCells.length < maxCols) {
             docxCells.push(new TableCell({
               borders: allBorders,
@@ -293,7 +307,6 @@ function DocumentTab() {
           columnWidths: Array(maxCols).fill(colWidth),
           rows: docxRows,
         }));
-        // Spacing after table
         docChildren.push(new Paragraph({ children: [new TextRun({ text: "" })], spacing: { after: 100 } }));
       };
 
@@ -324,10 +337,8 @@ function DocumentTab() {
         } else if (tag === "div" || tag === "article" || tag === "header" || tag === "section") {
           const elementChildren = Array.from(node.children).filter((c: Element) => (c as Element).tagName?.toLowerCase() !== "br");
           if (elementChildren.length > 0) {
-            // Has real element children — recurse
             Array.from(node.children).forEach(child => processNode(child as Element));
           } else if (text) {
-            // Only text + <br> nodes — split on <br> into separate paragraphs
             const innerHTML = node.innerHTML || "";
             const lines = innerHTML.split(/<br\s*\/?>/i).map((l: string) => cleanText(l.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim())).filter((l: string) => l.length > 0);
             lines.forEach((line: string) => docChildren.push(new Paragraph({ children: [new TextRun({ text: line })], spacing: { after: 60 } })));
@@ -339,7 +350,6 @@ function DocumentTab() {
         }
       };
 
-      // Use structured HTML (Claude’s improved version) if available; fall back to raw text
       if (html && parsed2.body.children.length > 0) {
         Array.from(parsed2.body.children).forEach(child => processNode(child as Element));
       } else {
@@ -373,18 +383,15 @@ function DocumentTab() {
       });
 
       const blob = await Packer.toBlob(doc);
-      setResult({ fixesMade, issues, blob, filename });
+      setFastResult({ fixesMade, issues, blob, filename });
     } catch (e: any) {
       setError(e.message);
-      // Auto-refund: the server already charged for this job, but the browser
-      // failed to deliver a usable result (e.g. the .docx build threw). Never
-      // let the user pay for nothing.
-      if (chargedJobId && documentUser?.id) {
+      if (chargedJobId && docsUser?.id) {
         try {
           await fetch("/api/document/refund", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jobId: chargedJobId, clerkUserId: documentUser.id }),
+            body: JSON.stringify({ jobId: chargedJobId, clerkUserId: docsUser.id }),
           });
           setError(e.message + " Your credits for this attempt have been refunded.");
         } catch {
@@ -399,30 +406,25 @@ function DocumentTab() {
     <div className="space-y-5">
       <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} iconImg={iconDocument} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
-        <p>✓ Word (.docx) and digital PDF files supported</p>
-        <p>✓ Best for syllabi, course documents, and handouts (typically ~50 pages, up to 100 max)</p>
-        <p>⚠ Scanned or image-heavy PDF? Use <button type="button" onClick={goToComplexPdf} className="underline font-medium text-[#0d9488] hover:no-underline">Complex PDF</button> instead — it reads each page visually.</p>
+        <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
+        <p>✓ Remedy508 automatically detects your document's structure and picks the right remediation approach</p>
+        <p>✓ Documents up to 100 pages</p>
       </div>
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
-      {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Identifying accessibility issues…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {error && (
-        <ErrorAlert
-          message={error}
-          actionLabel={errorCode === "WRONG_TOOL_COMPLEX_PDF" ? "Switch to Complex PDF →" : undefined}
-          onAction={errorCode === "WRONG_TOOL_COMPLEX_PDF" ? goToComplexPdf : undefined}
-        />
-      )}
-      {result && (
+      {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
+      {error && <ErrorAlert message={error} />}
+
+      {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
             <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially any images, tables, or math.</p>
-            {result.fixesMade?.length > 0 ? (
+            {fastResult.fixesMade?.length > 0 ? (
               <ul className="space-y-1">
-                {result.fixesMade.slice(0, 8).map((s: string, i: number) => (
+                {fastResult.fixesMade.slice(0, 8).map((s: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
                     <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
                   </li>
@@ -432,7 +434,7 @@ function DocumentTab() {
               <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied.</p>
             )}
           </div>
-          {result.blob && (
+          {fastResult.blob && (
             <>
               <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -442,59 +444,59 @@ function DocumentTab() {
               </div>
               <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
                 const a = document.createElement("a");
-                a.href = URL.createObjectURL(result.blob);
-                a.download = result.filename;
+                a.href = URL.createObjectURL(fastResult.blob);
+                a.download = fastResult.filename;
                 a.click();
               }}>
-                <Download className="w-4 h-4 mr-2" />Download {result.filename}
+                <Download className="w-4 h-4 mr-2" />Download {fastResult.filename}
               </Button>
             </>
           )}
+        </div>
+      )}
 
-          {result.accessibleHtml && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Accessible Document</h3>
-                <div className="flex gap-2">
-                  <CopyBtn text={result.accessibleHtml} testId="copy-doc" />
-                  <Button variant="outline" size="sm" onClick={async () => {
-                    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer } = await import("docx");
-                    const html = result.accessibleHtml || "";
-                    // Use DOMParser to properly parse the HTML structure
-                    const parser = new DOMParser();
-                    const doc2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
-                    const children: any[] = [];
-                    const processNode = (node: Element) => {
-                      const tag = node.tagName?.toLowerCase();
-                      const text = node.textContent?.trim() || "";
-                      if (!text && !tag) return;
-                      if (tag === "h1") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_1 }));
-                      else if (tag === "h2") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
-                      else if (tag === "h3") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_3 }));
-                      else if (tag === "h4" || tag === "h5" || tag === "h6") children.push(new Paragraph({ text, heading: HeadingLevel.HEADING_4 }));
-                      else if (tag === "li") children.push(new Paragraph({ text: `• ${text}`, indent: { left: 360 } }));
-                      else if (tag === "p") { if (text) children.push(new Paragraph({ children: [new TextRun(text)] })); }
-                      else if (tag === "ul" || tag === "ol" || tag === "section" || tag === "div" || tag === "body") {
-                        Array.from(node.children).forEach(processNode);
-                      } else if (text) {
-                        children.push(new Paragraph({ children: [new TextRun(text)] }));
-                      }
-                    };
-                    Array.from(doc2.body.children).forEach(processNode);
-                    if (children.length === 0) children.push(new Paragraph({ children: [new TextRun(html.replace(/<[^>]+>/g, ""))] }));
-                    const docx = new Document({ sections: [{ children }] });
-                    const buf = await Packer.toBlob(docx);
-                    const a = document.createElement("a");
-                    a.href = URL.createObjectURL(buf);
-                    a.download = (result.filename || "document").replace(/\.pdf$/i, "").replace(/\.docx$/i, "") + "-accessible.docx";
-                    a.click();
-                  }}>
-                    <Download className="w-3.5 h-3.5 mr-1" />Download .docx
-                  </Button>
-                </div>
-              </div>
-              <pre className="result-panel">{result.accessibleHtml}</pre>
+      {visionResult && (
+        <div className="space-y-4" data-testid="doc-result">
+          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
+          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
+                {visionResult.pages > 0 ? `${visionResult.pages}-page` : ""} tagged PDF ready
+              </span>
             </div>
-          )}
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
+            {visionResult.fixes.length > 0 ? (
+              <ul className="space-y-1">
+                {visionResult.fixes.slice(0, 8).map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied to all pages.</p>
+            )}
+          </div>
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
+            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-800 leading-relaxed">
+              <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
+            </p>
+          </div>
+          <Button
+            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
+            onClick={() => {
+              const url = URL.createObjectURL(visionResult.blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = visionResult.filename;
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
+            <Download className="w-4 h-4 mr-2" />Download {visionResult.filename}
+          </Button>
         </div>
       )}
     </div>
@@ -732,138 +734,12 @@ function AltTextTab() {
   );
 }
 
-// ── Complex PDF Tab ──────────────────────────────────────────────────────────
-function ComplexPdfTab() {
-  const [loading, setLoading] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
-  const [error, setError] = useState("");
-  const [resetKey, setResetKey] = useState(0);
-  const { toast } = useToast();
-  const { user: complexPdfUser } = useUser();
-
-  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
-
-  const run = async () => {
-    if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setResult(null);
-    try {
-      const fd = new FormData();
-      fd.append("file", file);
-      if (complexPdfUser?.id) fd.append("clerkUserId", complexPdfUser.id);
-      const resp = await fetch("/api/complexpdf/fix", { method: "POST", body: fd });
-      if (!resp.ok) {
-        const errData = await parseApiResponse(resp).catch((e) => ({ error: e.message }));
-        throw new Error(errData.error || `Server error ${resp.status}`);
-      }
-      // Response is binary PDF
-      const blob = await resp.blob();
-      const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
-      let fixes: string[] = [];
-      try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
-      const baseName = file.name.replace(/\.pdf$/i, "");
-      setResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
-    } catch (e: any) { setError(e.message); } finally { setLoading(false); }
-  };
-
-  return (
-    <div className="space-y-5">
-      <FileDropZone
-        accept=".pdf"
-        onFile={setFile}
-        label="Upload PDF"
-        sublabel="PDFs with diagrams, equations, or complex layouts"
-        icon={FileText}
-        iconImg={iconComplexpdf}
-        testId="complexpdf-upload"
-        resetKey={resetKey}
-      />
-      <div className="text-xs text-muted-foreground space-y-0.5 px-1">
-        <p>✓ Best for science, math, or diagram-heavy PDFs</p>
-        <p>✓ Remedy508 reads each page as an image — handles equations and charts</p>
-        <p>✓ Documents up to 100 pages</p>
-        <p>⏱ Allow 30–90 seconds for a typical document</p>
-      </div>
-      <Button
-        className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold"
-        onClick={run}
-        disabled={loading || !file}
-        data-testid="btn-fix-complexpdf"
-      >
-        {loading
-          ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Processing pages…</>
-          : <><Zap className="w-4 h-4 mr-2" />Make Accessible PDF</>}
-      </Button>
-      {loading && (
-        <LoadingState
-          text="Processing your PDF…"
-          steps={[
-            "Rendering pages as images…",
-            "Analyzing page 1 with AI vision…",
-            "Analyzing page 2 with AI vision…",
-            "Analyzing page 3 with AI vision…",
-            "Interpreting diagrams and equations…",
-            "Generating accessible structure…",
-            "Building tagged PDF…",
-          ]}
-        />
-      )}
-      {error && <ErrorAlert message={error} />}
-      {result && (
-        <div className="space-y-4" data-testid="complexpdf-result">
-          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
-                {result.pages > 0 ? `${result.pages}-page` : ""} tagged PDF ready
-              </span>
-            </div>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
-            {result.fixes.length > 0 ? (
-              <ul className="space-y-1">
-                {result.fixes.slice(0, 8).map((s, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied to all pages.</p>
-            )}
-          </div>
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
-            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
-            </p>
-          </div>
-          <Button
-            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
-            onClick={() => {
-              const url = URL.createObjectURL(result.blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = result.filename;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <Download className="w-4 h-4 mr-2" />Download {result.filename}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 const TAB_META = [
-  { id: "document", label: "Document\nFixer", icon: iconDocument, desc: "Fix .docx & .pdf", badge: ".docx & .pdf", title: "Document Fixer", blurb: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure." },
-  { id: "complexpdf", label: "Complex PDF", icon: iconComplexpdf, desc: "Science & diagrams", beta: true, badge: "Complex .pdf", title: "Complex PDF", blurb: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged PDF built toward WCAG 2.1 AA." },
-  { id: "video", label: "Video\nTranscription", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Video Transcription", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
-  { id: "canvas", label: "Canvas HTML\nFixer", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Canvas HTML Fixer", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
-  { id: "alttext", label: "Alt Text\nGenerator", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Alt Text Generator", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
+  { id: "document", label: "Remedy\nDocs", icon: iconDocument, desc: "Word docs & PDFs", badge: ".docx & .pdf", title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool." },
+  { id: "video", label: "Remedy\nVideo", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Remedy Video", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
+  { id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Remedy HTML", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
+  { id: "alttext", label: "Remedy\nImage", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Remedy Image", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
 ];
 
 export default function ToolsPage() {
@@ -941,18 +817,9 @@ export default function ToolsPage() {
           ))}
         </div>
 
-        {/* Document Fixer vs Complex PDF guidance */}
-        <div className="rounded-xl border border-[#0d9488]/20 bg-[#0d9488]/5 p-4">
-          <p className="text-sm font-semibold text-[#3a485b] mb-1.5">Not sure which tool to use?</p>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            <span className="font-medium text-[#3a485b]">Document Fixer</span> is for everyday text documents — syllabi, handouts, and Word/PDF course materials up to ~50 pages.{" "}
-            <span className="font-medium text-[#3a485b]">Complex PDF</span> is for scanned or photographed pages, and PDFs with images, tables, multi-column layouts, or math and science content, where each page is read visually to catch things Document Fixer would miss.
-          </p>
-        </div>
-
         {/* Tab interface */}
         <Tabs defaultValue={initialTab} className="space-y-4" data-testid="tool-tabs">
-          <TabsList className="grid grid-cols-5 w-full h-auto p-1 gap-1">
+          <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1">
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px]" data-testid={`tab-${tab.id}`}>
                 <img src={tab.icon} alt="" aria-hidden="true" className="w-14 h-14 object-contain shrink-0" />
@@ -963,8 +830,7 @@ export default function ToolsPage() {
           </TabsList>
 
           <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <TabsContent value="document" tabIndex={-1}><DocumentTab /></TabsContent>
-            <TabsContent value="complexpdf" tabIndex={-1}><ComplexPdfTab /></TabsContent>
+            <TabsContent value="document" tabIndex={-1}><RemedyDocsTab /></TabsContent>
             <TabsContent value="video" tabIndex={-1}><VideoTab /></TabsContent>
             <TabsContent value="canvas" tabIndex={-1}><CanvasTab /></TabsContent>
             <TabsContent value="alttext" tabIndex={-1}><AltTextTab /></TabsContent>

@@ -4,7 +4,6 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SiteFooter from "@/components/SiteFooter";
 import teaserVideo from "@/assets/teaser.mp4";
 import iconDocument from "@/assets/icon-document.png";
-import iconComplexpdf from "@/assets/icon-complexpdf.png";
 import iconVideo from "@/assets/icon-video.png";
 import iconCanvas from "@/assets/icon-canvas.png";
 import iconAlttext from "@/assets/icon-alttext.png";
@@ -26,11 +25,10 @@ import {
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
-  { icon: iconDocument, title: "Document Fixer", desc: "Upload a Word doc or PDF — Remedy508 identifies accessibility issues and returns a remediated version with proper headings, alt text, and structure.", tag: ".docx & .pdf", tab: "document" },
-  { icon: iconComplexpdf, title: "Complex PDF", desc: "Upload a complex PDF with images, tables, and multi-column layouts — Remedy508 remediates the full document and returns a tagged PDF built toward WCAG 2.1 AA.", tag: "Complex .pdf", tab: "complexpdf" },
-  { icon: iconVideo, title: "Video Transcription", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
-  { icon: iconCanvas, title: "Canvas HTML Fixer", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
-  { icon: iconAlttext, title: "Alt Text Generator", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
+  { icon: iconDocument, title: "Remedy Docs", desc: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.", tag: ".docx & .pdf", tab: "document" },
+  { icon: iconVideo, title: "Remedy Video", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
+  { icon: iconCanvas, title: "Remedy HTML", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
+  { icon: iconAlttext, title: "Remedy Image", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
 ];
 
 const STATS = [

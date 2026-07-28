@@ -427,8 +427,114 @@ export function registerRoutes(httpServer: Server, app: Express) {
     });
   });
 
+  // ── REMEDY DOCS: AUTO-DETECTION ──────────────────────────────────────────────
+  // Merges the old "Document Fixer" (fast, text-based) and "Complex PDF" (slow,
+  // Claude Vision per-page) tools into one upload. Users were consistently unable
+  // to tell which tool their file needed -- this inspects the file itself instead
+  // of asking them to guess. Detection signals, in order of reliability:
+  //   1. .docx always goes to the fast text pipeline (Complex PDF is PDF-only by
+  //      design -- it renders page screenshots, which .docx has no concept of).
+  //   2. OCR ratio -- reuses the exact heuristic already proven in handleDocumentFix's
+  //      "WRONG_TOOL_COMPLEX_PDF" gate: if most sampled pages needed OCR fallback
+  //      (little/no real text layer), the file is scanned/image-based and needs vision.
+  //   3. Real table coverage -- uses PyMuPDF's built-in find_tables() detector (far
+  //      more reliable than hand-rolled block/line heuristics, which were tested
+  //      against real VPATs and plain docs and produced false positives on ordinary
+  //      prose). A page counts as "table-dominated" only when it has a genuine
+  //      multi-row, multi-column table (>=3 rows, >=2 cols) whose bounding box covers
+  //      at least 30% of the page area -- this is what separates a VPAT-style
+  //      conformance table (nearly every page is one big table) from a normal
+  //      document that happens to contain one small data table.
+  // Validated against 8 real uploaded documents before shipping (see session notes):
+  // VPAT source PDFs (14p, table-ratio ~0.88) correctly route to Vision; a 660-page
+  // dictionary, plain syllabi, and a chemistry doc with one small data table (ratio 0)
+  // all correctly route to the Fast pipeline.
+  // Errs toward the fast pipeline when signals are weak/ambiguous, since it's
+  // cheaper and faster -- only routes to vision when there's a real, specific
+  // reason plain text extraction would produce a worse result.
+  async function detectDocsRoute(fileBuffer: Buffer, ext: string): Promise<{ useVision: boolean; reason: string }> {
+    if (ext === ".docx") {
+      return { useVision: false, reason: "docx-always-fast-path" };
+    }
+    if (ext !== ".pdf") {
+      return { useVision: false, reason: "unsupported-ext" };
+    }
+
+    const { execFile } = await import("child_process");
+    const { writeFile, unlink } = await import("fs/promises");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+    const tmpIn = join(tmpdir(), `detect-${Date.now()}.pdf`);
+    await writeFile(tmpIn, fileBuffer);
+
+    const pyDetect = [
+      "import fitz, sys, json",
+      "doc = fitz.open(sys.argv[1])",
+      "total_pages = len(doc)",
+      "SAMPLE = min(total_pages, 8)",
+      "step = max(1, total_pages // SAMPLE)",
+      "sampled = 0",
+      "ocr_pages = 0",
+      "table_pages = 0",
+      "for i in range(0, total_pages, step):",
+      "    if sampled >= SAMPLE: break",
+      "    sampled += 1",
+      "    page = doc[i]",
+      "    text = page.get_text().strip()",
+      "    if len(text) < 50:",
+      "        ocr_pages += 1",
+      "        continue",
+      "    try:",
+      "        tabs = page.find_tables()",
+      "        real = [t for t in tabs.tables if t.row_count >= 3 and t.col_count >= 2]",
+      "        if real:",
+      "            page_area = page.rect.width * page.rect.height",
+      "            biggest = max(real, key=lambda t: (t.bbox[2]-t.bbox[0])*(t.bbox[3]-t.bbox[1]))",
+      "            table_area = (biggest.bbox[2]-biggest.bbox[0]) * (biggest.bbox[3]-biggest.bbox[1])",
+      "            coverage = table_area / page_area if page_area > 0 else 0",
+      "            if coverage >= 0.3:",
+      "                table_pages += 1",
+      "    except Exception:",
+      "        pass",
+      "print(json.dumps({'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages}))",
+    ].join("\n");
+
+    const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+    try {
+      const rawOutput = await new Promise<string>((resolve, reject) => {
+        execFile(python3, ["-c", pyDetect, tmpIn], { maxBuffer: 5 * 1024 * 1024, timeout: 30000 }, (err, stdout) => {
+          if (err) reject(err); else resolve(stdout);
+        });
+      });
+      await unlink(tmpIn).catch(() => {});
+      const outLines = rawOutput.trim().split("\n");
+      let stats: { sampled: number; ocr_pages: number; table_pages: number } | null = null;
+      for (let i = outLines.length - 1; i >= 0; i--) {
+        try { stats = JSON.parse(outLines[i]); break; } catch { /* keep scanning upward past advisory lines */ }
+      }
+      if (!stats) throw new Error("no parseable JSON in detector output");
+      const { sampled, ocr_pages, table_pages } = stats;
+      if (sampled === 0) return { useVision: false, reason: "empty-doc" };
+
+      const ocrRatio = ocr_pages / sampled;
+      const tableRatio = table_pages / sampled;
+
+      if (ocrRatio >= 0.5) {
+        return { useVision: true, reason: `ocr-ratio-${ocrRatio.toFixed(2)}` };
+      }
+      if (tableRatio >= 0.5) {
+        return { useVision: true, reason: `table-ratio-${tableRatio.toFixed(2)}` };
+      }
+      return { useVision: false, reason: "plain-text-fast-path" };
+    } catch (err: any) {
+      await unlink(tmpIn).catch(() => {});
+      console.error("[REMEDY DOCS DETECT] Error, defaulting to fast path:", err.message);
+      return { useVision: false, reason: "detect-error-fallback" };
+    }
+  }
+
   // ── DOCUMENT ACCESSIBILITY ──────────────────────────────────────────────────
-  app.post("/api/document/fix", upload.single("file"), (req, res, next) => { req.setTimeout(300000); res.setTimeout(300000); next(); }, async (req, res) => {
+  async function handleDocumentFix(req: Request, res: any) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
 
@@ -523,7 +629,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const ocrRatio = docPageCount > 0 ? ocrPages / docPageCount : 0;
         if (ocrRatio >= 0.5 && rawText.trim().length < 200 * docPageCount) {
           return res.status(422).json({
-            error: "This looks like a scanned or image-heavy PDF, which Document Fixer isn't built for. Try the Complex PDF tool instead — it reads each page visually and handles images, tables, and scanned content.",
+            error: "This looks like a scanned or image-heavy PDF. Try uploading it to Remedy Docs again — it will automatically use a vision-based approach that reads each page visually and handles images, tables, and scanned content.",
             code: "WRONG_TOOL_COMPLEX_PDF",
           });
         }
@@ -739,7 +845,9 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
-  });
+  }
+
+  app.post("/api/document/fix", upload.single("file"), (req, res, next) => { req.setTimeout(300000); res.setTimeout(300000); next(); }, handleDocumentFix);
 
   app.post("/api/document/refund", async (req, res) => {
     try {
@@ -922,7 +1030,7 @@ Canvas-specific rules:
   });
 
   // ── COMPLEX PDF (MAY PIPELINE — fpdf2 + real image embed + Claude Vision) ─────
-  app.post("/api/complexpdf/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
+  async function handleComplexPdfFix(req: Request, res: any) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
@@ -1724,7 +1832,40 @@ print('ok')
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
+  }
+
+  app.post("/api/complexpdf/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, handleComplexPdfFix);
+
+  // ── REMEDY DOCS: unified upload endpoint ─────────────────────────────────────
+  // Single entry point replacing the old "Document Fixer" vs "Complex PDF" tool
+  // choice. Detects which underlying pipeline the file needs and dispatches to
+  // the exact same, unchanged handlers used by the legacy routes above (kept
+  // registered for backward compatibility / in case anything still links to
+  // them directly). No duplicated logic -- this only decides which one to call.
+  app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    if (ext !== ".docx" && ext !== ".pdf") {
+      return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
+    }
+
+    let route: { useVision: boolean; reason: string };
+    try {
+      route = await detectDocsRoute(req.file.buffer, ext);
+    } catch (err: any) {
+      console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
+      route = { useVision: false, reason: "detect-exception-fallback" };
+    }
+
+    res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
+    console.log(`[REMEDY DOCS] ${req.file.originalname} -> ${route.useVision ? "Vision" : "Fast"} pipeline (${route.reason})`);
+
+    if (route.useVision) {
+      return handleComplexPdfFix(req, res);
+    }
+    return handleDocumentFix(req, res);
   });
+
 
   app.post("/api/contact", async (req, res) => {
     try {

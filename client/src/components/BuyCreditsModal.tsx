@@ -114,7 +114,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
 
           {/* Policy note */}
           <p className="text-sm text-gray-700 mb-4">
-            A Credit is simply a page. Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. 1 Credit covers 1 processed page (Document Fixer and Complex PDF both draw from the same pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
+            A Credit is simply a page. Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. 1 Credit covers 1 processed page (Remedy Docs draws from this pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (

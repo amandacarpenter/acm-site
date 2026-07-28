@@ -56,19 +56,18 @@ const SEED: Omit<KbArticle, "updated_at">[] = [
   { id: "uploading-your-first-file", section: 1, section_name: "Getting Started", order_num: 4, title: "Uploading your first file", summary: "How to upload a document or PDF and send it through Remedy508 for the first time.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["welcome-to-remedy508", "understanding-your-results"] },
   { id: "understanding-your-results", section: 1, section_name: "Getting Started", order_num: 5, title: "Understanding your results", summary: "What the output means — how to read your remediated file and what each fix applied.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["uploading-your-first-file", "document-fixer-word-doc"] },
 
-  // Section 2 — Using the 5 Tools
-  { id: "document-fixer-word-doc", section: 2, section_name: "Using the 5 Tools", order_num: 6, title: "Document Fixer — remediate a Word doc", summary: "Walk through fixing a real Word document using the Document Fixer tool, from upload to download.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["complex-pdf-remediating", "understanding-your-results"] },
-  { id: "complex-pdf-remediating", section: 2, section_name: "Using the 5 Tools", order_num: 7, title: "Complex PDF — remediating a real PDF", summary: "How to use the Complex PDF tool on scanned or complex PDF files that need vision-based remediation.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["document-fixer-word-doc", "opening-remediated-pdf-acrobat"] },
-  { id: "alt-text-generator", section: 2, section_name: "Using the 5 Tools", order_num: 8, title: "Alt Text Generator — images made accessible", summary: "Generate accurate, descriptive alt text for images and charts using the Alt Text Generator tool.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["writing-good-alt-text", "canvas-html-fixer"] },
-  { id: "canvas-html-fixer", section: 2, section_name: "Using the 5 Tools", order_num: 9, title: "Canvas HTML Fixer — accessible Canvas pages", summary: "Clean up Canvas LMS HTML to meet accessibility standards using the Canvas HTML Fixer tool.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["alt-text-generator", "accessibility-101-wcag"] },
-  { id: "video-transcription-captions", section: 2, section_name: "Using the 5 Tools", order_num: 10, title: "Video Transcription — captions & transcripts", summary: "Upload a video or audio file and generate accurate captions and a full text transcript automatically.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["canvas-html-fixer", "welcome-to-remedy508"] },
+  // Section 2 — Using the 4 Tools
+  { id: "document-fixer-word-doc", section: 2, section_name: "Using the 4 Tools", order_num: 6, title: "Remedy Docs — remediate a Word doc or PDF", summary: "Walk through fixing a real Word document or PDF using Remedy Docs, from upload to download, including how auto-detection picks the right pipeline.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["understanding-your-results"] },
+  { id: "alt-text-generator", section: 2, section_name: "Using the 4 Tools", order_num: 8, title: "Remedy Image — images made accessible", summary: "Generate accurate, descriptive alt text for images and charts using Remedy Image.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["writing-good-alt-text", "canvas-html-fixer"] },
+  { id: "canvas-html-fixer", section: 2, section_name: "Using the 4 Tools", order_num: 9, title: "Remedy HTML — accessible Canvas pages", summary: "Clean up Canvas LMS HTML to meet accessibility standards using Remedy HTML.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["alt-text-generator", "accessibility-101-wcag"] },
+  { id: "video-transcription-captions", section: 2, section_name: "Using the 4 Tools", order_num: 10, title: "Remedy Video — captions & transcripts", summary: "Upload a video or audio file and generate accurate captions and a full text transcript automatically.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["canvas-html-fixer", "welcome-to-remedy508"] },
 
   // Section 3 — Preparing Files for Remedy508
   { id: "save-powerpoint-as-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 11, title: "How to save a PowerPoint (.pptx) as a PDF", summary: "The right way to export a PowerPoint presentation as a PDF before running it through Remedy508.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["what-file-types-accepted", "save-word-doc-as-pdf"] },
   { id: "save-google-slides-as-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 12, title: "How to save a Google Slides deck as a PDF", summary: "Export a Google Slides presentation as a PDF with the right settings for accessibility remediation.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["save-powerpoint-as-pdf", "save-word-doc-as-pdf"] },
   { id: "save-word-doc-as-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 13, title: "How to save a Word doc as a PDF (and when NOT to)", summary: "When to send Word docs directly vs. converting to PDF first, and how to export correctly either way.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["document-fixer-word-doc", "save-powerpoint-as-pdf"] },
   { id: "export-canva-accessible-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 14, title: "How to export from Canva as an accessible-ready PDF", summary: "Get the best results from Remedy508 by exporting your Canva designs with the right PDF settings.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["save-google-slides-as-pdf", "what-file-types-accepted"] },
-  { id: "scan-paper-document-to-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 15, title: "How to scan a paper document into a usable PDF", summary: "Best practices for scanning physical documents into a PDF that Remedy508 can process effectively.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["complex-pdf-remediating", "what-file-types-accepted"] },
+  { id: "scan-paper-document-to-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 15, title: "How to scan a paper document into a usable PDF", summary: "Best practices for scanning physical documents into a PDF that Remedy508 can process effectively.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["document-fixer-word-doc", "what-file-types-accepted"] },
   { id: "what-file-types-accepted", section: 3, section_name: "Preparing Files for Remedy508", order_num: 16, title: "What file types Remedy508 accepts (and which to avoid)", summary: "A complete reference of supported file formats and common types that need conversion before upload.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["save-powerpoint-as-pdf", "uploading-your-first-file"] },
 
   // Section 4 — Editing a PDF After Remedy508
@@ -101,17 +100,16 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Compliance pressure is real.</strong> Title II of the ADA now requires digital accessibility for all public college content. Remedy508 helps you meet that standard quickly.</li>
   <li><strong>Most staff aren't trained in accessibility.</strong> You don't need to know WCAG inside and out — Remedy508 applies the correct fixes automatically.</li>
 </ul>
-<h2>The five tools</h2>
-<p>Remedy508 gives you five purpose-built tools:</p>
+<h2>The four tools</h2>
+<p>Remedy508 gives you four purpose-built tools:</p>
 <ol>
-  <li><strong>Document Fixer</strong> — remediates Word documents and converts them to accessible PDFs</li>
-  <li><strong>Complex PDF</strong> — handles scanned documents, forms, and multi-column layouts</li>
-  <li><strong>Alt Text Generator</strong> — writes accurate, descriptive alt text for images and charts</li>
-  <li><strong>Canvas HTML Fixer</strong> — cleans up Canvas LMS page HTML for accessibility</li>
-  <li><strong>Video Transcription</strong> — generates captions and full transcripts from video or audio files</li>
+  <li><strong>Remedy Docs</strong> — remediates Word documents and PDFs, automatically detecting scanned pages, forms, and multi-column layouts and choosing the right remediation approach</li>
+  <li><strong>Remedy Image</strong> — writes accurate, descriptive alt text for images and charts</li>
+  <li><strong>Remedy HTML</strong> — cleans up Canvas LMS page HTML for accessibility</li>
+  <li><strong>Remedy Video</strong> — generates captions and full transcripts from video or audio files</li>
 </ol>
 <h2>Next steps</h2>
-<p>Start by creating your account, then head to your dashboard to run your first file through the Document Fixer. Most users see results in under 60 seconds.</p>`,
+<p>Start by creating your account, then head to your dashboard to run your first file through Remedy Docs. Most users see results in under 60 seconds.</p>`,
   "creating-account-logging-in": `<h2>Creating your account</h2>
 <p>Go to <strong>remedy508.com</strong> and click <strong>Get Started</strong>. You can sign up with your Google account (recommended for campus users) or with an email and password.</p>
 <h3>Recommended: Sign in with Google</h3>
@@ -149,12 +147,10 @@ const ARTICLE_CONTENT: Record<string, string> = {
   "uploading-your-first-file": `<h2>Choosing the right tool</h2>
 <p>Before uploading, make sure you're using the right tool for your file type:</p>
 <ul>
-  <li><strong>Word document (.docx)</strong> → Document Fixer</li>
-  <li><strong>Standard PDF</strong> → Document Fixer</li>
-  <li><strong>Scanned PDF, complex layout, or form</strong> → Complex PDF</li>
-  <li><strong>Image with alt text needed</strong> → Alt Text Generator</li>
-  <li><strong>Canvas LMS page HTML</strong> → Canvas HTML Fixer</li>
-  <li><strong>Video or audio file</strong> → Video Transcription</li>
+  <li><strong>Word document (.docx) or any PDF</strong> → Remedy Docs (it automatically detects scanned pages, tables, and complex layouts and remediates accordingly)</li>
+  <li><strong>Image with alt text needed</strong> → Remedy Image</li>
+  <li><strong>Canvas LMS page HTML</strong> → Remedy HTML</li>
+  <li><strong>Video or audio file</strong> → Remedy Video</li>
 </ul>
 <h2>Uploading your file</h2>
 <ol>
@@ -188,21 +184,31 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <p>Highly complex documents — scanned pages, intricate tables, multi-column layouts — occasionally need minor manual corrections after remediation. See the articles in Section 4 (Editing a PDF After Remedy508) for guidance on common post-remediation edits.</p>
 <h2>Counts and credits</h2>
 <p>Your document count updates immediately after a successful submission. If a file fails to process for any reason, it does not count against your limit — contact us and we'll investigate.</p>`,
-  "document-fixer-word-doc": `<h2>What the Document Fixer does</h2>
-<p>The Document Fixer takes a Word document (.docx) or a standard PDF and applies a full suite of WCAG 2.1 AA accessibility fixes. It returns a remediated PDF ready for distribution.</p>
+  "document-fixer-word-doc": `<h2>What Remedy Docs does</h2>
+<p>Remedy Docs takes a Word document (.docx) or a PDF — plain text, table-heavy, or scanned/image-based — and applies a full suite of WCAG 2.1 AA accessibility fixes. It automatically detects your document's structure and routes it to the right remediation pipeline internally, so you never have to choose between tools.</p>
+<h2>How auto-detection works</h2>
+<p>When you upload a file, Remedy Docs analyzes it before processing:</p>
+<ul>
+  <li><strong>.docx files</strong> always use the fast text pipeline.</li>
+  <li><strong>PDFs</strong> are sampled across several pages to check for scanned/image-based content and dense tables or multi-column layouts. If either is common enough in your document, Remedy Docs automatically switches to a vision-based pipeline that reads each page as an image for higher accuracy.</li>
+  <li>Otherwise, your PDF goes through the faster text-based pipeline.</li>
+</ul>
+<p>Either way, you get a single download button and a remediated, accessible file — the underlying pipeline choice happens automatically in the background.</p>
 <h2>Best file types for this tool</h2>
 <ul>
   <li>Microsoft Word documents (.docx)</li>
-  <li>Text-based PDFs (not scanned) — syllabi, handouts, reports, guides</li>
-  <li>PowerPoint files saved as PDF (see Section 3 for export tips)</li>
-  <li>Google Docs or Google Slides exported as PDF</li>
+  <li>Text-based PDFs — syllabi, handouts, reports, guides</li>
+  <li>Scanned documents (images of paper pages — no selectable text)</li>
+  <li>Multi-column layouts like newsletters, textbook pages, or journal articles</li>
+  <li>PDFs with complex tables, or fillable forms</li>
+  <li>PowerPoint or Google Slides files saved as PDF (see Section 3 for export tips)</li>
 </ul>
 <h2>Step-by-step</h2>
 <ol>
-  <li>From your dashboard or the Tools page, click <strong>Document Fixer</strong>.</li>
+  <li>From your dashboard or the Tools page, click <strong>Remedy Docs</strong>.</li>
   <li>Click <strong>Choose File</strong> and select your .docx or PDF.</li>
-  <li>Click <strong>Fix Document</strong> and wait. Standard documents typically process in 20–45 seconds.</li>
-  <li>When the download button appears, click it to save your remediated PDF.</li>
+  <li>Click <strong>Fix Accessibility</strong> and wait. Standard documents typically process in 20–45 seconds; scanned or complex-layout PDFs can take 1–5 minutes depending on page count, since each page is analyzed visually.</li>
+  <li>When the download button appears, click it to save your remediated file.</li>
 </ol>
 <h2>What gets fixed</h2>
 <ul>
@@ -217,46 +223,17 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <ul>
   <li><strong>Use Word's built-in heading styles</strong> before uploading — Heading 1, Heading 2, etc. Remedy508 reads these to set the correct heading hierarchy.</li>
   <li><strong>Add alt text to images in Word</strong> first if you know exactly what each image conveys. Remedy508 will generate alt text for any images that don't have it, but your manual descriptions are often more accurate.</li>
-  <li><strong>Avoid text boxes and floating objects</strong> — these are difficult for any remediation tool to handle correctly.</li>
+  <li><strong>Avoid text boxes and floating objects</strong> where possible — these are harder for any remediation tool to interpret correctly, though heavily-tabled or scanned documents are automatically routed to the more thorough vision pipeline.</li>
+  <li><strong>Scan at 300 DPI or higher</strong> for best OCR accuracy if you're working from a paper document. Low-resolution scans produce poor text recognition.</li>
+  <li><strong>Straighten pages before scanning</strong> — skewed pages confuse layout detection.</li>
 </ul>
-<h2>Limitations</h2>
-<p>The Document Fixer is designed for standard single-column documents. For scanned pages, complex multi-column layouts, or fillable forms, use the <strong>Complex PDF</strong> tool instead.</p>`,
-  "complex-pdf-remediating": `<h2>When to use Complex PDF</h2>
-<p>Use the Complex PDF tool when the standard Document Fixer isn't enough. Common cases include:</p>
-<ul>
-  <li>Scanned documents (images of paper pages — no selectable text)</li>
-  <li>Multi-column layouts like newsletters, textbook pages, or journal articles</li>
-  <li>PDFs with complex tables spanning multiple pages</li>
-  <li>Fillable forms</li>
-  <li>Documents with heavy use of text boxes, sidebars, or callouts</li>
-  <li>Any PDF where the Document Fixer result has obvious reading order problems</li>
-</ul>
-<h2>How it works differently</h2>
-<p>The Complex PDF tool uses AI vision to analyze each page as an image, understand the layout, and apply accessibility fixes with awareness of visual context — not just raw text extraction. This is especially important for scanned documents, which have no underlying text at all.</p>
-<h2>Step-by-step</h2>
-<ol>
-  <li>From the Tools page, click <strong>Complex PDF</strong>.</li>
-  <li>Upload your PDF. Scanned documents may take longer — allow up to 2–3 minutes for large files.</li>
-  <li>Download the remediated result when processing completes.</li>
-</ol>
-<h2>Processing time</h2>
-<p>Complex PDF takes longer than the standard Document Fixer because it analyzes every page visually. Expect:</p>
-<ul>
-  <li>1–5 pages: 30–60 seconds</li>
-  <li>6–20 pages: 1–3 minutes</li>
-  <li>20+ pages: 3–5 minutes</li>
-</ul>
-<h2>Tips for best results</h2>
-<ul>
-  <li>Scan at <strong>300 DPI or higher</strong> for best OCR accuracy. Low-resolution scans produce poor text recognition.</li>
-  <li>Scan in <strong>black and white or grayscale</strong> unless color is essential to the content.</li>
-  <li>Straighten pages before scanning — skewed pages confuse layout detection.</li>
-</ul>`,
+<h2>Document size limits</h2>
+<p>Remedy Docs supports documents up to 100 pages. Larger documents should be split before uploading.</p>`,
   "alt-text-generator": `<h2>What is alt text?</h2>
 <p>Alt text (alternative text) is a written description of an image that screen readers announce to users who cannot see the image. It also displays when an image fails to load. Without alt text, images are completely inaccessible to blind and low-vision users.</p>
-<h2>Using the Alt Text Generator</h2>
+<h2>Using Remedy Image</h2>
 <ol>
-  <li>From the Tools page, click <strong>Alt Text Generator</strong>.</li>
+  <li>From the Tools page, click <strong>Remedy Image</strong>.</li>
   <li>Upload your image file (JPG, PNG, GIF, WebP, or PDF page) or paste an image URL.</li>
   <li>Click <strong>Generate Alt Text</strong>.</li>
   <li>Review the generated description. Edit it if needed for your specific context.</li>
@@ -278,12 +255,12 @@ const ARTICLE_CONTENT: Record<string, string> = {
 </ul>`,
   "canvas-html-fixer": `<h2>Why Canvas pages need accessibility fixes</h2>
 <p>Canvas LMS lets instructors edit page content in a rich text editor, but the underlying HTML it generates often contains accessibility issues — missing heading structure, improper list markup, inline font-size styles instead of semantic tags, and images without alt text. These issues are invisible in the visual editor but break the experience for screen reader users.</p>
-<h2>Using the Canvas HTML Fixer</h2>
+<h2>Using Remedy HTML</h2>
 <ol>
   <li>Open your Canvas page in Edit mode.</li>
   <li>Switch to the <strong>HTML editor</strong> view (click the angle brackets &lt;/&gt; icon in the Canvas toolbar).</li>
   <li>Select all the HTML and copy it.</li>
-  <li>Go to Remedy508 → <strong>Canvas HTML Fixer</strong> and paste the HTML into the input field.</li>
+  <li>Go to Remedy508 → <strong>Remedy HTML</strong> and paste the HTML into the input field.</li>
   <li>Click <strong>Fix HTML</strong>.</li>
   <li>Copy the cleaned HTML output.</li>
   <li>Return to Canvas, paste the fixed HTML into the HTML editor, then save the page.</li>
@@ -309,7 +286,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 </ul>
 <h2>Step-by-step</h2>
 <ol>
-  <li>From the Tools page, click <strong>Video Transcription</strong>.</li>
+  <li>From the Tools page, click <strong>Remedy Video</strong>.</li>
   <li>Upload your video or audio file.</li>
   <li>Select the primary language of the content (default: English).</li>
   <li>Click <strong>Transcribe</strong>. Processing time varies by file length — expect roughly 1 minute per 10 minutes of audio.</li>
@@ -344,7 +321,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Don't export from a preview window</strong> — always export directly from PowerPoint.</li>
 </ul>
 <h2>After exporting</h2>
-<p>Upload the PDF to Remedy508's Document Fixer. If your presentation has complex layouts (overlapping text boxes, multiple columns per slide), use the Complex PDF tool instead.</p>`,
+<p>Upload the PDF to Remedy Docs. It automatically detects complex layouts (overlapping text boxes, multiple columns per slide) and switches to the more thorough vision-based remediation approach when needed.</p>`,
   "save-google-slides-as-pdf": `<h2>Exporting from Google Slides</h2>
 <ol>
   <li>Open your Google Slides presentation.</li>
@@ -353,13 +330,13 @@ const ARTICLE_CONTENT: Record<string, string> = {
 </ol>
 <p>That's it — Google Slides exports clean, text-based PDFs by default. No extra settings needed.</p>
 <h2>One slide per page vs. handout layout</h2>
-<p>The default export puts one slide per page, which is the best format for Remedy508. If you need a handout layout (multiple slides per page), the text is smaller but still readable. Either format works with the Document Fixer.</p>
+<p>The default export puts one slide per page, which is the best format for Remedy508. If you need a handout layout (multiple slides per page), the text is smaller but still readable. Either format works with Remedy Docs.</p>
 <h2>Presenter notes</h2>
 <p>If you want to include speaker notes in the PDF, go to <strong>File → Print settings and preview</strong>, select <strong>"1 slide with notes"</strong>, then click the print icon and save as PDF from your browser. Note: this format often requires more manual cleanup after remediation.</p>
 <h2>After downloading</h2>
-<p>Upload the PDF to Remedy508's Document Fixer. Google Slides PDFs typically remediate cleanly and quickly since they are already well-structured text-based files.</p>`,
+<p>Upload the PDF to Remedy Docs. Google Slides PDFs typically remediate cleanly and quickly since they are already well-structured text-based files.</p>`,
   "save-word-doc-as-pdf": `<h2>Should you upload the Word doc or a PDF?</h2>
-<p>For most documents, <strong>upload the Word .docx file directly</strong> to the Document Fixer. Remedy508 can read the document structure more accurately from a .docx than from an exported PDF — especially heading styles, table structure, and list formatting.</p>
+<p>For most documents, <strong>upload the Word .docx file directly</strong> to Remedy Docs. Remedy508 can read the document structure more accurately from a .docx than from an exported PDF — especially heading styles, table structure, and list formatting.</p>
 <p>Convert to PDF first only if:</p>
 <ul>
   <li>You need to deliver a PDF (not a Word file) to your users</li>
@@ -403,9 +380,9 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Add alt text to images.</strong> In Canva, click an image → click the three-dot menu → <strong>Edit alt text</strong>.</li>
 </ul>
 <h2>After exporting</h2>
-<p>Upload to Remedy508's <strong>Complex PDF</strong> tool (not Document Fixer) for Canva files, since Canva layouts often have multiple columns and overlapping elements that benefit from vision-based analysis.</p>`,
+<p>Upload to Remedy Docs. Canva files typically have multiple columns and overlapping elements, so Remedy Docs will automatically detect that and route your file through the more thorough vision-based analysis.</p>`,
   "scan-paper-document-to-pdf": `<h2>When you need to scan</h2>
-<p>Physical paper documents — old syllabi, printed handouts, forms, consent documents — can be scanned and remediated through Remedy508's Complex PDF tool. The tool uses AI vision to read scanned pages and apply accessibility structure even when there is no underlying digital text.</p>
+<p>Physical paper documents — old syllabi, printed handouts, forms, consent documents — can be scanned and remediated through Remedy Docs. It automatically detects scanned pages and uses AI vision to read them and apply accessibility structure even when there is no underlying digital text.</p>
 <h2>Scanner settings for best results</h2>
 <ul>
   <li><strong>Resolution: 300 DPI minimum.</strong> 600 DPI is better for documents with small text. Higher resolution means better OCR (optical character recognition) accuracy.</li>
@@ -426,27 +403,23 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Adobe Scan</strong> (free, iOS and Android) works well for multi-page documents.</li>
 </ul>
 <h2>After scanning</h2>
-<p>Upload the scanned PDF to Remedy508's <strong>Complex PDF</strong> tool. Expect slightly longer processing time for scanned files compared to digital documents.</p>`,
+<p>Upload the scanned PDF to Remedy Docs. Expect slightly longer processing time for scanned files compared to digital documents, since Remedy Docs automatically detects scanned pages and switches to the more thorough vision-based approach.</p>`,
   "what-file-types-accepted": `<h2>Supported file types by tool</h2>
-<h3>Document Fixer</h3>
+<h3>Remedy Docs</h3>
 <ul>
   <li>Microsoft Word: .docx</li>
-  <li>PDF: .pdf (text-based, not scanned)</li>
+  <li>PDF: .pdf (any — text-based, scanned, multi-column, tables, forms). Remedy Docs automatically detects the right remediation approach for your file.</li>
 </ul>
-<h3>Complex PDF</h3>
-<ul>
-  <li>PDF: .pdf (any — including scanned, multi-column, forms)</li>
-</ul>
-<h3>Alt Text Generator</h3>
+<h3>Remedy Image</h3>
 <ul>
   <li>Images: .jpg, .jpeg, .png, .gif, .webp, .bmp</li>
   <li>PDF pages can also be uploaded to generate alt text for embedded images</li>
 </ul>
-<h3>Canvas HTML Fixer</h3>
+<h3>Remedy HTML</h3>
 <ul>
   <li>Paste HTML directly — no file upload</li>
 </ul>
-<h3>Video Transcription</h3>
+<h3>Remedy Video</h3>
 <ul>
   <li>Video: .mp4, .mov, .avi, .mkv, .webm</li>
   <li>Audio: .mp3, .wav, .m4a, .aac, .ogg</li>
@@ -455,13 +428,13 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <table>
   <thead><tr><th>Your file type</th><th>Convert to</th><th>Tool to use</th></tr></thead>
   <tbody>
-    <tr><td>PowerPoint (.pptx)</td><td>PDF</td><td>Document Fixer or Complex PDF</td></tr>
-    <tr><td>Google Slides</td><td>PDF (download from Google)</td><td>Document Fixer</td></tr>
-    <tr><td>Google Docs</td><td>PDF or .docx</td><td>Document Fixer</td></tr>
-    <tr><td>Excel / Google Sheets</td><td>PDF</td><td>Document Fixer</td></tr>
-    <tr><td>InDesign (.indd)</td><td>PDF (export from InDesign)</td><td>Complex PDF</td></tr>
-    <tr><td>Publisher (.pub)</td><td>PDF</td><td>Complex PDF</td></tr>
-    <tr><td>Scanned images (.jpg, .tiff)</td><td>Combine into PDF</td><td>Complex PDF</td></tr>
+    <tr><td>PowerPoint (.pptx)</td><td>PDF</td><td>Remedy Docs</td></tr>
+    <tr><td>Google Slides</td><td>PDF (download from Google)</td><td>Remedy Docs</td></tr>
+    <tr><td>Google Docs</td><td>PDF or .docx</td><td>Remedy Docs</td></tr>
+    <tr><td>Excel / Google Sheets</td><td>PDF</td><td>Remedy Docs</td></tr>
+    <tr><td>InDesign (.indd)</td><td>PDF (export from InDesign)</td><td>Remedy Docs</td></tr>
+    <tr><td>Publisher (.pub)</td><td>PDF</td><td>Remedy Docs</td></tr>
+    <tr><td>Scanned images (.jpg, .tiff)</td><td>Combine into PDF</td><td>Remedy Docs</td></tr>
   </tbody>
 </table>
 <h2>File size limit</h2>
@@ -513,8 +486,8 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li>Open the Order panel.</li>
   <li>Select all items in the right column and drag them below all items in the left column.</li>
 </ol>
-<h2>When to use Remedy508's Complex PDF instead</h2>
-<p>If you're consistently seeing reading order issues with a particular document template, try re-running it through the Complex PDF tool. The vision-based analysis often produces better initial reading order than the standard Document Fixer for complex layouts.</p>`,
+<h2>When Remedy Docs' vision-based remediation can help</h2>
+<p>If you're consistently seeing reading order issues with a particular document template, try re-running it through Remedy Docs — documents with heavy multi-column or table layouts are automatically routed to a more thorough vision-based analysis, which often produces better initial reading order than the standard text-based pipeline for complex layouts.</p>`,
   "editing-alt-text-after": `<h2>Reviewing alt text in Acrobat Pro</h2>
 <ol>
   <li>Go to <strong>Tools → Accessibility → Reading Order</strong>.</li>
@@ -593,7 +566,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h3>Alt text that's inaccurate or too generic</h3>
 <p>Review and edit alt text in Acrobat Pro (see "Editing alt text after remediation"). For charts and graphs, you will almost always want to manually specify the key data points rather than rely on auto-generated descriptions.</p>
 <h3>Tables not reading correctly</h3>
-<p>Complex or merged-cell tables are the hardest thing to remediate automatically. If your table has merged cells or unusual structure, the Complex PDF tool may produce better results. For highly complex tables, manual Acrobat Pro tag editing may be needed.</p>
+<p>Complex or merged-cell tables are the hardest thing to remediate automatically. If your table has merged cells or unusual structure, Remedy Docs will automatically detect the table density and route your document through its more thorough vision-based analysis, which may produce better results. For highly complex tables, manual Acrobat Pro tag editing may still be needed.</p>
 <h3>Scanned pages not recognized correctly</h3>
 <p>Poor scan quality is the most common cause of OCR failures. Rescan at 300 DPI or higher, straighten the pages, and try again.</p>
 <h2>When to contact support</h2>

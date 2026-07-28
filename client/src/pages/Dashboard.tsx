@@ -8,11 +8,10 @@ import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
 const TOOLS = [
-  { label: "Document Fixer", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
-  { label: "Complex PDF", desc: "Scanned & complex PDFs", icon: FileSearch, tab: "complexpdf", color: "bg-blue-50 text-blue-600" },
-  { label: "Video Transcription", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
-  { label: "Canvas HTML Fixer", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
-  { label: "Alt Text Generator", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
+  { label: "Remedy Docs", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
+  { label: "Remedy Video", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
+  { label: "Remedy HTML", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
+  { label: "Remedy Image", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
 ];
 
 interface JobRow {
@@ -35,9 +34,12 @@ interface UsageStatus {
   teamSeats: number;
 }
 
+// Both "document" and "complexpdf" are internal job-type values written by the
+// two remediation pipelines (still distinct server-side for routing/billing),
+// but both now surface under the single public-facing "Remedy Docs" tool name.
 const TOOL_LABELS: Record<string, string> = {
-  document: "Document Fixer",
-  complexpdf: "Complex PDF",
+  document: "Remedy Docs",
+  complexpdf: "Remedy Docs",
 };
 
 export default function Dashboard() {
@@ -143,7 +145,7 @@ export default function Dashboard() {
             )}
 
             <p className="text-sm text-gray-700">
-              A Credit is simply a page. 1 Credit = 1 page processed. Document Fixer &amp; Complex PDF both draw from this pool — larger documents use more Credits, smaller ones use fewer.
+              A Credit is simply a page. 1 Credit = 1 page processed. Remedy Docs draws from this pool — larger documents use more Credits, smaller ones use fewer.
             </p>
 
             {/* Purchased credits balance */}

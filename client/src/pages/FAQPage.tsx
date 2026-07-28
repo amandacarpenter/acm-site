@@ -27,7 +27,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What tools does Remedy508 include?",
-        a: "Your subscription includes access to five tools: Document Fixer (Word and PDF), Complex PDF (multi-column, tables, tagged PDF), Video Transcription, Canvas HTML Fixer, and Alt Text Generator. Each tool targets a specific, common accessibility problem in higher ed content.",
+        a: "Your subscription includes access to four tools: Remedy Docs (Word and PDF, including multi-column layouts, tables, and scanned pages), Remedy Video (transcription), Remedy HTML (Canvas LMS pages), and Remedy Image (alt text). Each tool targets a specific, common accessibility problem in higher ed content.",
       },
       {
         q: "Does Remedy508 make my content fully compliant?",
@@ -35,7 +35,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "How does remediation work — is it fully automatic?",
-        a: "Most tools require minimal input: upload your file, select the tool, download the output. Some tools like Alt Text Generator produce suggestions you review and confirm. The goal is to do the heavy lifting so you're editing, not building from scratch.",
+        a: "Most tools require minimal input: upload your file, select the tool, download the output. Some tools like Remedy Image produce suggestions you review and confirm. The goal is to do the heavy lifting so you're editing, not building from scratch.",
       },
       {
         q: "What accessibility standards does Remedy508 support?",
@@ -48,7 +48,7 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "What file types are supported?",
-        a: "Document Fixer handles Word (.docx) and PDF files. Complex PDF is built for advanced layouts — multi-column text, tables, forms, and scanned documents. Video Transcription accepts common video and audio formats (MP4, MOV, MP3). Canvas HTML Fixer works with HTML content directly from Canvas LMS.",
+        a: "Remedy Docs handles Word (.docx) and PDF files, including advanced layouts — multi-column text, tables, forms, and scanned documents. It automatically detects which kind of document you've uploaded and applies the right remediation approach. Remedy Video accepts common video and audio formats (MP4, MOV, MP3). Remedy HTML works with HTML content directly from Canvas LMS.",
       },
       {
         q: "What happens to my files after I upload them?",
@@ -73,7 +73,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 150 Credits per month across Document Fixer and Complex PDF (1 Credit = 1 page). Alt Text Generator, Canvas HTML Fixer, and Video Transcription are unlimited. Licensed for single-user personal use only.",
+        a: "The Individual plan gives you 150 Credits per month via Remedy Docs (1 Credit = 1 page). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Licensed for single-user personal use only.",
       },
       {
         q: "What does the Team plan include?",
@@ -81,7 +81,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What is a Credit?",
-        a: "A Credit is simply a page. 1 Credit = 1 page processed, so a 10-page PDF run through Document Fixer or Complex PDF uses 10 Credits. Alt Text Generator, Canvas HTML Fixer, and Video Transcription don't use Credits at all — they're unlimited on every paid plan. Individual documents are capped at 100 pages, and Credits reset on the 1st of each month. Need more? You can top up anytime with a Credit pack.",
+        a: "A Credit is simply a page. 1 Credit = 1 page processed, so a 10-page PDF run through Remedy Docs uses 10 Credits. Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Individual documents are capped at 100 pages, and Credits reset on the 1st of each month. Need more? You can top up anytime with a Credit pack.",
       },
       {
         q: "Can I cancel my plan?",

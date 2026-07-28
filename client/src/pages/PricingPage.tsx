@@ -9,11 +9,10 @@ const PRICE_MONTHLY = "price_1Thc2tAaDElV6hZxMwA0Wxgk";
 const PRICE_ANNUAL  = "price_1Tx9ixAaDElV6hZxZ6vb54pl"; // $179/yr
 
 const INDIVIDUAL_FEATURES = [
-  "Document Fixer (Word & PDF)",
-  "Complex PDF tool",
-  "Alt Text Generator",
-  "Canvas HTML Fixer",
-  "Video Transcription",
+  "Remedy Docs (Word & PDF)",
+  "Remedy Image",
+  "Remedy HTML",
+  "Remedy Video",
   "Email support",
   "Cancel anytime",
 ];
@@ -214,7 +213,7 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Document Fixer or Complex PDF — so a 10-page PDF uses 10 Credits. Credits reset on the 1st of each month, and Alt Text Generator, Canvas HTML Fixer, and Video Transcription don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
+              { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Remedy Docs — so a 10-page PDF uses 10 Credits. Credits reset on the 1st of each month, and Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
               { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard, pooled Credits, and a free onboarding call for the whole group." },
               { q: "How does the Team plan work?", a: "Team plans are $209/seat/year, billed annually. Credits are pooled across your team at 175/seat/month, and every Team plan includes a free onboarding call to help your group get set up. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
