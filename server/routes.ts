@@ -1150,6 +1150,35 @@ def clean_html(raw_html, page_images):
     # that have merged/missing cells in the source PDF). Pad short rows with
     # empty <td> cells so every row in a table matches the widest row's
     # column count. Cells with colspan count toward the total.
+    # WeasyPrint's tagged-PDF struct-tree builder does not implement colspan
+    # or rowspan at all (confirmed via its own source: weasyprint/pdf/tags.py
+    # has a literal "# TODO: handle rowspan and colspan values." comment) --
+    # a <td colspan="3"> renders visually as one wide cell but is tagged in
+    # the PDF struct tree as a row with just ONE /TD, while sibling rows in
+    # the same table have three. Acrobat's Regularity/Headers checks then
+    # correctly flag that row (uneven cell count, and the lone cell can only
+    # ever link to one column's header even though it visually spans all
+    # three). Real-world cause seen in practice: Claude Vision extracts a
+    # VPAT criterion whose Level/Remarks are blank/merged into a single
+    # descriptive cell using colspan. Fix at the HTML level, before
+    # WeasyPrint ever sees it: split every colspan>1 cell into the real cell
+    # plus (colspan-1) empty filler cells of the same type, and drop the
+    # colspan attribute -- this guarantees every row's real cell COUNT
+    # matches, independent of whatever WeasyPrint does/doesn't do with
+    # colspan, since we no longer rely on it being interpreted at all.
+    for table in soup.find_all('table'):
+        for row in table.find_all('tr'):
+            for cell in row.find_all(['td', 'th'], recursive=False):
+                try:
+                    span = int(cell.get('colspan', 1))
+                except (TypeError, ValueError):
+                    span = 1
+                if span > 1:
+                    del cell['colspan']
+                    for _ in range(span - 1):
+                        filler = soup.new_tag(cell.name)
+                        filler.string = ''
+                        cell.insert_after(filler)
     for table in soup.find_all('table'):
         rows = table.find_all('tr')
         if not rows:
