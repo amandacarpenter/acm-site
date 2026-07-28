@@ -91,6 +91,19 @@ async function getCreditBalance(clerkUserId: string): Promise<{
 // while avoiding the old bug where a flat "1 document" was charged regardless of page count.
 async function checkHasCredits(clerkUserId: string): Promise<{ allowed: boolean; reason?: string }> {
   try {
+    // Admin bypass: the owner account never gets blocked by the credit gate, regardless
+    // of balance. Mirrors the existing frontend subscription bypass in ToolsPage.tsx for
+    // the same email. Deduction below still runs normally (so usage still logs to the
+    // jobs table / Dashboard), it just can never prevent the job from starting.
+    try {
+      const adminUser = await clerkClient.users.getUser(clerkUserId);
+      if (adminUser.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com") {
+        return { allowed: true };
+      }
+    } catch (lookupErr: any) {
+      console.error("[ADMIN CREDIT BYPASS] Lookup error (non-fatal):", lookupErr.message);
+    }
+
     const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
     const remaining = (monthlyLimit - monthlyUsed) + purchasedCredits;
     if (remaining > 0) return { allowed: true };
