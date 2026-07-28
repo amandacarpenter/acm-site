@@ -3,7 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle } from "lucide-react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
@@ -194,11 +194,17 @@ export default function Dashboard() {
         </div>
 
         {/* Tools CTA */}
-        <div className="mb-8">
+        <div className="mb-8 flex flex-wrap items-center gap-3">
           <Link href="/tools">
             <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
               <Zap className="w-4 h-4" />
               Access the Tools
+            </button>
+          </Link>
+          <Link href="/contact">
+            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#d63b1f] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
+              <LifeBuoy className="w-4 h-4" />
+              Support &amp; Help
             </button>
           </Link>
         </div>
