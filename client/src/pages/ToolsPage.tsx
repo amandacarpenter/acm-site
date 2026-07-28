@@ -804,7 +804,7 @@ export default function ToolsPage() {
               onClick={() => { window.history.pushState({}, "", `/tools/${tab.id}`); window.dispatchEvent(new PopStateEvent("popstate")); }}
               className="w-full flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-[#0d9488] hover:shadow-md transition text-left"
             >
-              <img src={tab.icon} alt="" aria-hidden="true" className="w-14 h-14 object-contain flex-shrink-0" />
+              <img src={tab.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="font-bold text-[#3a485b] text-base">{tab.title}</span>
@@ -822,7 +822,7 @@ export default function ToolsPage() {
           <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1">
             {TAB_META.map((tab) => (
               <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px]" data-testid={`tab-${tab.id}`}>
-                <img src={tab.icon} alt="" aria-hidden="true" className="w-14 h-14 object-contain shrink-0" />
+                <img src={tab.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
                 <span className="font-semibold text-[10px] sm:text-xs text-center leading-tight whitespace-pre-line w-full">{tab.label}</span>
                 {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
               </TabsTrigger>
