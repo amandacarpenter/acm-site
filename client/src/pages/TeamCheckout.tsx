@@ -122,19 +122,15 @@ export default function TeamCheckout() {
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
-              <p className="text-sm text-gray-700 mb-1">Minimum 2 seats, up to {MAX_TEAM_SEATS} per team</p>
+              <p className="text-sm text-gray-700 mb-1">
+                Minimum 2 seats, up to {MAX_TEAM_SEATS} per team — need more?{" "}
+                <Link href="/contact?topic=more-seats">
+                  <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
+                </Link>
+              </p>
               <p className="text-sm text-gray-700 mb-1">
                 175 Credits/month per seat, pooled across your team
               </p>
-              {seats >= MAX_TEAM_SEATS && (
-                <p className="text-sm text-[#0d9488] mb-1">
-                  Need more than {MAX_TEAM_SEATS} seats?{" "}
-                  <Link href="/contact?topic=more-seats">
-                    <span className="underline font-medium cursor-pointer">Contact us</span>
-                  </Link>{" "}
-                  — we can set up a larger team.
-                </p>
-              )}
 
               {/* Live total */}
               <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">

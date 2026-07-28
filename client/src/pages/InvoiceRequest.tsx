@@ -130,15 +130,12 @@ export default function InvoiceRequest() {
               <p className="text-xs text-gray-400 mt-1">
                 {form.seats} seat{form.seats !== 1 ? "s" : ""} × $209 = ${(form.seats * 209).toLocaleString()}/year · {form.seats * 175} Credits/month pooled · includes a free onboarding call
               </p>
-              {form.seats >= MAX_TEAM_SEATS && (
-                <p className="text-xs text-[#0d9488] mt-1">
-                  Need more than {MAX_TEAM_SEATS} seats?{" "}
-                  <Link href="/contact?topic=more-seats">
-                    <span className="underline font-medium cursor-pointer">Contact us</span>
-                  </Link>{" "}
-                  instead — we'll set up a larger team for you.
-                </p>
-              )}
+              <p className="text-xs text-gray-400 mt-1">
+                Up to {MAX_TEAM_SEATS} seats per team — need more?{" "}
+                <Link href="/contact?topic=more-seats">
+                  <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
+                </Link>
+              </p>
             </div>
 
             <div>
