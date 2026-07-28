@@ -81,7 +81,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What is a Credit?",
-        a: "A Credit is simply a page. 1 Credit = 1 page processed, so a 10-page PDF run through Remedy Docs uses 10 Credits. Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Individual documents are capped at 100 pages, and Credits reset on the 1st of each month. Need more? You can top up anytime with a Credit pack.",
+        a: "A Credit is simply a page. 1 Credit = 1 page processed, so a 10-page PDF run through Remedy Docs uses 10 Credits. Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Individual documents are capped at 50 pages, and Credits reset on the 1st of each month. Need more? You can top up anytime with a Credit pack.",
       },
       {
         q: "Can I cancel my plan?",

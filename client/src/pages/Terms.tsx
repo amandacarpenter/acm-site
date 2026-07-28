@@ -38,11 +38,11 @@ export default function Terms() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
                 <p className="font-semibold text-[#3a485b]">Individual — $19/month or $179/year</p>
-                <p className="text-sm">150 Credits per month via Remedy Docs (1 Credit = 1 page processed; documents over 100 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
+                <p className="text-sm">150 Credits per month via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
               </div>
               <div>
                 <p className="font-semibold text-[#3a485b]">Team — $209/seat/year (annual only, 2+ seats)</p>
-                <p className="text-sm">175 Credits/seat/month pooled across the organization via Remedy Docs (1 Credit = 1 page processed; documents over 100 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Every Team plan includes a free onboarding call. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
+                <p className="text-sm">175 Credits/seat/month pooled across the organization via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Every Team plan includes a free onboarding call. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">

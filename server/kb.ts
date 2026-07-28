@@ -228,7 +228,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Straighten pages before scanning</strong> — skewed pages confuse layout detection.</li>
 </ul>
 <h2>Document size limits</h2>
-<p>Remedy Docs supports documents up to 100 pages. Larger documents should be split before uploading.</p>`,
+<p>Remedy Docs supports documents up to 50 pages. Larger documents should be split before uploading.</p>`,
   "alt-text-generator": `<h2>What is alt text?</h2>
 <p>Alt text (alternative text) is a written description of an image that screen readers announce to users who cannot see the image. It also displays when an image fails to load. Without alt text, images are completely inaccessible to blind and low-vision users.</p>
 <h2>Using Remedy Image</h2>

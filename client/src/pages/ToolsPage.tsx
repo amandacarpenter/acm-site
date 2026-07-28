@@ -408,7 +408,7 @@ function RemedyDocsTab() {
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Remedy508 automatically detects your document's structure and picks the right remediation approach</p>
-        <p>✓ Documents up to 100 pages</p>
+        <p>✓ Documents up to 50 pages</p>
       </div>
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}

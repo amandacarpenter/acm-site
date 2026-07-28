@@ -130,7 +130,7 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-gray-900">
-                  One seat. All five tools. Built for anyone who needs to make course materials accessible on their own.
+                  One seat. All four tools. Only Remedy Docs uses Credits — Remedy Image, Remedy HTML, and Remedy Video are unlimited. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">

@@ -235,7 +235,7 @@ export default function Home() {
               How It Works
             </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Five Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
+              Four Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
             </h2>
 
           </div>
