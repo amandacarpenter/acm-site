@@ -1346,6 +1346,41 @@ def _patched_get_wrapped_table(self):
 
 _wp_boxes.ParentBox.get_wrapped_table = _patched_get_wrapped_table
 
+# WeasyPrint bug: _build_box_tree() reads element.attrib.get('scope') off each
+# <th> ONLY to decide internally whether that header groups into row_headers
+# or column_headers (for building the /Headers array on <td> cells) -- it
+# NEVER writes the scope value back out as a /Scope attribute on the <th>
+# struct element itself. Verified directly: even a minimal <th scope="row">
+# test document produces a tagged PDF where every /TH has no /A/Scope entry
+# at all. PDF/UA explicitly states Headers/ID linking does NOT substitute for
+# Scope (see ISO 32000-2 14.8.4.8.3, Note 4: "The use of Headers does not
+# negate the need for Scope") -- so Acrobat's Headers check correctly fails
+# even though our Headers/ID linking (which WeasyPrint DOES emit) is present.
+# Patch: wrap the whole recursive tag-builder so that immediately after it
+# creates a struct element for a <th>, we also set element['A'] = {'O':
+# '/Table', 'S': '/Row' or '/Column'} based on the exact same attrib lookup
+# WeasyPrint itself already performs, so Acrobat's Headers/Scope check has a
+# real Scope value to find -- without touching any other behavior of the
+# original recursive builder (delegates to it entirely, just augments the
+# yielded TH elements before they're consumed by the caller).
+import weasyprint.pdf.tags as _wp_tags
+import pydyf as _pydyf
+
+_original_build_box_tree = _wp_tags._build_box_tree
+
+def _patched_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
+    for element in _original_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
+        try:
+            if element.get('S') == '/TH' and box.element is not None:
+                scope_attr = box.element.attrib.get('scope')
+                pdf_scope = 'Row' if scope_attr == 'row' else 'Column'
+                element['A'] = _pydyf.Dictionary({'O': '/Table', 'S': f'/{pdf_scope}'})
+        except Exception:
+            pass
+        yield element
+
+_wp_tags._build_box_tree = _patched_build_box_tree
+
 try:
     HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
 except ValueError as wp_val_err:
@@ -1489,6 +1524,44 @@ _pp_st = pp.Root['/StructTreeRoot']
 for _pp_k in _pp_get_kids(_pp_st):
     _pp_visit(_pp_k)
 print(f'headers-repair: fixed {_pp_headers_fixed} TD elements', file=sys.stderr)
+
+# Safety net: verify every /TH actually got a /Scope from the monkeypatch
+# above. If WeasyPrint's internal struct-tree shape ever changes such that
+# the patched _build_box_tree stops firing for some TH (e.g. a future
+# WeasyPrint version restructures how table cells are yielded), backfill any
+# TH missing /A/S here using the same running-header-row logic already used
+# for TD /Headers, rather than silently shipping a PDF that fails the
+# Acrobat Headers check again with no visible signal.
+_pp_th_total = 0
+_pp_th_missing_scope = 0
+
+def _pp_verify_scope(elem, in_header_row=False):
+    global _pp_th_total, _pp_th_missing_scope
+    s = _pp_get_S(elem)
+    if s == '/TR':
+        cells = _pp_get_kids(elem)
+        tags = [_pp_get_S(c) for c in cells]
+        all_th = bool(cells) and all(t == '/TH' for t in tags)
+        for ci, c in enumerate(cells):
+            if _pp_get_S(c) != '/TH':
+                continue
+            _pp_th_total += 1
+            attrs = _pp_get_attr(c)
+            has_scope = attrs is not None and '/S' in attrs
+            if not has_scope:
+                _pp_th_missing_scope += 1
+                fallback_scope = 'Column' if (all_th or ci == 0) else 'Column'
+                attrs = _pp_get_attr(c, create=True)
+                attrs['/S'] = pikepdf.Name('/' + fallback_scope)
+        return
+    for k in _pp_get_kids(elem):
+        _pp_verify_scope(k)
+
+for _pp_k in _pp_get_kids(_pp_st):
+    _pp_verify_scope(_pp_k)
+print(f'scope-verify: {_pp_th_total} TH total, {_pp_th_missing_scope} were missing /Scope and backfilled', file=sys.stderr)
+if _pp_th_total > 0 and _pp_th_missing_scope == _pp_th_total:
+    print('scope-verify WARNING: monkeypatch appears to have not fired at all (100% missing) -- check WeasyPrint version compatibility', file=sys.stderr)
 
 pp.save(output_path)
 pp.close()
