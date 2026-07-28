@@ -1592,6 +1592,46 @@ print(f'scope-verify: {_pp_th_total} TH total, {_pp_th_missing_scope} were missi
 if _pp_th_total > 0 and _pp_th_missing_scope == _pp_th_total:
     print('scope-verify WARNING: monkeypatch appears to have not fired at all (100% missing) -- check WeasyPrint version compatibility', file=sys.stderr)
 
+# CRITICAL gap, confirmed by direct inspection of weasyprint/pdf/tags.py
+# source (zero occurrences of "IDTree" anywhere in that module): WeasyPrint
+# assigns a unique /ID byte string directly on each /TH struct element, and
+# writes /Headers arrays on /TD cells that reference those ID strings -- but
+# it NEVER builds or attaches the /IDTree name tree that PDF/UA (ISO 32000-2
+# 14.7.3.4, via the general name-tree mechanism in 7.9.6) requires on
+# StructTreeRoot for those IDs to be considered resolvable. Confirmed via a
+# real generated PDF: 400/400 TH have unique, non-colliding /ID values, and
+# all 1,025 /Headers references correctly resolve to one of those IDs when
+# walked directly -- yet StructTreeRoot has no /IDTree key at all. Acrobat's
+# accessibility checker validates Headers/ID resolution through /IDTree, not
+# by walking the struct tree the way our own diagnostics do, so it correctly
+# flags every single Headers reference as unresolvable even though the
+# struct tree itself is fully self-consistent. This is almost certainly the
+# real, final cause of the persistent "Headers" failure -- the /Scope fix
+# and the colspan fix were both real, necessary bugs, but neither could ever
+# make Acrobat's Headers check pass while /IDTree was missing entirely.
+# Fix: collect every struct element that has an /ID (currently just /TH),
+# build a proper sorted name tree (PDF name trees require key-sorted /Names
+# arrays alternating key/value), and attach it as StructTreeRoot/IDTree.
+_pp_id_entries = []
+
+def _pp_collect_ids(elem):
+    if isinstance(elem, pikepdf.Dictionary) and '/ID' in elem:
+        _pp_id_entries.append((bytes(elem.ID), elem))
+    for k in _pp_get_kids(elem):
+        _pp_collect_ids(k)
+
+for _pp_k in _pp_get_kids(_pp_st):
+    _pp_collect_ids(_pp_k)
+
+if _pp_id_entries:
+    _pp_id_entries.sort(key=lambda pair: pair[0])
+    _pp_names_array = pikepdf.Array()
+    for _pp_id_bytes, _pp_elem in _pp_id_entries:
+        _pp_names_array.append(pikepdf.String(_pp_id_bytes))
+        _pp_names_array.append(_pp_elem)
+    _pp_st['/IDTree'] = pikepdf.Dictionary({'/Names': _pp_names_array})
+print(f'idtree-build: registered {len(_pp_id_entries)} struct element IDs into StructTreeRoot/IDTree', file=sys.stderr)
+
 pp.save(output_path)
 pp.close()
 
