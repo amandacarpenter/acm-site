@@ -12,6 +12,7 @@ import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
 import logoHero from "@/assets/logo-hero.jpg";
+import HeroWatermark from "@/components/HeroWatermark";
 import {
   Accordion,
   AccordionContent,
@@ -57,16 +58,17 @@ export default function Home() {
       <section className="relative flex flex-col lg:flex-row lg:[min-height:100svh]" aria-labelledby="hero-heading">
 
         {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
-        <div className="hidden lg:flex flex-col bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
+        <div className="hidden lg:flex flex-col relative overflow-hidden bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
+          <HeroWatermark corner="left" className="top-auto bottom-[-10%]" />
           {/* Logo row at very top */}
-          <div className="pt-6 pb-4">
+          <div className="relative pt-6 pb-4">
             <Link href="/" className="flex items-center no-underline" aria-label="Remedy508 home">
               <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
             </Link>
           </div>
 
           {/* Copy — centered vertically in remaining space */}
-          <div className="flex flex-col justify-center flex-1 pb-16">
+          <div className="relative flex flex-col justify-center flex-1 pb-16">
             <h1 id="hero-heading" className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-5">
               Not Accessible,<br />Not Acceptable™
             </h1>

@@ -2,6 +2,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useState } from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
+import HeroWatermark from "@/components/HeroWatermark";
 
 interface FAQItem {
   q: string;
@@ -127,8 +128,9 @@ export default function FAQPage() {
       <SiteHeader />
 
       {/* Hero */}
-      <section className="bg-[#3a485b] py-16 sm:py-20" aria-labelledby="faq-heading">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="faq-heading">
+        <HeroWatermark corner="right" />
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
             Got questions?
@@ -164,8 +166,9 @@ export default function FAQPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-[#3a485b] py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
+      <section className="relative overflow-hidden bg-[#3a485b] py-16">
+        <HeroWatermark corner="left" />
+        <div className="relative max-w-3xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
             Still have questions?
           </h2>
