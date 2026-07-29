@@ -2112,7 +2112,7 @@ Rules:
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { seats, clerkUserId } = req.body;
       const qty = Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(seats) || 2));
-      const TEAM_PRICE = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat (175 credits/mo/seat)
+      const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat (175 credits/mo/seat)
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -2144,12 +2144,12 @@ Rules:
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const total = (parseInt(seats) || 2) * 209;
+      const total = (parseInt(seats) || 2) * 299;
       const body = [
         `Institution: ${institutionName}`,
         `Type: ${institutionType}`,
         `Contact: ${contactName} — ${contactEmail}${contactPhone ? ` — ${contactPhone}` : ""}`,
-        `Seats: ${seats} × $209 = $${total.toLocaleString()}/year (175 credits/seat/month)`,
+        `Seats: ${seats} × $299 = $${total.toLocaleString()}/year (175 credits/seat/month)`,
         `PO Number: ${poNumber || "Not provided"}`,
         `Timeline: ${timeline}`,
         `Notes: ${notes || "None"}`,
@@ -2224,8 +2224,10 @@ Rules:
         process.env.STRIPE_PRICE_MONTHLY,
         process.env.STRIPE_PRICE_ANNUAL,
         // live mode prices
-        "price_1Thc2tAaDElV6hZxMwA0Wxgk", // $19/mo individual (150 credits/mo)
-        "price_1Tx9ixAaDElV6hZxZ6vb54pl", // $179/yr individual (150 credits/mo) — current
+        "price_1Tycq3AaDElV6hZxP4W6qC7M", // $25/mo individual (150 credits/mo) — current
+        "price_1TycqCAaDElV6hZxKM0uIEu2", // $229/yr individual (150 credits/mo) — current
+        "price_1Thc2tAaDElV6hZxMwA0Wxgk", // old $19/mo — kept valid for legacy subscribers only
+        "price_1Tx9ixAaDElV6hZxZ6vb54pl", // old $179/yr — kept valid for legacy subscribers only
         "price_1Thc2sAaDElV6hZx3M4Ua1kM", // old $149/yr — kept valid for legacy subscribers only
       ].filter(Boolean);
       if (!validPrices.includes(priceId)) {

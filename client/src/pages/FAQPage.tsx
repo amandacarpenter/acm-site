@@ -70,7 +70,7 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "Individual plans are $19/month or $179/year (save 21%). Team plans are $209/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
+        a: "Individual plans are $25/month or $229/year (save 24%). Team plans are $299/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
       },
       {
         q: "What does the Individual plan include?",

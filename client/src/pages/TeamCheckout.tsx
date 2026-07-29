@@ -6,7 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 
-const TEAM_PRICE_ANNUAL = "price_1Tx9k7AaDElV6hZxYiVekuQn"; // $209/yr/seat
+const TEAM_PRICE_ANNUAL = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 
 const TEAM_FEATURES = [
@@ -27,7 +27,7 @@ export default function TeamCheckout() {
   const { isSignedIn, userId } = useAuth();
   const [, navigate] = useLocation();
 
-  const total = seats * 209;
+  const total = seats * 299;
 
   function adjustSeats(delta: number) {
     setSeats((s) => Math.min(MAX_TEAM_SEATS, Math.max(2, s + delta)));
@@ -74,7 +74,7 @@ export default function TeamCheckout() {
           <h1 id="team-heading" className="text-4xl font-bold text-white mb-3">
             Team Plan
           </h1>
-          <p className="text-white/70 text-lg">$209/seat/year — annual only</p>
+          <p className="text-white/70 text-lg">$299/seat/year — annual only</p>
         </div>
       </section>
 
@@ -137,7 +137,7 @@ export default function TeamCheckout() {
               {/* Live total */}
               <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">
                 <p className="text-lg font-bold text-[#3a485b]">
-                  {seats} seat{seats !== 1 ? "s" : ""} × $209 ={" "}
+                  {seats} seat{seats !== 1 ? "s" : ""} × $299 ={" "}
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">

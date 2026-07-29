@@ -6,8 +6,8 @@ import HeroWatermark from "@/components/HeroWatermark";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 
-const PRICE_MONTHLY = "price_1Thc2tAaDElV6hZxMwA0Wxgk";
-const PRICE_ANNUAL  = "price_1Tx9ixAaDElV6hZxZ6vb54pl"; // $179/yr
+const PRICE_MONTHLY = "price_1Tycq3AaDElV6hZxP4W6qC7M"; // $25/mo
+const PRICE_ANNUAL  = "price_1TycqCAaDElV6hZxKM0uIEu2"; // $229/yr
 
 const INDIVIDUAL_FEATURES = [
   "Remedy Docs (Word & PDF)",
@@ -114,20 +114,20 @@ export default function PricingPage() {
                           annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-600"
                         }`}
                       >
-                        Annual <span className="text-[#0d9488]">−21%</span>
+                        Annual <span className="text-[#0d9488]">−24%</span>
                       </button>
                     </div>
                   </div>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-5xl font-bold text-[#3a485b]">
-                      {annual ? "$15" : "$19"}
+                      {annual ? "$19" : "$25"}
                     </span>
                     <span className="mb-2 text-base text-gray-900">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-base text-gray-900">$179/year — paid in full upfront, not refundable</p>
+                    <p className="text-base text-gray-900">$229/year — paid in full upfront, not refundable</p>
                   ) : (
-                    <p className="text-base text-gray-900">or $179/yr — save 21%</p>
+                    <p className="text-base text-gray-900">or $229/yr — save 24%</p>
                   )}
                 </div>
 
@@ -170,7 +170,7 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <p className="text-2xl font-bold text-white mb-4">Team</p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className="text-5xl font-bold text-white">$209</span>
+                    <span className="text-5xl font-bold text-white">$299</span>
                     <span className="mb-2 text-base text-white">/seat/yr</span>
                   </div>
                   <p className="text-base text-white">Annual only · 2+ seats · paid in full upfront, not refundable</p>
@@ -218,7 +218,7 @@ export default function PricingPage() {
               { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Remedy Docs — so a 10-page PDF uses 10 Credits. Credits reset on the 1st of each month, and Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
               { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard, pooled Credits, and a free onboarding call for the whole group." },
-              { q: "How does the Team plan work?", a: "Team plans are $209/seat/year, billed annually. Credits are pooled across your team at 175/seat/month, and every Team plan includes a free onboarding call to help your group get set up. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
+              { q: "How does the Team plan work?", a: "Team plans are $299/seat/year, billed annually. Credits are pooled across your team at 175/seat/month, and every Team plan includes a free onboarding call to help your group get set up. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">
