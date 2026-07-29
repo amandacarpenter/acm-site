@@ -228,7 +228,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Straighten pages before scanning</strong> — skewed pages confuse layout detection.</li>
 </ul>
 <h2>Document size limits</h2>
-<p>Remedy Docs supports documents up to 50 pages. Larger documents should be split before uploading.</p>`,
+<p>Remedy Docs supports documents up to 100 pages. Larger documents should be split before uploading.</p>`,
   "alt-text-generator": `<h2>What is alt text?</h2>
 <p>Alt text (alternative text) is a written description of an image that screen readers announce to users who cannot see the image. It also displays when an image fails to load. Without alt text, images are completely inaccessible to blind and low-vision users.</p>
 <h2>Using Remedy Image</h2>
@@ -767,32 +767,73 @@ if (count === 0) {
     }
   });
   insertMany(SEED);
-  console.log("[KB] Seeded 30 articles");
+  console.log(`[KB] Seeded ${SEED.length} articles`);
 }
 
-// ── Content refresh migration ──────────────────────────────────────────────
-// The seed above only runs once (on an empty table), so editing ARTICLE_CONTENT
-// alone does NOT update already-seeded production rows. This migration
-// force-refreshes specific article transcripts whenever their live content
-// still contains known-stale phrasing, keeping kb.ts as the source of truth
-// for these articles even after the initial seed. Safe to run on every boot:
-// each check is idempotent (no-op once the live content matches).
-const STALE_MARKERS: Record<string, string[]> = {
-  "tour-of-your-dashboard": ["five Remedy508 tools", "50 documents per month", "valid for 12 months from purchase"],
-  "uploading-your-first-file": ["counts as one document"],
-  "alt-text-generator": ["<h2>What good alt text looks like</h2>"],
-};
-for (const [id, staleMarkers] of Object.entries(STALE_MARKERS)) {
-  const row = db.prepare("SELECT transcript FROM kb_articles WHERE id = ?").get(id) as { transcript: string } | undefined;
-  if (!row) continue;
-  const needsRefresh =
-    id === "alt-text-generator"
-      ? !row.transcript?.includes("How to get a link (URL) for an image")
-      : staleMarkers.some((marker) => row.transcript?.includes(marker));
-  if (needsRefresh && ARTICLE_CONTENT[id]) {
-    db.prepare("UPDATE kb_articles SET transcript = ?, updated_at = datetime('now') WHERE id = ?").run(ARTICLE_CONTENT[id], id);
-    console.log(`[KB] Refreshed stale content for article: ${id}`);
+// ── Content reconciliation migration ────────────────────────────────────────
+// The seed above only runs once (on an empty table), so editing SEED or
+// ARTICLE_CONTENT alone does NOT update already-seeded production rows.
+// This migration runs on every boot and treats kb.ts (SEED + ARTICLE_CONTENT)
+// as the single source of truth: for every article defined in SEED, it
+// compares every live-editable field against the source and overwrites the
+// live row wherever they differ. It also removes any live row whose id no
+// longer exists in SEED (e.g. articles merged/retired during a rebrand), so
+// stale orphaned content can't keep surfacing in listings or via direct link.
+// Every check is idempotent — once live content matches source, this is a
+// no-op read-only pass on subsequent boots.
+const reconcileStmt = db.prepare(`
+  UPDATE kb_articles
+  SET section = @section, section_name = @section_name, order_num = @order_num,
+      title = @title, summary = @summary, transcript = @transcript,
+      related_ids = @related_ids, updated_at = datetime('now')
+  WHERE id = @id
+`);
+const deleteOrphanStmt = db.prepare("DELETE FROM kb_articles WHERE id = ?");
+const liveRows = db.prepare("SELECT * FROM kb_articles").all() as any[];
+const seedIds = new Set(SEED.map((a) => a.id));
+let refreshedCount = 0;
+let removedCount = 0;
+const reconcile = db.transaction(() => {
+  for (const row of liveRows) {
+    if (!seedIds.has(row.id)) {
+      deleteOrphanStmt.run(row.id);
+      removedCount++;
+      console.log(`[KB] Removed orphaned article no longer in source: ${row.id}`);
+      continue;
+    }
   }
+  for (const a of SEED) {
+    const row = liveRows.find((r) => r.id === a.id);
+    if (!row) continue; // handled by the seed-once block on empty tables
+    const sourceTranscript = ARTICLE_CONTENT[a.id] ?? null;
+    const sourceRelatedIds = JSON.stringify(a.related_ids);
+    const differs =
+      row.section !== a.section ||
+      row.section_name !== a.section_name ||
+      row.order_num !== a.order_num ||
+      row.title !== a.title ||
+      row.summary !== a.summary ||
+      row.transcript !== sourceTranscript ||
+      row.related_ids !== sourceRelatedIds;
+    if (differs) {
+      reconcileStmt.run({
+        id: a.id,
+        section: a.section,
+        section_name: a.section_name,
+        order_num: a.order_num,
+        title: a.title,
+        summary: a.summary,
+        transcript: sourceTranscript,
+        related_ids: sourceRelatedIds,
+      });
+      refreshedCount++;
+      console.log(`[KB] Reconciled stale content for article: ${a.id}`);
+    }
+  }
+});
+reconcile();
+if (refreshedCount > 0 || removedCount > 0) {
+  console.log(`[KB] Reconciliation complete: ${refreshedCount} article(s) refreshed, ${removedCount} orphaned row(s) removed`);
 }
 
 // ── Query helpers ─────────────────────────────────────────────────────────────
