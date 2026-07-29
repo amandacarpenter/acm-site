@@ -12,7 +12,14 @@ import * as path from "path";
 import * as child_process from "child_process";
 import * as os from "os";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
+// Upload size limits are enforced here to match what the Knowledge Base documents to users
+// (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
+// 50 MB for documents/images, 3 GB for video/audio. Keep these in sync with the KB text
+// if either changes — there is no other source of truth for these numbers.
+const DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024; // 50 MB — documents and images
+const MEDIA_UPLOAD_LIMIT_BYTES = 3 * 1024 * 1024 * 1024; // 3 GB — video and audio
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: DOCUMENT_UPLOAD_LIMIT_BYTES } });
+const uploadMedia = multer({ storage: multer.memoryStorage(), limits: { fileSize: MEDIA_UPLOAD_LIMIT_BYTES } });
 const anthropic = new Anthropic();
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
@@ -898,7 +905,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
   });
 
   // ── VIDEO TRANSCRIPTION ─────────────────────────────────────────────────────
-  app.post("/api/video/transcribe", upload.single("file"), async (req, res) => {
+  app.post("/api/video/transcribe", uploadMedia.single("file"), async (req, res) => {
     const bodyUrl = req.body?.url;
     if (!req.file && !bodyUrl) return res.status(400).json({ error: "No file or URL provided" });
 
