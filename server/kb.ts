@@ -129,11 +129,11 @@ const ARTICLE_CONTENT: Record<string, string> = {
   "tour-of-your-dashboard": `<h2>Your dashboard at a glance</h2>
 <p>After logging in, you land on your dashboard. Here's what you'll find:</p>
 <h3>Usage meter</h3>
-<p>At the top of your dashboard you'll see your current usage — how many documents you've processed this billing period versus your plan limit. Individual plans include 50 documents per month. Team plans pool usage across seats.</p>
+<p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit. Remedy508 runs on a simple credit system: <strong>1 credit = 1 processed page</strong>. Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets on the 1st of each billing month.</p>
 <h3>Quick-access tools</h3>
-<p>The five Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
+<p>The four Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
 <h3>Credit pack balance</h3>
-<p>If you've purchased credit packs (additional document credits beyond your plan limit), your remaining credit balance is shown here. Credits roll over and are valid for 12 months from purchase.</p>
+<p>If you've purchased a page-credit pack (an additional block of credits on top of your monthly plan), your remaining balance is shown here. Purchased credits are a separate top-up pool that's drawn down only after your monthly plan credits are used up, so they carry over — nothing is lost if you don't use your full monthly allotment first.</p>
 <h3>Recent activity</h3>
 <p>Your most recently processed files appear in the activity feed so you can quickly re-download or review past results.</p>
 <h3>Account settings</h3>
@@ -163,8 +163,8 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <p>The current upload limit is <strong>50 MB per file</strong>. If your file is larger, try compressing images in the document first, or split it into sections before uploading.</p>
 <h2>Downloading your result</h2>
 <p>Once processing is complete, a download button appears. Click it to save the remediated file to your computer. Your result is also saved in your recent activity on the dashboard for 30 days.</p>
-<h2>What counts as one document?</h2>
-<p>Each file you submit counts as one document against your monthly limit — regardless of page count or file size. A 50-page PDF and a 2-page PDF both count as one document.</p>`,
+<h2>How credits are counted</h2>
+<p>Remedy508 runs on a page-based credit system: <strong>1 credit = 1 processed page</strong>. A 2-page PDF uses 2 credits; a 50-page PDF uses 50 credits. Word documents (.docx) count as 1 credit per file, since page count isn't available before processing. Individual plans include 150 credits per month, and Team plans include 175 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
   "understanding-your-results": `<h2>What Remedy508 fixes</h2>
 <p>Depending on the tool used, Remedy508 applies some or all of the following fixes automatically:</p>
 <ul>
@@ -183,7 +183,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h2>When the result isn't perfect</h2>
 <p>Highly complex documents — scanned pages, intricate tables, multi-column layouts — occasionally need minor manual corrections after remediation. See the articles in Section 4 (Editing a PDF After Remedy508) for guidance on common post-remediation edits.</p>
 <h2>Counts and credits</h2>
-<p>Your document count updates immediately after a successful submission. If a file fails to process for any reason, it does not count against your limit — contact us and we'll investigate.</p>`,
+<p>Your credit balance updates immediately after a successful submission, deducted at 1 credit per page processed. If a file fails to process for any reason, it does not count against your balance — contact us and we'll investigate.</p>`,
   "document-fixer-word-doc": `<h2>What Remedy Docs does</h2>
 <p>Remedy Docs takes a Word document (.docx) or a PDF — plain text, table-heavy, or scanned/image-based — and applies a full suite of WCAG 2.1 AA accessibility fixes. It automatically detects your document's structure and routes it to the right remediation pipeline internally, so you never have to choose between tools.</p>
 <h2>How auto-detection works</h2>
@@ -239,6 +239,15 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li>Review the generated description. Edit it if needed for your specific context.</li>
   <li>Copy the alt text and add it to your document, web page, or LMS content.</li>
 </ol>
+<h2>How to get a link (URL) for an image</h2>
+<p>If you don't want to download and re-upload an image file, you can paste a direct link to it instead. The link must point straight at the image itself &mdash; not a webpage that displays it &mdash; because Remedy Image fetches whatever the URL returns and expects image data back.</p>
+<ul>
+  <li><strong>An image already on a website:</strong> Right-click the image and choose <strong>Copy Image Address</strong> (Chrome/Edge) or <strong>Copy Image Link</strong> (Safari/Firefox). Paste that into the image URL field. A good link usually ends in <code>.jpg</code>, <code>.png</code>, <code>.gif</code>, or <code>.webp</code>.</li>
+  <li><strong>Canva:</strong> Open your design, click <strong>Share &rarr; Download</strong>, choose PNG or JPG, and download it &mdash; then upload that file directly to Remedy Image. Canva's share links open an editor page, not a raw image file, so they won't work pasted as a URL.</li>
+  <li><strong>Google Drive:</strong> A normal Drive "Share" link (like <code>drive.google.com/file/d/.../view</code>) opens a preview page, not the raw image, so Remedy Image can't read it directly. Instead, download the image to your computer and upload the file, or right-click the image while previewing it in Drive and choose <strong>Copy image address</strong> if your browser offers that option.</li>
+  <li><strong>Canvas LMS:</strong> If the image is already embedded in a Canvas page, right-click it in the page preview (not the editor) and choose <strong>Copy Image Address</strong>, then paste that link in.</li>
+</ul>
+<p>Not sure if a link will work? Paste it into a new browser tab first &mdash; if the tab shows just the image by itself (not a webpage with buttons, menus, or other content around it), the link will work in Remedy Image. When in doubt, downloading the image and uploading the file directly is always the most reliable option.</p>
 <h2>What good alt text looks like</h2>
 <p>Good alt text is specific, concise, and context-aware. It describes what matters about the image for the purpose it serves in your content.</p>
 <ul>
@@ -759,6 +768,31 @@ if (count === 0) {
   });
   insertMany(SEED);
   console.log("[KB] Seeded 30 articles");
+}
+
+// ── Content refresh migration ──────────────────────────────────────────────
+// The seed above only runs once (on an empty table), so editing ARTICLE_CONTENT
+// alone does NOT update already-seeded production rows. This migration
+// force-refreshes specific article transcripts whenever their live content
+// still contains known-stale phrasing, keeping kb.ts as the source of truth
+// for these articles even after the initial seed. Safe to run on every boot:
+// each check is idempotent (no-op once the live content matches).
+const STALE_MARKERS: Record<string, string[]> = {
+  "tour-of-your-dashboard": ["five Remedy508 tools", "50 documents per month", "valid for 12 months from purchase"],
+  "uploading-your-first-file": ["counts as one document"],
+  "alt-text-generator": ["<h2>What good alt text looks like</h2>"],
+};
+for (const [id, staleMarkers] of Object.entries(STALE_MARKERS)) {
+  const row = db.prepare("SELECT transcript FROM kb_articles WHERE id = ?").get(id) as { transcript: string } | undefined;
+  if (!row) continue;
+  const needsRefresh =
+    id === "alt-text-generator"
+      ? !row.transcript?.includes("How to get a link (URL) for an image")
+      : staleMarkers.some((marker) => row.transcript?.includes(marker));
+  if (needsRefresh && ARTICLE_CONTENT[id]) {
+    db.prepare("UPDATE kb_articles SET transcript = ?, updated_at = datetime('now') WHERE id = ?").run(ARTICLE_CONTENT[id], id);
+    console.log(`[KB] Refreshed stale content for article: ${id}`);
+  }
 }
 
 // ── Query helpers ─────────────────────────────────────────────────────────────
