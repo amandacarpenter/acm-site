@@ -17,7 +17,7 @@ export default function Privacy() {
             Legal
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: July 29, 2026</p>
         </div>
       </section>
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
@@ -82,11 +82,38 @@ export default function Privacy() {
             </table>
           </Section>
 
-          <Section title="5. FERPA Compliance">
+          <Section title="5. Cookies and Similar Technologies">
+            <p className="mb-3">Remedy508 uses a limited set of cookies required to operate the Service. We do not use advertising or third-party tracking cookies, and we do not sell or share data collected through cookies.</p>
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="bg-[#3a485b]">
+                  <th className="text-left p-3 text-white font-semibold">Cookie</th>
+                  <th className="text-left p-3 text-white font-semibold">Set By</th>
+                  <th className="text-left p-3 text-white font-semibold">Purpose</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  ["Authentication / session", "Clerk", "Keeps you signed in and secures your account session. Strictly necessary — the Service cannot function without it."],
+                  ["Fraud prevention", "Stripe", "Detects fraudulent payment activity during checkout. Strictly necessary for processing payments securely."],
+                  ["Interface preference", "Remedy508", "Remembers minor UI state, such as whether a sidebar is expanded. Functional, not tracking-related."],
+                ].map(([cookie, setBy, purpose], i) => (
+                  <tr key={cookie} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                    <td className="p-3 font-medium">{cookie}</td>
+                    <td className="p-3">{setBy}</td>
+                    <td className="p-3">{purpose}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-3">Because these cookies are strictly necessary for account authentication and payment security, no cookie consent banner is used. You can block or delete cookies through your browser settings, but doing so may prevent you from logging in or completing payment. We do not currently use analytics or advertising cookies; if that changes, we will update this section and this policy's effective date.</p>
+          </Section>
+
+          <Section title="6. FERPA Compliance">
             <p>Higher education institutions using Remedy508 may upload course materials that contain student educational records covered by FERPA. Left Coast Learning LLC acts as a service provider on behalf of the institution under 34 C.F.R. § 99.31(a)(1). We process student-related data only to perform accessibility remediation, do not use it for any other purpose, do not re-disclose it, and do not retain it after processing is complete.</p>
           </Section>
 
-          <Section title="6. California Residents — CCPA Rights">
+          <Section title="7. California Residents — CCPA Rights">
             <ul className="list-disc pl-5 space-y-2">
               <li><strong>Right to Know:</strong> Request disclosure of personal information we've collected, its sources, purposes, and third parties involved.</li>
               <li><strong>Right to Delete:</strong> Request deletion of personal information, subject to legal exceptions.</li>
@@ -97,11 +124,11 @@ export default function Privacy() {
             <p className="mt-3">To exercise your rights, email hello@remedy508.com with subject "CCPA Request." We respond within 45 days.</p>
           </Section>
 
-          <Section title="7. European Users — GDPR">
+          <Section title="8. European Users — GDPR">
             <p>If you are located in the EEA, UK, or Switzerland, you have rights under the GDPR. We process your data under legal bases including contract performance, legitimate interests, legal obligation, and consent. You have the right to access, rectify, erase, restrict, object, and portability. Contact hello@remedy508.com. Data may be transferred to the U.S. with appropriate safeguards (Standard Contractual Clauses where applicable).</p>
           </Section>
 
-          <Section title="8. Data Retention">
+          <Section title="9. Data Retention">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#3a485b]">
@@ -127,19 +154,19 @@ export default function Privacy() {
             </table>
           </Section>
 
-          <Section title="9. Data Security">
+          <Section title="10. Data Security">
             <p>We implement industry-standard security including TLS/HTTPS encryption in transit and at rest, access controls, secure infrastructure via Railway, and multi-factor authentication support via Clerk. In the event of a data breach, we will notify you and relevant authorities as required by law.</p>
           </Section>
 
-          <Section title="10. Children's Privacy">
+          <Section title="11. Children's Privacy">
             <p>Remedy508 is designed for higher education professionals. We do not knowingly collect information from children under 13. Contact us if you believe we have done so.</p>
           </Section>
 
-          <Section title="11. Changes to This Policy">
+          <Section title="12. Changes to This Policy">
             <p>We may update this policy from time to time. For material changes, we will notify you by updating the effective date and by email or in-app notice. Continued use constitutes acceptance.</p>
           </Section>
 
-          <Section title="12. Contact Us">
+          <Section title="13. Contact Us">
             <p><strong>Left Coast Learning LLC, doing business as Remedy508</strong><br />
             Email: <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a><br />
             Website: <a href="https://remedy508.com" className="text-[#0d9488] hover:underline">remedy508.com</a></p>
