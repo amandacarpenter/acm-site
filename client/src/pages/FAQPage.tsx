@@ -78,7 +78,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Team plan include?",
-        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, 175 Credits/seat/month pooled across your team, and a free onboarding call to get everyone set up. Pay by credit card or invoice/PO.",
+        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 175 Credits/seat/month pooled across your team. Pay by credit card or invoice/PO.",
       },
       {
         q: "What is a Credit?",

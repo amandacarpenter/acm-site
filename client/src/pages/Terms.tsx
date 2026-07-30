@@ -44,7 +44,7 @@ export default function Terms() {
               </div>
               <div>
                 <p className="font-semibold text-[#3a485b]">Team — $299/seat/year (annual only, 2+ seats)</p>
-                <p className="text-sm">175 Credits/seat/month pooled across the organization via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Every Team plan includes a free onboarding call. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
+                <p className="text-sm">175 Credits/seat/month pooled across the organization via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">
