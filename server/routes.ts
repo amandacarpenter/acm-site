@@ -20,7 +20,14 @@ const DOCUMENT_UPLOAD_LIMIT_BYTES = 50 * 1024 * 1024; // 50 MB — documents and
 const MEDIA_UPLOAD_LIMIT_BYTES = 3 * 1024 * 1024 * 1024; // 3 GB — video and audio
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: DOCUMENT_UPLOAD_LIMIT_BYTES } });
 const uploadMedia = multer({ storage: multer.memoryStorage(), limits: { fileSize: MEDIA_UPLOAD_LIMIT_BYTES } });
-const anthropic = new Anthropic();
+// Default Anthropic SDK timeout is 10 minutes with no backend logging on the way there --
+// a slow/degraded Claude response hangs silently until the SDK (or Railway's proxy) finally
+// gives up, producing the generic "Something went wrong" fallback with zero trace in the logs.
+// Set an explicit 90s client-level timeout so every call site fails fast and predictably.
+// Also disable the SDK's default maxRetries: 2 -- retrying a request that already timed out
+// at 90s just re-runs the same slow call up to 2 more times (silently tripling the user's
+// wait to ~4.5 min) before the error ever surfaces. Fail once, fast, with a clear message.
+const anthropic = new Anthropic({ timeout: 90_000, maxRetries: 0 });
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 // ── Usage / Credits Helpers ──────────────────────────────────
@@ -203,12 +210,20 @@ type UsageCounter = { input: number; output: number };
 function newUsageCounter(): UsageCounter { return { input: 0, output: 0 }; }
 
 async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384, usage?: UsageCounter): Promise<string> {
-  const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: maxTokens,
-    messages: [{ role: "user", content: userContent }],
-    system: systemPrompt,
-  });
+  let msg;
+  try {
+    msg = await anthropic.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: maxTokens,
+      messages: [{ role: "user", content: userContent }],
+      system: systemPrompt,
+    });
+  } catch (err: any) {
+    const isTimeout = err?.name === "APIConnectionTimeoutError" || /timeout/i.test(err?.message || "");
+    throw new Error(isTimeout
+      ? "The AI service took too long to respond. This can happen during high demand -- please try again in a moment."
+      : `AI processing failed: ${err?.message || "unknown error"}`);
+  }
   if (usage) {
     usage.input += msg.usage?.input_tokens || 0;
     usage.output += msg.usage?.output_tokens || 0;
@@ -685,15 +700,22 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // Send full document to Claude — 16384 max_tokens handles full syllabi
       // Trim only if extremely large (>40k chars raw HTML)
       const auditContent = rawText.length > 14000 ? rawText.slice(0, 14000) + "\n...[document continues]" : rawText;
-      const HTML_CLAUDE_LIMIT = 40000;
-      const htmlForClaude = htmlContent.length > HTML_CLAUDE_LIMIT
-        ? htmlContent.slice(0, HTML_CLAUDE_LIMIT)
-        : htmlContent;
-      const htmlRemainder = ""; // No remainder — Claude handles the full document
+      // Note: htmlContent is no longer truncated here -- the chunking logic below
+      // (HTML_CHUNK_SIZE) sends the FULL document to Claude across multiple calls,
+      // so a large document's later content is no longer silently dropped before
+      // ever reaching Claude the way a flat truncate-and-send would drop it.
+      const htmlRemainder = ""; // No remainder — chunking handles documents of any size
 
-      // ── Two parallel Claude calls ──────────────────────────────────────────
+      // ── Two Claude calls ──────────────────────────────────────────
       // Call 1: Audit only — returns JSON with fixesMade + issues (no HTML to escape)
-      // Call 2: Structured HTML only — returns plain HTML (no JSON quoting problems)
+      // Call 2: Structured HTML — chunked for dense/large documents. A single call
+      // asking Claude to emit fully-structured WCAG HTML for a large, table-heavy
+      // document (e.g. a multi-page class schedule) can legitimately take 3-4+
+      // minutes of active generation to hit max_tokens, with the non-streaming API
+      // giving zero progress feedback in between (see commit notes). Splitting the
+      // source HTML into ~10k-char chunks on paragraph boundaries keeps each Claude
+      // call's generation bounded and fast, so no single request risks running past
+      // a sane timeout no matter how large or repetitive the source document is.
       const auditSystemPrompt = `You are a WCAG 2.1 AA accessibility expert auditing a document.
 Analyze the document text and return ONLY a valid JSON object — no markdown, no code fences, no explanation.
 
@@ -795,14 +817,68 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
 - Preserve ALL original content — do not omit, summarize, or add content not in the original
 - Keep URLs as plain text in <p> or <li> — do not wrap in <a> tags unless the original has hyperlink text
 - Do not include any CSS, style, or class attributes
-- Return ONLY the HTML content inside the <div lang="en"> wrapper, nothing else`;
+- This may be a partial chunk of a larger document — do not wrap in <div lang="en"> yourself; that wrapper is added once around the full assembled document afterward
+- Return ONLY the HTML content for this chunk, nothing else`;
 
-      // Run both calls in parallel, tracking real Claude token usage for this job
+      // Split the raw HTML into chunks on paragraph/line-break boundaries so each
+      // Claude call has a bounded amount of source content to restructure. This is
+      // what keeps generation time predictable regardless of overall document size.
+      const HTML_CHUNK_SIZE = 10000;
+      const splitHtmlIntoChunks = (html: string, maxLen: number): string[] => {
+        if (html.length <= maxLen) return [html];
+        const boundaries: number[] = [];
+        const boundaryRe = /<\/p>|<br\s*\/?>/gi;
+        let bm: RegExpExecArray | null;
+        while ((bm = boundaryRe.exec(html)) !== null) {
+          boundaries.push(bm.index + bm[0].length);
+        }
+        const chunks: string[] = [];
+        let start = 0;
+        while (start < html.length) {
+          let end = start + maxLen;
+          if (end >= html.length) {
+            chunks.push(html.slice(start));
+            break;
+          }
+          // Snap to the nearest paragraph/line boundary at or before the target length
+          let candidate = 0;
+          for (const b of boundaries) {
+            if (b > start && b <= end) candidate = b;
+          }
+          end = candidate || end;
+          chunks.push(html.slice(start, end));
+          start = end;
+        }
+        return chunks;
+      };
+      const htmlChunks: string[] = splitHtmlIntoChunks(htmlContent, HTML_CHUNK_SIZE);
+
+      // Run the audit call and all HTML chunk calls in parallel, tracking real
+      // Claude token usage for this job across every call.
       const docUsage = newUsageCounter();
-      const [auditResponse, structuredHtml] = await Promise.all([
+      const [auditResponse, htmlChunkResults] = await Promise.all([
         callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage),
-        callClaude(htmlSystemPrompt, `Convert this to clean semantic HTML. File: ${req.file.originalname}\n\nMammoth HTML:\n${htmlForClaude}`, 16384, docUsage),
+        Promise.all(htmlChunks.map((chunk: string, i: number) =>
+          callClaude(
+            htmlSystemPrompt,
+            `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`,
+            16384,
+            docUsage,
+          )
+        )),
       ]);
+      // Strip any accidental code fences per-chunk before joining, then wrap the
+      // assembled result in the single lang="en" div (each chunk was told not to
+      // add its own wrapper, since a chunk boundary would otherwise produce
+      // multiple nested/duplicate <div lang="en"> wrappers in the final output).
+      const cleanedChunks = htmlChunkResults.map((chunk: string) => {
+        let c = chunk.trim();
+        if (c.startsWith("```")) {
+          c = c.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+        }
+        return c;
+      });
+      const structuredHtml = `<div lang="en">\n${cleanedChunks.join("\n")}\n</div>`;
 
       let parsed: any;
       try {
@@ -886,6 +962,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         fixesMade,
       });
     } catch (err: any) {
+      console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- fast pipeline failed:`, err.message);
       res.status(500).json({ error: err.message });
     }
   }
@@ -1873,6 +1950,7 @@ print('ok')
       return res.send(pdfBuffer);
 
     } catch (err: any) {
+      console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- vision pipeline failed:`, err.message);
       res.status(500).json({ error: err.message });
     }
   }
