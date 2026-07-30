@@ -502,10 +502,20 @@ export function registerRoutes(httpServer: Server, app: Express) {
   //      at least 30% of the page area -- this is what separates a VPAT-style
   //      conformance table (nearly every page is one big table) from a normal
   //      document that happens to contain one small data table.
+  //   4. Real embedded images -- the fast text pipeline has no concept of images at
+  //      all (it extracts text blocks only and the .docx builder has no <img> case),
+  //      so any PDF with real content images MUST go to vision or those images (and
+  //      any alt text for them) are silently dropped. Uses the exact same filter as
+  //      the vision pipeline's own extraction step so routing matches what vision
+  //      would actually treat as a real image: skips tiny images (<5KB, usually
+  //      bullets/icons), skips extreme aspect ratios (thin divider lines), and skips
+  //      images repeated on 2+ pages (headers/watermarks/logos, detected via MD5
+  //      hash across the FULL document, not just the sampled pages).
   // Validated against 8 real uploaded documents before shipping (see session notes):
   // VPAT source PDFs (14p, table-ratio ~0.88) correctly route to Vision; a 660-page
   // dictionary, plain syllabi, and a chemistry doc with one small data table (ratio 0)
-  // all correctly route to the Fast pipeline.
+  // all correctly route to the Fast pipeline. Image detection added after a real user
+  // upload (PDF with content images) was mis-routed to Fast, silently losing all images.
   // Errs toward the fast pipeline when signals are weak/ambiguous, since it's
   // cheaper and faster -- only routes to vision when there's a real, specific
   // reason plain text extraction would produce a worse result.
@@ -525,14 +535,33 @@ export function registerRoutes(httpServer: Server, app: Express) {
     await writeFile(tmpIn, fileBuffer);
 
     const pyDetect = [
-      "import fitz, sys, json",
+      "import fitz, sys, json, hashlib",
       "doc = fitz.open(sys.argv[1])",
       "total_pages = len(doc)",
       "SAMPLE = min(total_pages, 8)",
       "step = max(1, total_pages // SAMPLE)",
+      "",
+      "# Pre-scan every page (not just the sample) to find images repeated on 2+ pages --",
+      "# these are headers/watermarks/logos, not real content images, and are excluded",
+      "# the same way the Complex PDF vision pipeline already excludes them.",
+      "hash_page_count = {}",
+      "for page in doc:",
+      "    seen_on_page = set()",
+      "    for img_info in page.get_images(full=True):",
+      "        xref = img_info[0]",
+      "        try:",
+      "            base_image = doc.extract_image(xref)",
+      "            h = hashlib.md5(base_image['image']).hexdigest()",
+      "            if h not in seen_on_page:",
+      "                seen_on_page.add(h)",
+      "                hash_page_count[h] = hash_page_count.get(h, 0) + 1",
+      "        except Exception:",
+      "            pass",
+      "",
       "sampled = 0",
       "ocr_pages = 0",
       "table_pages = 0",
+      "image_pages = 0",
       "for i in range(0, total_pages, step):",
       "    if sampled >= SAMPLE: break",
       "    sampled += 1",
@@ -553,7 +582,32 @@ export function registerRoutes(httpServer: Server, app: Express) {
       "                table_pages += 1",
       "    except Exception:",
       "        pass",
-      "print(json.dumps({'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages}))",
+      "    # Real embedded content images -- same filter as the vision extraction step:",
+      "    # skip tiny images (<5KB, usually bullets/icons) and skip extreme aspect",
+      "    # ratios (thin divider lines), so decorative/structural graphics don't",
+      "    # trigger vision routing on their own.",
+      "    try:",
+      "        has_real_image = False",
+      "        for img_info in page.get_images(full=True):",
+      "            xref = img_info[0]",
+      "            base_image = doc.extract_image(xref)",
+      "            img_bytes = base_image['image']",
+      "            if len(img_bytes) < 5120:",
+      "                continue",
+      "            img_w = base_image.get('width', 0)",
+      "            img_h = base_image.get('height', 0)",
+      "            if img_w > 0 and (img_h / img_w) > 5.0:",
+      "                continue",
+      "            img_hash = hashlib.md5(img_bytes).hexdigest()",
+      "            if hash_page_count.get(img_hash, 0) >= 2:",
+      "                continue",
+      "            has_real_image = True",
+      "            break",
+      "        if has_real_image:",
+      "            image_pages += 1",
+      "    except Exception:",
+      "        pass",
+      "print(json.dumps({'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages, 'image_pages': image_pages}))",
     ].join("\n");
 
     const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
@@ -565,12 +619,12 @@ export function registerRoutes(httpServer: Server, app: Express) {
       });
       await unlink(tmpIn).catch(() => {});
       const outLines = rawOutput.trim().split("\n");
-      let stats: { sampled: number; ocr_pages: number; table_pages: number } | null = null;
+      let stats: { sampled: number; ocr_pages: number; table_pages: number; image_pages: number } | null = null;
       for (let i = outLines.length - 1; i >= 0; i--) {
         try { stats = JSON.parse(outLines[i]); break; } catch { /* keep scanning upward past advisory lines */ }
       }
       if (!stats) throw new Error("no parseable JSON in detector output");
-      const { sampled, ocr_pages, table_pages } = stats;
+      const { sampled, ocr_pages, table_pages, image_pages } = stats;
       if (sampled === 0) return { useVision: false, reason: "empty-doc" };
 
       const ocrRatio = ocr_pages / sampled;
@@ -581,6 +635,14 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }
       if (tableRatio >= 0.5) {
         return { useVision: true, reason: `table-ratio-${tableRatio.toFixed(2)}` };
+      }
+      // Any real content image (not a repeated logo/watermark, not a tiny icon) means
+      // the fast pipeline would silently drop it -- unlike OCR/table ratio, this isn't
+      // a "which pipeline gives a better result" judgment call, it's correctness: the
+      // fast pipeline has zero image support, so even one real image on one sampled
+      // page routes the whole document to vision.
+      if (image_pages && image_pages > 0) {
+        return { useVision: true, reason: `has-content-images-${image_pages}-of-${sampled}` };
       }
       return { useVision: false, reason: "plain-text-fast-path" };
     } catch (err: any) {
