@@ -4,6 +4,7 @@ import fs from "fs";
 import { Server } from "http";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
+import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient } from "@clerk/backend";
 import { storage } from "./storage";
@@ -29,6 +30,12 @@ const uploadMedia = multer({ storage: multer.memoryStorage(), limits: { fileSize
 // wait to ~4.5 min) before the error ever surfaces. Fail once, fast, with a clear message.
 const anthropic = new Anthropic({ timeout: 95_000, maxRetries: 0 });
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+// Used by the "Report this issue" button (see /api/report-error below) to email a failed
+// job's details + the original file straight to support instead of relying on a user
+// screenshot with no reproducible file attached. Optional: if RESEND_API_KEY isn't set,
+// the endpoint fails gracefully with a clear message instead of crashing the process.
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+const REPORT_ERROR_TO_EMAIL = process.env.REPORT_ERROR_TO_EMAIL || "hello@remedy508.com";
 
 // ── Usage / Credits Helpers ──────────────────────────────────
 
@@ -1012,6 +1019,52 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
     } catch (err: any) {
       console.error("[REFUND] Error:", err.message);
       res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ── ERROR REPORTING ──────────────────────────────────────────────────────────
+  // One-click "Report this issue" from any tool's error state. Emails support directly
+  // with the error message, tool name, timestamp, browser info, and the ORIGINAL FILE
+  // the user was working with (as an attachment) -- so a real, reproducible bug report
+  // arrives automatically instead of relying on a user screenshot with no file attached.
+  app.post("/api/report-error", upload.single("file"), async (req, res) => {
+    try {
+      if (!resend) {
+        console.error("[REPORT ERROR] RESEND_API_KEY not configured -- cannot send report email");
+        return res.status(503).json({ error: "Error reporting isn't configured yet. Please email hello@remedy508.com directly for now." });
+      }
+      const { tool, errorMessage, errorCode, userEmail } = req.body || {};
+      if (!errorMessage) {
+        return res.status(400).json({ error: "errorMessage is required" });
+      }
+      const timestamp = new Date().toISOString();
+      const attachments = req.file
+        ? [{ filename: req.file.originalname, content: req.file.buffer }]
+        : [];
+      const subject = `[Remedy508 Error Report] ${tool || "Unknown tool"}${req.file ? " — " + req.file.originalname : ""}`;
+      const html = `
+        <h2>Error report from Remedy508</h2>
+        <p><strong>Tool:</strong> ${tool || "unknown"}</p>
+        <p><strong>Time:</strong> ${timestamp}</p>
+        <p><strong>User:</strong> ${userEmail || "not signed in / not provided"}</p>
+        <p><strong>Error code:</strong> ${errorCode || "none"}</p>
+        <p><strong>Error message:</strong></p>
+        <pre style="white-space: pre-wrap; background:#f5f5f5; padding:12px; border-radius:6px;">${String(errorMessage).replace(/</g, "&lt;")}</pre>
+        <p><strong>File attached:</strong> ${req.file ? `${req.file.originalname} (${(req.file.size / 1024).toFixed(1)} KB)` : "none"}</p>
+      `;
+      await resend.emails.send({
+        from: `Remedy508 Error Reports <reports@remedy508.com>`,
+        to: REPORT_ERROR_TO_EMAIL,
+        replyTo: userEmail || undefined,
+        subject,
+        html,
+        attachments,
+      });
+      console.log(`[REPORT ERROR] Sent report for tool=${tool} file=${req.file?.originalname || "none"}`);
+      return res.json({ success: true });
+    } catch (err: any) {
+      console.error("[REPORT ERROR] Failed to send report email:", err.message);
+      return res.status(500).json({ error: "Couldn't send the report. Please email hello@remedy508.com directly." });
     }
   });
 

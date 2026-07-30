@@ -167,17 +167,72 @@ function StartOverButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function ErrorAlert({ message, actionLabel, onAction }: { message: string; actionLabel?: string; onAction?: () => void }) {
+// Sends a failed job's details (+ the file the user was working with, if any) to support
+// via the /api/report-error endpoint. Used by the "Report this issue" button in ErrorAlert
+// so a real, reproducible bug report reaches us automatically instead of relying on a
+// screenshot with no context.
+async function reportErrorToSupport(opts: { tool: string; errorMessage: string; errorCode?: string; userEmail?: string; file?: File | null; htmlFallback?: string }) {
+  const fd = new FormData();
+  fd.append("tool", opts.tool);
+  fd.append("errorMessage", opts.errorMessage);
+  if (opts.errorCode) fd.append("errorCode", opts.errorCode);
+  if (opts.userEmail) fd.append("userEmail", opts.userEmail);
+  if (opts.file) {
+    fd.append("file", opts.file);
+  } else if (opts.htmlFallback) {
+    // Not an actual file upload -- either pasted Canvas HTML or an image URL the user
+    // typed in. Attach it as plain text so support can still see exactly what was submitted.
+    fd.append("file", new Blob([opts.htmlFallback], { type: "text/plain" }), "submitted-content.txt");
+  }
+  const resp = await fetch("/api/report-error", { method: "POST", body: fd });
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok) throw new Error(data.error || "Couldn't send the report.");
+  return data;
+}
+
+function ErrorAlert({ message, actionLabel, onAction, reportContext }: { message: string; actionLabel?: string; onAction?: () => void; reportContext?: { tool: string; errorCode?: string; userEmail?: string; file?: File | null; htmlFallback?: string } }) {
+  const [reportState, setReportState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
+  const { toast } = useToast();
+
+  const handleReport = async () => {
+    if (!reportContext) return;
+    setReportState("sending");
+    try {
+      await reportErrorToSupport({ ...reportContext, errorMessage: message });
+      setReportState("sent");
+    } catch (e: any) {
+      setReportState("failed");
+      toast({ title: "Couldn't send report", description: e.message, variant: "destructive" });
+    }
+  };
+
   return (
     <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm" role="alert">
       <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
       <div className="flex-1">
         <p>{message}</p>
-        {actionLabel && onAction && (
-          <button onClick={onAction} className="mt-2 inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 hover:no-underline">
-            {actionLabel}
-          </button>
-        )}
+        <div className="mt-2 flex items-center gap-4 flex-wrap">
+          {actionLabel && onAction && (
+            <button onClick={onAction} className="inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 hover:no-underline">
+              {actionLabel}
+            </button>
+          )}
+          {reportContext && reportState !== "sent" && (
+            <button
+              onClick={handleReport}
+              disabled={reportState === "sending"}
+              className="inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 hover:no-underline disabled:opacity-60"
+              data-testid="btn-report-error"
+            >
+              {reportState === "sending" ? "Sending report…" : reportState === "failed" ? "Try reporting again" : "Report this issue"}
+            </button>
+          )}
+          {reportState === "sent" && (
+            <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+              <CheckCircle2 className="w-3.5 h-3.5" />Report sent — thank you
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -414,7 +469,7 @@ function RemedyDocsTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {error && <ErrorAlert message={error} />}
+      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
@@ -514,6 +569,7 @@ function VideoTab() {
   const [view, setView] = useState<"timecoded" | "plain">("timecoded");
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
+  const { user: videoUser } = useUser();
 
   const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
 
@@ -536,7 +592,7 @@ function VideoTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Transcribing…" steps={["Uploading file…", "Extracting audio track…", "Running AI transcription…", "Generating timecoded transcript…"]} />}
-      {error && <ErrorAlert message={error} />}
+      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Video", userEmail: videoUser?.primaryEmailAddress?.emailAddress, file }} />}
       {result && (
         <div className="space-y-4" data-testid="video-result">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -592,6 +648,7 @@ function CanvasTab() {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const { user: canvasUser } = useUser();
 
   const run = async () => {
     if (!html.trim()) { toast({ title: "No HTML", variant: "destructive" }); return; }
@@ -617,7 +674,7 @@ function CanvasTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
-      {error && <ErrorAlert message={error} />}
+      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy HTML (Canvas)", userEmail: canvasUser?.primaryEmailAddress?.emailAddress, htmlFallback: html }} />}
       {result && (
         <div className="space-y-4" data-testid="canvas-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={() => { setHtml(""); setResult(null); setError(""); }} /></div>
@@ -667,6 +724,7 @@ function AltTextTab() {
   const [error, setError] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
+  const { user: altTextUser } = useUser();
 
   const handleFile = (f: File) => { setFile(f); setImageUrl(""); setPreviewUrl(URL.createObjectURL(f)); };
 
@@ -700,7 +758,7 @@ function AltTextTab() {
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
-      {error && <ErrorAlert message={error} />}
+      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Image (Alt Text)", userEmail: altTextUser?.primaryEmailAddress?.emailAddress, file, htmlFallback: !file && imageUrl ? `Image URL: ${imageUrl}` : undefined }} />}
       {result && (
         <div className="space-y-4" data-testid="alt-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
