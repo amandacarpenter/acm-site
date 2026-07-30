@@ -84,7 +84,6 @@ export default function InvoiceRequest() {
           <h1 id="invoice-heading" className="text-4xl font-bold text-white mb-3">
             Request an Invoice
           </h1>
-          <p className="text-white/70">We'll send your invoice within one business day.</p>
         </div>
       </section>
 
@@ -94,7 +93,7 @@ export default function InvoiceRequest() {
 
             <div>
               <label htmlFor="institutionName" className={labelClass}>Institution / Organization name *</label>
-              <input id="institutionName" name="institutionName" required value={form.institutionName} onChange={handleChange} className={inputClass} placeholder="e.g. Santa Ana College" />
+              <input id="institutionName" name="institutionName" required value={form.institutionName} onChange={handleChange} className={inputClass} placeholder="Name of Institution or Organization" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
