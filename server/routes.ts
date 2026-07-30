@@ -1352,6 +1352,7 @@ for page_idx, page in enumerate(doc):
     page_images = []
     for img_idx, img_info in enumerate(img_list):
         xref = img_info[0]
+        smask_xref = img_info[1]
         try:
             base_image = doc.extract_image(xref)
             img_bytes = base_image['image']
@@ -1365,6 +1366,29 @@ for page_idx, page in enumerate(doc):
             img_hash = hashlib.md5(img_bytes).hexdigest()
             if hash_page_count.get(img_hash, 0) >= 2:
                 continue
+            # Composite soft-mask (SMask) transparency onto white before saving.
+            # Without this, images whose color layer is a flat/dark fill (with the
+            # real artwork carried entirely in the SMask alpha channel) get saved
+            # as their raw un-composited color layer -- e.g. a solid black block --
+            # instead of the correct black-text-on-white appearance a PDF viewer
+            # would render. Only affects images that actually declare an SMask.
+            if smask_xref:
+                try:
+                    from PIL import Image
+                    import io as _io
+                    smask_image = doc.extract_image(smask_xref)
+                    color_img = Image.open(_io.BytesIO(img_bytes)).convert('RGB')
+                    mask_img = Image.open(_io.BytesIO(smask_image['image'])).convert('L')
+                    if mask_img.size != color_img.size:
+                        mask_img = mask_img.resize(color_img.size)
+                    white_bg = Image.new('RGB', color_img.size, (255, 255, 255))
+                    composited = Image.composite(color_img, white_bg, mask_img)
+                    buf = _io.BytesIO()
+                    composited.save(buf, format='PNG')
+                    img_bytes = buf.getvalue()
+                    img_ext = 'png'
+                except Exception:
+                    pass
             img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
             img_path = os.path.join(work_dir, img_filename)
             with open(img_path, 'wb') as f:
