@@ -523,7 +523,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
     try {
       const rawOutput = await new Promise<string>((resolve, reject) => {
-        execFile(python3, ["-c", pyDetect, tmpIn], { maxBuffer: 5 * 1024 * 1024, timeout: 30000 }, (err, stdout) => {
+        execFile(python3, ["-c", pyDetect, tmpIn], { maxBuffer: 5 * 1024 * 1024, timeout: 30000, killSignal: "SIGKILL" }, (err, stdout) => {
           if (err) reject(err); else resolve(stdout);
         });
       });
@@ -621,10 +621,18 @@ export function registerRoutes(httpServer: Server, app: Express) {
         ].join("\n");
         // Use venv python3 if available (Railway), fall back to system python3
         const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+        // killSignal defaults to SIGTERM, which PyMuPDF's OCR call (a blocking C extension
+        // via Tesseract) can swallow while stuck mid-page, leaving the process running past
+        // the stated timeout with the request never resolving. Force SIGKILL so a hung OCR
+        // page is always reaped on schedule, and add a hard backstop above the child's own
+        // timeout so the request settles even if the process is somehow still unkillable.
         const rawOutput = await new Promise<string>((resolve, reject) => {
-          execFile(python3, ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024, timeout: 120000 }, (err, stdout) => {
-            if (err) reject(err); else resolve(stdout);
+          const child = execFile(python3, ["-c", pyScript, tmpIn], { maxBuffer: 10 * 1024 * 1024, timeout: 120000, killSignal: "SIGKILL" }, (err, stdout) => {
+            clearTimeout(backstop);
+            if (err) reject(new Error(/killed|SIGKILL|SIGTERM|ETIMEDOUT/.test(err.message) ? "This document took too long to process, likely due to dense scanned tables or images. Try Complex PDF instead, or split the file into smaller sections." : err.message));
+            else resolve(stdout);
           });
+          const backstop = setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 130000);
         });
         await unlink(tmpIn).catch(() => {});
 
@@ -1161,7 +1169,7 @@ print(json.dumps({'pages': result, 'total': len(doc)}))
       await writeFile(tmpExtractScript, pyExtract, "utf8");
 
       const extractJson = await new Promise<string>((resolve, reject) => {
-        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 90000 }, (err, stdout, stderr) => {
+        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 90000, killSignal: "SIGKILL" }, (err, stdout, stderr) => {
           if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
           else resolve(stdout.trim());
         });
