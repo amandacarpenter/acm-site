@@ -27,7 +27,7 @@ const uploadMedia = multer({ storage: multer.memoryStorage(), limits: { fileSize
 // Also disable the SDK's default maxRetries: 2 -- retrying a request that already timed out
 // at 90s just re-runs the same slow call up to 2 more times (silently tripling the user's
 // wait to ~4.5 min) before the error ever surfaces. Fail once, fast, with a clear message.
-const anthropic = new Anthropic({ timeout: 90_000, maxRetries: 0 });
+const anthropic = new Anthropic({ timeout: 95_000, maxRetries: 0 });
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 // ── Usage / Credits Helpers ──────────────────────────────────
@@ -823,7 +823,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       // Split the raw HTML into chunks on paragraph/line-break boundaries so each
       // Claude call has a bounded amount of source content to restructure. This is
       // what keeps generation time predictable regardless of overall document size.
-      const HTML_CHUNK_SIZE = 10000;
+      const HTML_CHUNK_SIZE = 6000;
       const splitHtmlIntoChunks = (html: string, maxLen: number): string[] => {
         if (html.length <= maxLen) return [html];
         const boundaries: number[] = [];
@@ -858,23 +858,35 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       const docUsage = newUsageCounter();
       const [auditResponse, htmlChunkResults] = await Promise.all([
         callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage),
-        Promise.all(htmlChunks.map((chunk: string, i: number) =>
-          callClaude(
+        Promise.all(htmlChunks.map(async (chunk: string, i: number) => {
+          const t0 = Date.now();
+          const r = await callClaude(
             htmlSystemPrompt,
             `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`,
             16384,
             docUsage,
-          )
-        )),
+          );
+          console.log(`[REMEDY DOCS] chunk ${i + 1}/${htmlChunks.length} took ${Date.now() - t0}ms`);
+          return r;
+        })),
       ]);
       // Strip any accidental code fences per-chunk before joining, then wrap the
       // assembled result in the single lang="en" div (each chunk was told not to
       // add its own wrapper, since a chunk boundary would otherwise produce
       // multiple nested/duplicate <div lang="en"> wrappers in the final output).
+      // Claude occasionally ignores the "don't wrap this chunk" instruction and
+      // self-wraps a chunk in <div lang="..."> anyway. Strip any such wrapper (only
+      // if it wraps the ENTIRE chunk, so we never eat a legitimate div the content
+      // itself needed) before joining, so the final document always has exactly one
+      // wrapper regardless of what any individual chunk call returned.
       const cleanedChunks = htmlChunkResults.map((chunk: string) => {
         let c = chunk.trim();
         if (c.startsWith("```")) {
           c = c.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
+        }
+        const wrapperMatch = c.match(/^<div[^>]*lang=["'][a-zA-Z-]+["'][^>]*>([\s\S]*)<\/div>$/i);
+        if (wrapperMatch) {
+          c = wrapperMatch[1].trim();
         }
         return c;
       });
