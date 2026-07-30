@@ -13,6 +13,7 @@ import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
 import logoHero from "@/assets/logo-hero.jpg";
 import HeroWatermark from "@/components/HeroWatermark";
+import IncidentBanner from "@/components/IncidentBanner";
 import {
   Accordion,
   AccordionContent,
@@ -52,6 +53,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0d9488] focus:text-white focus:rounded-lg focus:font-semibold">Skip to main content</a>
+      <IncidentBanner />
 
       <main id="main-content">
       {/* ── HERO ── */}
