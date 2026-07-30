@@ -190,7 +190,7 @@ async function reportErrorToSupport(opts: { tool: string; errorMessage: string; 
   return data;
 }
 
-function ErrorAlert({ message, actionLabel, onAction, reportContext }: { message: string; actionLabel?: string; onAction?: () => void; reportContext?: { tool: string; errorCode?: string; userEmail?: string; file?: File | null; htmlFallback?: string } }) {
+function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditNote }: { message: string; actionLabel?: string; onAction?: () => void; reportContext?: { tool: string; errorCode?: string; userEmail?: string; file?: File | null; htmlFallback?: string }; showCreditNote?: boolean }) {
   const [reportState, setReportState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const { toast } = useToast();
 
@@ -211,6 +211,9 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext }: { message
       <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
       <div className="flex-1">
         <p>{message}</p>
+        {showCreditNote && (
+          <p className="mt-1 text-xs text-destructive/80">Your credits were not charged for this attempt.</p>
+        )}
         <div className="mt-2 flex items-center gap-4 flex-wrap">
           {actionLabel && onAction && (
             <button onClick={onAction} className="inline-flex items-center gap-1 text-sm font-semibold underline underline-offset-2 hover:no-underline">
@@ -469,7 +472,7 @@ function RemedyDocsTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
+      {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Docs", errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
