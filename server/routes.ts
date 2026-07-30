@@ -28,7 +28,7 @@ const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY 
 const INDIVIDUAL_MONTHLY_CREDITS = 150; // 1 credit = 1 processed page
 const TEAM_CREDITS_PER_SEAT = 175;
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
-const MAX_PAGES_PER_DOCUMENT = 100; // hard cap — protects against runaway cost + server load on a single upload
+const MAX_PAGES_PER_DOCUMENT = 50; // hard cap — protects against runaway cost + server load on a single upload
 
 function getResetDate(): string {
   const now = new Date();
