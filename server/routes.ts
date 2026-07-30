@@ -331,6 +331,20 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
 
+  // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
+  // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
+  // banner (e.g. during a Railway/Clerk/Stripe/Anthropic outage that affects the app).
+  // Unset it (or leave empty) to hide the banner. Read at request time, not build time,
+  // so it takes effect immediately without a new deployment.
+  app.get("/api/incident-status", (_req, res) => {
+    const message = (process.env.INCIDENT_BANNER_MESSAGE || "").trim();
+    res.json({
+      active: message.length > 0,
+      message: message || null,
+      severity: (process.env.INCIDENT_BANNER_SEVERITY || "warning").trim(), // "warning" | "error"
+    });
+  });
+
   // ── Credit usage status (for Dashboard) ──────────────────────────────────
   app.get("/api/usage/status", async (req, res) => {
     const clerkUserId = req.query.clerkUserId as string | undefined;
