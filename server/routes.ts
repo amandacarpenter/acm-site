@@ -1441,6 +1441,7 @@ print(json.dumps({'pages': result, 'total': len(doc)}))
 Extract ALL content from this page image and convert it to clean, fully accessible semantic HTML.
 
 CRITICAL RULES:
+- This may be a page from a well-known published textbook (OpenStax, LibreTexts, etc.) that you have seen before during training, in a DIFFERENT layout (e.g. a markdown/HTML table with different columns than what is drawn here). IGNORE any memorized version of this content. Base your output ONLY on what is visually drawn on THIS page image — the actual ruled columns, the actual rows, the actual figures as laid out here — even if you recall the same facts being presented differently elsewhere. If your memory of "how this table usually looks" conflicts with the image in front of you, the image always wins.
 - Read EVERY piece of text visible on the page exactly as written
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
@@ -1448,8 +1449,10 @@ CRITICAL RULES:
   If an extracted-image ID is provided for this page (listed below) and it corresponds to this figure, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using the exact ID given. If no ID matches (e.g. the figure is a hand-drawn diagram fitz could not extract as a raster image), omit the <img> and rely on the <figcaption> alone.
   Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
-- CRITICAL — reproduce tables EXACTLY as drawn, column for column: use only the columns that literally appear as ruled/visible columns in the source image, in the same left-to-right order, with the same header text. NEVER add a column, grouping column, or summary column that is not a real ruled column in the source (e.g. do not invent an extra "Acid strength"-style column just because rows happen to be visually grouped or shaded by a bracket/label in the margin — represent that as a normal <td> value only if it is truly its own column, otherwise leave it out entirely). NEVER leave trailing empty <td> cells at the end of a row — every <tr> must have exactly as many cells as the table has columns, no more, no fewer.
-- If a table visually continues from the previous page (same column headers, or the page starts mid-table with data rows but no new header row), do NOT start a new <table> or repeat the caption/header — instead open with <table data-continues="true"><tbody> containing only the additional rows, so it can be merged with the prior page's table. Likewise, if a table is clearly cut off at the bottom of THIS page (last row looks incomplete, or you can tell from context more rows follow), add data-continued="true" on that <table> element.
+- CRITICAL — a table's real columns are ONLY the columns inside its own ruled/shaded grid box. Decorative elements positioned NEXT TO a table (arrows, gradient bars, brackets, or labels like "Stronger acid" / "Weaker acid" / "Increasing X" placed beside or below the grid, often with their own color gradient) are NOT part of the table — they are a separate visual annotation. Describe that decorative element in a short separate <p> or <figcaption> right before or after the <table>, and do NOT create a table column for it. The table itself must have exactly the columns that are visually ruled/shaded as columns inside its own box: e.g. a table drawn with columns Y | Ka | pKa | Group must produce a <table> with exactly those 4 columns, even if an unrelated arrow graphic sits to its left.
+- If ONE column's cell visually spans multiple rows (a merged/rowspan cell, e.g. one "Group type" label drawn once next to 5 stacked rows), use <td rowspan="N"> on that cell in the first of those rows and omit the <td> entirely from the other rows it covers — do NOT repeat the label as a separate one-row cell, and do NOT leave the covered rows with a blank trailing cell.
+- NEVER leave trailing empty <td> cells at the end of a row — every <tr> must have exactly as many cells as the <thead> row has, no more, no fewer.
+- If a table's data rows are split across two page images (the table's grid visually continues from the bottom of one page to the top of the next with no gap, no repeated header row, and no other content in between), treat it as one table split only by the page boundary: on the FIRST page emit <table data-pdf-table-id="T1"> with the header and the rows shown on that page; on the SECOND page emit a table with the SAME data-pdf-table-id value ("T1") containing ONLY the additional rows with no <thead> and no repeated header cells, so it can be recombined into a single table. Use the table's caption text (if visible) to help you recognize this is the same table — do not repeat the caption on the continuation fragment either.
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
 - Use <p> for paragraphs, <ul>/<ol> for lists, <blockquote> for exercise/practice problem boxes
@@ -1671,25 +1674,35 @@ for pg in pages:
 # than the previous heading, while preserving same-level and shallower jumps.
 # Each page's HTML is generated by an independent Claude call with no
 # visibility into neighboring pages, so a single real table that happens to
-# span a page boundary comes back as two separate <table> elements. Detect
-# and merge these before final assembly: the vision prompt asks the model to
-# mark a continued table with data-continued="true" (page N, cut off at the
-# bottom) and the continuing fragment with data-continues="true" (page N+1,
-# more rows only, no repeated header). Walk consecutive top-level <table>
-# tags across the whole document and fold any such pair into one table so
-# it renders and reads as a single continuous table instead of two.
+# span a page boundary can come back as two separate <table> elements.
+# Detect and merge these before final assembly using two signals, since
+# relying on the model to self-report a continuation marker is unreliable:
+#   1. Explicit signal: matching data-pdf-table-id on consecutive tables
+#      (the vision prompt asks the model to reuse the same ID on a
+#      continuation fragment that has no <thead> of its own).
+#   2. Structural fallback: two ADJACENT tables (no other table in between,
+#      only page/section wrappers) where the first has no closing/total row
+#      and the second has the exact same column count and no <thead> of its
+#      own (i.e. its first row is plain <td> data, not <th> headers) -- this
+#      is the shape of a real continued table even when the model didn't
+#      tag it explicitly.
 _pre_merge_soup = BeautifulSoup(''.join(html_parts), 'html.parser')
 _all_tables = _pre_merge_soup.find_all('table')
 for _i in range(len(_all_tables) - 1, 0, -1):
     _cur = _all_tables[_i]
     _prev = _all_tables[_i - 1]
-    _cur_marked = _cur.get('data-continues') == 'true'
-    _prev_marked = _prev.get('data-continued') == 'true'
-    _prev_cols = len(_prev.find('tr').find_all(['th', 'td'])) if _prev.find('tr') else 0
+    _cur_id = _cur.get('data-pdf-table-id')
+    _prev_id = _prev.get('data-pdf-table-id')
+    _id_match = bool(_cur_id) and _cur_id == _prev_id
+    _prev_row = _prev.find('tr')
+    _prev_cols = len(_prev_row.find_all(['th', 'td'])) if _prev_row else 0
+    _cur_has_thead = _cur.find('thead') is not None
     _cur_first_row = _cur.find('tr')
     _cur_cols = len(_cur_first_row.find_all(['th', 'td'])) if _cur_first_row else 0
+    _cur_first_row_is_data = _cur_first_row is not None and _cur_first_row.find('th') is None
     _same_width = _prev_cols > 0 and _prev_cols == _cur_cols
-    if (_cur_marked or _prev_marked) and _same_width:
+    _structural_match = _same_width and not _cur_has_thead and _cur_first_row_is_data
+    if _id_match or _structural_match:
         _prev_tbody = _prev.find('tbody') or _prev
         _cur_tbody = _cur.find('tbody') or _cur
         for _row in _cur_tbody.find_all('tr', recursive=False):
