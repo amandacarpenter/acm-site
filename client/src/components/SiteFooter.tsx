@@ -56,7 +56,7 @@ export default function SiteFooter() {
               {footerLinks.map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href}>
-                    <span className="text-base font-bold text-white hover:text-[#5eead4] transition cursor-pointer whitespace-nowrap">
+                    <span className="text-base font-bold text-white hover:text-gray-300 transition cursor-pointer whitespace-nowrap">
                       {label}
                     </span>
                   </Link>
