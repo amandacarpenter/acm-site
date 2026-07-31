@@ -4,8 +4,12 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-# Write Clerk key into .env file so Vite picks it up at build time
-RUN echo "VITE_CLERK_PUBLISHABLE_KEY=pk_live_Y2xlcmsucmVtZWR5NTA4LmNvbSQ" > client/.env
+# Pass Railway service variables through as Vite build-time env vars.
+# Railway auto-populates any declared ARG with a matching-name service variable.
+ARG VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_ADMIN_STATS_KEY
+ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ENV VITE_ADMIN_STATS_KEY=$VITE_ADMIN_STATS_KEY
 RUN npm run build
 
 # ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────
