@@ -14,6 +14,16 @@ interface DashboardData {
     visitors7d: number | null;
     pageViews7d: number | null;
     dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
+    visitorsToday: number | null;
+    pageViewsToday: number | null;
+    visitorsLastHour: number | null;
+    requestsLastHour: number | null;
+    requestsToday: number | null;
+    botRequestsToday: number | null;
+    botSharePctToday: number | null;
+    topPagesToday: { path: string; count: number }[];
+    topCountriesToday: { country: string; count: number }[];
+    statusCodesToday: { status: string; count: number }[];
     error: string | null;
   };
   revenue: {
@@ -62,7 +72,7 @@ const platforms = [
   { name: "Anthropic", desc: "Claude API — powers the accessibility pipeline", url: "https://console.anthropic.com", icon: "🤖", color: "#d97757" },
   { name: "Namecheap", desc: "leftcoastlearningllc.com registrar", url: "https://namecheap.com", icon: "🌐", color: "#de3723" },
   { name: "Porkbun", desc: "remedy508.ai registrar", url: "https://porkbun.com", icon: "🐷", color: "#f472b6" },
-  { name: "Plausible", desc: "remedy508.com analytics", url: "https://plausible.io/remedy508.com", icon: "📊", color: "#5850ec" },
+  { name: "Cloudflare Analytics", desc: "remedy508.com traffic (GraphQL API)", url: "https://dash.cloudflare.com", icon: "📊", color: "#5850ec" },
 ];
 
 const socials = [
@@ -256,23 +266,83 @@ function LiveDashboard() {
 
       {/* Site Traffic (Cloudflare) */}
       <div style={{ marginBottom: 28 }}>
-        <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Cloudflare analytics unavailable" : "Live from Cloudflare — remedy508.com, last 7 days"} />
+        <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Cloudflare analytics unavailable" : "Live from Cloudflare — remedy508.com"} />
         {analytics.error ? (
           <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px", color: "#991b1b", fontSize: "0.8rem" }}>
             {analytics.error}
           </div>
         ) : (
           <>
+            <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 14px", marginBottom: 12, fontSize: "0.76rem", color: "#92400e", lineHeight: 1.4 }}>
+              "Visitors" below are raw unique IPs Cloudflare saw hitting the zone — they are <strong>not</strong> filtered for bots/crawlers (Cloudflare's Free-plan API can't cross unique-visitor counts with path filters). Today, known scanner traffic is about{" "}
+              <strong>{analytics.botSharePctToday != null ? `${analytics.botSharePctToday}%` : "—"}</strong> of raw requests — see the breakdown below for what's really going on.
+            </div>
+
             <StatGrid>
-              <StatCard label="Visitors (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" />
+              <StatCard label="Visitors (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" sub="raw uniques" />
               <StatCard label="Page Views (7d)" value={analytics.pageViews7d != null ? analytics.pageViews7d.toLocaleString() : "—"} />
+              <StatCard label="Visitors Today" value={analytics.visitorsToday != null ? analytics.visitorsToday.toLocaleString() : "—"} tone="good" sub="raw uniques" />
+              <StatCard label="Page Views Today" value={analytics.pageViewsToday != null ? analytics.pageViewsToday.toLocaleString() : "—"} />
+              <StatCard label="Visitors (Last Hour)" value={analytics.visitorsLastHour != null ? analytics.visitorsLastHour.toLocaleString() : "—"} tone="good" sub={analytics.requestsLastHour != null ? `${analytics.requestsLastHour.toLocaleString()} requests` : undefined} />
+              <StatCard label="Bot Traffic Today" value={analytics.botSharePctToday != null ? `${analytics.botSharePctToday}%` : "—"} tone="warn" sub={analytics.botRequestsToday != null && analytics.requestsToday != null ? `${analytics.botRequestsToday.toLocaleString()} of ${analytics.requestsToday.toLocaleString()} reqs` : undefined} />
             </StatGrid>
+
             {analytics.dailyCounts7d.length > 0 && (
               <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", marginTop: 12 }}>
                 <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>PAGE VIEWS PER DAY (7 DAYS)</div>
                 <MiniBarChart data={analytics.dailyCounts7d.map(d => ({ date: d.date, jobs: d.pageViews, failed: 0 }))} />
               </div>
             )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TOP PAGES TODAY (BOT PATHS EXCLUDED)</div>
+                {analytics.topPagesToday.length === 0 ? (
+                  <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {analytics.topPagesToday.map((p) => (
+                      <div key={p.path} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+                        <span style={{ color: "#374151", fontFamily: "monospace", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 8 }}>{p.path}</span>
+                        <span style={{ color: "#111827", fontWeight: 600, flexShrink: 0 }}>{p.count.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TOP COUNTRIES TODAY (RAW, INCL. BOTS)</div>
+                {analytics.topCountriesToday.length === 0 ? (
+                  <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {analytics.topCountriesToday.map((c) => (
+                      <div key={c.country} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+                        <span style={{ color: "#374151" }}>{c.country}</span>
+                        <span style={{ color: "#111827", fontWeight: 600 }}>{c.count.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>STATUS CODES TODAY</div>
+                {analytics.statusCodesToday.length === 0 ? (
+                  <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    {analytics.statusCodesToday.map((s) => (
+                      <div key={s.status} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+                        <span style={{ color: s.status.startsWith("2") ? "#0d9488" : s.status.startsWith("4") ? "#d97706" : s.status.startsWith("5") ? "#dc2626" : "#374151", fontFamily: "monospace" }}>{s.status}</span>
+                        <span style={{ color: "#111827", fontWeight: 600 }}>{s.count.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </>
         )}
       </div>

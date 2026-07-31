@@ -397,30 +397,86 @@ function formatTime(seconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
 }
 
+// Known bot/vulnerability-scanner paths that show up as raw hits in Cloudflare's numbers but are
+// never real visitors to this app (this is a Node/React app — none of these routes exist here).
+// Cloudflare's daily/hourly rollup datasets (httpRequests1dGroups / httpRequests1hGroups) do NOT
+// support filtering by path — only the adaptive, 1-day-max dataset (httpRequestsAdaptiveGroups) does,
+// and it doesn't expose real unique-visitor counts (only raw request counts). So "visitors" numbers
+// below are Cloudflare's raw uniques (unique IPs hitting the zone, including bots/crawlers) — NOT
+// verified human visitors. We separately compute what share of TODAY's raw traffic is known bot/scanner
+// noise so the real number can be read in context, and surface a real breakdown of today's traffic
+// (top pages, top countries, status codes) which strongly signals bot vs. real activity.
+const BOT_SCANNER_PATHS = [
+  "/index.php", "/wp-login.php", "/wp-admin", "/xmlrpc.php", "/.env",
+  "/.git/config", "/wp-content", "/wp-includes", "/phpmyadmin", "/config.php",
+];
+
 async function getCloudflareAnalytics(): Promise<{
   visitors7d: number | null;
   pageViews7d: number | null;
   dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
+  visitorsToday: number | null;
+  pageViewsToday: number | null;
+  visitorsLastHour: number | null;
+  requestsLastHour: number | null;
+  requestsToday: number | null;
+  botRequestsToday: number | null;
+  botSharePctToday: number | null;
+  topPagesToday: { path: string; count: number }[];
+  topCountriesToday: { country: string; count: number }[];
+  statusCodesToday: { status: string; count: number }[];
   error: string | null;
 }> {
+  const empty = {
+    visitors7d: null, pageViews7d: null, dailyCounts7d: [] as { date: string; visitors: number; pageViews: number }[],
+    visitorsToday: null, pageViewsToday: null, visitorsLastHour: null, requestsLastHour: null,
+    requestsToday: null, botRequestsToday: null, botSharePctToday: null,
+    topPagesToday: [] as { path: string; count: number }[], topCountriesToday: [] as { country: string; count: number }[],
+    statusCodesToday: [] as { status: string; count: number }[],
+  };
   const token = process.env.CLOUDFLARE_API_TOKEN;
   const zoneId = process.env.CLOUDFLARE_ZONE_ID;
   if (!token || !zoneId) {
-    return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: "Cloudflare not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID missing)" };
+    return { ...empty, error: "Cloudflare not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID missing)" };
   }
   try {
-    const today = new Date();
-    const end = today.toISOString().slice(0, 10);
-    const startDate = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const end = now.toISOString().slice(0, 10);
+    const startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
     const start = startDate.toISOString().slice(0, 10);
+    const todayStart = `${end}T00:00:00Z`;
+    const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    const botPathList = BOT_SCANNER_PATHS.map((p) => `"${p}"`).join(", ");
 
     const query = `query {
       viewer {
         zones(filter: { zoneTag: "${zoneId}" }) {
-          httpRequests1dGroups(limit: 7, filter: { date_geq: "${start}", date_leq: "${end}" }, orderBy: [date_ASC]) {
+          daily: httpRequests1dGroups(limit: 7, filter: { date_geq: "${start}", date_leq: "${end}" }, orderBy: [date_ASC]) {
             dimensions { date }
             sum { pageViews }
             uniq { uniques }
+          }
+          lastHour: httpRequests1hGroups(limit: 1, filter: { datetime_geq: "${hourAgo}" }) {
+            sum { requests }
+            uniq { uniques }
+          }
+          topPaths: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${botPathList}] }, orderBy: [count_DESC]) {
+            count
+            dimensions { clientRequestPath }
+          }
+          topCountries: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}" }, orderBy: [count_DESC]) {
+            count
+            dimensions { clientCountryName }
+          }
+          statusCodes: httpRequestsAdaptiveGroups(limit: 8, filter: { datetime_geq: "${todayStart}" }, orderBy: [count_DESC]) {
+            count
+            dimensions { edgeResponseStatus }
+          }
+          totalToday: httpRequestsAdaptiveGroups(limit: 1, filter: { datetime_geq: "${todayStart}" }) {
+            count
+          }
+          botToday: httpRequestsAdaptiveGroups(limit: 1, filter: { datetime_geq: "${todayStart}", clientRequestPath_in: [${botPathList}] }) {
+            count
           }
         }
       }
@@ -433,19 +489,53 @@ async function getCloudflareAnalytics(): Promise<{
     });
     const json: any = await resp.json();
     if (json.errors) {
-      return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: json.errors.map((e: any) => e.message).join("; ") };
+      return { ...empty, error: json.errors.map((e: any) => e.message).join("; ") };
     }
-    const groups = json?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
-    const dailyCounts7d = groups.map((g: any) => ({
+    const zone = json?.data?.viewer?.zones?.[0] || {};
+
+    const dailyGroups = zone.daily || [];
+    const dailyCounts7d = dailyGroups.map((g: any) => ({
       date: g.dimensions.date,
       visitors: g.uniq?.uniques ?? 0,
       pageViews: g.sum?.pageViews ?? 0,
     }));
     const visitors7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.visitors, 0);
     const pageViews7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.pageViews, 0);
-    return { visitors7d, pageViews7d, dailyCounts7d, error: null };
+    const todayRow = dailyCounts7d.find((d: any) => d.date === end);
+    const visitorsToday = todayRow?.visitors ?? null;
+    const pageViewsToday = todayRow?.pageViews ?? null;
+
+    const lastHour = zone.lastHour?.[0];
+    const visitorsLastHour = lastHour?.uniq?.uniques ?? null;
+    const requestsLastHour = lastHour?.sum?.requests ?? null;
+
+    const topPagesToday = (zone.topPaths || []).map((p: any) => ({
+      path: p.dimensions.clientRequestPath,
+      count: p.count,
+    }));
+    const topCountriesToday = (zone.topCountries || []).map((c: any) => ({
+      country: c.dimensions.clientCountryName || "Unknown",
+      count: c.count,
+    }));
+    const statusCodesToday = (zone.statusCodes || []).map((s: any) => ({
+      status: String(s.dimensions.edgeResponseStatus),
+      count: s.count,
+    }));
+    const requestsToday = zone.totalToday?.[0]?.count ?? null;
+    const botRequestsToday = zone.botToday?.[0]?.count ?? 0;
+    const botSharePctToday = requestsToday && requestsToday > 0
+      ? Number(((botRequestsToday / requestsToday) * 100).toFixed(1))
+      : null;
+
+    return {
+      visitors7d, pageViews7d, dailyCounts7d,
+      visitorsToday, pageViewsToday, visitorsLastHour, requestsLastHour,
+      requestsToday, botRequestsToday, botSharePctToday,
+      topPagesToday, topCountriesToday, statusCodesToday,
+      error: null,
+    };
   } catch (err: any) {
-    return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: err.message || "Failed to fetch Cloudflare analytics" };
+    return { ...empty, error: err.message || "Failed to fetch Cloudflare analytics" };
   }
 }
 
