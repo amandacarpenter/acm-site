@@ -274,12 +274,27 @@ function LiveDashboard() {
               <strong>{analytics.botSharePctToday != null ? `${analytics.botSharePctToday}%` : "—"}</strong> of raw requests — see the breakdown below for what's really going on.
             </div>
 
+            {/* Live Now — standalone callout, separate from the daily/7d stat grid */}
+            <div style={{ background: "#111827", borderRadius: 12, padding: "14px 18px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#22c55e", display: "inline-block", boxShadow: "0 0 0 4px rgba(34,197,94,0.25)" }} />
+                <span style={{ fontSize: "0.72rem", color: "#9ca3af", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Live Now (Last 60 Min)</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontSize: "1.7rem", fontWeight: 700, color: "#fff", fontFamily: "'Clash Display', sans-serif" }}>
+                  {analytics.visitorsLastHour != null ? analytics.visitorsLastHour.toLocaleString() : "—"}
+                </span>
+                <span style={{ fontSize: "0.78rem", color: "#9ca3af" }}>
+                  visitors{analytics.requestsLastHour != null ? ` · ${analytics.requestsLastHour.toLocaleString()} requests` : ""}
+                </span>
+              </div>
+            </div>
+
             <StatGrid>
               <StatCard label="Visitors (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" sub="raw uniques" />
               <StatCard label="Page Views (7d)" value={analytics.pageViews7d != null ? analytics.pageViews7d.toLocaleString() : "—"} />
               <StatCard label="Visitors Today" value={analytics.visitorsToday != null ? analytics.visitorsToday.toLocaleString() : "—"} tone="good" sub="raw uniques" />
               <StatCard label="Page Views Today" value={analytics.pageViewsToday != null ? analytics.pageViewsToday.toLocaleString() : "—"} />
-              <StatCard label="Visitors (Last Hour)" value={analytics.visitorsLastHour != null ? analytics.visitorsLastHour.toLocaleString() : "—"} tone="good" sub={analytics.requestsLastHour != null ? `${analytics.requestsLastHour.toLocaleString()} requests` : undefined} />
               <StatCard label="Bot Traffic Today" value={analytics.botSharePctToday != null ? `${analytics.botSharePctToday}%` : "—"} tone="warn" sub={analytics.botRequestsToday != null && analytics.requestsToday != null ? `${analytics.botRequestsToday.toLocaleString()} of ${analytics.requestsToday.toLocaleString()} reqs` : undefined} />
             </StatGrid>
 
