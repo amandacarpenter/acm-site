@@ -227,9 +227,9 @@ function LiveDashboard() {
         </div>
         <button
           onClick={() => fetchData()}
-          style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}
+          style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
         >
-          Refresh
+          <span aria-hidden="true">↻</span> Refresh
         </button>
       </div>
 
