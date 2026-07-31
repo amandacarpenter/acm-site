@@ -467,7 +467,7 @@ async function getCloudflareAnalytics(): Promise<{
             sum { requests }
             uniq { uniques }
           }
-          topPaths: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${topPagesExcludeList}] }, orderBy: [count_DESC]) {
+          topPaths: httpRequestsAdaptiveGroups(limit: 25, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${topPagesExcludeList}] }, orderBy: [count_DESC]) {
             count
             dimensions { clientRequestPath }
           }
@@ -516,10 +516,25 @@ async function getCloudflareAnalytics(): Promise<{
     const visitorsLastHour = lastHour?.uniq?.uniques ?? null;
     const requestsLastHour = lastHour?.sum?.requests ?? null;
 
-    const topPagesToday = (zone.topPaths || []).map((p: any) => ({
-      path: p.dimensions.clientRequestPath,
-      count: p.count,
-    }));
+    // Only keep genuine app page routes — drop static assets, API calls, and Cloudflare's own
+    // internal beacons so "Top Pages" reflects what a real visitor actually navigated to.
+    const isRealPage = (path: string) => {
+      if (path.startsWith("/api/")) return false;
+      if (path.startsWith("/assets/")) return false;
+      if (path.startsWith("/cdn-cgi/")) return false;
+      if (path.startsWith("/.well-known/")) return false;
+      if (/\.[a-zA-Z0-9]{2,5}$/.test(path)) return false; // file extensions (.css, .js, .png, .mp4, etc.)
+      if (/\.(env|git|aws|ssh|htaccess|htpasswd)/i.test(path)) return false; // credential/secret-scanner probes
+      if (/^\/(staging|dev|test|backup|old|new|next|prod|api-|admin-|cpanel|_)\b/i.test(path) && path !== "/admin") return false; // scanner-style prefix probes for hidden env/config paths
+      return true;
+    };
+    const topPagesToday = (zone.topPaths || [])
+      .filter((p: any) => isRealPage(p.dimensions.clientRequestPath))
+      .slice(0, 6)
+      .map((p: any) => ({
+        path: p.dimensions.clientRequestPath,
+        count: p.count,
+      }));
     const topCountriesToday = (zone.topCountries || []).map((c: any) => ({
       country: c.dimensions.clientCountryName || "Unknown",
       count: c.count,

@@ -206,6 +206,12 @@ function LiveDashboard() {
     return () => { if (intervalRef.current) window.clearInterval(intervalRef.current); };
   }, [fetchData]);
 
+  useEffect(() => {
+    const handler = () => fetchData();
+    window.addEventListener("admin-dashboard-refresh", handler);
+    return () => window.removeEventListener("admin-dashboard-refresh", handler);
+  }, [fetchData]);
+
   if (loading && !data) {
     return (
       <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "32px 20px", textAlign: "center", color: "#6b7280", fontSize: "0.85rem" }}>
@@ -229,19 +235,9 @@ function LiveDashboard() {
 
   return (
     <div>
-      {/* Refresh bar */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", gap: 8 }}>
-        <div style={{ fontSize: "0.75rem", color: "#9ca3af" }}>
-          {lastFetched ? `Updated ${timeAgo(lastFetched)}` : ""}
-          {error && <span style={{ color: "#dc2626", marginLeft: 8 }}>· refresh failed, showing last good data</span>}
-        </div>
-        <button
-          onClick={() => fetchData()}
-          style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
-        >
-          <span aria-hidden="true">↻</span> Refresh
-        </button>
-      </div>
+      {error && (
+        <div style={{ fontSize: "0.75rem", color: "#dc2626", marginBottom: 20 }}>refresh failed, showing last good data</div>
+      )}
 
       {/* Revenue & Subscribers */}
       <div style={{ marginBottom: 28 }}>
@@ -296,7 +292,7 @@ function LiveDashboard() {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
               <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TOP PAGES TODAY (BOT PATHS EXCLUDED)</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TOP PAGES TODAY (REAL PAGES ONLY)</div>
                 {analytics.topPagesToday.length === 0 ? (
                   <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
                 ) : (
@@ -444,6 +440,12 @@ export default function AdminPortal() {
           <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 700, fontSize: "1.1rem", color: "#fff", margin: 0, letterSpacing: "0.02em" }}>
             Admin Dashboard
           </h1>
+          <button
+            onClick={() => window.dispatchEvent(new Event("admin-dashboard-refresh"))}
+            style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <span aria-hidden="true">↻</span> Refresh
+          </button>
         </div>
       </div>
 
