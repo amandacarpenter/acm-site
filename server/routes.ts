@@ -12,6 +12,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as child_process from "child_process";
 import * as os from "os";
+import { BetaAnalyticsDataClient } from "@google-analytics/data";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -397,27 +398,31 @@ function formatTime(seconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
 }
 
-// Known bot/vulnerability-scanner paths that show up as raw hits in Cloudflare's numbers but are
-// never real visitors to this app (this is a Node/React app — none of these routes exist here).
-// Cloudflare's daily/hourly rollup datasets (httpRequests1dGroups / httpRequests1hGroups) do NOT
-// support filtering by path — only the adaptive, 1-day-max dataset (httpRequestsAdaptiveGroups) does,
-// and it doesn't expose real unique-visitor counts (only raw request counts). So "visitors" numbers
-// below are Cloudflare's raw uniques (unique IPs hitting the zone, including bots/crawlers) — NOT
-// verified human visitors. We separately compute what share of TODAY's raw traffic is known bot/scanner
-// noise so the real number can be read in context, and surface a real breakdown of today's traffic
-// (top pages, top countries, status codes) which strongly signals bot vs. real activity.
-const BOT_SCANNER_PATHS = [
-  "/index.php", "/wp-login.php", "/wp-admin", "/xmlrpc.php", "/.env",
-  "/.git/config", "/wp-content", "/wp-includes", "/phpmyadmin", "/config.php",
-];
+// ── Google Analytics (GA4) — replaces the old Cloudflare-based Site Traffic panel ──
+// Uses a Google Cloud service account (Viewer access granted directly on the GA4 property)
+// so the backend can pull real traffic-source data at runtime, independent of any user's
+// browser session. Requires GA4_PROPERTY_ID and GA4_SERVICE_ACCOUNT_JSON (the full service
+// account JSON key, as a single-line string) to be set as Railway env vars.
+let gaClient: BetaAnalyticsDataClient | null = null;
+let gaClientError: string | null = null;
+function getGaClient(): BetaAnalyticsDataClient | null {
+  if (gaClient || gaClientError) return gaClient;
+  const raw = process.env.GA4_SERVICE_ACCOUNT_JSON;
+  if (!raw) {
+    gaClientError = "GA4_SERVICE_ACCOUNT_JSON not set";
+    return null;
+  }
+  try {
+    const credentials = JSON.parse(raw);
+    gaClient = new BetaAnalyticsDataClient({ credentials });
+    return gaClient;
+  } catch (err: any) {
+    gaClientError = "Failed to parse GA4_SERVICE_ACCOUNT_JSON: " + (err.message || String(err));
+    return null;
+  }
+}
 
-// The dashboard polls its own API endpoint every 45s (LiveDashboard auto-refresh) plus manual
-// Refresh clicks — this is real traffic but it's the dashboard checking itself, not a page a
-// visitor loaded. Excluded from "Top Pages" alongside bot-scanner paths so that list only shows
-// actual pages/assets real visitors requested.
-const SELF_POLLING_PATHS = ["/api/admin/dashboard"];
-
-async function getCloudflareAnalytics(): Promise<{
+async function getGoogleAnalytics(): Promise<{
   visitors7d: number | null;
   pageViews7d: number | null;
   dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
@@ -425,139 +430,123 @@ async function getCloudflareAnalytics(): Promise<{
   pageViewsToday: number | null;
   visitorsLastHour: number | null;
   requestsLastHour: number | null;
-  requestsToday: number | null;
-  botRequestsToday: number | null;
-  botSharePctToday: number | null;
   topPagesToday: { path: string; count: number }[];
   topCountriesToday: { country: string; count: number }[];
-  statusCodesToday: { status: string; count: number }[];
+  trafficSourcesToday: { source: string; count: number }[];
+  trafficSources7d: { source: string; count: number }[];
   error: string | null;
 }> {
   const empty = {
     visitors7d: null, pageViews7d: null, dailyCounts7d: [] as { date: string; visitors: number; pageViews: number }[],
     visitorsToday: null, pageViewsToday: null, visitorsLastHour: null, requestsLastHour: null,
-    requestsToday: null, botRequestsToday: null, botSharePctToday: null,
     topPagesToday: [] as { path: string; count: number }[], topCountriesToday: [] as { country: string; count: number }[],
-    statusCodesToday: [] as { status: string; count: number }[],
+    trafficSourcesToday: [] as { source: string; count: number }[], trafficSources7d: [] as { source: string; count: number }[],
   };
-  const token = process.env.CLOUDFLARE_API_TOKEN;
-  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
-  if (!token || !zoneId) {
-    return { ...empty, error: "Cloudflare not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID missing)" };
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) {
+    return { ...empty, error: "Google Analytics not configured (GA4_PROPERTY_ID missing)" };
   }
+  const client = getGaClient();
+  if (!client) {
+    return { ...empty, error: gaClientError || "Google Analytics client unavailable" };
+  }
+  const property = `properties/${propertyId}`;
   try {
-    const now = new Date();
-    const end = now.toISOString().slice(0, 10);
-    const startDate = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-    const start = startDate.toISOString().slice(0, 10);
-    const todayStart = `${end}T00:00:00Z`;
-    const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
-    const botPathList = BOT_SCANNER_PATHS.map((p) => `"${p}"`).join(", ");
-    const topPagesExcludeList = [...BOT_SCANNER_PATHS, ...SELF_POLLING_PATHS].map((p) => `"${p}"`).join(", ");
+    const [daily, today, lastHour, topPages, topCountries, sourcesToday, sources7d] = await Promise.all([
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
+        orderBys: [{ dimension: { dimensionName: "date" } }],
+      }),
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "today", endDate: "today" }],
+        metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
+      }),
+      client.runRealtimeReport({
+        property,
+        metrics: [{ name: "activeUsers" }],
+      }),
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "today", endDate: "today" }],
+        dimensions: [{ name: "pagePath" }],
+        metrics: [{ name: "screenPageViews" }],
+        orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
+        limit: 6,
+      }),
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "today", endDate: "today" }],
+        dimensions: [{ name: "country" }],
+        metrics: [{ name: "totalUsers" }],
+        orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
+        limit: 6,
+      }),
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "today", endDate: "today" }],
+        dimensions: [{ name: "sessionDefaultChannelGroup" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 8,
+      }),
+      client.runReport({
+        property,
+        dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
+        dimensions: [{ name: "sessionDefaultChannelGroup" }],
+        metrics: [{ name: "sessions" }],
+        orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
+        limit: 8,
+      }),
+    ]);
 
-    const query = `query {
-      viewer {
-        zones(filter: { zoneTag: "${zoneId}" }) {
-          daily: httpRequests1dGroups(limit: 7, filter: { date_geq: "${start}", date_leq: "${end}" }, orderBy: [date_ASC]) {
-            dimensions { date }
-            sum { pageViews }
-            uniq { uniques }
-          }
-          lastHour: httpRequests1hGroups(limit: 1, filter: { datetime_geq: "${hourAgo}" }) {
-            sum { requests }
-            uniq { uniques }
-          }
-          topPaths: httpRequestsAdaptiveGroups(limit: 25, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${topPagesExcludeList}] }, orderBy: [count_DESC]) {
-            count
-            dimensions { clientRequestPath }
-          }
-          topCountries: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}" }, orderBy: [count_DESC]) {
-            count
-            dimensions { clientCountryName }
-          }
-          statusCodes: httpRequestsAdaptiveGroups(limit: 8, filter: { datetime_geq: "${todayStart}" }, orderBy: [count_DESC]) {
-            count
-            dimensions { edgeResponseStatus }
-          }
-          totalToday: httpRequestsAdaptiveGroups(limit: 1, filter: { datetime_geq: "${todayStart}" }) {
-            count
-          }
-          botToday: httpRequestsAdaptiveGroups(limit: 1, filter: { datetime_geq: "${todayStart}", clientRequestPath_in: [${botPathList}] }) {
-            count
-          }
-        }
-      }
-    }`;
-
-    const resp = await fetch("https://api.cloudflare.com/client/v4/graphql", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ query }),
+    const dailyRows = daily[0]?.rows || [];
+    const dailyCounts7d = dailyRows.map((r) => {
+      const raw = r.dimensionValues?.[0]?.value || "";
+      const date = raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+      return {
+        date,
+        visitors: Number(r.metricValues?.[0]?.value || 0),
+        pageViews: Number(r.metricValues?.[1]?.value || 0),
+      };
     });
-    const json: any = await resp.json();
-    if (json.errors) {
-      return { ...empty, error: json.errors.map((e: any) => e.message).join("; ") };
-    }
-    const zone = json?.data?.viewer?.zones?.[0] || {};
+    const visitors7d = dailyCounts7d.reduce((sum, d) => sum + d.visitors, 0);
+    const pageViews7d = dailyCounts7d.reduce((sum, d) => sum + d.pageViews, 0);
 
-    const dailyGroups = zone.daily || [];
-    const dailyCounts7d = dailyGroups.map((g: any) => ({
-      date: g.dimensions.date,
-      visitors: g.uniq?.uniques ?? 0,
-      pageViews: g.sum?.pageViews ?? 0,
-    }));
-    const visitors7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.visitors, 0);
-    const pageViews7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.pageViews, 0);
-    const todayRow = dailyCounts7d.find((d: any) => d.date === end);
-    const visitorsToday = todayRow?.visitors ?? null;
-    const pageViewsToday = todayRow?.pageViews ?? null;
+    const todayRow = today[0]?.rows?.[0];
+    const visitorsToday = todayRow ? Number(todayRow.metricValues?.[0]?.value || 0) : 0;
+    const pageViewsToday = todayRow ? Number(todayRow.metricValues?.[1]?.value || 0) : 0;
 
-    const lastHour = zone.lastHour?.[0];
-    const visitorsLastHour = lastHour?.uniq?.uniques ?? null;
-    const requestsLastHour = lastHour?.sum?.requests ?? null;
+    const visitorsLastHour = Number(lastHour[0]?.rows?.[0]?.metricValues?.[0]?.value || 0);
 
-    // Only keep genuine app page routes — drop static assets, API calls, and Cloudflare's own
-    // internal beacons so "Top Pages" reflects what a real visitor actually navigated to.
-    const isRealPage = (path: string) => {
-      if (path.startsWith("/api/")) return false;
-      if (path.startsWith("/assets/")) return false;
-      if (path.startsWith("/cdn-cgi/")) return false;
-      if (path.startsWith("/.well-known/")) return false;
-      if (/\.[a-zA-Z0-9]{2,5}$/.test(path)) return false; // file extensions (.css, .js, .png, .mp4, etc.)
-      if (/\.(env|git|aws|ssh|htaccess|htpasswd)/i.test(path)) return false; // credential/secret-scanner probes
-      if (/^\/(staging|dev|test|backup|old|new|next|prod|api-|admin-|cpanel|_)\b/i.test(path) && path !== "/admin") return false; // scanner-style prefix probes for hidden env/config paths
-      return true;
-    };
-    const topPagesToday = (zone.topPaths || [])
-      .filter((p: any) => isRealPage(p.dimensions.clientRequestPath))
-      .slice(0, 6)
-      .map((p: any) => ({
-        path: p.dimensions.clientRequestPath,
-        count: p.count,
-      }));
-    const topCountriesToday = (zone.topCountries || []).map((c: any) => ({
-      country: c.dimensions.clientCountryName || "Unknown",
-      count: c.count,
+    const topPagesToday = (topPages[0]?.rows || []).map((r) => ({
+      path: r.dimensionValues?.[0]?.value || "(unknown)",
+      count: Number(r.metricValues?.[0]?.value || 0),
     }));
-    const statusCodesToday = (zone.statusCodes || []).map((s: any) => ({
-      status: String(s.dimensions.edgeResponseStatus),
-      count: s.count,
+    const topCountriesToday = (topCountries[0]?.rows || []).map((r) => ({
+      country: r.dimensionValues?.[0]?.value || "Unknown",
+      count: Number(r.metricValues?.[0]?.value || 0),
     }));
-    const requestsToday = zone.totalToday?.[0]?.count ?? null;
-    const botRequestsToday = zone.botToday?.[0]?.count ?? 0;
-    const botSharePctToday = requestsToday && requestsToday > 0
-      ? Number(((botRequestsToday / requestsToday) * 100).toFixed(1))
-      : null;
+    const trafficSourcesToday = (sourcesToday[0]?.rows || []).map((r) => ({
+      source: r.dimensionValues?.[0]?.value || "Unassigned",
+      count: Number(r.metricValues?.[0]?.value || 0),
+    }));
+    const trafficSources7d = (sources7d[0]?.rows || []).map((r) => ({
+      source: r.dimensionValues?.[0]?.value || "Unassigned",
+      count: Number(r.metricValues?.[0]?.value || 0),
+    }));
 
     return {
       visitors7d, pageViews7d, dailyCounts7d,
-      visitorsToday, pageViewsToday, visitorsLastHour, requestsLastHour,
-      requestsToday, botRequestsToday, botSharePctToday,
-      topPagesToday, topCountriesToday, statusCodesToday,
+      visitorsToday, pageViewsToday, visitorsLastHour, requestsLastHour: null,
+      topPagesToday, topCountriesToday, trafficSourcesToday, trafficSources7d,
       error: null,
     };
   } catch (err: any) {
-    return { ...empty, error: err.message || "Failed to fetch Cloudflare analytics" };
+    return { ...empty, error: err.message || "Failed to fetch Google Analytics data" };
   }
 }
 
@@ -698,7 +687,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 229 / 12;
       const TEAM_SEAT_MONTHLY_EQUIV = 299 / 12;
 
-      const cloudflareAnalyticsPromise = getCloudflareAnalytics();
+      const googleAnalyticsPromise = getGoogleAnalytics();
 
       let allUsers: any[] = [];
       let offset = 0;
@@ -811,7 +800,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }));
 
       const dailyCounts14d = storage.getDailyJobCounts(14);
-      const analytics = await cloudflareAnalyticsPromise;
+      const analytics = await googleAnalyticsPromise;
 
       res.json({
         generatedAt: new Date().toISOString(),
