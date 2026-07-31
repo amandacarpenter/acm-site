@@ -411,6 +411,12 @@ const BOT_SCANNER_PATHS = [
   "/.git/config", "/wp-content", "/wp-includes", "/phpmyadmin", "/config.php",
 ];
 
+// The dashboard polls its own API endpoint every 45s (LiveDashboard auto-refresh) plus manual
+// Refresh clicks — this is real traffic but it's the dashboard checking itself, not a page a
+// visitor loaded. Excluded from "Top Pages" alongside bot-scanner paths so that list only shows
+// actual pages/assets real visitors requested.
+const SELF_POLLING_PATHS = ["/api/admin/dashboard"];
+
 async function getCloudflareAnalytics(): Promise<{
   visitors7d: number | null;
   pageViews7d: number | null;
@@ -447,6 +453,7 @@ async function getCloudflareAnalytics(): Promise<{
     const todayStart = `${end}T00:00:00Z`;
     const hourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
     const botPathList = BOT_SCANNER_PATHS.map((p) => `"${p}"`).join(", ");
+    const topPagesExcludeList = [...BOT_SCANNER_PATHS, ...SELF_POLLING_PATHS].map((p) => `"${p}"`).join(", ");
 
     const query = `query {
       viewer {
@@ -460,7 +467,7 @@ async function getCloudflareAnalytics(): Promise<{
             sum { requests }
             uniq { uniques }
           }
-          topPaths: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${botPathList}] }, orderBy: [count_DESC]) {
+          topPaths: httpRequestsAdaptiveGroups(limit: 6, filter: { datetime_geq: "${todayStart}", clientRequestPath_notin: [${topPagesExcludeList}] }, orderBy: [count_DESC]) {
             count
             dimensions { clientRequestPath }
           }

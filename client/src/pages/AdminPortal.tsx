@@ -452,7 +452,6 @@ export default function AdminPortal() {
 
         {/* Live Dashboard — the main event */}
         <div style={{ marginBottom: 36 }}>
-          <SectionHeader title="Dashboard" subtitle={`Auto-refreshes every ${REFRESH_MS / 1000}s`} />
           <LiveDashboard />
         </div>
 
