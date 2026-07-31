@@ -397,7 +397,65 @@ function formatTime(seconds: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
 }
 
+async function getCloudflareAnalytics(): Promise<{
+  visitors7d: number | null;
+  pageViews7d: number | null;
+  dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
+  error: string | null;
+}> {
+  const token = process.env.CLOUDFLARE_API_TOKEN;
+  const zoneId = process.env.CLOUDFLARE_ZONE_ID;
+  if (!token || !zoneId) {
+    return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: "Cloudflare not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ZONE_ID missing)" };
+  }
+  try {
+    const today = new Date();
+    const end = today.toISOString().slice(0, 10);
+    const startDate = new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const start = startDate.toISOString().slice(0, 10);
+
+    const query = `query {
+      viewer {
+        zones(filter: { zoneTag: "${zoneId}" }) {
+          httpRequests1dGroups(limit: 7, filter: { date_geq: "${start}", date_leq: "${end}" }, orderBy: [date_ASC]) {
+            dimensions { date }
+            sum { pageViews }
+            uniq { uniques }
+          }
+        }
+      }
+    }`;
+
+    const resp = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    });
+    const json: any = await resp.json();
+    if (json.errors) {
+      return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: json.errors.map((e: any) => e.message).join("; ") };
+    }
+    const groups = json?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+    const dailyCounts7d = groups.map((g: any) => ({
+      date: g.dimensions.date,
+      visitors: g.uniq?.uniques ?? 0,
+      pageViews: g.sum?.pageViews ?? 0,
+    }));
+    const visitors7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.visitors, 0);
+    const pageViews7d = dailyCounts7d.reduce((sum: number, d: any) => sum + d.pageViews, 0);
+    return { visitors7d, pageViews7d, dailyCounts7d, error: null };
+  } catch (err: any) {
+    return { visitors7d: null, pageViews7d: null, dailyCounts7d: [], error: err.message || "Failed to fetch Cloudflare analytics" };
+  }
+}
+
 export function registerRoutes(httpServer: Server, app: Express) {
+
+  // ── Stripe client (moved to top of function so it's in scope for every route,
+  // including /api/admin/dashboard which is registered before the checkout routes) ──
+  const stripeKey = process.env.STRIPE_SECRET_KEY || "";
+  console.log("[STARTUP] STRIPE_SECRET_KEY prefix:", stripeKey.slice(0, 15) || "(not set)");
+  const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
@@ -528,6 +586,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 229 / 12;
       const TEAM_SEAT_MONTHLY_EQUIV = 299 / 12;
 
+      const cloudflareAnalyticsPromise = getCloudflareAnalytics();
+
       let allUsers: any[] = [];
       let offset = 0;
       while (true) {
@@ -540,7 +600,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
       let individualSubs = 0;
       let teamSeats = 0;
-      let mrr = 0;
+      let estimatedMrr = 0;
       let newSignups7d = 0;
       let newSignups30d = 0;
       const now = Date.now();
@@ -554,15 +614,60 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
         if (meta.subscribed && meta.plan === "individual") {
           individualSubs++;
-          mrr += INDIVIDUAL_MONTHLY_PRICE; // conservative: assumes monthly plan unless we track cadence separately
+          estimatedMrr += INDIVIDUAL_MONTHLY_PRICE; // conservative: assumes monthly plan unless we track cadence separately
         } else if (meta.plan === "team" && meta.orgId) {
           teamSeats++;
           if (!orgIdsSeen.has(meta.orgId)) {
             orgIdsSeen.add(meta.orgId);
           }
-          mrr += TEAM_SEAT_MONTHLY_EQUIV;
+          estimatedMrr += TEAM_SEAT_MONTHLY_EQUIV;
         }
       }
+
+      // ── Real Stripe MRR (source of truth) ────────────────────────────────
+      // Sums all ACTIVE + PAST_DUE subscriptions from Stripe directly, normalized to a
+      // monthly amount per Stripe's own MRR definition. Trialing subscriptions are
+      // excluded (per user preference) until they convert to a paid, active state.
+      let stripeMrr: number | null = null;
+      let stripeActiveSubscriptions = 0;
+      let stripeError: string | null = null;
+      if (stripe) {
+        try {
+          const monthlyFromPrice = (price: Stripe.Price): number => {
+            if (!price.recurring || price.unit_amount == null) return 0;
+            const cents = price.unit_amount;
+            switch (price.recurring.interval) {
+              case "month":
+                return cents / price.recurring.interval_count;
+              case "year":
+                return cents / 12 / price.recurring.interval_count;
+              case "week":
+                return (cents * 4.345) / price.recurring.interval_count;
+              case "day":
+                return (cents * 30.44) / price.recurring.interval_count;
+              default:
+                return 0;
+            }
+          };
+
+          let totalCents = 0;
+          for (const status of ["active", "past_due"] as const) {
+            for await (const sub of stripe.subscriptions.list({ status, limit: 100, expand: ["data.items.data.price"] })) {
+              stripeActiveSubscriptions++;
+              for (const item of sub.items.data) {
+                totalCents += monthlyFromPrice(item.price) * (item.quantity ?? 1);
+              }
+            }
+          }
+          stripeMrr = Number((totalCents / 100).toFixed(2));
+        } catch (err: any) {
+          stripeError = err.message || "Failed to fetch Stripe subscriptions";
+        }
+      } else {
+        stripeError = "Stripe not configured (STRIPE_SECRET_KEY missing)";
+      }
+
+      const mrr = stripeMrr != null ? stripeMrr : estimatedMrr;
 
       // ── Usage & cost (real logged token usage) ──────────────────────────
       const sinceMs30 = now - 30 * 24 * 60 * 60 * 1000;
@@ -594,18 +699,27 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }));
 
       const dailyCounts14d = storage.getDailyJobCounts(14);
+      const analytics = await cloudflareAnalyticsPromise;
 
       res.json({
         generatedAt: new Date().toISOString(),
+        analytics,
         revenue: {
           mrr: Number(mrr.toFixed(2)),
+          mrrSource: stripeMrr != null ? "stripe" : "clerk_estimate",
+          stripeMrr,
+          stripeActiveSubscriptions,
+          estimatedMrr: Number(estimatedMrr.toFixed(2)),
+          stripeError,
           individualSubscribers: individualSubs,
           teamSeatsActive: teamSeats,
           teamOrgs: orgIdsSeen.size,
           totalUsers: allUsers.length,
           newSignups7d,
           newSignups30d,
-          note: "MRR is an estimate from Clerk plan metadata (list prices), not live Stripe subscription amounts — verify against Stripe dashboard for exact billing-cycle totals.",
+          note: stripeMrr != null
+            ? "MRR is calculated live from active + past_due Stripe subscriptions (trials excluded), normalized to a monthly amount."
+            : "Stripe MRR unavailable — showing Clerk plan-metadata estimate instead. See stripeError for details.",
         },
         usageAndCost: {
           last30Days: {
@@ -2489,9 +2603,8 @@ Rules:
   });
 
   // ── Stripe Checkout ──────────────────────────────────────────
-  const stripeKey = process.env.STRIPE_SECRET_KEY || "";
-  console.log("[STARTUP] STRIPE_SECRET_KEY prefix:", stripeKey.slice(0, 15) || "(not set)");
-  const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
+  // (stripe client initialized near the top of this function so it's in scope
+  // for the /api/admin/dashboard route, which is registered earlier below)
 
   // ── Stripe Webhook ───────────────────────────────────────────
   // Must be registered BEFORE express.json() parses the body

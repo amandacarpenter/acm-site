@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Redirect } from "wouter";
-import adminLogoIcon from "@/assets/admin-logo-icon.png";
+import logoFull from "@/assets/logo-hero.jpg";
 
 const ADMIN_EMAIL = "amandathecarpenter@gmail.com";
 const ADMIN_STATS_KEY = import.meta.env.VITE_ADMIN_STATS_KEY as string | undefined;
@@ -10,8 +10,19 @@ const REFRESH_MS = 45000;
 // ── Types (mirrors /api/admin/dashboard response) ────────────────
 interface DashboardData {
   generatedAt: string;
+  analytics: {
+    visitors7d: number | null;
+    pageViews7d: number | null;
+    dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
+    error: string | null;
+  };
   revenue: {
     mrr: number;
+    mrrSource: "stripe" | "clerk_estimate";
+    stripeMrr: number | null;
+    stripeActiveSubscriptions: number;
+    estimatedMrr: number;
+    stripeError: string | null;
     individualSubscribers: number;
     teamSeatsActive: number;
     teamOrgs: number;
@@ -48,6 +59,7 @@ const platforms = [
   { name: "Zoho Mail", desc: "hello@remedy508.com", url: "https://mail.zoho.com", icon: "📧", color: "#e42527" },
   { name: "Formspree", desc: "Contact & waitlist forms", url: "https://formspree.io", icon: "📋", color: "#e85d04" },
   { name: "Stripe", desc: "Payments", url: "https://dashboard.stripe.com", icon: "💳", color: "#635bff" },
+  { name: "Anthropic", desc: "Claude API — powers the accessibility pipeline", url: "https://console.anthropic.com", icon: "🤖", color: "#d97757" },
   { name: "Namecheap", desc: "leftcoastlearningllc.com registrar", url: "https://namecheap.com", icon: "🌐", color: "#de3723" },
   { name: "Porkbun", desc: "remedy508.ai registrar", url: "https://porkbun.com", icon: "🐷", color: "#f472b6" },
   { name: "Plausible", desc: "remedy508.com analytics", url: "https://plausible.io/remedy508.com", icon: "📊", color: "#5850ec" },
@@ -202,7 +214,7 @@ function LiveDashboard() {
 
   if (!data) return null;
 
-  const { revenue, usageAndCost, health, recentActivity } = data;
+  const { revenue, usageAndCost, health, recentActivity, analytics } = data;
   const failRate24h = health.last24h.total > 0 ? (health.last24h.failed / health.last24h.total) * 100 : 0;
 
   return (
@@ -215,23 +227,54 @@ function LiveDashboard() {
         </div>
         <button
           onClick={() => fetchData()}
-          style={{ background: "#111827", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}
+          style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}
         >
-          ↻ Refresh now
+          Refresh
         </button>
       </div>
 
       {/* Revenue & Subscribers */}
       <div style={{ marginBottom: 28 }}>
-        <SectionHeader title="Revenue & Subscribers" subtitle="Estimated from plan metadata — verify exact billing in Stripe" />
+        <SectionHeader
+          title="Revenue & Subscribers"
+          subtitle={revenue.mrrSource === "stripe" ? "Live from Stripe — active + past_due subscriptions, trials excluded" : "Stripe unavailable — estimated from Clerk plan metadata"}
+        />
         <StatGrid>
-          <StatCard label="Est. MRR" value={`$${revenue.mrr.toLocaleString()}`} tone="good" />
+          <StatCard
+            label={revenue.mrrSource === "stripe" ? "MRR (Stripe)" : "Est. MRR"}
+            value={`$${revenue.mrr.toLocaleString()}`}
+            tone="good"
+            sub={revenue.mrrSource === "stripe" ? `${revenue.stripeActiveSubscriptions} active subscription${revenue.stripeActiveSubscriptions === 1 ? "" : "s"}` : revenue.stripeError || undefined}
+          />
           <StatCard label="Individual Subs" value={String(revenue.individualSubscribers)} />
           <StatCard label="Team Seats" value={String(revenue.teamSeatsActive)} sub={`${revenue.teamOrgs} team org${revenue.teamOrgs === 1 ? "" : "s"}`} />
           <StatCard label="Total Users" value={String(revenue.totalUsers)} />
           <StatCard label="New (7d)" value={String(revenue.newSignups7d)} />
           <StatCard label="New (30d)" value={String(revenue.newSignups30d)} />
         </StatGrid>
+      </div>
+
+      {/* Site Traffic (Cloudflare) */}
+      <div style={{ marginBottom: 28 }}>
+        <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Cloudflare analytics unavailable" : "Live from Cloudflare — remedy508.com, last 7 days"} />
+        {analytics.error ? (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px", color: "#991b1b", fontSize: "0.8rem" }}>
+            {analytics.error}
+          </div>
+        ) : (
+          <>
+            <StatGrid>
+              <StatCard label="Visitors (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" />
+              <StatCard label="Page Views (7d)" value={analytics.pageViews7d != null ? analytics.pageViews7d.toLocaleString() : "—"} />
+            </StatGrid>
+            {analytics.dailyCounts7d.length > 0 && (
+              <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px", marginTop: 12 }}>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>PAGE VIEWS PER DAY (7 DAYS)</div>
+                <MiniBarChart data={analytics.dailyCounts7d.map(d => ({ date: d.date, jobs: d.pageViews, failed: 0 }))} />
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {/* Usage & Cost */}
@@ -325,18 +368,12 @@ export default function AdminPortal() {
   return (
     <div style={{ minHeight: "100vh", background: "#f9fafb", fontFamily: "'General Sans', sans-serif" }}>
       {/* Header */}
-      <div style={{ background: "#111827", padding: "20px 20px", borderBottom: "1px solid #1f2937" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <img src={adminLogoIcon} alt="Remedy508 logo" style={{ height: 40, width: 40, borderRadius: 9, flexShrink: 0 }} />
-            <div>
-              <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 700, fontSize: "1.35rem", color: "#fff", margin: 0 }}>
-                Admin Dashboard
-              </h1>
-              <p style={{ color: "#6b7280", fontSize: "0.78rem", margin: "4px 0 0" }}>Mission Control — {user?.firstName || "Amanda"}</p>
-            </div>
-          </div>
-          <span style={{ background: "#0d9488", color: "#fff", fontSize: "0.68rem", fontWeight: 600, padding: "4px 10px", borderRadius: 20 }}>PRIVATE</span>
+      <div style={{ background: "#111827", padding: "28px 20px", borderBottom: "1px solid #1f2937" }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <img src={logoFull} alt="Remedy508" style={{ height: 48, width: "auto" }} />
+          <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 700, fontSize: "1.1rem", color: "#fff", margin: 0, letterSpacing: "0.02em" }}>
+            Admin Dashboard
+          </h1>
         </div>
       </div>
 
