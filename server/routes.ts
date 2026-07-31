@@ -44,10 +44,43 @@ const TEAM_CREDITS_PER_SEAT = 175;
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 const MAX_PAGES_PER_DOCUMENT = 50; // hard cap — protects against runaway cost + server load on a single upload
 
+// Legacy fallback only -- used if a user's Clerk createdAt is somehow unavailable.
+// Modern code should always prefer getFirstResetDate(user.createdAt).
 function getResetDate(): string {
   const now = new Date();
   const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 8, 0, 0)); // 1st of next month 12AM PT (UTC-8)
   return next.toISOString();
+}
+
+// Signup-anniversary credit reset: each customer's monthly pool resets on the same
+// day-of-month they signed up, not a shared calendar-month date for everyone. E.g. a user
+// who signs up July 28 resets Aug 28, Sept 28, etc. -- never right after they just got a
+// nearly-full pool days earlier, and never leaving a later-month signer waiting ~4 weeks
+// longer than an early-month signer for their first "real" reset.
+//
+// Handles short months correctly (e.g. signup on the 31st -- Feb has no 31st, so that
+// month's reset lands on the last day of Feb instead) via JS Date's day-overflow rollover
+// being explicitly clamped back down.
+function getFirstResetDate(signupDate: Date): string {
+  const day = signupDate.getUTCDate();
+  const next = addOneMonthClamped(signupDate, day);
+  return next.toISOString();
+}
+
+function getNextResetDate(currentResetDate: Date, anniversaryDay: number): string {
+  const next = addOneMonthClamped(currentResetDate, anniversaryDay);
+  return next.toISOString();
+}
+
+// Adds one month to `base`, targeting `anniversaryDay` as the day-of-month, but clamped to
+// the last real day of the resulting month (so Jan 31 -> Feb 28/29, not March 3 from JS's
+// default day-overflow rollover).
+function addOneMonthClamped(base: Date, anniversaryDay: number): Date {
+  const year = base.getUTCFullYear();
+  const month = base.getUTCMonth() + 1; // target next month
+  const lastDayOfTargetMonth = new Date(Date.UTC(year, month + 1, 0, 8, 0, 0)).getUTCDate();
+  const clampedDay = Math.min(anniversaryDay, lastDayOfTargetMonth);
+  return new Date(Date.UTC(year, month, clampedDay, 8, 0, 0)); // 12AM PT (UTC-8)
 }
 
 function getMonthlyCreditLimit(meta: any): number {
@@ -96,11 +129,27 @@ async function getCreditBalance(clerkUserId: string): Promise<{
   const monthlyLimit = getMonthlyCreditLimit(meta);
   let monthlyUsed: number = meta.monthlyCreditsUsed ?? meta.monthlyDocsUsed ?? 0;
   const purchasedCredits: number = meta.purchasedCredits || 0;
-  const resetDate: string = meta.usageResetDate || getResetDate();
+
+  // Signup date drives the reset anniversary. Clerk's user.createdAt is a real Date object
+  // for every account (new or pre-existing), so this works for existing users too -- their
+  // very first reset after this change lands on their actual signup day-of-month, not the
+  // 1st of whatever month they happen to log in during.
+  const signupDate = new Date(user.createdAt);
+  const anniversaryDay: number = meta.usageAnniversaryDay || signupDate.getUTCDate();
+
+  let resetDate: string = meta.usageResetDate;
+  if (!resetDate) {
+    // First time this user's credits are ever checked -- seed from their real signup date.
+    resetDate = getFirstResetDate(signupDate);
+    meta = { ...meta, usageResetDate: resetDate, usageAnniversaryDay: anniversaryDay };
+    await clerkClient.users.updateUserMetadata(clerkUserId, { publicMetadata: meta });
+  }
 
   if (new Date() >= new Date(resetDate)) {
     monthlyUsed = 0;
-    meta = { ...meta, monthlyCreditsUsed: 0, usageResetDate: getResetDate() };
+    const newResetDate = getNextResetDate(new Date(resetDate), anniversaryDay);
+    meta = { ...meta, monthlyCreditsUsed: 0, usageResetDate: newResetDate, usageAnniversaryDay: anniversaryDay };
+    resetDate = newResetDate;
     await clerkClient.users.updateUserMetadata(clerkUserId, { publicMetadata: meta });
   }
 

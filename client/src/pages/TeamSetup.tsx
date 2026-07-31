@@ -26,9 +26,11 @@ export default function TeamSetup() {
 
   const meta = user?.publicMetadata as any;
   const seats: number = meta?.teamSeats || 0;
-  const resetDate = new Date();
-  resetDate.setMonth(resetDate.getMonth() + 1, 1);
-  const resetStr = resetDate.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+
+  // Each teammate resets on their own signup-anniversary date (not a shared calendar-month
+  // date), so this shows the CURRENT logged-in member's own reset date, fetched the same way
+  // Dashboard.tsx does -- not a generically-computed "1st of next month" placeholder.
+  const [resetStr, setResetStr] = useState<string | null>(null);
 
   const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
@@ -44,6 +46,18 @@ export default function TeamSetup() {
       .catch((err) => console.error("Failed to load team usage:", err))
       .finally(() => setUsageLoading(false));
   }, [user?.id, organization?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/usage/status?clerkUserId=${user.id}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.resetDate) {
+          setResetStr(new Date(data.resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" }));
+        }
+      })
+      .catch((err) => console.error("Failed to load reset date:", err));
+  }, [user?.id]);
 
   if (!organization) {
     return (
@@ -115,7 +129,7 @@ export default function TeamSetup() {
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    Resets {resetStr} · {TEAM_CREDITS_PER_SEAT} credits per seat, individually allotted (not pooled)
+                    {resetStr ? `Resets ${resetStr}` : "Resets monthly on your signup date"} · {TEAM_CREDITS_PER_SEAT} credits per seat, individually allotted (not pooled)
                   </p>
                 </>
               ) : (

@@ -129,7 +129,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   "tour-of-your-dashboard": `<h2>Your dashboard at a glance</h2>
 <p>After logging in, you land on your dashboard. Here's what you'll find:</p>
 <h3>Usage meter</h3>
-<p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit. Remedy508 runs on a simple credit system: <strong>1 credit = 1 processed page</strong>. Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets on the 1st of each billing month.</p>
+<p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit. Remedy508 runs on a simple credit system: <strong>1 credit = 1 processed page</strong>. Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
 <h3>Quick-access tools</h3>
 <p>The four Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
 <h3>Credit pack balance</h3>
