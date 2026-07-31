@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { Redirect } from "wouter";
+import adminLogoIcon from "@/assets/admin-logo-icon.png";
 
 const ADMIN_EMAIL = "amandathecarpenter@gmail.com";
 const ADMIN_STATS_KEY = import.meta.env.VITE_ADMIN_STATS_KEY as string | undefined;
@@ -326,11 +327,14 @@ export default function AdminPortal() {
       {/* Header */}
       <div style={{ background: "#111827", padding: "20px 20px", borderBottom: "1px solid #1f2937" }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-          <div>
-            <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 700, fontSize: "1.35rem", color: "#fff", margin: 0 }}>
-              Remedy<span style={{ color: "#0d9488" }}>508</span> Admin
-            </h1>
-            <p style={{ color: "#6b7280", fontSize: "0.78rem", margin: "4px 0 0" }}>Mission Control — {user?.firstName || "Amanda"}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <img src={adminLogoIcon} alt="Remedy508 logo" style={{ height: 40, width: 40, borderRadius: 9, flexShrink: 0 }} />
+            <div>
+              <h1 style={{ fontFamily: "'Clash Display', sans-serif", fontWeight: 700, fontSize: "1.35rem", color: "#fff", margin: 0 }}>
+                Admin Dashboard
+              </h1>
+              <p style={{ color: "#6b7280", fontSize: "0.78rem", margin: "4px 0 0" }}>Mission Control — {user?.firstName || "Amanda"}</p>
+            </div>
           </div>
           <span style={{ background: "#0d9488", color: "#fff", fontSize: "0.68rem", fontWeight: 600, padding: "4px 10px", borderRadius: 20 }}>PRIVATE</span>
         </div>
