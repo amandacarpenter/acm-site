@@ -462,6 +462,130 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
+  // Single-call summary powering the mobile admin dashboard: revenue/subscribers
+  // (from Clerk user metadata, since that's the source of truth for plan state
+  // set by the Stripe webhook), usage/cost (real logged token usage), error
+  // health (from the jobs table, now that failures are logged there too), and
+  // recent activity. Query with ?key=<ADMIN_STATS_KEY>
+  app.get("/api/admin/dashboard", async (req, res) => {
+    const key = req.query.key as string | undefined;
+    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      // ── Revenue & subscribers ────────────────────────────────────────────
+      const INDIVIDUAL_MONTHLY_PRICE = 25; // $25/mo list price (billing cadence varies, monthly-equivalent used for MRR)
+      const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 229 / 12;
+      const TEAM_SEAT_MONTHLY_EQUIV = 299 / 12;
+
+      let allUsers: any[] = [];
+      let offset = 0;
+      while (true) {
+        const page = await clerkClient.users.getUserList({ limit: 100, offset });
+        allUsers = allUsers.concat(page.data);
+        if (page.data.length < 100) break;
+        offset += 100;
+        if (offset > 2000) break; // safety cap
+      }
+
+      let individualSubs = 0;
+      let teamSeats = 0;
+      let mrr = 0;
+      let newSignups7d = 0;
+      let newSignups30d = 0;
+      const now = Date.now();
+      const orgIdsSeen = new Set<string>();
+
+      for (const u of allUsers) {
+        const meta = (u.publicMetadata || {}) as any;
+        const createdAt = u.createdAt || 0;
+        if (now - createdAt <= 7 * 24 * 60 * 60 * 1000) newSignups7d++;
+        if (now - createdAt <= 30 * 24 * 60 * 60 * 1000) newSignups30d++;
+
+        if (meta.subscribed && meta.plan === "individual") {
+          individualSubs++;
+          mrr += INDIVIDUAL_MONTHLY_PRICE; // conservative: assumes monthly plan unless we track cadence separately
+        } else if (meta.plan === "team" && meta.orgId) {
+          teamSeats++;
+          if (!orgIdsSeen.has(meta.orgId)) {
+            orgIdsSeen.add(meta.orgId);
+          }
+          mrr += TEAM_SEAT_MONTHLY_EQUIV;
+        }
+      }
+
+      // ── Usage & cost (real logged token usage) ──────────────────────────
+      const sinceMs30 = now - 30 * 24 * 60 * 60 * 1000;
+      const costSummary30d = storage.getCostSummary(sinceMs30);
+      const totalCost30d = tokenCostUsd(costSummary30d.totalInputTokens, costSummary30d.totalOutputTokens);
+      const costAllTime = storage.getCostSummary();
+      const totalCostAllTime = tokenCostUsd(costAllTime.totalInputTokens, costAllTime.totalOutputTokens);
+
+      // ── Errors & health ──────────────────────────────────────────────────
+      const jobCounts24h = storage.getJobCountsSince(now - 24 * 60 * 60 * 1000);
+      const jobCounts7d = storage.getJobCountsSince(now - 7 * 24 * 60 * 60 * 1000);
+      const recentFailures = storage.getRecentFailedJobs(10).map((j) => ({
+        id: j.id,
+        type: j.type,
+        inputName: j.inputName,
+        errorMessage: j.errorMessage,
+        createdAt: j.createdAt,
+      }));
+
+      // ── Recent activity ──────────────────────────────────────────────────
+      const recentJobs = storage.getRecentJobs(15).map((j) => ({
+        id: j.id,
+        type: j.type,
+        status: j.status,
+        inputName: j.inputName,
+        pageCount: j.pageCount,
+        creditsUsed: j.creditsUsed,
+        createdAt: j.createdAt,
+      }));
+
+      const dailyCounts14d = storage.getDailyJobCounts(14);
+
+      res.json({
+        generatedAt: new Date().toISOString(),
+        revenue: {
+          mrr: Number(mrr.toFixed(2)),
+          individualSubscribers: individualSubs,
+          teamSeatsActive: teamSeats,
+          teamOrgs: orgIdsSeen.size,
+          totalUsers: allUsers.length,
+          newSignups7d,
+          newSignups30d,
+          note: "MRR is an estimate from Clerk plan metadata (list prices), not live Stripe subscription amounts — verify against Stripe dashboard for exact billing-cycle totals.",
+        },
+        usageAndCost: {
+          last30Days: {
+            totalJobs: costSummary30d.totalJobs,
+            totalPages: costSummary30d.totalPages,
+            totalCostUsd: Number(totalCost30d.toFixed(4)),
+            avgCostPerPageUsd: costSummary30d.totalPages > 0 ? Number((totalCost30d / costSummary30d.totalPages).toFixed(5)) : null,
+            byType: costSummary30d.byType,
+          },
+          allTime: {
+            totalJobs: costAllTime.totalJobs,
+            totalPages: costAllTime.totalPages,
+            totalCostUsd: Number(totalCostAllTime.toFixed(4)),
+          },
+          dailyCounts14d,
+        },
+        health: {
+          last24h: jobCounts24h,
+          last7d: jobCounts7d,
+          recentFailures,
+        },
+        recentActivity: recentJobs,
+      });
+    } catch (err: any) {
+      console.error("[ADMIN DASHBOARD] Error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Recent job activity (for Dashboard)
   app.get("/api/jobs/recent", (req, res) => {
     const clerkUserId = req.query.clerkUserId as string | undefined;
@@ -1044,6 +1168,23 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       });
     } catch (err: any) {
       console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- fast pipeline failed:`, err.message);
+      try {
+        storage.createJob({
+          type: "document",
+          status: "failed",
+          inputName: req.file?.originalname || null,
+          result: null,
+          errorMessage: String(err.message || err).slice(0, 500),
+          createdAt: Date.now(),
+          clerkUserId: clerkUserId || null,
+          pageCount: null,
+          creditsUsed: null,
+          inputTokens: null,
+          outputTokens: null,
+        });
+      } catch (logErr: any) {
+        console.error("[JOB LOG] Failed to log failure:", logErr.message);
+      }
       res.status(500).json({ error: err.message });
     }
   }
@@ -2146,6 +2287,23 @@ print('ok')
 
     } catch (err: any) {
       console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- vision pipeline failed:`, err.message);
+      try {
+        storage.createJob({
+          type: "complexpdf",
+          status: "failed",
+          inputName: req.file?.originalname || null,
+          result: null,
+          errorMessage: String(err.message || err).slice(0, 500),
+          createdAt: Date.now(),
+          clerkUserId: (req.body?.clerkUserId as string) || null,
+          pageCount: null,
+          creditsUsed: null,
+          inputTokens: null,
+          outputTokens: null,
+        });
+      } catch (logErr: any) {
+        console.error("[JOB LOG] Failed to log failure:", logErr.message);
+      }
       res.status(500).json({ error: err.message });
     }
   }

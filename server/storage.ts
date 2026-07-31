@@ -67,6 +67,10 @@ export interface IStorage {
   updateJob(id: number, updates: Partial<Job>): Job | undefined;
   getRecentJobsForUser(clerkUserId: string, limit?: number): Job[];
   getCostSummary(sinceMs?: number): CostSummary;
+  getRecentJobs(limit?: number): Job[];
+  getRecentFailedJobs(limit?: number): Job[];
+  getJobCountsSince(sinceMs: number): { total: number; failed: number; completed: number };
+  getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[];
 }
 
 export class Storage implements IStorage {
@@ -110,6 +114,42 @@ export class Storage implements IStorage {
       summary.byType[j.type] = t;
     }
     return summary;
+  }
+  getRecentJobs(limit = 50): Job[] {
+    return db.select().from(jobs).orderBy(desc(jobs.createdAt)).limit(limit).all();
+  }
+  getRecentFailedJobs(limit = 50): Job[] {
+    return db
+      .select()
+      .from(jobs)
+      .where(eq(jobs.status, "failed"))
+      .orderBy(desc(jobs.createdAt))
+      .limit(limit)
+      .all();
+  }
+  getJobCountsSince(sinceMs: number): { total: number; failed: number; completed: number } {
+    const all = db.select().from(jobs).all().filter((j) => j.createdAt >= sinceMs);
+    return {
+      total: all.length,
+      failed: all.filter((j) => j.status === "failed").length,
+      completed: all.filter((j) => j.status === "completed").length,
+    };
+  }
+  getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[] {
+    const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+    const all = db.select().from(jobs).all().filter((j) => j.createdAt >= sinceMs);
+    const byDate = new Map<string, { jobs: number; pages: number; failed: number }>();
+    for (const j of all) {
+      const d = new Date(j.createdAt).toISOString().slice(0, 10);
+      const entry = byDate.get(d) || { jobs: 0, pages: 0, failed: 0 };
+      entry.jobs++;
+      entry.pages += j.pageCount || 0;
+      if (j.status === "failed") entry.failed++;
+      byDate.set(d, entry);
+    }
+    return Array.from(byDate.entries())
+      .map(([date, v]) => ({ date, ...v }))
+      .sort((a, b) => a.date.localeCompare(b.date));
   }
 }
 
