@@ -56,6 +56,8 @@ export default function TeamSetup() {
   const [addSeatsQty, setAddSeatsQty] = useState(1);
   const [addSeatsLoading, setAddSeatsLoading] = useState(false);
   const [addSeatsError, setAddSeatsError] = useState<string | null>(null);
+  const [addSeatsStep, setAddSeatsStep] = useState<"choose" | "confirm">("choose");
+  const [addSeatsPreview, setAddSeatsPreview] = useState<{ newSeats: number; amountDueTodayCents: number; currency: string } | null>(null);
 
   useEffect(() => {
     if (!user?.id || !organization?.id) return;
@@ -76,12 +78,40 @@ export default function TeamSetup() {
   const seats: number = teamUsage?.purchasedSeats ?? 0;
   const isOrgAdmin = membership?.role === "org:admin";
 
-  async function handleAddSeats() {
+  // Step 1: ask the server for the exact prorated charge, without billing
+  // anything yet, so the admin can see the real dollar amount up front.
+  async function handlePreviewSeats() {
     if (!user?.id || !organization?.id) return;
     setAddSeatsLoading(true);
     setAddSeatsError(null);
     try {
-      const resp = await fetch("/api/team/add-seats", {
+      const resp = await fetch("/api/team/add-seats/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, additionalSeats: addSeatsQty }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setAddSeatsError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+      setAddSeatsPreview({ newSeats: data.newSeats, amountDueTodayCents: data.amountDueTodayCents, currency: data.currency });
+      setAddSeatsStep("confirm");
+    } catch {
+      setAddSeatsError("Something went wrong. Please try again.");
+    } finally {
+      setAddSeatsLoading(false);
+    }
+  }
+
+  // Step 2: the admin has seen the exact charge and explicitly confirmed --
+  // this is the step that actually bills the card on file.
+  async function handleConfirmSeats() {
+    if (!user?.id || !organization?.id) return;
+    setAddSeatsLoading(true);
+    setAddSeatsError(null);
+    try {
+      const resp = await fetch("/api/team/add-seats/confirm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, additionalSeats: addSeatsQty }),
@@ -92,7 +122,9 @@ export default function TeamSetup() {
         return;
       }
       setAddSeatsOpen(false);
+      setAddSeatsStep("choose");
       setAddSeatsQty(1);
+      setAddSeatsPreview(null);
       // Refresh usage so the new seat count shows immediately.
       setUsageLoading(true);
       const usageResp = await fetch(`/api/team/usage?clerkUserId=${user.id}&orgId=${organization.id}`);
@@ -294,60 +326,99 @@ export default function TeamSetup() {
         >
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 relative">
             <button
-              onClick={() => { setAddSeatsOpen(false); setAddSeatsError(null); }}
+              onClick={() => { setAddSeatsOpen(false); setAddSeatsError(null); setAddSeatsStep("choose"); setAddSeatsPreview(null); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
-            <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Add seats</h2>
-            <p className="text-sm text-gray-500 mb-4">
-              You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
-              prorated for the rest of your current billing year.
-            </p>
-            <label htmlFor="add-seats-qty" className="block text-xs font-semibold text-gray-500 mb-1">
-              Additional seats
-            </label>
-            <div className="flex items-center gap-2 mb-4">
-              <button
-                type="button"
-                onClick={() => setAddSeatsQty((q) => Math.max(1, q - 1))}
-                className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
-                aria-label="Decrease"
-              >
-                −
-              </button>
-              <input
-                id="add-seats-qty"
-                type="number"
-                min={1}
-                max={20}
-                value={addSeatsQty}
-                onChange={(e) => setAddSeatsQty(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1)))}
-                className="w-16 text-center border border-gray-200 rounded-lg py-2 text-[#3a485b] font-semibold"
-              />
-              <button
-                type="button"
-                onClick={() => setAddSeatsQty((q) => Math.min(20, q + 1))}
-                className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
-                aria-label="Increase"
-              >
-                +
-              </button>
-              <span className="text-sm text-gray-400 ml-1">
-                = ${(addSeatsQty * 299).toLocaleString()}/yr (prorated)
-              </span>
-            </div>
-            {addSeatsError && (
-              <p className="text-sm text-red-600 mb-3" role="alert">{addSeatsError}</p>
+            {addSeatsStep === "choose" ? (
+              <>
+                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Add seats</h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
+                  prorated for the rest of your current billing year. You'll see the exact charge before anything
+                  is billed.
+                </p>
+                <label htmlFor="add-seats-qty" className="block text-xs font-semibold text-gray-500 mb-1">
+                  Additional seats
+                </label>
+                <div className="flex items-center gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setAddSeatsQty((q) => Math.max(1, q - 1))}
+                    className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
+                    aria-label="Decrease"
+                  >
+                    −
+                  </button>
+                  <input
+                    id="add-seats-qty"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={addSeatsQty}
+                    onChange={(e) => setAddSeatsQty(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1)))}
+                    className="w-16 text-center border border-gray-200 rounded-lg py-2 text-[#3a485b] font-semibold"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setAddSeatsQty((q) => Math.min(20, q + 1))}
+                    className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
+                    aria-label="Increase"
+                  >
+                    +
+                  </button>
+                  <span className="text-sm text-gray-400 ml-1">
+                    ≈ ${(addSeatsQty * 299).toLocaleString()}/yr full price
+                  </span>
+                </div>
+                {addSeatsError && (
+                  <p className="text-sm text-red-600 mb-3" role="alert">{addSeatsError}</p>
+                )}
+                <button
+                  onClick={handlePreviewSeats}
+                  disabled={addSeatsLoading}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                >
+                  {addSeatsLoading ? "Calculating…" : "See exact charge"}
+                </button>
+              </>
+            ) : (
+              <>
+                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Confirm payment</h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  Adding {addSeatsQty} seat{addSeatsQty === 1 ? "" : "s"} will bring your team to{" "}
+                  <strong>{addSeatsPreview?.newSeats}</strong> seats. Your card on file will be charged now for the
+                  prorated remainder of your current billing year.
+                </p>
+                <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 mb-4 flex items-baseline justify-between">
+                  <span className="text-sm text-gray-500">Charged today</span>
+                  <span className="text-2xl font-bold text-[#3a485b]">
+                    ${addSeatsPreview ? (addSeatsPreview.amountDueTodayCents / 100).toFixed(2) : "—"}
+                  </span>
+                </div>
+                {addSeatsError && (
+                  <p className="text-sm text-red-600 mb-3" role="alert">{addSeatsError}</p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setAddSeatsStep("choose"); setAddSeatsError(null); }}
+                    disabled={addSeatsLoading}
+                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-200 text-[#3a485b] hover:bg-gray-50 transition disabled:opacity-60"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleConfirmSeats}
+                    disabled={addSeatsLoading}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                  >
+                    {addSeatsLoading ? "Charging…" : "Confirm & Pay"}
+                  </button>
+                </div>
+              </>
             )}
-            <button
-              onClick={handleAddSeats}
-              disabled={addSeatsLoading}
-              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
-            >
-              {addSeatsLoading ? "Adding…" : `Add ${addSeatsQty} Seat${addSeatsQty === 1 ? "" : "s"}`}
-            </button>
           </div>
         </div>
       )}
