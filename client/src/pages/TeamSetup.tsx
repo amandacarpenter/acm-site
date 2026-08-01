@@ -1,4 +1,5 @@
 import { useOrganization, useOrganizationList, OrganizationProfile, useUser } from "@clerk/clerk-react";
+import { Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
@@ -22,7 +23,25 @@ const TEAM_CREDITS_PER_SEAT = 175; // must match server/routes.ts TEAM_CREDITS_P
 export default function TeamSetup() {
   const { user } = useUser();
   const { organization, membership } = useOrganization();
+  const { userMemberships, setActive, isLoaded: orgListLoaded } = useOrganizationList({
+    userMemberships: { infinite: true },
+  });
   const [, navigate] = useLocation();
+  const [activating, setActivating] = useState(false);
+
+  // Clerk does not automatically make a newly-created organization the user's
+  // "active" org for an existing session (e.g. right after a team checkout, or
+  // right after an admin grants team access). If the user has org membership(s)
+  // but no active org is selected yet, activate the first one automatically so
+  // they land straight in the team dashboard instead of a false "No team found".
+  useEffect(() => {
+    if (!orgListLoaded || organization || activating) return;
+    const first = userMemberships?.data?.[0]?.organization;
+    if (first && setActive) {
+      setActivating(true);
+      setActive({ organization: first.id }).finally(() => setActivating(false));
+    }
+  }, [orgListLoaded, organization, userMemberships, setActive, activating]);
 
   const meta = user?.publicMetadata as any;
   const seats: number = meta?.teamSeats || 0;
@@ -60,6 +79,24 @@ export default function TeamSetup() {
   }, [user?.id]);
 
   if (!organization) {
+    // While Clerk is still loading org membership data, or while we're actively
+    // switching the session to the user's org, show a neutral loading state
+    // rather than immediately claiming there's no team.
+    const stillResolving = !orgListLoaded || activating || (userMemberships?.data?.length ?? 0) > 0;
+
+    if (stillResolving) {
+      return (
+        <div className="min-h-screen bg-white">
+          <SiteHeader />
+          <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
+            <Loader2 className="w-8 h-8 text-[#0d9488] mb-4 animate-spin" />
+            <p className="text-gray-500">Loading your team...</p>
+          </div>
+          <SiteFooter />
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-white">
         <SiteHeader />
