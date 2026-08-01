@@ -3,7 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy } from "lucide-react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy, Users } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
@@ -179,6 +179,14 @@ export default function Dashboard() {
             <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} Credits/mo</p>
 
             <div className="mt-auto flex flex-col gap-2">
+              {plan === "team" && (
+                <Link href="/team/setup">
+                  <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#3a485b] text-white hover:bg-[#2d3847] transition cursor-pointer">
+                    <Users className="w-3 h-3" />
+                    Team Dashboard
+                  </span>
+                </Link>
+              )}
               <button
                 onClick={() => setBuyCreditsOpen(true)}
                 className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"

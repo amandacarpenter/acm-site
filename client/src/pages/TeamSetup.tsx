@@ -121,7 +121,7 @@ export default function TeamSetup() {
 
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-dash-heading">
         <HeroWatermark corner="left" />
-        <div className="relative max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6">
           <h1 id="team-dash-heading" className="text-3xl font-bold text-white mb-1">
             {organization.name}
           </h1>
@@ -130,7 +130,7 @@ export default function TeamSetup() {
       </section>
 
       <section className="py-12 bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
 
           {/* Stats row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -220,12 +220,13 @@ export default function TeamSetup() {
               <h2 className="text-lg font-bold text-[#3a485b] mb-1">Team members</h2>
               <p className="text-sm text-gray-400">Invite teammates by link or email. Both options are available below.</p>
             </div>
-            <div className="p-4">
+            <div className="p-4 overflow-x-auto">
               <OrganizationProfile
                 appearance={{
                   elements: {
-                    card: "shadow-none border-0 p-0",
+                    card: "shadow-none border-0 p-0 min-w-[820px]",
                     rootBox: "w-full",
+                    scrollBox: "min-w-0",
                   },
                 }}
               />

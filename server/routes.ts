@@ -2777,6 +2777,12 @@ Rules:
                   maxAllowedMemberships: cappedSeats,
                   publicMetadata: { plan: "team", seats: cappedSeats },
                 });
+                // A purchase (new signup OR upgrade from an existing individual/free
+                // account) always starts a fresh monthly credit cycle from today --
+                // otherwise an upgrader's reset date would carry over stale from
+                // whatever their prior plan had already scheduled.
+                const purchaseDate = new Date();
+                const freshAnniversaryDay = purchaseDate.getUTCDate();
                 await clerkClient.users.updateUserMetadata(clerkUserId, {
                   publicMetadata: {
                     subscribed: true,
@@ -2784,20 +2790,27 @@ Rules:
                     teamSeats: seats,
                     orgId: org.id,
                     stripeCustomerId: session.customer as string,
-                    subscribedAt: new Date().toISOString(),
+                    subscribedAt: purchaseDate.toISOString(),
+                    monthlyCreditsUsed: 0,
+                    usageAnniversaryDay: freshAnniversaryDay,
+                    usageResetDate: getFirstResetDate(purchaseDate),
                   },
                 });
-                console.log(`[WEBHOOK] Team checkout: created org ${org.id} for user ${clerkUserId} with ${seats} seats`);
+                console.log(`[WEBHOOK] Team checkout: created org ${org.id} for user ${clerkUserId} with ${seats} seats, credits reset to today's cycle`);
               } else {
+                const purchaseDate = new Date();
                 await clerkClient.users.updateUserMetadata(clerkUserId, {
                   publicMetadata: {
                     subscribed: true,
                     plan: "individual",
                     stripeCustomerId: session.customer as string,
-                    subscribedAt: new Date().toISOString(),
+                    subscribedAt: purchaseDate.toISOString(),
+                    monthlyCreditsUsed: 0,
+                    usageAnniversaryDay: purchaseDate.getUTCDate(),
+                    usageResetDate: getFirstResetDate(purchaseDate),
                   },
                 });
-                console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed (individual)`);
+                console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed (individual), credits reset to today's cycle`);
               }
             }
           }
