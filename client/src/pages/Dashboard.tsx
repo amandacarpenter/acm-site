@@ -219,7 +219,7 @@ export default function Dashboard() {
                   }}
                   className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
                 >
-                  {portalLoading ? "Loading…" : "Manage Billing"} <ArrowRight className="w-3 h-3" />
+                  {portalLoading ? "Loading…" : "Manage Plan"} <ArrowRight className="w-3 h-3" />
                 </button>
               ) : (
                 <Link href="/pricing">

@@ -650,6 +650,72 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  // ── Team seat expansion (org admin only) ──────────────────────────────────
+  // Increases the purchased seat count on an existing team subscription:
+  // updates the Stripe subscription item quantity (prorated for the rest of
+  // the current billing period), then syncs the org's Clerk metadata (seats +
+  // maxAllowedMemberships) so the new seats are usable immediately.
+  app.post("/api/team/add-seats", async (req, res) => {
+    try {
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+      const { clerkUserId, orgId, additionalSeats } = req.body;
+      const addQty = parseInt(additionalSeats, 10);
+      if (!clerkUserId || !orgId || !addQty || addQty < 1) {
+        return res.status(400).json({ error: "clerkUserId, orgId, and a positive additionalSeats are required" });
+      }
+
+      // Only an org admin may purchase more seats for the team.
+      const memberships = await clerkClient.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 100 });
+      const requesterMembership = memberships.data.find((m: any) => m.publicUserData?.userId === clerkUserId);
+      if (!requesterMembership || requesterMembership.role !== "org:admin") {
+        return res.status(403).json({ error: "Only a team admin can add seats" });
+      }
+
+      const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+      const currentSeats: number = (org.publicMetadata as any)?.seats || 0;
+      const newSeats = currentSeats + addQty;
+      if (newSeats > MAX_TEAM_SEATS) {
+        return res.status(400).json({ error: `Team plan is capped at ${MAX_TEAM_SEATS} seats (currently ${currentSeats}). Contact us for a larger plan.` });
+      }
+
+      // The buyer's stripeCustomerId lives on their own Clerk user metadata
+      // (set at checkout time), not on the org. The requester here must be an
+      // org admin, and org admins are the people who bought/manage the plan.
+      const requester = await clerkClient.users.getUser(clerkUserId);
+      const requesterMeta = (requester.publicMetadata || {}) as any;
+      const customerId = requesterMeta.stripeCustomerId;
+      if (!customerId) {
+        return res.status(400).json({ error: "No billing account found for this admin. Only the original purchaser can add seats." });
+      }
+
+      const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
+      const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 });
+      const teamSub = subs.data.find((s) => s.items.data.some((item) => item.price.id === TEAM_PRICE));
+      if (!teamSub) {
+        return res.status(400).json({ error: "No active team subscription found for this account." });
+      }
+      const teamItem = teamSub.items.data.find((item) => item.price.id === TEAM_PRICE)!;
+
+      // Update quantity with proration so the admin is charged only for the
+      // remaining time in the current billing year on the new seats.
+      await stripe.subscriptionItems.update(teamItem.id, {
+        quantity: newSeats,
+        proration_behavior: "create_prorations",
+      });
+
+      await clerkClient.organizations.updateOrganization(orgId, {
+        publicMetadata: { ...(org.publicMetadata as any), seats: newSeats },
+        maxAllowedMemberships: newSeats,
+      });
+
+      console.log(`[TEAM] Admin ${clerkUserId} added ${addQty} seat(s) to org ${orgId}: ${currentSeats} -> ${newSeats}`);
+      res.json({ success: true, seats: newSeats });
+    } catch (err: any) {
+      console.error("[TEAM] add-seats error:", err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Real per-page cost summary (owner-only, gated by ADMIN_STATS_KEY env var).
   // Reports EXACT Anthropic-billed token usage logged at job-completion time,
   // not an estimate. Query with ?key=<ADMIN_STATS_KEY>&sinceDays=30

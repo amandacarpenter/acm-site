@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Users, FileText, AlertCircle } from "lucide-react";
+import { Users, FileText, AlertCircle, Plus, X } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 
 interface TeamMemberUsage {
@@ -52,6 +52,10 @@ export default function TeamSetup() {
 
   const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number; purchasedSeats: number } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
+  const [addSeatsOpen, setAddSeatsOpen] = useState(false);
+  const [addSeatsQty, setAddSeatsQty] = useState(1);
+  const [addSeatsLoading, setAddSeatsLoading] = useState(false);
+  const [addSeatsError, setAddSeatsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.id || !organization?.id) return;
@@ -70,6 +74,37 @@ export default function TeamSetup() {
   // that field is each member's individual per-seat credit allotment (always 1),
   // a completely different number than the team's total purchased seats.
   const seats: number = teamUsage?.purchasedSeats ?? 0;
+  const isOrgAdmin = membership?.role === "org:admin";
+
+  async function handleAddSeats() {
+    if (!user?.id || !organization?.id) return;
+    setAddSeatsLoading(true);
+    setAddSeatsError(null);
+    try {
+      const resp = await fetch("/api/team/add-seats", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, additionalSeats: addSeatsQty }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        setAddSeatsError(data.error || "Something went wrong. Please try again.");
+        return;
+      }
+      setAddSeatsOpen(false);
+      setAddSeatsQty(1);
+      // Refresh usage so the new seat count shows immediately.
+      setUsageLoading(true);
+      const usageResp = await fetch(`/api/team/usage?clerkUserId=${user.id}&orgId=${organization.id}`);
+      const usageData = await usageResp.json();
+      if (usageData.members) setTeamUsage(usageData);
+      setUsageLoading(false);
+    } catch {
+      setAddSeatsError("Something went wrong. Please try again.");
+    } finally {
+      setAddSeatsLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!user?.id) return;
@@ -148,6 +183,15 @@ export default function TeamSetup() {
               </div>
               <p className="text-3xl font-bold text-[#3a485b]">{organization.membersCount ?? "—"} <span className="text-lg font-normal text-gray-400">of {usageLoading ? "—" : seats}</span></p>
               <p className="text-xs text-gray-400 mt-1">Annual plan · {usageLoading ? "…" : seats} seats purchased</p>
+              {isOrgAdmin && (
+                <button
+                  onClick={() => setAddSeatsOpen(true)}
+                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
+                >
+                  <Plus className="w-3 h-3" />
+                  Add Seats
+                </button>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
@@ -240,6 +284,73 @@ export default function TeamSetup() {
 
         </div>
       </section>
+
+      {addSeatsOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-seats-heading"
+        >
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 relative">
+            <button
+              onClick={() => { setAddSeatsOpen(false); setAddSeatsError(null); }}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Add seats</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
+              prorated for the rest of your current billing year.
+            </p>
+            <label htmlFor="add-seats-qty" className="block text-xs font-semibold text-gray-500 mb-1">
+              Additional seats
+            </label>
+            <div className="flex items-center gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => setAddSeatsQty((q) => Math.max(1, q - 1))}
+                className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
+                aria-label="Decrease"
+              >
+                −
+              </button>
+              <input
+                id="add-seats-qty"
+                type="number"
+                min={1}
+                max={20}
+                value={addSeatsQty}
+                onChange={(e) => setAddSeatsQty(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1)))}
+                className="w-16 text-center border border-gray-200 rounded-lg py-2 text-[#3a485b] font-semibold"
+              />
+              <button
+                type="button"
+                onClick={() => setAddSeatsQty((q) => Math.min(20, q + 1))}
+                className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
+                aria-label="Increase"
+              >
+                +
+              </button>
+              <span className="text-sm text-gray-400 ml-1">
+                = ${(addSeatsQty * 299).toLocaleString()}/yr (prorated)
+              </span>
+            </div>
+            {addSeatsError && (
+              <p className="text-sm text-red-600 mb-3" role="alert">{addSeatsError}</p>
+            )}
+            <button
+              onClick={handleAddSeats}
+              disabled={addSeatsLoading}
+              className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+            >
+              {addSeatsLoading ? "Adding…" : `Add ${addSeatsQty} Seat${addSeatsQty === 1 ? "" : "s"}`}
+            </button>
+          </div>
+        </div>
+      )}
 
       <SiteFooter />
     </div>
