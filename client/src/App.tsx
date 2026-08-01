@@ -48,13 +48,26 @@ export default function App() {
       signInUrl="/login"
       signUpUrl="/signup"
       afterSignOutUrl="/"
+      // Without these, Clerk falls back to redirecting new/returning users to
+      // the app root ("/"), which is the stale pre-launch "Coming Soon"
+      // waitlist page -- not the real product. Send everyone to the
+      // dashboard instead. Organization-invitation acceptance is handled
+      // separately in TeamSetup/SignupPage via the redirect_url on the
+      // invitation itself, but this is the safety-net default.
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
       clerkJSUrl="https://clerk.remedy508.com/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
     >
       <QueryClientProvider client={queryClient}>
         <Router base="">
           <ScrollToTop />
           <Switch>
-            <Route path="/" component={ComingSoon} />
+            {/* Root now serves the real homepage -- the site is live. Previously
+                this rendered the pre-launch "Coming Soon" waitlist page, which is
+                also where Clerk sends already-signed-in users after they accept
+                an organization invitation (Clerk always redirects to "/" for that
+                specific case and it cannot be overridden via component props). */}
+            <Route path="/" component={Home} />
             <Route path="/home" component={Home} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
