@@ -658,24 +658,39 @@ export function registerRoutes(httpServer: Server, app: Express) {
   //   2. POST /api/team/add-seats/confirm -> actually updates the subscription
   //      quantity (charges the previewed prorated amount to the card on file)
   //      and syncs the org's Clerk metadata (seats + maxAllowedMemberships).
-  async function resolveTeamSeatContext(clerkUserId: string, orgId: string, addQty: number) {
+  // deltaQty is signed: positive to add seats, negative to remove seats.
+  async function resolveTeamSeatContext(clerkUserId: string, orgId: string, deltaQty: number) {
     if (!stripe) throw Object.assign(new Error("Stripe not configured"), { status: 500 });
-    if (!clerkUserId || !orgId || !addQty || addQty < 1) {
-      throw Object.assign(new Error("clerkUserId, orgId, and a positive additionalSeats are required"), { status: 400 });
+    if (!clerkUserId || !orgId || !deltaQty) {
+      throw Object.assign(new Error("clerkUserId, orgId, and a non-zero seat change are required"), { status: 400 });
     }
 
-    // Only an org admin may purchase more seats for the team.
+    // Only an org admin may change the purchased seat count for the team.
     const memberships = await clerkClient.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 100 });
     const requesterMembership = memberships.data.find((m: any) => m.publicUserData?.userId === clerkUserId);
     if (!requesterMembership || requesterMembership.role !== "org:admin") {
-      throw Object.assign(new Error("Only a team admin can add seats"), { status: 403 });
+      throw Object.assign(new Error("Only a team admin can change seats"), { status: 403 });
     }
 
     const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
     const currentSeats: number = (org.publicMetadata as any)?.seats || 0;
-    const newSeats = currentSeats + addQty;
+    const newSeats = currentSeats + deltaQty;
     if (newSeats > MAX_TEAM_SEATS) {
       throw Object.assign(new Error(`Team plan is capped at ${MAX_TEAM_SEATS} seats (currently ${currentSeats}). Contact us for a larger plan.`), { status: 400 });
+    }
+    if (newSeats < 1) {
+      throw Object.assign(new Error("A team plan needs at least 1 seat."), { status: 400 });
+    }
+    if (deltaQty < 0) {
+      // Never let purchased seats drop below the number of people currently
+      // occupying seats -- that would leave existing members without one.
+      const occupiedSeats = memberships.data.length;
+      if (newSeats < occupiedSeats) {
+        throw Object.assign(
+          new Error(`You have ${occupiedSeats} team member(s) using seats. Remove members first, or reduce to no fewer than ${occupiedSeats} seats.`),
+          { status: 400 }
+        );
+      }
     }
 
     // The buyer's stripeCustomerId lives on their own Clerk user metadata
@@ -685,7 +700,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const requesterMeta = (requester.publicMetadata || {}) as any;
     const customerId = requesterMeta.stripeCustomerId;
     if (!customerId) {
-      throw Object.assign(new Error("No billing account found for this admin. Only the original purchaser can add seats."), { status: 400 });
+      throw Object.assign(new Error("No billing account found for this admin. Only the original purchaser can change seats."), { status: 400 });
     }
 
     const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
@@ -703,7 +718,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       const { clerkUserId, orgId, additionalSeats } = req.body;
       const addQty = parseInt(additionalSeats, 10);
-      const { currentSeats, newSeats, customerId, teamSub, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, addQty);
+      const { currentSeats, newSeats, customerId, teamSub, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, Math.abs(addQty));
 
       // Ask Stripe for the exact prorated amount due today, without charging
       // or mutating anything -- this is a read-only preview.
@@ -733,7 +748,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       const { clerkUserId, orgId, additionalSeats } = req.body;
       const addQty = parseInt(additionalSeats, 10);
-      const { org, currentSeats, newSeats, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, addQty);
+      const { org, currentSeats, newSeats, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, Math.abs(addQty));
 
       // Update quantity with proration -- this is the step that actually
       // charges the card on file for the prorated remainder of the year.
@@ -751,6 +766,71 @@ export function registerRoutes(httpServer: Server, app: Express) {
       res.json({ success: true, seats: newSeats });
     } catch (err: any) {
       console.error("[TEAM] add-seats confirm error:", err.message);
+      res.status(err.status || 500).json({ error: err.message });
+    }
+  });
+
+  // ── Team seat reduction (org admin only) ───────────────────────────────────
+  // Mirrors the add-seats preview/confirm flow with a negative quantity delta.
+  // Blocked if the requested seat count would drop below the number of
+  // people currently occupying seats (existing org memberships). Stripe
+  // applies the prorated unused-time value as an account credit toward the
+  // next renewal invoice automatically -- no separate refund call needed.
+  app.post("/api/team/remove-seats/preview", async (req, res) => {
+    try {
+      const { clerkUserId, orgId, seatsToRemove } = req.body;
+      const removeQty = parseInt(seatsToRemove, 10);
+      const { currentSeats, newSeats, customerId, teamSub, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, -Math.abs(removeQty));
+
+      // Read-only proration preview -- same mechanism as add-seats, just with
+      // a lower quantity. Stripe returns a negative amount_due when the
+      // proration results in a credit rather than a charge.
+      const preview = await stripe!.invoices.createPreview({
+        customer: customerId,
+        subscription: teamSub.id,
+        subscription_details: {
+          items: [{ id: teamItem.id, quantity: newSeats }],
+          proration_behavior: "create_prorations",
+        },
+      });
+
+      res.json({
+        currentSeats,
+        newSeats,
+        seatsToRemove: Math.abs(removeQty),
+        creditCents: Math.max(0, -preview.amount_due),
+        amountDueTodayCents: Math.max(0, preview.amount_due),
+        currency: preview.currency,
+      });
+    } catch (err: any) {
+      console.error("[TEAM] remove-seats preview error:", err.message);
+      res.status(err.status || 500).json({ error: err.message });
+    }
+  });
+
+  app.post("/api/team/remove-seats/confirm", async (req, res) => {
+    try {
+      const { clerkUserId, orgId, seatsToRemove } = req.body;
+      const removeQty = parseInt(seatsToRemove, 10);
+      const { org, currentSeats, newSeats, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, -Math.abs(removeQty));
+
+      // Lower the quantity with proration -- Stripe automatically applies the
+      // unused-time credit toward the customer's balance for their next
+      // invoice; no refund API call is needed for that default behavior.
+      await stripe!.subscriptionItems.update(teamItem.id, {
+        quantity: newSeats,
+        proration_behavior: "create_prorations",
+      });
+
+      await clerkClient.organizations.updateOrganization(orgId, {
+        publicMetadata: { ...(org.publicMetadata as any), seats: newSeats },
+        maxAllowedMemberships: newSeats,
+      });
+
+      console.log(`[TEAM] Admin ${clerkUserId} removed ${Math.abs(removeQty)} seat(s) from org ${orgId}: ${currentSeats} -> ${newSeats}`);
+      res.json({ success: true, seats: newSeats });
+    } catch (err: any) {
+      console.error("[TEAM] remove-seats confirm error:", err.message);
       res.status(err.status || 500).json({ error: err.message });
     }
   });

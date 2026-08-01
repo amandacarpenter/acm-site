@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Users, FileText, AlertCircle, Plus, X } from "lucide-react";
+import { Users, FileText, AlertCircle, Plus, Minus, X } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 
 interface TeamMemberUsage {
@@ -53,11 +53,12 @@ export default function TeamSetup() {
   const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number; purchasedSeats: number } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
   const [addSeatsOpen, setAddSeatsOpen] = useState(false);
+  const [seatMode, setSeatMode] = useState<"add" | "remove">("add");
   const [addSeatsQty, setAddSeatsQty] = useState(1);
   const [addSeatsLoading, setAddSeatsLoading] = useState(false);
   const [addSeatsError, setAddSeatsError] = useState<string | null>(null);
   const [addSeatsStep, setAddSeatsStep] = useState<"choose" | "confirm">("choose");
-  const [addSeatsPreview, setAddSeatsPreview] = useState<{ newSeats: number; amountDueTodayCents: number; currency: string } | null>(null);
+  const [addSeatsPreview, setAddSeatsPreview] = useState<{ newSeats: number; amountDueTodayCents: number; creditCents?: number; currency: string } | null>(null);
 
   useEffect(() => {
     if (!user?.id || !organization?.id) return;
@@ -76,6 +77,7 @@ export default function TeamSetup() {
   // that field is each member's individual per-seat credit allotment (always 1),
   // a completely different number than the team's total purchased seats.
   const seats: number = teamUsage?.purchasedSeats ?? 0;
+  const occupiedSeats: number = teamUsage?.members?.length ?? 0;
   const isOrgAdmin = membership?.role === "org:admin";
 
   // Step 1: ask the server for the exact prorated charge, without billing
@@ -85,17 +87,19 @@ export default function TeamSetup() {
     setAddSeatsLoading(true);
     setAddSeatsError(null);
     try {
-      const resp = await fetch("/api/team/add-seats/preview", {
+      const endpoint = seatMode === "add" ? "/api/team/add-seats/preview" : "/api/team/remove-seats/preview";
+      const bodyKey = seatMode === "add" ? "additionalSeats" : "seatsToRemove";
+      const resp = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, additionalSeats: addSeatsQty }),
+        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, [bodyKey]: addSeatsQty }),
       });
       const data = await resp.json();
       if (!resp.ok) {
         setAddSeatsError(data.error || "Something went wrong. Please try again.");
         return;
       }
-      setAddSeatsPreview({ newSeats: data.newSeats, amountDueTodayCents: data.amountDueTodayCents, currency: data.currency });
+      setAddSeatsPreview({ newSeats: data.newSeats, amountDueTodayCents: data.amountDueTodayCents, creditCents: data.creditCents, currency: data.currency });
       setAddSeatsStep("confirm");
     } catch {
       setAddSeatsError("Something went wrong. Please try again.");
@@ -111,10 +115,12 @@ export default function TeamSetup() {
     setAddSeatsLoading(true);
     setAddSeatsError(null);
     try {
-      const resp = await fetch("/api/team/add-seats/confirm", {
+      const endpoint = seatMode === "add" ? "/api/team/add-seats/confirm" : "/api/team/remove-seats/confirm";
+      const bodyKey = seatMode === "add" ? "additionalSeats" : "seatsToRemove";
+      const resp = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, additionalSeats: addSeatsQty }),
+        body: JSON.stringify({ clerkUserId: user.id, orgId: organization.id, [bodyKey]: addSeatsQty }),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -216,13 +222,24 @@ export default function TeamSetup() {
               <p className="text-3xl font-bold text-[#3a485b]">{organization.membersCount ?? "—"} <span className="text-lg font-normal text-gray-400">of {usageLoading ? "—" : seats}</span></p>
               <p className="text-xs text-gray-400 mt-1">Annual plan · {usageLoading ? "…" : seats} seats purchased</p>
               {isOrgAdmin && (
-                <button
-                  onClick={() => setAddSeatsOpen(true)}
-                  className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
-                >
-                  <Plus className="w-3 h-3" />
-                  Add Seats
-                </button>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    onClick={() => { setSeatMode("add"); setAddSeatsQty(1); setAddSeatsOpen(true); }}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Add Seats
+                  </button>
+                  {seats > occupiedSeats && (
+                    <button
+                      onClick={() => { setSeatMode("remove"); setAddSeatsQty(1); setAddSeatsOpen(true); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-200 text-gray-500 hover:bg-gray-50 transition"
+                    >
+                      <Minus className="w-3 h-3" />
+                      Remove Seats
+                    </button>
+                  )}
+                </div>
               )}
             </div>
 
@@ -334,14 +351,27 @@ export default function TeamSetup() {
             </button>
             {addSeatsStep === "choose" ? (
               <>
-                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Add seats</h2>
+                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">
+                  {seatMode === "add" ? "Add seats" : "Remove seats"}
+                </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
-                  prorated for the rest of your current billing year. You'll see the exact charge before anything
-                  is billed.
+                  {seatMode === "add" ? (
+                    <>
+                      You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
+                      prorated for the rest of your current billing year. You'll see the exact charge before anything
+                      is billed.
+                    </>
+                  ) : (
+                    <>
+                      You currently have {seats} seat{seats === 1 ? "" : "s"}, with {occupiedSeats} in use. You can
+                      remove up to {Math.max(0, seats - occupiedSeats)} unused seat{Math.max(0, seats - occupiedSeats) === 1 ? "" : "s"}.
+                      Unused time on removed seats is applied as a credit toward your next renewal — you'll see the
+                      exact credit before confirming.
+                    </>
+                  )}
                 </p>
                 <label htmlFor="add-seats-qty" className="block text-xs font-semibold text-gray-500 mb-1">
-                  Additional seats
+                  {seatMode === "add" ? "Additional seats" : "Seats to remove"}
                 </label>
                 <div className="flex items-center gap-2 mb-4">
                   <button
@@ -356,14 +386,20 @@ export default function TeamSetup() {
                     id="add-seats-qty"
                     type="number"
                     min={1}
-                    max={20}
+                    max={seatMode === "add" ? 20 : Math.max(1, seats - occupiedSeats)}
                     value={addSeatsQty}
-                    onChange={(e) => setAddSeatsQty(Math.max(1, Math.min(20, parseInt(e.target.value, 10) || 1)))}
+                    onChange={(e) => {
+                      const cap = seatMode === "add" ? 20 : Math.max(1, seats - occupiedSeats);
+                      setAddSeatsQty(Math.max(1, Math.min(cap, parseInt(e.target.value, 10) || 1)));
+                    }}
                     className="w-16 text-center border border-gray-200 rounded-lg py-2 text-[#3a485b] font-semibold"
                   />
                   <button
                     type="button"
-                    onClick={() => setAddSeatsQty((q) => Math.min(20, q + 1))}
+                    onClick={() => {
+                      const cap = seatMode === "add" ? 20 : Math.max(1, seats - occupiedSeats);
+                      setAddSeatsQty((q) => Math.min(cap, q + 1));
+                    }}
                     className="w-9 h-9 rounded-lg border border-gray-200 text-[#3a485b] font-bold hover:bg-gray-50"
                     aria-label="Increase"
                   >
@@ -381,21 +417,37 @@ export default function TeamSetup() {
                   disabled={addSeatsLoading}
                   className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
                 >
-                  {addSeatsLoading ? "Calculating…" : "See exact charge"}
+                  {addSeatsLoading ? "Calculating…" : seatMode === "add" ? "See exact charge" : "See exact credit"}
                 </button>
               </>
             ) : (
               <>
-                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">Confirm payment</h2>
+                <h2 id="add-seats-heading" className="text-lg font-bold text-[#3a485b] mb-1">
+                  {seatMode === "add" ? "Confirm payment" : "Confirm removal"}
+                </h2>
                 <p className="text-sm text-gray-500 mb-4">
-                  Adding {addSeatsQty} seat{addSeatsQty === 1 ? "" : "s"} will bring your team to{" "}
-                  <strong>{addSeatsPreview?.newSeats}</strong> seats. Your card on file will be charged now for the
-                  prorated remainder of your current billing year.
+                  {seatMode === "add" ? (
+                    <>
+                      Adding {addSeatsQty} seat{addSeatsQty === 1 ? "" : "s"} will bring your team to{" "}
+                      <strong>{addSeatsPreview?.newSeats}</strong> seats. Your card on file will be charged now for
+                      the prorated remainder of your current billing year.
+                    </>
+                  ) : (
+                    <>
+                      Removing {addSeatsQty} seat{addSeatsQty === 1 ? "" : "s"} will bring your team to{" "}
+                      <strong>{addSeatsPreview?.newSeats}</strong> seats. The unused prorated value is applied as a
+                      credit toward your next renewal — nothing is charged now.
+                    </>
+                  )}
                 </p>
                 <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 mb-4 flex items-baseline justify-between">
-                  <span className="text-sm text-gray-500">Charged today</span>
+                  <span className="text-sm text-gray-500">{seatMode === "add" ? "Charged today" : "Credit applied"}</span>
                   <span className="text-2xl font-bold text-[#3a485b]">
-                    ${addSeatsPreview ? (addSeatsPreview.amountDueTodayCents / 100).toFixed(2) : "—"}
+                    ${addSeatsPreview
+                      ? seatMode === "add"
+                        ? (addSeatsPreview.amountDueTodayCents / 100).toFixed(2)
+                        : ((addSeatsPreview.creditCents ?? 0) / 100).toFixed(2)
+                      : "—"}
                   </span>
                 </div>
                 {addSeatsError && (
@@ -414,7 +466,9 @@ export default function TeamSetup() {
                     disabled={addSeatsLoading}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
                   >
-                    {addSeatsLoading ? "Charging…" : "Confirm & Pay"}
+                    {addSeatsLoading
+                      ? (seatMode === "add" ? "Charging…" : "Removing…")
+                      : (seatMode === "add" ? "Confirm & Pay" : "Confirm Removal")}
                   </button>
                 </div>
               </>
