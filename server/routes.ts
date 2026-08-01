@@ -789,6 +789,12 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }));
 
       // ── Recent activity ──────────────────────────────────────────────────
+      const userEmailById = new Map<string, string>(
+        allUsers.map((u) => [
+          u.id,
+          u.emailAddresses.find((e: any) => e.id === u.primaryEmailAddressId)?.emailAddress || "",
+        ])
+      );
       const recentJobs = storage.getRecentJobs(15).map((j) => ({
         id: j.id,
         type: j.type,
@@ -797,6 +803,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         pageCount: j.pageCount,
         creditsUsed: j.creditsUsed,
         createdAt: j.createdAt,
+        submittedBy: j.clerkUserId ? (userEmailById.get(j.clerkUserId) || j.clerkUserId) : null,
       }));
 
       const dailyCounts14d = storage.getDailyJobCounts(14);

@@ -55,7 +55,7 @@ interface DashboardData {
     last7d: { total: number; failed: number; completed: number };
     recentFailures: { id: number; type: string; inputName: string | null; errorMessage: string | null; createdAt: number }[];
   };
-  recentActivity: { id: number; type: string; status: string; inputName: string | null; pageCount: number | null; creditsUsed: number | null; createdAt: number }[];
+  recentActivity: { id: number; type: string; status: string; inputName: string | null; pageCount: number | null; creditsUsed: number | null; createdAt: number; submittedBy: string | null }[];
 }
 
 // ── Links data (unchanged from previous version) ──────────────────
@@ -424,8 +424,15 @@ function LiveDashboard() {
               }}
             >
               <div style={{ minWidth: 0, flex: 1 }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#111827" }}>{j.type}</span>
-                {j.inputName && <span style={{ fontSize: "0.75rem", color: "#6b7280" }}> · {j.inputName}</span>}
+                <div>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "#111827" }}>{j.type}</span>
+                  {j.inputName && <span style={{ fontSize: "0.75rem", color: "#6b7280" }}> · {j.inputName}</span>}
+                </div>
+                {j.submittedBy && (
+                  <div style={{ fontSize: "0.68rem", color: "#9ca3af", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {j.submittedBy}
+                  </div>
+                )}
               </div>
               <span
                 style={{
