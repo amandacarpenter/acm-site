@@ -44,14 +44,13 @@ export default function TeamSetup() {
   }, [orgListLoaded, organization, userMemberships, setActive, activating]);
 
   const meta = user?.publicMetadata as any;
-  const seats: number = meta?.teamSeats || 0;
 
   // Each teammate resets on their own signup-anniversary date (not a shared calendar-month
   // date), so this shows the CURRENT logged-in member's own reset date, fetched the same way
   // Dashboard.tsx does -- not a generically-computed "1st of next month" placeholder.
   const [resetStr, setResetStr] = useState<string | null>(null);
 
-  const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number } | null>(null);
+  const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number; purchasedSeats: number } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +64,12 @@ export default function TeamSetup() {
       .catch((err) => console.error("Failed to load team usage:", err))
       .finally(() => setUsageLoading(false));
   }, [user?.id, organization?.id]);
+
+  // Purchased seat count comes from the org's own metadata via the API (source of
+  // truth for every member), not from this user's own publicMetadata.teamSeats --
+  // that field is each member's individual per-seat credit allotment (always 1),
+  // a completely different number than the team's total purchased seats.
+  const seats: number = teamUsage?.purchasedSeats ?? 0;
 
   useEffect(() => {
     if (!user?.id) return;
@@ -141,8 +146,8 @@ export default function TeamSetup() {
                 </div>
                 <p className="font-semibold text-[#3a485b] text-sm">Seats</p>
               </div>
-              <p className="text-3xl font-bold text-[#3a485b]">{organization.membersCount ?? "—"} <span className="text-lg font-normal text-gray-400">of {seats}</span></p>
-              <p className="text-xs text-gray-400 mt-1">Annual plan · {seats} seats purchased</p>
+              <p className="text-3xl font-bold text-[#3a485b]">{organization.membersCount ?? "—"} <span className="text-lg font-normal text-gray-400">of {usageLoading ? "—" : seats}</span></p>
+              <p className="text-xs text-gray-400 mt-1">Annual plan · {usageLoading ? "…" : seats} seats purchased</p>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 p-6">

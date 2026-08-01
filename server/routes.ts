@@ -608,6 +608,16 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const isMember = requesterMemberships.data.some((m: any) => m.organization?.id === orgId);
       if (!isMember) return res.status(403).json({ error: "Not a member of this organization" });
 
+      // Purchased seat count lives on the ORGANIZATION's own metadata (set once at
+      // checkout time), not on any individual member's metadata. Each member's
+      // publicMetadata.teamSeats is their own per-seat credit allotment (always 1),
+      // which is a completely different number and was previously being misread on
+      // the client as if it were the team's total purchased seats -- showing e.g.
+      // "2 of 0" for a teammate whose own teamSeats happened to be unset/1, instead
+      // of the real "2 of 3" purchased-seats figure the org owner correctly saw.
+      const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+      const purchasedSeats: number = (org.publicMetadata as any)?.seats || 0;
+
       const memberships = await clerkClient.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 100 });
       const members = await Promise.all(
         memberships.data.map(async (m: any) => {
@@ -631,6 +641,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
         members: validMembers,
         totalUsed: validMembers.reduce((sum: number, m: any) => sum + m.monthlyUsed, 0),
         totalLimit: validMembers.reduce((sum: number, m: any) => sum + m.monthlyLimit, 0),
+        purchasedSeats,
+        membersCount: memberships.data.length,
       });
     } catch (err: any) {
       console.error("[TEAM] usage fetch error:", err.message);
