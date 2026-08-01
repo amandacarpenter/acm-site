@@ -45,6 +45,7 @@ const TOOL_LABELS: Record<string, string> = {
 export default function Dashboard() {
   const { user } = useUser();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
   const [usage, setUsage] = useState<UsageStatus | null>(null);
   const [jobs, setJobs] = useState<JobRow[] | null>(null);
   const [loadingUsage, setLoadingUsage] = useState(true);
@@ -194,11 +195,47 @@ export default function Dashboard() {
                 <ShoppingCart className="w-3 h-3" />
                 Buy More Credits
               </button>
-              <Link href="/pricing">
-                <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
-                  Upgrade Plan <ArrowRight className="w-3 h-3" />
-                </span>
-              </Link>
+              {meta.stripeCustomerId ? (
+                <button
+                  disabled={portalLoading}
+                  onClick={async () => {
+                    if (!user?.id) return;
+                    setPortalLoading(true);
+                    try {
+                      const resp = await fetch("/api/stripe/create-portal-session", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ clerkUserId: user.id }),
+                      });
+                      const data = await resp.json();
+                      if (data.url) {
+                        window.location.href = data.url;
+                      } else {
+                        setPortalLoading(false);
+                      }
+                    } catch {
+                      setPortalLoading(false);
+                    }
+                  }}
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                >
+                  {portalLoading ? "Loading…" : "Manage Billing"} <ArrowRight className="w-3 h-3" />
+                </button>
+              ) : (
+                <Link href="/pricing">
+                  <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                    Upgrade Plan <ArrowRight className="w-3 h-3" />
+                  </span>
+                </Link>
+              )}
+              {plan === "individual" && meta.stripeCustomerId && (
+                <Link href="/pricing">
+                  <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#3a485b] text-[#3a485b] hover:bg-gray-50 transition cursor-pointer">
+                    <Users className="w-3 h-3" />
+                    Upgrade to Team
+                  </span>
+                </Link>
+              )}
             </div>
           </div>
         </div>

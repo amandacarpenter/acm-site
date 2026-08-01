@@ -2780,6 +2780,24 @@ Rules:
               if (!session.customer) return;
 
               if (plan === "team") {
+                // If this buyer already had an individual subscription
+                // (upgrading individual -> team), cancel the old
+                // subscription so they aren't billed for both plans.
+                try {
+                  const priorUser = await clerkClient.users.getUser(clerkUserId);
+                  const priorMeta = (priorUser.publicMetadata || {}) as any;
+                  const priorCustomerId = priorMeta.stripeCustomerId;
+                  if (priorMeta.plan === "individual" && priorCustomerId && priorCustomerId !== session.customer) {
+                    const priorSubs = await stripe!.subscriptions.list({ customer: priorCustomerId, status: "active", limit: 10 });
+                    for (const sub of priorSubs.data) {
+                      await stripe!.subscriptions.cancel(sub.id);
+                      console.log(`[WEBHOOK] Cancelled prior individual subscription ${sub.id} for user ${clerkUserId} upgrading to team`);
+                    }
+                  }
+                } catch (cancelErr: any) {
+                  console.error("[WEBHOOK] Failed to cancel prior individual subscription on team upgrade:", cancelErr.message);
+                }
+
                 // Create a Clerk Organization for the buyer
                 const orgName = `Team (${new Date().toLocaleDateString()})`;
                 const cappedSeats = Math.min(MAX_TEAM_SEATS, seats);
@@ -2830,6 +2848,55 @@ Rules:
           // Also handle subscription cancellation
         } catch (err: any) {
           console.error("[WEBHOOK] Failed to update Clerk metadata:", err.message);
+        }
+      })();
+    }
+
+    // Handle subscription updates (e.g. plan/price switched via the Stripe
+    // Customer Portal) — keep Clerk metadata's plan + credit limit in sync.
+    if (event.type === "customer.subscription.updated") {
+      (async () => {
+        try {
+          const subscription = event.data.object as Stripe.Subscription;
+          const customerId = subscription.customer as string;
+          const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+          const users = await clerkClient.users.getUserList({ limit: 100 });
+          const user = users.data.find(
+            (u) => (u.publicMetadata as any)?.stripeCustomerId === customerId
+          );
+          if (!user) return;
+
+          const meta = (user.publicMetadata || {}) as any;
+          // Only individual-plan self-service switches are handled here.
+          // Team plan/seat changes go through the team-specific flows.
+          if (meta.plan === "team") return;
+
+          const priceId = subscription.items.data[0]?.price?.id;
+          if (!priceId) return;
+
+          const INDIVIDUAL_PRICES = [
+            process.env.STRIPE_PRICE_MONTHLY,
+            process.env.STRIPE_PRICE_ANNUAL,
+            "price_1Tycq3AaDElV6hZxP4W6qC7M", // $25/mo individual — current
+            "price_1TycqCAaDElV6hZxKM0uIEu2", // $229/yr individual — current
+            "price_1Thc2tAaDElV6hZxMwA0Wxgk", // legacy $19/mo
+            "price_1Tx9ixAaDElV6hZxZ6vb54pl", // legacy $179/yr
+            "price_1Thc2sAaDElV6hZx3M4Ua1kM", // legacy $149/yr
+          ].filter(Boolean);
+
+          if (!INDIVIDUAL_PRICES.includes(priceId)) return;
+
+          const isActive = subscription.status === "active" || subscription.status === "trialing";
+          await clerkClient.users.updateUserMetadata(user.id, {
+            publicMetadata: {
+              ...meta,
+              subscribed: isActive,
+              plan: "individual",
+            },
+          });
+          console.log(`[WEBHOOK] Synced portal plan change for user ${user.id}: price ${priceId}, status ${subscription.status}`);
+        } catch (err: any) {
+          console.error("[WEBHOOK] Failed to sync subscription update:", err.message);
         }
       })();
     }
@@ -3005,6 +3072,90 @@ Rules:
       const keyPrefix = (process.env.STRIPE_SECRET_KEY || "").slice(0, 15);
       console.error("Stripe checkout error:", err.message, "| key prefix:", keyPrefix);
       res.status(500).json({ error: err.message, keyPrefix });
+    }
+  });
+
+  // ── Stripe Customer Portal (manage/upgrade/downgrade existing subscription) ──
+  let cachedPortalConfigId: string | null = null;
+
+  async function getOrCreatePortalConfig(): Promise<string> {
+    if (cachedPortalConfigId) return cachedPortalConfigId;
+    if (!stripe) throw new Error("Stripe not configured");
+
+    // Individual plan prices customers can self-serve switch between
+    // (monthly <-> annual). Team plan changes are handled outside the portal.
+    const monthly = process.env.STRIPE_PRICE_MONTHLY || "price_1Tycq3AaDElV6hZxP4W6qC7M";
+    const annual = process.env.STRIPE_PRICE_ANNUAL || "price_1TycqCAaDElV6hZxKM0uIEu2";
+
+    const config = await stripe.billingPortal.configurations.create({
+      business_profile: {
+        headline: "Remedy508 partners with Stripe for secure billing.",
+      },
+      features: {
+        customer_update: {
+          enabled: true,
+          allowed_updates: ["email", "address", "phone"],
+        },
+        invoice_history: { enabled: true },
+        payment_method_update: { enabled: true },
+        subscription_cancel: {
+          enabled: true,
+          mode: "at_period_end",
+          cancellation_reason: {
+            enabled: true,
+            options: ["too_expensive", "missing_features", "switched_service", "unused", "other"],
+          },
+        },
+        subscription_update: {
+          enabled: true,
+          default_allowed_updates: ["price"],
+          proration_behavior: "create_prorations",
+          products: [
+            {
+              product: (await stripe.prices.retrieve(monthly)).product as string,
+              prices: [monthly, annual],
+            },
+          ],
+        },
+      },
+    });
+    cachedPortalConfigId = config.id;
+    return config.id;
+  }
+
+  app.options("/api/stripe/create-portal-session", (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    res.sendStatus(200);
+  });
+
+  app.post("/api/stripe/create-portal-session", async (req, res) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    try {
+      if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
+      const { clerkUserId } = req.body;
+      if (!clerkUserId) return res.status(400).json({ error: "Missing clerkUserId" });
+
+      const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
+      const user = await clerkClient.users.getUser(clerkUserId);
+      const meta = (user.publicMetadata || {}) as any;
+      const customerId = meta.stripeCustomerId;
+      if (!customerId) {
+        return res.status(400).json({ error: "No active subscription found for this account" });
+      }
+
+      const configurationId = await getOrCreatePortalConfig();
+      const session = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        configuration: configurationId,
+        return_url: `${process.env.APP_URL || "https://remedy508.com"}/dashboard`,
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Stripe portal session error:", err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
