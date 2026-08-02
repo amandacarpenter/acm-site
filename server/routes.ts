@@ -177,6 +177,28 @@ async function checkHasCredits(clerkUserId: string): Promise<{ allowed: boolean;
     }
 
     const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+
+    // Fix #3/#6: a team whose renewal payment has failed is immediately restricted
+    // to read-only (per product decision) -- this blocks NEW processing jobs for
+    // every member of that org, regardless of their individual credit balance.
+    // billingRestricted lives on the org (not the user) since it's a team-wide
+    // state; it's set/cleared by the customer.subscription.updated webhook based
+    // on the real Stripe subscription status (active/trialing = clear, anything
+    // else e.g. past_due/unpaid/incomplete = restrict).
+    if (meta.plan === "team" && meta.orgId) {
+      try {
+        const org = await clerkClient.organizations.getOrganization({ organizationId: meta.orgId });
+        if ((org.publicMetadata as any)?.billingRestricted) {
+          return {
+            allowed: false,
+            reason: "Your team's payment couldn't be processed, so new document processing is paused for all members. Ask your team's billing admin to update the payment method to restore access.",
+          };
+        }
+      } catch (orgErr: any) {
+        console.error("[CREDIT CHECK] Failed to check org billing restriction (non-fatal, failing open):", orgErr.message);
+      }
+    }
+
     const remaining = (monthlyLimit - monthlyUsed) + purchasedCredits;
     if (remaining > 0) return { allowed: true };
 
@@ -581,6 +603,22 @@ export function registerRoutes(httpServer: Server, app: Express) {
     if (!clerkUserId) return res.status(400).json({ error: "clerkUserId required" });
     try {
       const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+
+      // Fix #3/#6: surface whether this user's team is currently payment-restricted
+      // so the frontend can show a clear banner instead of a surprise error only
+      // at submit-time. Individual plans use the existing `subscribed` flag for
+      // this (already correctly cleared on payment failure); teams use this
+      // org-level flag since restriction applies to every member at once.
+      let billingRestricted = false;
+      if (meta.plan === "team" && meta.orgId) {
+        try {
+          const org = await clerkClient.organizations.getOrganization({ organizationId: meta.orgId });
+          billingRestricted = Boolean((org.publicMetadata as any)?.billingRestricted);
+        } catch {
+          // fail open on lookup error -- checkHasCredits is still the real enforcement gate
+        }
+      }
+
       res.json({
         monthlyUsed,
         monthlyLimit,
@@ -589,6 +627,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         resetDate: meta.usageResetDate || getResetDate(),
         plan: meta.plan || "individual",
         teamSeats: meta.teamSeats || 1,
+        billingRestricted,
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -617,6 +656,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // of the real "2 of 3" purchased-seats figure the org owner correctly saw.
       const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
       const purchasedSeats: number = (org.publicMetadata as any)?.seats || 0;
+      const billingRestricted: boolean = Boolean((org.publicMetadata as any)?.billingRestricted);
 
       const memberships = await clerkClient.organizations.getOrganizationMembershipList({ organizationId: orgId, limit: 100 });
       const members = await Promise.all(
@@ -637,12 +677,29 @@ export function registerRoutes(httpServer: Server, app: Express) {
         })
       );
       const validMembers = members.filter(Boolean);
+
+      // Fix #1: surface pending invite count alongside occupied seats so the
+      // admin can see "X members + Y pending invites" instead of only finding
+      // out about oversubscription when a remove-seats request gets blocked.
+      let pendingInvitesCount = 0;
+      try {
+        const pendingInvites = await clerkClient.organizations.getOrganizationInvitationList({
+          organizationId: orgId,
+          status: ["pending"],
+        });
+        pendingInvitesCount = pendingInvites.data.length;
+      } catch (inviteErr: any) {
+        console.error("[TEAM] Failed to fetch pending invites (non-fatal):", inviteErr.message);
+      }
+
       res.json({
         members: validMembers,
         totalUsed: validMembers.reduce((sum: number, m: any) => sum + m.monthlyUsed, 0),
         totalLimit: validMembers.reduce((sum: number, m: any) => sum + m.monthlyLimit, 0),
         purchasedSeats,
         membersCount: memberships.data.length,
+        pendingInvitesCount,
+        billingRestricted,
       });
     } catch (err: any) {
       console.error("[TEAM] usage fetch error:", err.message);
@@ -672,7 +729,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       throw Object.assign(new Error("Only a team admin can change seats"), { status: 403 });
     }
 
-    const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+    let org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
     const currentSeats: number = (org.publicMetadata as any)?.seats || 0;
     const newSeats = currentSeats + deltaQty;
     if (newSeats > MAX_TEAM_SEATS) {
@@ -681,26 +738,87 @@ export function registerRoutes(httpServer: Server, app: Express) {
     if (newSeats < 1) {
       throw Object.assign(new Error("A team plan needs at least 1 seat."), { status: 400 });
     }
+
+    // Fix #1/#5: pending invitations don't count toward Clerk's maxAllowedMemberships
+    // enforcement (Clerk only blocks at *acceptance* time), so an admin could otherwise
+    // send more invites than seats without any warning, and a removal could drop seats
+    // below "members + outstanding invites" -- leaving pending invites that will fail
+    // to accept later with a confusing Clerk-level error instead of a clear one here.
+    const pendingInvites = await clerkClient.organizations.getOrganizationInvitationList({
+      organizationId: orgId,
+      status: ["pending"],
+    });
+    const occupiedSeats = memberships.data.length;
+    const committedSeats = occupiedSeats + pendingInvites.data.length; // members + outstanding invites
+
     if (deltaQty < 0) {
       // Never let purchased seats drop below the number of people currently
-      // occupying seats -- that would leave existing members without one.
-      const occupiedSeats = memberships.data.length;
-      if (newSeats < occupiedSeats) {
+      // occupying seats OR holding a pending invite -- that would either strand
+      // an existing member or guarantee a pending invite fails to accept later.
+      if (newSeats < committedSeats) {
         throw Object.assign(
-          new Error(`You have ${occupiedSeats} team member(s) using seats. Remove members first, or reduce to no fewer than ${occupiedSeats} seats.`),
+          new Error(
+            pendingInvites.data.length > 0
+              ? `You have ${occupiedSeats} team member(s) and ${pendingInvites.data.length} pending invite(s) (${committedSeats} total). Revoke pending invites or remove members first, or reduce to no fewer than ${committedSeats} seats.`
+              : `You have ${occupiedSeats} team member(s) using seats. Remove members first, or reduce to no fewer than ${occupiedSeats} seats.`
+          ),
           { status: 400 }
         );
       }
     }
 
-    // The buyer's stripeCustomerId lives on their own Clerk user metadata
-    // (set at checkout time), not on the org. The requester here must be an
-    // org admin, and org admins are the people who bought/manage the plan.
-    const requester = await clerkClient.users.getUser(clerkUserId);
-    const requesterMeta = (requester.publicMetadata || {}) as any;
-    const customerId = requesterMeta.stripeCustomerId;
+    // Fix #7: the billing owner (whoever's Stripe customer is charged) is tracked
+    // separately from "any org:admin" so that if that specific person leaves the org
+    // or is demoted, we can auto-reassign billing to another remaining admin instead
+    // of permanently locking seat management. Falls back to the requester for teams
+    // created before this field existed.
+    const orgMeta = (org.publicMetadata || {}) as any;
+    let billingOwnerId: string | undefined = orgMeta.billingOwnerId;
+    const billingOwnerStillValid =
+      !!billingOwnerId &&
+      memberships.data.some((m: any) => m.publicUserData?.userId === billingOwnerId && m.role === "org:admin");
+
+    if (!billingOwnerStillValid) {
+      // Look for another current admin (preferring the requester) who already has
+      // their own stripeCustomerId on file, and promote them to billing owner.
+      const adminMemberships = memberships.data.filter((m: any) => m.role === "org:admin");
+      const candidateIds = [
+        clerkUserId,
+        ...adminMemberships.map((m: any) => m.publicUserData?.userId).filter(Boolean),
+      ];
+      let reassigned: string | undefined;
+      for (const candidateId of Array.from(new Set(candidateIds))) {
+        try {
+          const candidate = await clerkClient.users.getUser(candidateId);
+          if ((candidate.publicMetadata as any)?.stripeCustomerId) {
+            reassigned = candidateId;
+            break;
+          }
+        } catch {
+          // candidate no longer exists -- skip
+        }
+      }
+      if (!reassigned) {
+        throw Object.assign(
+          new Error(
+            "This team's billing owner is no longer available, and no other admin has a billing account on file. Contact support to reassign billing."
+          ),
+          { status: 400 }
+        );
+      }
+      billingOwnerId = reassigned;
+      await clerkClient.organizations.updateOrganizationMetadata(orgId, {
+        publicMetadata: { ...orgMeta, billingOwnerId },
+      });
+      org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+      console.log(`[TEAM BILLING] Auto-reassigned billing owner for org ${orgId} to ${billingOwnerId}`);
+    }
+
+    const owner = await clerkClient.users.getUser(billingOwnerId!);
+    const ownerMeta = (owner.publicMetadata || {}) as any;
+    const customerId = ownerMeta.stripeCustomerId;
     if (!customerId) {
-      throw Object.assign(new Error("No billing account found for this admin. Only the original purchaser can change seats."), { status: 400 });
+      throw Object.assign(new Error("No billing account found for this team's billing owner. Contact support to reassign billing."), { status: 400 });
     }
 
     const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
@@ -711,7 +829,15 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
     const teamItem = teamSub.items.data.find((item) => item.price.id === TEAM_PRICE)!;
 
-    return { org, currentSeats, newSeats, customerId, teamSub, teamItem };
+    // Fix #4: optimistic concurrency guard. We captured `currentSeats` from the org
+    // metadata read at the top of this function; if two requests race (two admins,
+    // or a double-click), the second one to reach the actual Stripe/Clerk write below
+    // must re-verify the org's seats haven't changed since it read them, rather than
+    // blindly overwriting with a stale newSeats value. Callers re-check this right
+    // before mutating (see add-seats/confirm and remove-seats/confirm).
+    const expectedCurrentSeats = currentSeats;
+
+    return { org, currentSeats, newSeats, customerId, teamSub, teamItem, expectedCurrentSeats, occupiedSeats, pendingInvitesCount: pendingInvites.data.length };
   }
 
   app.post("/api/team/add-seats/preview", async (req, res) => {
@@ -748,7 +874,21 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       const { clerkUserId, orgId, additionalSeats } = req.body;
       const addQty = parseInt(additionalSeats, 10);
-      const { org, currentSeats, newSeats, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, Math.abs(addQty));
+      const { org, currentSeats, newSeats, teamItem, expectedCurrentSeats } = await resolveTeamSeatContext(clerkUserId, orgId, Math.abs(addQty));
+
+      // Fix #4: re-verify no other request changed the seat count between our
+      // read above and this write (two admins racing, or a double-click firing
+      // twice). Cheap re-read of just the org metadata immediately before the
+      // Stripe mutation -- if it moved, reject so the client can retry with
+      // fresh numbers instead of silently overwriting a concurrent change.
+      const freshOrg = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+      const freshSeats: number = (freshOrg.publicMetadata as any)?.seats || 0;
+      if (freshSeats !== expectedCurrentSeats) {
+        throw Object.assign(
+          new Error("Seat count changed since you started this request (possibly another admin). Please refresh and try again."),
+          { status: 409 }
+        );
+      }
 
       // Update quantity with proration -- this is the step that actually
       // charges the card on file for the prorated remainder of the year.
@@ -812,7 +952,17 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       const { clerkUserId, orgId, seatsToRemove } = req.body;
       const removeQty = parseInt(seatsToRemove, 10);
-      const { org, currentSeats, newSeats, teamItem } = await resolveTeamSeatContext(clerkUserId, orgId, -Math.abs(removeQty));
+      const { org, currentSeats, newSeats, teamItem, expectedCurrentSeats } = await resolveTeamSeatContext(clerkUserId, orgId, -Math.abs(removeQty));
+
+      // Fix #4: same concurrency re-check as add-seats/confirm -- see comment there.
+      const freshOrg = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+      const freshSeats: number = (freshOrg.publicMetadata as any)?.seats || 0;
+      if (freshSeats !== expectedCurrentSeats) {
+        throw Object.assign(
+          new Error("Seat count changed since you started this request (possibly another admin). Please refresh and try again."),
+          { status: 409 }
+        );
+      }
 
       // Lower the quantity with proration -- Stripe automatically applies the
       // unused-time credit toward the customer's balance for their next
@@ -2990,7 +3140,12 @@ Rules:
                   name: orgName,
                   createdBy: clerkUserId,
                   maxAllowedMemberships: cappedSeats,
-                  publicMetadata: { plan: "team", seats: cappedSeats },
+                  // billingOwnerId is whoever's Stripe customer is charged for this team's
+                  // subscription (the purchaser, at creation time). If they ever leave the
+                  // org or are demoted from org:admin, resolveTeamSeatContext() below
+                  // auto-reassigns this to another remaining admin with their own
+                  // stripeCustomerId on file (Fix #7).
+                  publicMetadata: { plan: "team", seats: cappedSeats, billingOwnerId: clerkUserId },
                 });
                 // A purchase (new signup OR upgrade from an existing individual/free
                 // account) always starts a fresh monthly credit cycle from today --
@@ -3052,9 +3207,57 @@ Rules:
           if (!user) return;
 
           const meta = (user.publicMetadata || {}) as any;
-          // Only individual-plan self-service switches are handled here.
-          // Team plan/seat changes go through the team-specific flows.
-          if (meta.plan === "team") return;
+
+          // Fix #2: team-plan quantity changes normally flow through our own
+          // /api/team/add-seats and /api/team/remove-seats endpoints, which sync
+          // Stripe and Clerk together. But if a team subscription's quantity is
+          // ever changed some OTHER way (a manual edit in the Stripe dashboard, a
+          // support action, a future integration), Clerk's seats/maxAllowedMemberships
+          // would silently drift out of sync with the real Stripe subscription
+          // with no code path to catch it. This block re-syncs Clerk to whatever
+          // Stripe now says whenever a team subscription's line-item quantity
+          // doesn't match our own record of the org's seat count.
+          if (meta.plan === "team") {
+            try {
+              const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg";
+              const teamItem = subscription.items.data.find((item) => item.price?.id === TEAM_PRICE);
+              if (!teamItem || !teamItem.quantity) return;
+
+              const orgId: string | undefined = meta.orgId;
+              if (!orgId) return;
+
+              const org = await clerkClient.organizations.getOrganization({ organizationId: orgId });
+              const orgMeta = (org.publicMetadata || {}) as any;
+              const recordedSeats: number = orgMeta.seats || 0;
+              const stripeSeats = teamItem.quantity;
+
+              // Fix #3/#6: mirror Stripe's subscription status onto the org so the
+              // read-only restriction reflects reality even when this update didn't
+              // originate from our own confirm endpoints. Only "active" and
+              // "trialing" count as good-standing; "past_due", "unpaid", "incomplete",
+              // etc. immediately restrict the team to read-only (per product decision).
+              const inGoodStanding = subscription.status === "active" || subscription.status === "trialing";
+              const shouldBeRestricted = !inGoodStanding;
+              const seatsChanged = stripeSeats !== recordedSeats;
+              const restrictionChanged = Boolean(orgMeta.billingRestricted) !== shouldBeRestricted;
+
+              if (seatsChanged || restrictionChanged) {
+                await clerkClient.organizations.updateOrganization(orgId, {
+                  publicMetadata: { ...orgMeta, seats: stripeSeats, billingRestricted: shouldBeRestricted },
+                  maxAllowedMemberships: stripeSeats,
+                });
+                if (seatsChanged) {
+                  console.log(`[WEBHOOK] Re-synced org ${orgId} seats from out-of-band Stripe change: ${recordedSeats} -> ${stripeSeats}`);
+                }
+                if (restrictionChanged) {
+                  console.log(`[WEBHOOK] Org ${orgId} billingRestricted -> ${shouldBeRestricted} (subscription status: ${subscription.status})`);
+                }
+              }
+            } catch (teamSyncErr: any) {
+              console.error("[WEBHOOK] Failed to sync team org seats from out-of-band Stripe change:", teamSyncErr.message);
+            }
+            return; // Team plans don't go through the individual-plan logic below.
+          }
 
           const priceId = subscription.items.data[0]?.price?.id;
           if (!priceId) return;

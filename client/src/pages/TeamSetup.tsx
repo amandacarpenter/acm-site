@@ -50,7 +50,7 @@ export default function TeamSetup() {
   // Dashboard.tsx does -- not a generically-computed "1st of next month" placeholder.
   const [resetStr, setResetStr] = useState<string | null>(null);
 
-  const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number; purchasedSeats: number } | null>(null);
+  const [teamUsage, setTeamUsage] = useState<{ members: TeamMemberUsage[]; totalUsed: number; totalLimit: number; purchasedSeats: number; pendingInvitesCount?: number; billingRestricted?: boolean } | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
   const [addSeatsOpen, setAddSeatsOpen] = useState(false);
   const [seatMode, setSeatMode] = useState<"add" | "remove">("add");
@@ -78,6 +78,8 @@ export default function TeamSetup() {
   // a completely different number than the team's total purchased seats.
   const seats: number = teamUsage?.purchasedSeats ?? 0;
   const occupiedSeats: number = teamUsage?.members?.length ?? 0;
+  const pendingInvitesCount: number = teamUsage?.pendingInvitesCount ?? 0;
+  const billingRestricted: boolean = teamUsage?.billingRestricted ?? false;
   const isOrgAdmin = membership?.role === "org:admin";
 
   // Step 1: ask the server for the exact prorated charge, without billing
@@ -210,6 +212,23 @@ export default function TeamSetup() {
       <section className="py-12 bg-gray-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 space-y-8">
 
+          {/* Fix #3/#6: payment-failure banner -- shown to every team member, not just
+              admins, since the read-only restriction blocks everyone's processing. */}
+          {billingRestricted && (
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4" role="alert">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Payment issue -- processing paused</p>
+                <p className="text-sm text-red-600 mt-0.5">
+                  Your team's last payment couldn't be processed, so new document processing is paused for all members.
+                  {isOrgAdmin
+                    ? " Update your payment method from Manage Plan to restore access."
+                    : " Your team's billing admin needs to update the payment method to restore access."}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Stats row */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
@@ -221,6 +240,9 @@ export default function TeamSetup() {
               </div>
               <p className="text-3xl font-bold text-[#3a485b]">{organization.membersCount ?? "—"} <span className="text-lg font-normal text-gray-400">of {usageLoading ? "—" : seats}</span></p>
               <p className="text-xs text-gray-400 mt-1">Annual plan · {usageLoading ? "…" : seats} seats purchased</p>
+              {pendingInvitesCount > 0 && (
+                <p className="text-xs text-amber-600 mt-1">{pendingInvitesCount} pending invite{pendingInvitesCount === 1 ? "" : "s"} outstanding</p>
+              )}
               {isOrgAdmin && (
                 <div className="mt-3 flex items-center gap-2">
                   <button

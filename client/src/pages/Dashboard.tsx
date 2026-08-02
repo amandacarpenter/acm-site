@@ -32,6 +32,7 @@ interface UsageStatus {
   resetDate: string;
   plan: string;
   teamSeats: number;
+  billingRestricted?: boolean;
 }
 
 // Both "document" and "complexpdf" are internal job-type values written by the
@@ -100,6 +101,21 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-[#3a485b]">Dashboard</h1>
           <p className="text-gray-900 text-base mt-1">Here's what's happening with your account.</p>
         </div>
+
+        {/* Fix #3/#6: team-wide payment-failure notice -- mirrors the banner on
+            /team/setup so it's visible from the main Dashboard too, not just
+            for admins who go looking at the team page. */}
+        {usage?.billingRestricted && (
+          <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 mb-8" role="alert">
+            <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="text-sm font-semibold text-red-700">Payment issue — processing paused</p>
+              <p className="text-sm text-red-600 mt-0.5">
+                Your team's last payment couldn't be processed, so new document processing is paused for all members until your billing admin updates the payment method.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Top row — Usage + Plan */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
