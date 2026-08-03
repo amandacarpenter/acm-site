@@ -3,8 +3,10 @@ import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
 import HeroWatermark from "@/components/HeroWatermark";
 import { CheckCircle2, Target, Lightbulb, Heart, Info } from "lucide-react";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 export default function About() {
+  useDocumentTitle("About Remedy508 | Accessibility Built for Higher Ed");
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />

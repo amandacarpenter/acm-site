@@ -4,8 +4,10 @@ import SiteFooter from "@/components/SiteFooter";
 import { Mail, Clock, MessageSquare, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 export default function Contact() {
+  useDocumentTitle("Contact Remedy508");
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const topic = params.get("topic");
   const prefill = topic === "more-seats"

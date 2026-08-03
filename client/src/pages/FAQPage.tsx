@@ -3,6 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { useState, type ReactNode } from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 interface FAQItem {
   q: string;
@@ -147,6 +148,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 }
 
 export default function FAQPage() {
+  useDocumentTitle("FAQ | Remedy508 Accessibility Remediation");
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <SiteHeader />

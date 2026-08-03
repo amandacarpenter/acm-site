@@ -6,6 +6,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { useKbSections, useKbSearch, type KbArticle } from "./useKb";
 import { BookOpen } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 const SECTION_ICONS = ["🚀", "🛠️", "📄", "✏️", "♿"];
 
@@ -46,6 +47,7 @@ function SearchResults({ q }: { q: string }) {
 }
 
 export default function KbHome() {
+  useDocumentTitle("How-To Guides & Tips | Remedy508 Knowledge Base");
   const { sections, loading } = useKbSections();
   const [query, setQuery] = useState("");
 

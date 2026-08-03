@@ -3,8 +3,10 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Mail } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 export default function Accessibility() {
+  useDocumentTitle("Our Accessibility Commitment | Remedy508");
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />

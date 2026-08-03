@@ -4,8 +4,10 @@ import { ShieldCheck } from "lucide-react";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2 } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 export default function Privacy() {
+  useDocumentTitle("Privacy Policy | Remedy508");
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Auth-gated / internal pages -- no value indexing these
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /kb/admin
+Disallow: /checkout/success
+Disallow: /team/setup
+Disallow: /invoice-request
+
+Sitemap: https://remedy508.com/sitemap.xml

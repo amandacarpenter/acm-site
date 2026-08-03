@@ -5,6 +5,7 @@ import { CheckCircle2, Zap, Users, Loader2, Building2 } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 const PRICE_MONTHLY = "price_1Tycq3AaDElV6hZxP4W6qC7M"; // $25/mo
 const PRICE_ANNUAL  = "price_1TycqCAaDElV6hZxKM0uIEu2"; // $229/yr
@@ -29,6 +30,7 @@ const TEAM_FEATURES = [
 ];
 
 export default function PricingPage() {
+  useDocumentTitle("Pricing | Remedy508 Accessibility Remediation");
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isSignedIn, userId } = useAuth();

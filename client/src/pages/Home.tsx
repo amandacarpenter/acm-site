@@ -24,6 +24,7 @@ import {
   ArrowRight,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
@@ -47,6 +48,7 @@ const NAV_LINKS = [
 ];
 
 export default function Home() {
+  useDocumentTitle("Remedy508 | AI Accessibility Remediation for Higher Ed");
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 

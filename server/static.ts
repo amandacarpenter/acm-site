@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import path from "path";
+import { injectSeoMeta } from "./seo-html";
 
 // Custom domains that should show the coming-soon page
 const COMING_SOON_HOSTS = ["remedy508.com", "www.remedy508.com", "remedy508.ai", "www.remedy508.ai"];
@@ -174,12 +175,20 @@ export function serveStatic(app: Express) {
     );
   }
 
-  app.use(express.static(distPath));
+  // Serve static assets but exclude index.html from the auto-index behavior
+  // -- express.static would otherwise serve it directly for "/" and bypass
+  // the SEO injection below entirely.
+  app.use(express.static(distPath, { index: false }));
 
   // fall through to index.html if the file doesn't exist
   // Never intercept API routes — let Express handle those
+  const indexHtmlTemplate = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");
   app.use("/{*path}", (req, res) => {
-    if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
-    res.sendFile(path.resolve(distPath, "index.html"));
+    // NOTE: Express 5 rebases req.path/req.url to "/" for wildcard mount
+    // patterns like this one -- req.originalUrl retains the real request path.
+    const requestPath = req.originalUrl.split("?")[0];
+    if (requestPath.startsWith("/api/")) return res.status(404).json({ error: "Not found" });
+    const html = injectSeoMeta(indexHtmlTemplate, requestPath);
+    res.set({ "Content-Type": "text/html" }).send(html);
   });
 }

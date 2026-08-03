@@ -5,6 +5,7 @@ import viteConfig from "../vite.config";
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { injectSeoMeta } from "./seo-html";
 
 const viteLogger = createLogger();
 
@@ -48,7 +49,10 @@ export async function setupVite(server: Server, app: Express) {
         `src="/src/main.tsx"`,
         `src="/src/main.tsx?v=${nanoid()}"`,
       );
-      const page = await vite.transformIndexHtml(url, template);
+      let page = await vite.transformIndexHtml(url, template);
+      // NOTE: Express 5 rebases req.path to "/" for this wildcard mount
+      // pattern -- use the local `url` (req.originalUrl) for the real path.
+      page = injectSeoMeta(page, url.split("?")[0]);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);

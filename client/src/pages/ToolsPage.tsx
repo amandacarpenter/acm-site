@@ -19,6 +19,7 @@ import {
   Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw, AlertTriangle
 } from "lucide-react";
 import { Link } from "wouter";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -830,6 +831,7 @@ const TAB_META = [
 ] as const;
 
 export default function ToolsPage() {
+  useDocumentTitle("Accessibility Tools | Remedy Docs, Image, HTML & Video | Remedy508");
   const [, params] = useRoute("/tools/:tab");
   const initialTab = params?.tab || "document";
   const { isSignedIn, isLoaded } = useAuth();
