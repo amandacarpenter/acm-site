@@ -1,12 +1,41 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 
 interface FAQItem {
   q: string;
-  a: string;
+  a: ReactNode;
+}
+
+// Shared per-tool credit breakdown, reused wherever this FAQ needs it so the
+// wording/format stays in sync with the Dashboard's "How are my credits
+// used?" card.
+function CreditBreakdown() {
+  return (
+    <>
+      <p className="mb-2">Credits are shared across all four tools.</p>
+      <ul className="space-y-1">
+        <li className="flex justify-between gap-3">
+          <span>Remedy Docs</span>
+          <span className="text-gray-500">1 Credit = 1 Document Page</span>
+        </li>
+        <li className="flex justify-between gap-3">
+          <span>Remedy Image</span>
+          <span className="text-gray-500">1 Credit = 1 Image</span>
+        </li>
+        <li className="flex justify-between gap-3">
+          <span>Remedy Video</span>
+          <span className="text-gray-500">1 Credit = 1 Transcript</span>
+        </li>
+        <li className="flex justify-between gap-3">
+          <span>Remedy HTML</span>
+          <span className="text-gray-500">3 Credits = 1 HTML Fix</span>
+        </li>
+      </ul>
+    </>
+  );
 }
 
 interface FAQSection {
@@ -74,7 +103,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 150 Credits per month, shared across all four tools: Remedy Docs (1 Credit/page), Remedy Image (1 Credit/image), Remedy Video (1 Credit/transcript), and Remedy HTML (3 Credits/fix). Licensed for single-user personal use only.",
+        a: "The Individual plan gives you 150 Credits per month, shared across all four tools. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
       },
       {
         q: "What does the Team plan include?",
@@ -82,7 +111,14 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What is a Credit?",
-        a: "Credits are the usage currency across all four tools: Remedy Docs costs 1 Credit per page (a 10-page PDF uses 10 Credits), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML (Canvas) costs 3 Credits per fix. Individual documents are capped at 50 pages, and Credits reset monthly on the anniversary of your signup date. Need more? You can top up anytime with a Credit pack.",
+        a: (
+          <>
+            <CreditBreakdown />
+            <p className="mt-2">
+              Individual documents are capped at 50 pages, and Credits reset monthly on the anniversary of your signup date. Need more? You can top up anytime with a Credit pack.
+            </p>
+          </>
+        ),
       },
       {
         q: "Can I cancel my plan?",
@@ -114,9 +150,9 @@ function FAQAccordion({ item }: { item: FAQItem }) {
         />
       </button>
       {open && (
-        <p className="pb-5 text-base text-gray-900 leading-relaxed pr-8">
+        <div className="pb-5 text-base text-gray-900 leading-relaxed pr-8">
           {item.a}
-        </p>
+        </div>
       )}
     </div>
   );

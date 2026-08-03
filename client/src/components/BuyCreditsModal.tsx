@@ -114,7 +114,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
 
           {/* Policy note */}
           <p className="text-sm text-gray-700 mb-4">
-            Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. Remedy Docs costs 1 Credit/page, Remedy Image costs 1 Credit/image, Remedy Video costs 1 Credit/transcript, and Remedy HTML costs 3 Credits/fix. Credits never expire unless your account is inactive for 12+ months. Non-refundable.
+            Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. Credits are shared across all four tools: Remedy Docs (1 Credit = 1 Document Page), Remedy Image (1 Credit = 1 Image), Remedy Video (1 Credit = 1 Transcript), Remedy HTML (3 Credits = 1 HTML Fix). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (

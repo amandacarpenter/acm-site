@@ -175,9 +175,28 @@ export default function Dashboard() {
               </div>
             )}
 
-            <p className="text-sm text-gray-700">
-              Credits are shared across all four tools: Remedy Docs costs 1 Credit/page, Remedy Image costs 1 Credit/image, Remedy Video costs 1 Credit/transcript, and Remedy HTML costs 3 Credits/fix.
-            </p>
+            <div className="pt-3 mt-1 border-t border-gray-100">
+              <p className="text-sm font-semibold text-[#3a485b] mb-2">How are my credits used?</p>
+              <p className="text-sm text-gray-700 mb-2">Credits are shared across all four tools.</p>
+              <ul className="text-sm text-gray-700 space-y-1">
+                <li className="flex justify-between gap-3">
+                  <span>Remedy Docs</span>
+                  <span className="text-gray-500">1 Credit = 1 Document Page</span>
+                </li>
+                <li className="flex justify-between gap-3">
+                  <span>Remedy Image</span>
+                  <span className="text-gray-500">1 Credit = 1 Image</span>
+                </li>
+                <li className="flex justify-between gap-3">
+                  <span>Remedy Video</span>
+                  <span className="text-gray-500">1 Credit = 1 Transcript</span>
+                </li>
+                <li className="flex justify-between gap-3">
+                  <span>Remedy HTML</span>
+                  <span className="text-gray-500">3 Credits = 1 HTML Fix</span>
+                </li>
+              </ul>
+            </div>
 
             {/* Purchased credits balance */}
             {purchasedCredits > 0 && (
