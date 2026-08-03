@@ -68,7 +68,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-white text-base mt-1">One-time purchase · 1 Credit = 1 page processed · No expiration</p>
+          <p className="text-white text-base mt-1">One-time purchase · usable across all four tools · No expiration</p>
         </div>
 
         <div className="p-6">
@@ -114,7 +114,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
 
           {/* Policy note */}
           <p className="text-sm text-gray-700 mb-4">
-            A Credit is simply a page. Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. 1 Credit covers 1 processed page (Remedy Docs draws from this pool). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
+            Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. Remedy Docs costs 1 Credit/page, Remedy Image costs 1 Credit/image, Remedy Video costs 1 Credit/transcript, and Remedy HTML costs 3 Credits/fix. Credits never expire unless your account is inactive for 12+ months. Non-refundable.
           </p>
 
           {error && (

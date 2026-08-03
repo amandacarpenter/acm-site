@@ -40,8 +40,19 @@ const REPORT_ERROR_TO_EMAIL = process.env.REPORT_ERROR_TO_EMAIL || "hello@remedy
 
 // ── Usage / Credits Helpers ──────────────────────────────────
 
-const INDIVIDUAL_MONTHLY_CREDITS = 150; // 1 credit = 1 processed page
+const INDIVIDUAL_MONTHLY_CREDITS = 150; // shared pool across all tools -- Remedy Docs: 1 credit/page (see per-tool weights below)
 const TEAM_CREDITS_PER_SEAT = 175;
+// Per-tool credit weights -- Remedy Docs is metered per actual page (see deductCredits
+// call sites below); these three flat weights cover the other tools, cost-normalized
+// against Docs' measured ~$0.032/page Claude cost (see /api/admin/cost-summary):
+// Canvas HTML fixes run a full page of HTML through Claude text generation (far more
+// input+output tokens than a single Doc page), AltText is a single Claude vision call
+// (cheap), and Video transcription runs on local Whisper (near-zero marginal cost) but
+// is still metered at a nominal 1 credit so it draws from the same shared pool instead
+// of being truly unlimited.
+const CANVAS_CREDITS_PER_FIX = 3;
+const ALTTEXT_CREDITS_PER_IMAGE = 1;
+const VIDEO_CREDITS_PER_JOB = 1;
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 const MAX_PAGES_PER_DOCUMENT = 50; // hard cap — protects against runaway cost + server load on a single upload
 
@@ -1892,7 +1903,24 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
   // ── VIDEO TRANSCRIPTION ─────────────────────────────────────────────────────
   app.post("/api/video/transcribe", uploadMedia.single("file"), async (req, res) => {
     const bodyUrl = req.body?.url;
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
     if (!req.file && !bodyUrl) return res.status(400).json({ error: "No file or URL provided" });
+
+    // ── Usage gate — pre-flight only, confirms user has ANY credits available.
+    // Covers both the file-upload (local Whisper) and YouTube URL (Webshare proxy,
+    // a paid service) paths -- both have real marginal cost even though neither is
+    // a metered Claude call. ──
+    if (clerkUserId) {
+      try {
+        const usage = await checkHasCredits(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[VIDEO USAGE GATE] Error:", gateErr.message);
+        // Fail open — don't block if Clerk is temporarily unavailable
+      }
+    }
 
     try {
       let audioBuffer: Buffer;
@@ -1958,10 +1986,38 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
           (s: any) => `[${s.timestamp}] ${s.text}`
         ).join("\n");
 
+        let ytJobId: number | null = null;
+        let ytCreditsRemaining: number | undefined;
+        if (clerkUserId) {
+          try {
+            const { creditsRemaining } = await deductCredits(clerkUserId, VIDEO_CREDITS_PER_JOB);
+            ytCreditsRemaining = creditsRemaining;
+            const job = storage.createJob({
+              type: "video",
+              status: "completed",
+              inputName: url,
+              result: null,
+              errorMessage: null,
+              createdAt: Date.now(),
+              clerkUserId,
+              pageCount: 1,
+              creditsUsed: VIDEO_CREDITS_PER_JOB,
+              inputTokens: null,
+              outputTokens: null,
+            });
+            ytJobId = job.id;
+          } catch (creditErr: any) {
+            console.error("[VIDEO CREDIT DEDUCT] Error:", creditErr.message);
+          }
+        }
+
         return res.json({
           success: true,
           transcript: timecodedLines,
           source: "youtube-transcript",
+          jobId: ytJobId,
+          creditsUsed: VIDEO_CREDITS_PER_JOB,
+          creditsRemaining: ytCreditsRemaining,
         });
 
       } else {
@@ -1974,12 +2030,40 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         (s: any) => `[${s.timestamp}] ${s.text}`
       ).join("\n");
 
+      let videoJobId: number | null = null;
+      let videoCreditsRemaining: number | undefined;
+      if (clerkUserId) {
+        try {
+          const { creditsRemaining } = await deductCredits(clerkUserId, VIDEO_CREDITS_PER_JOB);
+          videoCreditsRemaining = creditsRemaining;
+          const job = storage.createJob({
+            type: "video",
+            status: "completed",
+            inputName: filename,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: 1,
+            creditsUsed: VIDEO_CREDITS_PER_JOB,
+            inputTokens: null,
+            outputTokens: null,
+          });
+          videoJobId = job.id;
+        } catch (creditErr: any) {
+          console.error("[VIDEO CREDIT DEDUCT] Error:", creditErr.message);
+        }
+      }
+
       res.json({
         success: true,
         filename,
         plainText: transcription.text,
         timecodedTranscript: timecodedLines || transcription.text,
         language: "en",
+        jobId: videoJobId,
+        creditsUsed: VIDEO_CREDITS_PER_JOB,
+        creditsRemaining: videoCreditsRemaining,
       });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
@@ -1988,8 +2072,21 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
 
   // ── CANVAS HTML ACCESSIBILITY ───────────────────────────────────────────────
   app.post("/api/canvas/fix", async (req, res) => {
-    const { html } = req.body;
+    const { html, clerkUserId } = req.body;
     if (!html) return res.status(400).json({ error: "No HTML provided" });
+
+    // ── Usage gate — pre-flight only, confirms user has ANY credits available ──
+    if (clerkUserId) {
+      try {
+        const usage = await checkHasCredits(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[CANVAS USAGE GATE] Error:", gateErr.message);
+        // Fail open — don't block if Clerk is temporarily unavailable
+      }
+    }
 
     try {
       const systemPrompt = `You are an expert in Canvas LMS accessibility and WCAG 2.1 AA compliance.
@@ -2029,7 +2126,34 @@ Canvas-specific rules:
         parsed = { accessibleHtml: html, changes: [], score: { before: 0, after: 100 } };
       }
 
-      res.json({ success: true, ...parsed });
+      // ── Deduct credits + log job (flat rate — a Canvas fix is one page of HTML,
+      // regardless of length, but costs more Claude tokens than a single Doc page) ──
+      let canvasJobId: number | null = null;
+      let canvasCreditsRemaining: number | undefined;
+      if (clerkUserId) {
+        try {
+          const { creditsRemaining } = await deductCredits(clerkUserId, CANVAS_CREDITS_PER_FIX);
+          canvasCreditsRemaining = creditsRemaining;
+          const job = storage.createJob({
+            type: "canvas",
+            status: "completed",
+            inputName: null,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: 1,
+            creditsUsed: CANVAS_CREDITS_PER_FIX,
+            inputTokens: null,
+            outputTokens: null,
+          });
+          canvasJobId = job.id;
+        } catch (creditErr: any) {
+          console.error("[CANVAS CREDIT DEDUCT] Error:", creditErr.message);
+        }
+      }
+
+      res.json({ success: true, ...parsed, jobId: canvasJobId, creditsUsed: CANVAS_CREDITS_PER_FIX, creditsRemaining: canvasCreditsRemaining });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }
@@ -2990,6 +3114,20 @@ print('ok')
 
   app.post("/api/alttext/generate", upload.single("image"), async (req, res) => {
     const context = req.body.context || "";
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
+
+    // ── Usage gate — pre-flight only, confirms user has ANY credits available ──
+    if (clerkUserId) {
+      try {
+        const usage = await checkHasCredits(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[ALTTEXT USAGE GATE] Error:", gateErr.message);
+        // Fail open — don't block if Clerk is temporarily unavailable
+      }
+    }
 
     try {
       let imageData: string;
@@ -3051,7 +3189,33 @@ Rules:
         parsed = { altText: responseText, longDescription: null, isDecorative: false, reasoning: "" };
       }
 
-      res.json({ success: true, ...parsed });
+      // ── Deduct credits + log job (flat rate per image) ──
+      let altTextJobId: number | null = null;
+      let altTextCreditsRemaining: number | undefined;
+      if (clerkUserId) {
+        try {
+          const { creditsRemaining } = await deductCredits(clerkUserId, ALTTEXT_CREDITS_PER_IMAGE);
+          altTextCreditsRemaining = creditsRemaining;
+          const job = storage.createJob({
+            type: "alttext",
+            status: "completed",
+            inputName: req.file?.originalname || null,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: 1,
+            creditsUsed: ALTTEXT_CREDITS_PER_IMAGE,
+            inputTokens: null,
+            outputTokens: null,
+          });
+          altTextJobId = job.id;
+        } catch (creditErr: any) {
+          console.error("[ALTTEXT CREDIT DEDUCT] Error:", creditErr.message);
+        }
+      }
+
+      res.json({ success: true, ...parsed, jobId: altTextJobId, creditsUsed: ALTTEXT_CREDITS_PER_IMAGE, creditsRemaining: altTextCreditsRemaining });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

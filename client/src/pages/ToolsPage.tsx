@@ -574,15 +574,18 @@ function VideoTab() {
   const { toast } = useToast();
   const { user: videoUser } = useUser();
 
-  const startOver = () => { setFile(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
+  const [errorCode, setErrorCode] = useState("");
+  const startOver = () => { setFile(null); setResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file selected", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setResult(null);
     try {
       const fd = new FormData(); fd.append("file", file);
+      if (videoUser?.id) fd.append("clerkUserId", videoUser.id);
       const resp = await fetch("/api/video/transcribe", { method: "POST", body: fd });
-      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error);
+      const data = await parseApiResponse(resp);
+      if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
@@ -595,7 +598,7 @@ function VideoTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Transcribing…" steps={["Uploading file…", "Extracting audio track…", "Running AI transcription…", "Generating timecoded transcript…"]} />}
-      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Video", userEmail: videoUser?.primaryEmailAddress?.emailAddress, file }} />}
+      {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Video", errorCode, userEmail: videoUser?.primaryEmailAddress?.emailAddress, file }} />}
       {result && (
         <div className="space-y-4" data-testid="video-result">
           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -652,13 +655,16 @@ function CanvasTab() {
   const [error, setError] = useState("");
   const { toast } = useToast();
   const { user: canvasUser } = useUser();
+  const [errorCode, setErrorCode] = useState("");
 
   const run = async () => {
     if (!html.trim()) { toast({ title: "No HTML", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setResult(null);
     try {
-      const resp = await fetch("/api/canvas/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ html }) });
-      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error); setResult(data);
+      const resp = await fetch("/api/canvas/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ html, clerkUserId: canvasUser?.id }) });
+      const data = await parseApiResponse(resp);
+      if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
+      setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -677,7 +683,7 @@ function CanvasTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
-      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy HTML (Canvas)", userEmail: canvasUser?.primaryEmailAddress?.emailAddress, htmlFallback: html }} />}
+      {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy HTML (Canvas)", errorCode, userEmail: canvasUser?.primaryEmailAddress?.emailAddress, htmlFallback: html }} />}
       {result && (
         <div className="space-y-4" data-testid="canvas-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={() => { setHtml(""); setResult(null); setError(""); }} /></div>
@@ -728,21 +734,25 @@ function AltTextTab() {
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: altTextUser } = useUser();
+  const [errorCode, setErrorCode] = useState("");
 
   const handleFile = (f: File) => { setFile(f); setImageUrl(""); setPreviewUrl(URL.createObjectURL(f)); };
 
-  const startOver = () => { setFile(null); setImageUrl(""); setContext(""); setPreviewUrl(null); setResult(null); setError(""); setResetKey((k) => k + 1); };
+  const startOver = () => { setFile(null); setImageUrl(""); setContext(""); setPreviewUrl(null); setResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file && !imageUrl.trim()) { toast({ title: "No image", variant: "destructive" }); return; }
-    setLoading(true); setError(""); setResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setResult(null);
     try {
       const fd = new FormData();
       if (file) fd.append("image", file);
       if (imageUrl) fd.append("imageUrl", imageUrl);
       fd.append("context", context);
+      if (altTextUser?.id) fd.append("clerkUserId", altTextUser.id);
       const resp = await fetch("/api/alttext/generate", { method: "POST", body: fd });
-      const data = await parseApiResponse(resp); if (!resp.ok) throw new Error(data.error); setResult(data);
+      const data = await parseApiResponse(resp);
+      if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
+      setResult(data);
     } catch (e: any) { setError(e.message); } finally { setLoading(false); }
   };
 
@@ -761,7 +771,7 @@ function AltTextTab() {
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
-      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Image (Alt Text)", userEmail: altTextUser?.primaryEmailAddress?.emailAddress, file, htmlFallback: !file && imageUrl ? `Image URL: ${imageUrl}` : undefined }} />}
+      {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Image (Alt Text)", errorCode, userEmail: altTextUser?.primaryEmailAddress?.emailAddress, file, htmlFallback: !file && imageUrl ? `Image URL: ${imageUrl}` : undefined }} />}
       {result && (
         <div className="space-y-4" data-testid="alt-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>

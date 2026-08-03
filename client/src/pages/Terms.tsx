@@ -40,11 +40,11 @@ export default function Terms() {
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4 space-y-3">
               <div>
                 <p className="font-semibold text-[#3a485b]">Individual — $25/month or $229/year</p>
-                <p className="text-sm">150 Credits per month via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
+                <p className="text-sm">150 Credits per month, shared across all tools: Remedy Docs costs 1 Credit per page processed (documents over 50 pages must be split), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML costs 3 Credits per fix. Licensed for single-user personal use only. Individual accounts may not be shared.</p>
               </div>
               <div>
                 <p className="font-semibold text-[#3a485b]">Team — $299/seat/year (annual only, 2+ seats)</p>
-                <p className="text-sm">175 Credits/seat/month pooled across the organization via Remedy Docs (1 Credit = 1 page processed; documents over 50 pages must be split). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
+                <p className="text-sm">175 Credits/seat/month — each seat receives its own allotment, not a shared pool — across all tools: Remedy Docs costs 1 Credit per page processed (documents over 50 pages must be split), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML costs 3 Credits per fix. Team plans are licensed for use by one institution or organization. Reselling or sublicensing access is prohibited. Pay by credit card or invoice/PO, available at Remedy508’s discretion.</p>
               </div>
             </div>
             <ul className="list-disc pl-5 space-y-2 text-sm">

@@ -74,15 +74,15 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 150 Credits per month via Remedy Docs (1 Credit = 1 page). Remedy Image, Remedy HTML, and Remedy Video are unlimited. Licensed for single-user personal use only.",
+        a: "The Individual plan gives you 150 Credits per month, shared across all four tools: Remedy Docs (1 Credit/page), Remedy Image (1 Credit/image), Remedy Video (1 Credit/transcript), and Remedy HTML (3 Credits/fix). Licensed for single-user personal use only.",
       },
       {
         q: "What does the Team plan include?",
-        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 175 Credits/seat/month pooled across your team. Pay by credit card or invoice/PO.",
+        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 175 Credits/seat/month — each teammate gets their own 175, not a shared pool. Pay by credit card or invoice/PO.",
       },
       {
         q: "What is a Credit?",
-        a: "A Credit is simply a page. 1 Credit = 1 page processed, so a 10-page PDF run through Remedy Docs uses 10 Credits. Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Individual documents are capped at 50 pages, and Credits reset monthly on the anniversary of your signup date. Need more? You can top up anytime with a Credit pack.",
+        a: "Credits are the usage currency across all four tools: Remedy Docs costs 1 Credit per page (a 10-page PDF uses 10 Credits), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML (Canvas) costs 3 Credits per fix. Individual documents are capped at 50 pages, and Credits reset monthly on the anniversary of your signup date. Need more? You can top up anytime with a Credit pack.",
       },
       {
         q: "Can I cancel my plan?",

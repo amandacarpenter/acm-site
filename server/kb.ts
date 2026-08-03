@@ -129,7 +129,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   "tour-of-your-dashboard": `<h2>Your dashboard at a glance</h2>
 <p>After logging in, you land on your dashboard. Here's what you'll find:</p>
 <h3>Usage meter</h3>
-<p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit. Remedy508 runs on a simple credit system: <strong>1 credit = 1 processed page</strong>. Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
+<p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit. Credits are shared across all four tools, weighted by processing cost: <strong>Remedy Docs costs 1 credit per page, Remedy Image costs 1 credit per image, Remedy Video costs 1 credit per transcript, and Remedy HTML (Canvas) costs 3 credits per fix</strong>. Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
 <h3>Quick-access tools</h3>
 <p>The four Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
 <h3>Credit pack balance</h3>
@@ -164,7 +164,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h2>Downloading your result</h2>
 <p>Once processing is complete, a download button appears. Click it to save the remediated file to your computer. Your result is also saved in your recent activity on the dashboard for 30 days.</p>
 <h2>How credits are counted</h2>
-<p>Remedy508 runs on a page-based credit system: <strong>1 credit = 1 processed page</strong>. A 2-page PDF uses 2 credits; a 50-page PDF uses 50 credits. Word documents (.docx) count as 1 credit per file, since page count isn't available before processing. Individual plans include 150 credits per month, and Team plans include 175 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
+<p>Each Remedy508 tool draws from the same credit pool, but at a different rate based on processing cost: <strong>Remedy Docs</strong> costs 1 credit per page (a 2-page PDF uses 2 credits, a 50-page PDF uses 50 credits — Word documents count as 1 credit per file, since page count isn't available before processing), <strong>Remedy Image</strong> costs 1 credit per image, <strong>Remedy Video</strong> costs 1 credit per transcript, and <strong>Remedy HTML</strong> (Canvas) costs 3 credits per fix. Individual plans include 150 credits per month, and Team plans include 175 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
   "understanding-your-results": `<h2>What Remedy508 fixes</h2>
 <p>Depending on the tool used, Remedy508 applies some or all of the following fixes automatically:</p>
 <ul>

@@ -162,7 +162,7 @@ export default function Dashboard() {
             )}
 
             <p className="text-sm text-gray-700">
-              A Credit is simply a page. 1 Credit = 1 page processed. Remedy Docs draws from this pool — larger documents use more Credits, smaller ones use fewer.
+              Credits are shared across all four tools: Remedy Docs costs 1 Credit/page, Remedy Image costs 1 Credit/image, Remedy Video costs 1 Credit/transcript, and Remedy HTML costs 3 Credits/fix.
             </p>
 
             {/* Purchased credits balance */}

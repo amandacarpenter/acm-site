@@ -131,14 +131,15 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-gray-900">
-                  One seat. All four tools. Only Remedy Docs uses Credits — Remedy Image, Remedy HTML, and Remedy Video are unlimited. Built for anyone who needs to make course materials accessible on their own.
+                  One seat. All four tools, all metered from one shared Credit pool. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   150 Credits / month
                 </div>
-                <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account · 1 Credit = 1 page processed</p>
+                <p className="text-sm mb-1 pl-1 text-gray-900">Individual use only — one seat per account</p>
+                <p className="text-sm mb-6 pl-1 text-gray-900">Remedy Docs: 1 Credit/page · Remedy Image: 1 Credit/image · Remedy Video: 1 Credit/transcript · Remedy HTML: 3 Credits/fix</p>
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
@@ -181,9 +182,10 @@ export default function PricingPage() {
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-white/10 text-white">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  175 Credits / month per seat, pooled
+                  175 Credits / month per seat
                 </div>
-                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan</p>
+                <p className="text-sm mb-1 pl-1 text-white">2+ seats — annual plan · each teammate gets their own 175/month, not shared</p>
+                <p className="text-sm mb-6 pl-1 text-white">Remedy Docs: 1 Credit/page · Remedy Image: 1 Credit/image · Remedy Video: 1 Credit/transcript · Remedy HTML: 3 Credits/fix</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
@@ -214,10 +216,10 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What is a Credit?", a: "A Credit is simply a page. 1 Credit = 1 page processed through Remedy Docs — so a 10-page PDF uses 10 Credits. Credits reset monthly on the anniversary of your signup date, and Remedy Image, Remedy HTML, and Remedy Video don't use Credits at all — they're unlimited on every paid plan. Need more Credits? You can top up with a Credit pack anytime." },
+              { q: "What is a Credit?", a: "Credits are the usage currency across all four tools, weighted by how much processing each one takes: Remedy Docs costs 1 Credit per page (a 10-page PDF uses 10 Credits), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML (Canvas) costs 3 Credits per fix. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
-              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard and pooled Credits for the whole group." },
-              { q: "How does the Team plan work?", a: "Team plans are $299/seat/year, billed annually. Credits are pooled across your team at 175/seat/month. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
+              { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard and its own Credit allotment for each teammate." },
+              { q: "How does the Team plan work?", a: "Team plans are $299/seat/year, billed annually. Each teammate gets their own 175 Credits/month — it's not a shared pool. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">

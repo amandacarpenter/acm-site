@@ -130,7 +130,10 @@ export default function TeamCheckout() {
                 </Link>
               </p>
               <p className="text-sm text-gray-700 mb-1">
-                175 Credits/month per seat, pooled across your team
+                175 Credits/month per seat — each teammate gets their own, not shared
+              </p>
+              <p className="text-sm text-gray-700 mb-1">
+                Credits cover all four tools: Remedy Docs (1/page), Remedy Image (1/image), Remedy Video (1/transcript), Remedy HTML (3/fix)
               </p>
 
               {/* Live total */}
@@ -140,7 +143,7 @@ export default function TeamCheckout() {
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  {seats * 175} Credits/month pooled · Billed annually · Not refundable
+                  {seats * 175} Credits/month total ({"175/seat"}) · Billed annually · Not refundable
                 </p>
               </div>
             </div>
