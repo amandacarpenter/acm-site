@@ -32,6 +32,10 @@ interface UsageStatus {
   resetDate: string;
   plan: string;
   teamSeats: number;
+  // Real team-purchased seat count (org-level), null for individual plans.
+  // Distinct from teamSeats, which is always 1 (a per-member allotment
+  // multiplier, not the team's actual size) -- use this for display.
+  orgSeats?: number | null;
   billingRestricted?: boolean;
 }
 
@@ -70,7 +74,12 @@ export default function Dashboard() {
 
   const meta = (user?.publicMetadata || {}) as any;
   const plan: string = usage?.plan || meta.plan || "individual";
+  // `teamSeats` is always 1 for an individual member (their own credit-
+  // allotment multiplier) -- it is NOT the team's real seat count, so it must
+  // never be shown to the user labeled as "seats". Use `orgSeats` (the team's
+  // actual purchased seat count) for anything user-facing.
   const teamSeats: number = usage?.teamSeats || meta.teamSeats || 1;
+  const orgSeats: number | null = usage?.orgSeats ?? null;
 
   const monthlyLimit = usage?.monthlyLimit ?? (plan === "team" ? teamSeats * 175 : 150);
   const monthlyUsed = usage?.monthlyUsed ?? 0;
@@ -87,7 +96,12 @@ export default function Dashboard() {
         return next.toLocaleDateString("en-US", { month: "long", day: "numeric" });
       })();
 
-  const planLabel = plan === "team" ? `Team (${teamSeats} seat${teamSeats !== 1 ? "s" : ""})` : "Individual";
+  const planLabel =
+    plan === "team"
+      ? orgSeats
+        ? `Team (${orgSeats} seat${orgSeats !== 1 ? "s" : ""} total)`
+        : "Team plan"
+      : "Individual";
   const billingCycle = meta.subscribedAt
     ? new Date(meta.subscribedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;

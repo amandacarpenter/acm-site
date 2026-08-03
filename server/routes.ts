@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient } from "@clerk/backend";
+import { Webhook as SvixWebhook } from "svix";
 import { storage } from "./storage";
 import * as fs from "fs";
 import * as path from "path";
@@ -620,11 +621,21 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // at submit-time. Individual plans use the existing `subscribed` flag for
       // this (already correctly cleared on payment failure); teams use this
       // org-level flag since restriction applies to every member at once.
+      //
+      // Dashboard seat-count fix: `meta.teamSeats` on an individual member is
+      // always 1 -- it's that member's own per-seat credit-allotment multiplier,
+      // NOT the team's total purchased seat count (see getMonthlyCreditLimit /
+      // getCreditBalance). Displaying it labeled as "seat" on the personal
+      // Dashboard was misleading (always showed "Team (1 seat)" regardless of
+      // real team size). Fetch the org's real purchased seat count here too so
+      // the frontend can show accurate numbers instead of the per-member value.
       let billingRestricted = false;
+      let orgSeats: number | null = null;
       if (meta.plan === "team" && meta.orgId) {
         try {
           const org = await clerkClient.organizations.getOrganization({ organizationId: meta.orgId });
           billingRestricted = Boolean((org.publicMetadata as any)?.billingRestricted);
+          orgSeats = (org.publicMetadata as any)?.seats ?? null;
         } catch {
           // fail open on lookup error -- checkHasCredits is still the real enforcement gate
         }
@@ -637,7 +648,12 @@ export function registerRoutes(httpServer: Server, app: Express) {
         creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits,
         resetDate: meta.usageResetDate || getResetDate(),
         plan: meta.plan || "individual",
+        // teamSeats: kept for backward compatibility -- this is the per-member
+        // allotment multiplier (always 1), NOT the team's real seat count.
         teamSeats: meta.teamSeats || 1,
+        // orgSeats: the team's actual purchased seat count (null for individual
+        // plans, or if the org lookup failed/hasn't set seats yet).
+        orgSeats,
         billingRestricted,
       });
     } catch (err: any) {
@@ -3480,6 +3496,113 @@ Rules:
     res.json({ received: true });
   });
 
+  // ── Clerk Webhook ────────────────────────────────────────────
+  // Fix: deleting an account via Clerk's own account UI (the only place users
+  // can delete their account -- there is no in-app delete flow) previously left
+  // any active Stripe subscription running forever, since nothing here ever
+  // heard about the deletion. This listens for Clerk's `user.deleted` event and
+  // cancels that user's Stripe subscription (looked up by their stored
+  // `stripeCustomerId`) before the account disappears, so people who delete
+  // their account stop being billed. Individual plans: cancels their personal
+  // subscription. Team plans: only cancels a subscription if THIS user is the
+  // org's billing owner (deleting a regular member's account must never cancel
+  // the whole team's subscription -- ownership can be reassigned; see
+  // resolveTeamSeatContext / Fix #7 elsewhere in this file).
+  // Requires CLERK_WEBHOOK_SECRET to be set (from the Clerk Dashboard ->
+  // Webhooks -> this endpoint's signing secret) and a webhook endpoint
+  // configured in Clerk pointing at POST /api/clerk/webhook subscribed to the
+  // "user.deleted" event. Must be registered so the raw body is available for
+  // signature verification -- see server/index.ts's express.json `verify`.
+  app.post("/api/clerk/webhook", (req, res, next) => {
+    const rawBody = (req as any).rawBody;
+    const webhookSecret = process.env.CLERK_WEBHOOK_SECRET || "";
+
+    if (!webhookSecret) {
+      console.error("[CLERK WEBHOOK] CLERK_WEBHOOK_SECRET not configured -- rejecting");
+      return res.status(400).json({ error: "Clerk webhook not configured" });
+    }
+    if (!rawBody) {
+      return res.status(400).json({ error: "Missing raw body" });
+    }
+
+    let event: any;
+    try {
+      const svixId = req.headers["svix-id"] as string;
+      const svixTimestamp = req.headers["svix-timestamp"] as string;
+      const svixSignature = req.headers["svix-signature"] as string;
+      const wh = new SvixWebhook(webhookSecret);
+      event = wh.verify(rawBody, {
+        "svix-id": svixId,
+        "svix-timestamp": svixTimestamp,
+        "svix-signature": svixSignature,
+      });
+    } catch (err: any) {
+      console.error("[CLERK WEBHOOK] Signature verification failed:", err.message);
+      return res.status(400).json({ error: `Webhook Error: ${err.message}` });
+    }
+
+    if (event.type === "user.deleted") {
+      (async () => {
+        try {
+          const deletedUserId: string | undefined = event.data?.id;
+          // Clerk's user.deleted payload only reliably includes the user ID --
+          // the user record itself is already gone by the time this fires, so
+          // we cannot re-fetch it from Clerk to read stripeCustomerId off their
+          // publicMetadata. Instead we search Stripe SUBSCRIPTIONS directly by
+          // the clerkUserId stamped into subscription_data.metadata at checkout
+          // time (see /api/stripe/create-checkout-session and
+          // create-team-checkout). Subscriptions created before this fix won't
+          // have that metadata and won't be found here -- existing subscribers
+          // are unaffected either way since this only runs on account deletion.
+          if (!deletedUserId) {
+            console.error("[CLERK WEBHOOK] user.deleted event missing user id");
+            return;
+          }
+          // Defensive: Clerk user IDs are always "user_" + alphanumerics. Reject
+          // anything else before it ever reaches a Stripe search query string,
+          // even though this value comes from Clerk's own signed webhook payload
+          // (not end-user input) so injection risk here is effectively nil.
+          if (!/^user_[A-Za-z0-9]+$/.test(deletedUserId)) {
+            console.error("[CLERK WEBHOOK] user.deleted id has unexpected format, refusing to search Stripe:", deletedUserId);
+            return;
+          }
+          if (!stripe) {
+            console.error("[CLERK WEBHOOK] Stripe not configured -- cannot cancel subscription for deleted user", deletedUserId);
+            return;
+          }
+
+          const subs = await stripe.subscriptions.search({
+            query: `status:'active' AND metadata['clerkUserId']:'${deletedUserId}'`,
+            limit: 10,
+          });
+
+          if (subs.data.length === 0) {
+            console.log(`[CLERK WEBHOOK] No active Stripe subscription found for deleted user ${deletedUserId} -- nothing to cancel`);
+            return;
+          }
+
+          for (const sub of subs.data) {
+            // Team plans: only cancel if this deleted user was the billing owner
+            // (whoever's card is actually charged). Deleting a regular team
+            // member's account must never cancel the whole team's subscription.
+            const isTeamSub = (sub.metadata as any)?.plan === "team";
+            const billingOwnerId = (sub.metadata as any)?.billingOwnerId;
+            if (isTeamSub && billingOwnerId && billingOwnerId !== deletedUserId) {
+              console.log(`[CLERK WEBHOOK] Skipping team subscription ${sub.id} -- deleted user ${deletedUserId} is not the billing owner (${billingOwnerId})`);
+              continue;
+            }
+            await stripe.subscriptions.cancel(sub.id);
+            console.log(`[CLERK WEBHOOK] Cancelled Stripe subscription ${sub.id} for deleted user ${deletedUserId}`);
+          }
+        } catch (err: any) {
+          console.error("[CLERK WEBHOOK] Failed to process user.deleted:", err.message);
+        }
+      })();
+    }
+
+    res.json({ received: true });
+  });
+
   // ── Team Checkout ─────────────────────────────────────────
   app.post("/api/stripe/create-team-checkout", async (req, res) => {
     try {
@@ -3497,6 +3620,14 @@ Rules:
         allow_promotion_codes: true,
         client_reference_id: clerkUserId || undefined,
         metadata: { plan: "team", seats: String(qty) },
+        // Stamp clerkUserId + billingOwnerId onto the SUBSCRIPTION itself (not
+        // just this one-time checkout session) so the account-deletion webhook
+        // can find it later and knows who the billing owner is -- deleting a
+        // regular team member's account must never cancel the whole team's
+        // subscription, only the billing owner's deletion should.
+        subscription_data: {
+          metadata: { plan: "team", clerkUserId: clerkUserId || "", billingOwnerId: clerkUserId || "" },
+        },
       });
 
       res.json({ url: session.url });
@@ -3617,6 +3748,13 @@ Rules:
         allow_promotion_codes: true,
         // Pass Clerk user ID so webhook can link payment to account
         client_reference_id: clerkUserId || undefined,
+        // Also stamp clerkUserId onto the SUBSCRIPTION itself (not just this
+        // one-time checkout session) so the account-deletion webhook can still
+        // find and cancel it later, after the Clerk user record is gone and
+        // client_reference_id/session metadata is no longer reachable.
+        subscription_data: {
+          metadata: { plan: "individual", clerkUserId: clerkUserId || "" },
+        },
       });
 
       res.json({ url: session.url });
