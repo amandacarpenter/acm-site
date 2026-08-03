@@ -806,12 +806,32 @@ function AltTextTab() {
 }
 
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
+// Each tool has its own accent color so it's immediately clear which tool is
+// active — in the tab strip and in the panel below it. Remedy Docs keeps the
+// site's core teal since it's the flagship/default tool; the other three get
+// distinct hues (blue, purple, rust) chosen for contrast and colorblind-safety.
 const TAB_META = [
-  { id: "document", label: "Remedy\nDocs", icon: iconDocument, desc: "Word docs & PDFs", badge: ".docx & .pdf", title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool." },
-  { id: "video", label: "Remedy\nVideo", icon: iconVideo, desc: "Timecoded transcripts", badge: "MP4, MOV, MP3", title: "Remedy Video", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds." },
-  { id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, desc: "LMS page fixer", beta: true, badge: "Canvas LMS", title: "Remedy HTML", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues." },
-  { id: "alttext", label: "Remedy\nImage", icon: iconAlttext, desc: "Image descriptions", badge: "Images & charts", title: "Remedy Image", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts." },
-];
+  {
+    id: "document", label: "Remedy\nDocs", icon: iconDocument, beta: false, badge: ".docx & .pdf",
+    title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.",
+    color: "#0d9488", colorSoft: "#0d948814", colorSoftHover: "#0d94881f",
+  },
+  {
+    id: "video", label: "Remedy\nVideo", icon: iconVideo, beta: false, badge: "MP4, MOV, MP3",
+    title: "Remedy Video", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.",
+    color: "#006494", colorSoft: "#00649414", colorSoftHover: "#0064941f",
+  },
+  {
+    id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, beta: true, badge: "Canvas LMS",
+    title: "Remedy HTML", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.",
+    color: "#7A39BB", colorSoft: "#7A39BB14", colorSoftHover: "#7A39BB1f",
+  },
+  {
+    id: "alttext", label: "Remedy\nImage", icon: iconAlttext, beta: false, badge: "Images & charts",
+    title: "Remedy Image", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.",
+    color: "#A84B2F", colorSoft: "#A84B2F14", colorSoftHover: "#A84B2F1f",
+  },
+] as const;
 
 export default function ToolsPage() {
   const [, params] = useRoute("/tools/:tab");
@@ -819,6 +839,17 @@ export default function ToolsPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const [, navigate] = useLocation();
+
+  // Active tab is tracked in state (not just Tabs' internal defaultValue) so the
+  // tab strip and its content panel can share one color per tool. Keep the URL
+  // in sync on change so /tools/:tab deep links and the back button still work.
+  const [activeTab, setActiveTabState] = useState(initialTab);
+  useEffect(() => { setActiveTabState(initialTab); }, [initialTab]);
+  const setActiveTab = useCallback((id: string) => {
+    setActiveTabState(id);
+    window.history.pushState({}, "", `/tools/${id}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }, []);
 
   // Wait for Clerk to load before checking auth
   if (!isLoaded) {
@@ -867,45 +898,55 @@ export default function ToolsPage() {
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — Remedy508 handles the accessibility fixes.</p>
         </div>
 
-        {/* Tool breakdown cards */}
-        <div className="space-y-3 mb-6">
+        {/* Tab interface — the active tool's color carries through the tab
+            itself, the panel border, and the heading, so there's one clear
+            signal for "which tool am I on" instead of a separate description
+            block above a disconnected tab strip. */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-0" data-testid="tool-tabs">
+          <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1 bg-gray-100">
+            {TAB_META.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <TabsTrigger
+                  key={tab.id}
+                  value={tab.id}
+                  className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px] rounded-lg border-2 border-transparent transition-colors data-[state=active]:shadow-sm"
+                  style={isActive ? { backgroundColor: "#fff", borderColor: tab.color, color: tab.color } : undefined}
+                  onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = tab.colorSoftHover; }}
+                  onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = ""; }}
+                  data-testid={`tab-${tab.id}`}
+                >
+                  <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                  <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full" style={isActive ? { color: tab.color } : undefined}>{tab.label}</span>
+                  {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
+                </TabsTrigger>
+              );
+            })}
+          </TabsList>
+
           {TAB_META.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => { window.history.pushState({}, "", `/tools/${tab.id}`); window.dispatchEvent(new PopStateEvent("popstate")); }}
-              className="w-full flex items-start gap-4 p-4 rounded-xl border border-gray-200 bg-white shadow-sm hover:border-[#0d9488] hover:shadow-md transition text-left"
-            >
-              <img src={tab.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain flex-shrink-0" />
-              <div className="flex-1 min-w-0">
+            <TabsContent key={tab.id} value={tab.id} tabIndex={-1} className="mt-4">
+              <div
+                className="rounded-xl border-2 bg-white p-5 shadow-sm"
+                style={{ borderColor: tab.color }}
+              >
+                {/* Tool identity: title + description live right where the tool is used,
+                    colored to match its tab, instead of in a separate block above. */}
                 <div className="flex items-center gap-2 flex-wrap mb-1">
-                  <span className="font-bold text-[#3a485b] text-base">{tab.title}</span>
+                  <span className="font-bold text-lg" style={{ color: tab.color }}>{tab.title}</span>
                   <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tab.badge}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">BETA</span>}
                 </div>
-                <p className="text-sm text-gray-500 leading-snug">{tab.blurb}</p>
+                <p className="text-sm text-gray-500 leading-snug mb-4">{tab.blurb}</p>
+                <div className="border-t border-gray-100 pt-4">
+                  {tab.id === "document" && <RemedyDocsTab />}
+                  {tab.id === "video" && <VideoTab />}
+                  {tab.id === "canvas" && <CanvasTab />}
+                  {tab.id === "alttext" && <AltTextTab />}
+                </div>
               </div>
-            </button>
+            </TabsContent>
           ))}
-        </div>
-
-        {/* Tab interface */}
-        <Tabs defaultValue={initialTab} className="space-y-4" data-testid="tool-tabs">
-          <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1">
-            {TAB_META.map((tab) => (
-              <TabsTrigger key={tab.id} value={tab.id} className="flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px]" data-testid={`tab-${tab.id}`}>
-                <img src={tab.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
-                <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full">{tab.label}</span>
-                {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <TabsContent value="document" tabIndex={-1}><RemedyDocsTab /></TabsContent>
-            <TabsContent value="video" tabIndex={-1}><VideoTab /></TabsContent>
-            <TabsContent value="canvas" tabIndex={-1}><CanvasTab /></TabsContent>
-            <TabsContent value="alttext" tabIndex={-1}><AltTextTab /></TabsContent>
-          </div>
         </Tabs>
 
         <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4 text-center">
