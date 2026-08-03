@@ -71,9 +71,17 @@ export interface IStorage {
   getRecentFailedJobs(limit?: number): Job[];
   getJobCountsSince(sinceMs: number): { total: number; failed: number; completed: number };
   getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[];
+  backupTo(destPath: string): Promise<void>;
 }
 
 export class Storage implements IStorage {
+  // Uses SQLite's native online backup API (safe to run against a live,
+  // actively-written WAL-mode database) to write a consistent snapshot to
+  // destPath, rather than copying the raw file which could catch a
+  // mid-write/mid-checkpoint state.
+  backupTo(destPath: string): Promise<void> {
+    return sqlite.backup(destPath).then(() => {});
+  }
   createJob(job: InsertJob): Job {
     return db.insert(jobs).values(job).returning().get();
   }

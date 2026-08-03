@@ -1044,6 +1044,33 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  // ── Database backup (owner-only, gated by ADMIN_STATS_KEY env var) ─────────
+  // Streams a consistent point-in-time snapshot of the SQLite database (jobs
+  // table: job history, credits used, usage logs) as a downloadable file.
+  // Uses SQLite's own backup API rather than reading the raw file directly,
+  // since the live db runs in WAL mode and a raw copy could catch a
+  // mid-write state. Intended to be called by a scheduled task on a regular
+  // cadence so this data has an off-server copy. Query with ?key=<ADMIN_STATS_KEY>
+  app.get("/api/admin/backup-db", async (req, res) => {
+    const key = req.query.key as string | undefined;
+    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      const tmpPath = path.join(os.tmpdir(), `acm-backup-${Date.now()}.db`);
+      await storage.backupTo(tmpPath);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      res.setHeader("Content-Disposition", `attachment; filename="acm-db-backup-${dateStr}.db"`);
+      res.setHeader("Content-Type", "application/octet-stream");
+      const stream = fs.createReadStream(tmpPath);
+      stream.pipe(res);
+      stream.on("close", () => fs.unlink(tmpPath, () => {}));
+      stream.on("error", (err) => { fs.unlink(tmpPath, () => {}); res.status(500).end(String(err)); });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
   // Single-call summary powering the mobile admin dashboard: revenue/subscribers
   // (from Clerk user metadata, since that's the source of truth for plan state
