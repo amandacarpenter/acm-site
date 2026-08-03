@@ -138,8 +138,7 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   150 Credits / month
                 </div>
-                <p className="text-sm mb-1 pl-1 text-gray-900">Individual use only — one seat per account</p>
-                <p className="text-sm mb-6 pl-1 text-gray-900">Remedy Docs: 1 Credit/page · Remedy Image: 1 Credit/image · Remedy Video: 1 Credit/transcript · Remedy HTML: 3 Credits/fix</p>
+                <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account</p>
 
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
@@ -184,8 +183,7 @@ export default function PricingPage() {
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   175 Credits / month per seat
                 </div>
-                <p className="text-sm mb-1 pl-1 text-white">2+ seats — annual plan · each teammate gets their own 175/month, not shared</p>
-                <p className="text-sm mb-6 pl-1 text-white">Remedy Docs: 1 Credit/page · Remedy Image: 1 Credit/image · Remedy Video: 1 Credit/transcript · Remedy HTML: 3 Credits/fix</p>
+                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan · each teammate gets their own 175/month, not shared</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
