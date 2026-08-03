@@ -179,22 +179,10 @@ export default function Dashboard() {
               <p className="text-sm font-semibold text-[#3a485b] mb-2">How are my credits used?</p>
               <p className="text-sm text-gray-700 mb-2">Credits are shared across all four tools.</p>
               <ul className="text-sm text-gray-700 space-y-1">
-                <li className="flex justify-between gap-3">
-                  <span>Remedy Docs</span>
-                  <span className="text-gray-500">1 Credit = 1 Document Page</span>
-                </li>
-                <li className="flex justify-between gap-3">
-                  <span>Remedy Image</span>
-                  <span className="text-gray-500">1 Credit = 1 Image</span>
-                </li>
-                <li className="flex justify-between gap-3">
-                  <span>Remedy Video</span>
-                  <span className="text-gray-500">1 Credit = 1 Transcript</span>
-                </li>
-                <li className="flex justify-between gap-3">
-                  <span>Remedy HTML</span>
-                  <span className="text-gray-500">3 Credits = 1 HTML Fix</span>
-                </li>
+                <li><strong>Remedy Docs:</strong> <span className="text-gray-500">1 Credit = 1 Document Page</span></li>
+                <li><strong>Remedy Image:</strong> <span className="text-gray-500">1 Credit = 1 Image</span></li>
+                <li><strong>Remedy Video:</strong> <span className="text-gray-500">1 Credit = 1 Transcript</span></li>
+                <li><strong>Remedy HTML:</strong> <span className="text-gray-500">3 Credits = 1 HTML Fix</span></li>
               </ul>
             </div>
 
