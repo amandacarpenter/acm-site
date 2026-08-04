@@ -206,12 +206,45 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <p>Once processing is complete, a download button appears. Click it to save the remediated file to your computer. Your result is also saved in your recent activity on the dashboard for 30 days.</p>
 <h2>How credits are counted</h2>
 <p>Credits are shared across all four tools.</p>
-<ul>
-  <li><strong>Remedy Docs:</strong> 1 Credit = 1 Document Page (a 2-page PDF uses 2 credits, a 50-page PDF uses 50 credits — Word documents count as 1 credit per file, since page count isn't available before processing)</li>
-  <li><strong>Remedy Image:</strong> 1 Credit = 1 Image</li>
-  <li><strong>Remedy Video:</strong> 1 Credit = 1 Transcript</li>
-  <li><strong>Remedy HTML:</strong> 3 Credits = 1 HTML Fix</li>
-</ul>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 8px;">
+  <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy Docs</p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">1 credit / page</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy Image</p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">1 credit / image</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy Video</p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">1 credit / transcript</p>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy HTML</p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">3 credits / fix</p>
+    </div>
+  </div>
+</div>
+<p style="font-size:13px;color:#6b7280;margin-top:0;">A 2-page PDF uses 2 credits, a 50-page PDF uses 50 credits. Word documents count as 1 credit per file, since page count isn't available before processing.</p>
 <p>Individual plans include 130 credits per month, and Team plans include 145 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
   "understanding-your-results": `<h2>What Remedy508 fixes</h2>
 <p>Depending on the tool used, Remedy508 applies some or all of the following fixes automatically:</p>
