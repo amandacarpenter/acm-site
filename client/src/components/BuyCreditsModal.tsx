@@ -118,7 +118,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
             <p className="text-xs text-gray-500 mb-2.5">Shared across all four tools, used after your monthly plan Credits run out.</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-50 text-[#0d9488]">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                   <FileText className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -127,7 +127,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-pink-50 text-pink-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                   <Image className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -136,7 +136,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                   <Video className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">
@@ -145,7 +145,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-orange-50 text-orange-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                   <Code className="h-3.5 w-3.5" />
                 </div>
                 <div className="min-w-0">

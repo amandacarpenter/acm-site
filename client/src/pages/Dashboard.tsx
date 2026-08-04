@@ -180,7 +180,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500 mb-3">Shared across all four tools.</p>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-[#0d9488]">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -189,7 +189,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                     <Image className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -198,7 +198,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                     <Video className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -207,7 +207,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
                     <Code className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">

@@ -1,7 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useState, type ReactNode } from "react";
-import { ChevronDown, HelpCircle } from "lucide-react";
+import { ChevronDown, HelpCircle, FileText, Image, Video, Code } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
@@ -16,13 +16,45 @@ interface FAQItem {
 function CreditBreakdown() {
   return (
     <>
-      <p className="mb-2">Credits are shared across all four tools.</p>
-      <ul className="space-y-1">
-        <li><strong>Remedy Docs:</strong> <span className="text-gray-500">1 Credit = 1 Document Page</span></li>
-        <li><strong>Remedy Image:</strong> <span className="text-gray-500">1 Credit = 1 Image</span></li>
-        <li><strong>Remedy Video:</strong> <span className="text-gray-500">1 Credit = 1 Transcript</span></li>
-        <li><strong>Remedy HTML:</strong> <span className="text-gray-500">3 Credits = 1 HTML Fix</span></li>
-      </ul>
+      <p className="mb-3">Credits are shared across all four tools.</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+            <FileText className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Docs</p>
+            <p className="text-xs text-gray-500 leading-tight">1 credit / page</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+            <Image className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Image</p>
+            <p className="text-xs text-gray-500 leading-tight">1 credit / image</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+            <Video className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Video</p>
+            <p className="text-xs text-gray-500 leading-tight">1 credit / transcript</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+            <Code className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
+            <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
