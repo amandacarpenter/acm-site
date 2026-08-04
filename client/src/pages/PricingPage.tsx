@@ -1,7 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link, useLocation } from "wouter";
-import { CheckCircle2, Zap, Users, Loader2, Building2 } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, Building2, FileText, Image, Video, Code } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
@@ -216,7 +216,54 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
-              { q: "What is a Credit?", a: "Credits are the usage currency across all four tools, weighted by how much processing each one takes: Remedy Docs costs 1 Credit per page (a 10-page PDF uses 10 Credits), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML (Canvas) costs 3 Credits per fix. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime." },
+              {
+                q: "What is a Credit?",
+                a: (
+                  <>
+                    <p className="mb-3">
+                      Credits are the usage currency across all four tools, weighted by how much processing each one takes. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Docs</p>
+                          <p className="text-xs text-gray-500 leading-tight">1 credit / page</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                          <Image className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Image</p>
+                          <p className="text-xs text-gray-500 leading-tight">1 credit / image</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                          <Video className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Video</p>
+                          <p className="text-xs text-gray-500 leading-tight">1 credit / transcript</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                          <Code className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
+                          <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ),
+              },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
               { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard and its own Credit allotment for each teammate." },
               { q: "How does the Team plan work?", a: "Team plans are $249/seat/year, billed annually. Each teammate gets their own 145 Credits/month — it's not a shared pool. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
@@ -224,7 +271,7 @@ export default function PricingPage() {
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">
                 <h3 className="font-bold text-gray-900 mb-2 text-base">{q}</h3>
-                <p className="text-base text-gray-900 leading-relaxed">{a}</p>
+                <div className="text-base text-gray-900 leading-relaxed">{a}</div>
               </div>
             ))}
           </div>
