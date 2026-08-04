@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ShoppingCart, Zap, ChevronRight } from "lucide-react";
+import { X, ShoppingCart, Zap, ChevronRight, FileText, Image, Video, Code } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -112,10 +112,52 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
             <span className="text-lg font-bold text-[#0d9488]">${pack.price.toFixed(2)}</span>
           </div>
 
-          {/* Policy note */}
-          <p className="text-sm text-gray-700 mb-4">
-            Credits are added to your account immediately after payment and are used only after your monthly plan Credits run out. Credits are shared across all four tools: Remedy Docs (1 Credit = 1 Document Page), Remedy Image (1 Credit = 1 Image), Remedy Video (1 Credit = 1 Transcript), Remedy HTML (3 Credits = 1 HTML Fix). Credits never expire unless your account is inactive for 12+ months. Non-refundable.
-          </p>
+          {/* How credits are used */}
+          <div className="mb-4">
+            <p className="text-sm font-semibold text-[#3a485b] mb-0.5">How credits are used</p>
+            <p className="text-xs text-gray-500 mb-2.5">Shared across all four tools, used after your monthly plan Credits run out.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-teal-50 text-[#0d9488]">
+                  <FileText className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Docs</p>
+                  <p className="text-xs text-gray-500 leading-tight">1 credit / page</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-pink-50 text-pink-600">
+                  <Image className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Image</p>
+                  <p className="text-xs text-gray-500 leading-tight">1 credit / image</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-purple-50 text-purple-600">
+                  <Video className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Video</p>
+                  <p className="text-xs text-gray-500 leading-tight">1 credit / transcript</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-orange-50 text-orange-600">
+                  <Code className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
+                  <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-2.5">
+              Credits are added immediately after payment and never expire unless your account is inactive for 12+ months. Non-refundable.
+            </p>
+          </div>
 
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-3">

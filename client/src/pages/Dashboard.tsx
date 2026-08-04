@@ -175,15 +175,47 @@ export default function Dashboard() {
               </div>
             )}
 
-            <div className="pt-3 mt-1 border-t border-gray-100">
-              <p className="text-sm font-semibold text-[#3a485b] mb-2">How are my credits used?</p>
-              <p className="text-sm text-gray-700 mb-2">Credits are shared across all four tools.</p>
-              <ul className="text-sm text-gray-700 space-y-1">
-                <li><strong>Remedy Docs:</strong> <span className="text-gray-500">1 Credit = 1 Document Page</span></li>
-                <li><strong>Remedy Image:</strong> <span className="text-gray-500">1 Credit = 1 Image</span></li>
-                <li><strong>Remedy Video:</strong> <span className="text-gray-500">1 Credit = 1 Transcript</span></li>
-                <li><strong>Remedy HTML:</strong> <span className="text-gray-500">3 Credits = 1 HTML Fix</span></li>
-              </ul>
+            <div className="pt-4 mt-1 border-t border-gray-100">
+              <p className="text-sm font-semibold text-[#3a485b] mb-0.5">How are credits used?</p>
+              <p className="text-xs text-gray-500 mb-3">Shared across all four tools.</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-[#0d9488]">
+                    <FileText className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Docs</p>
+                    <p className="text-xs text-gray-500 leading-tight">1 credit / page</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-pink-50 text-pink-600">
+                    <Image className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Image</p>
+                    <p className="text-xs text-gray-500 leading-tight">1 credit / image</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-purple-50 text-purple-600">
+                    <Video className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Video</p>
+                    <p className="text-xs text-gray-500 leading-tight">1 credit / transcript</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-600">
+                    <Code className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
+                    <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Purchased credits balance */}
