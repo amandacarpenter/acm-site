@@ -88,15 +88,15 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "How much does Remedy508 cost?",
-        a: "Individual plans are $25/month or $229/year (save 24%). Team plans are $299/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
+        a: "Individual plans are $19/month or $199/year (save 13%). Team plans are $249/seat/year (annual only, 2+ seats) — built for colleges, universities, government agencies, and healthcare organizations.",
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 150 Credits per month, shared across all four tools. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
+        a: "The Individual plan gives you 130 Credits per month, shared across all four tools. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
       },
       {
         q: "What does the Team plan include?",
-        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 175 Credits/seat/month — each teammate gets their own 175, not a shared pool. Pay by credit card or invoice/PO.",
+        a: "Team plans include everything in Individual, plus an admin dashboard, team member management (invite by link or email), per-user document history, and 145 Credits/seat/month — each teammate gets their own 145, not a shared pool. Pay by credit card or invoice/PO.",
       },
       {
         q: "What is a Credit?",

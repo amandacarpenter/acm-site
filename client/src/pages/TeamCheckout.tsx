@@ -6,7 +6,8 @@ import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 
-const TEAM_PRICE_ANNUAL = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
+// Team price ID lives server-side only (server/routes.ts TODO_STRIPE_PRICE_TEAM_249) --
+// this page just posts seat count to /api/stripe/create-team-checkout and displays $249/seat.
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 
 const TEAM_FEATURES = [
@@ -26,7 +27,7 @@ export default function TeamCheckout() {
   const { isSignedIn, userId } = useAuth();
   const [, navigate] = useLocation();
 
-  const total = seats * 299;
+  const total = seats * 249;
 
   function adjustSeats(delta: number) {
     setSeats((s) => Math.min(MAX_TEAM_SEATS, Math.max(2, s + delta)));
@@ -73,7 +74,7 @@ export default function TeamCheckout() {
           <h1 id="team-heading" className="text-4xl font-bold text-white mb-3">
             Team Plan
           </h1>
-          <p className="text-white/70 text-lg">$299/seat/year — annual only</p>
+          <p className="text-white/70 text-lg">$249/seat/year — annual only</p>
         </div>
       </section>
 
@@ -130,7 +131,7 @@ export default function TeamCheckout() {
                 </Link>
               </p>
               <p className="text-sm text-gray-700 mb-1">
-                175 Credits/month per seat — each teammate gets their own, not shared
+                145 Credits/month per seat — each teammate gets their own, not shared
               </p>
               <p className="text-sm text-gray-700 mb-1">
                 Credits cover all four tools: Remedy Docs (1/page), Remedy Image (1/image), Remedy Video (1/transcript), Remedy HTML (3/fix)
@@ -139,11 +140,11 @@ export default function TeamCheckout() {
               {/* Live total */}
               <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">
                 <p className="text-lg font-bold text-[#3a485b]">
-                  {seats} seat{seats !== 1 ? "s" : ""} × $299 ={" "}
+                  {seats} seat{seats !== 1 ? "s" : ""} × $249 ={" "}
                   <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  {seats * 175} Credits/month total ({"175/seat"}) · Billed annually · Not refundable
+                  {seats * 145} Credits/month total ({"145/seat"}) · Billed annually · Not refundable
                 </p>
               </div>
             </div>

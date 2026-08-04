@@ -41,8 +41,15 @@ const REPORT_ERROR_TO_EMAIL = process.env.REPORT_ERROR_TO_EMAIL || "hello@remedy
 
 // ── Usage / Credits Helpers ──────────────────────────────────
 
-const INDIVIDUAL_MONTHLY_CREDITS = 150; // shared pool across all tools -- Remedy Docs: 1 credit/page (see per-tool weights below)
-const TEAM_CREDITS_PER_SEAT = 175;
+const INDIVIDUAL_MONTHLY_CREDITS = 130; // shared pool across all tools -- Remedy Docs: 1 credit/page (see per-tool weights below). Same for Monthly ($19/mo) and Annual ($199/yr) individual plans -- pegged to hold ~$0.127/credit, matching the pre-Aug-2026 rate.
+const TEAM_CREDITS_PER_SEAT = 145; // pegged to hold ~$0.143/credit at the $249/seat/yr price, matching the pre-Aug-2026 rate.
+
+// ── Aug 2026 pricing update (Individual $19/mo or $199/yr, Team $249/seat/yr) ──
+// Live Price IDs created 2026-08-04 in the verified live Remedy508 Stripe account
+// (acct_1TZdmQAaDElV6hZx). Legacy prices below remain active for existing subscribers.
+const TODO_STRIPE_PRICE_MONTHLY_19 = "price_1U0nJxAaDElV6hZxPUcTnm6i";
+const TODO_STRIPE_PRICE_ANNUAL_199 = "price_1U0nK2AaDElV6hZxv9vmPBz4";
+const TODO_STRIPE_PRICE_TEAM_249 = "price_1U0nK7AaDElV6hZxdA5AToST";
 // Per-tool credit weights -- Remedy Docs is metered per actual page (see deductCredits
 // call sites below); these three flat weights cover the other tools, cost-normalized
 // against Docs' measured ~$0.032/page Claude cost (see /api/admin/cost-summary):
@@ -116,8 +123,8 @@ async function getCreditBalance(clerkUserId: string): Promise<{
   // Auto-provision team credits: if this user has never had a plan set (brand new
   // account, e.g. just accepted a team invite via Clerk Organizations) but belongs to
   // an organization whose OWNER metadata marks it as a team org, grant them their own
-  // individual team allotment (175 credits/mo per seat model -- NOT pooled/multiplied,
-  // each teammate gets their own 175, consistent with the "per-seat individual
+  // individual team allotment (145 credits/mo per seat model -- NOT pooled/multiplied,
+  // each teammate gets their own 145, consistent with the "per-seat individual
   // allotments" decision). This avoids needing a separate Clerk webhook + dashboard
   // config; provisioning happens lazily on first credit check instead.
   if (!meta.plan) {
@@ -848,13 +855,13 @@ export function registerRoutes(httpServer: Server, app: Express) {
       throw Object.assign(new Error("No billing account found for this team's billing owner. Contact support to reassign billing."), { status: 400 });
     }
 
-    const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat
+    const TEAM_PRICES = [TODO_STRIPE_PRICE_TEAM_249, "price_1TycqNAaDElV6hZxvedkVIYg" /* legacy $299/yr/seat */].filter(Boolean);
     const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 10 });
-    const teamSub = subs.data.find((s) => s.items.data.some((item) => item.price.id === TEAM_PRICE));
+    const teamSub = subs.data.find((s) => s.items.data.some((item) => TEAM_PRICES.includes(item.price.id)));
     if (!teamSub) {
       throw Object.assign(new Error("No active team subscription found for this account."), { status: 400 });
     }
-    const teamItem = teamSub.items.data.find((item) => item.price.id === TEAM_PRICE)!;
+    const teamItem = teamSub.items.data.find((item) => TEAM_PRICES.includes(item.price.id))!;
 
     // Fix #4: optimistic concurrency guard. We captured `currentSeats` from the org
     // metadata read at the top of this function; if two requests race (two admins,
@@ -1084,9 +1091,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
     try {
       // ── Revenue & subscribers ────────────────────────────────────────────
-      const INDIVIDUAL_MONTHLY_PRICE = 25; // $25/mo list price (billing cadence varies, monthly-equivalent used for MRR)
-      const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 229 / 12;
-      const TEAM_SEAT_MONTHLY_EQUIV = 299 / 12;
+      const INDIVIDUAL_MONTHLY_PRICE = 19; // $19/mo list price (billing cadence varies, monthly-equivalent used for MRR)
+      const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 199 / 12;
+      const TEAM_SEAT_MONTHLY_EQUIV = 249 / 12;
 
       const googleAnalyticsPromise = getGoogleAnalytics();
 
@@ -3426,8 +3433,8 @@ Rules:
           // doesn't match our own record of the org's seat count.
           if (meta.plan === "team") {
             try {
-              const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg";
-              const teamItem = subscription.items.data.find((item) => item.price?.id === TEAM_PRICE);
+              const TEAM_PRICES = [TODO_STRIPE_PRICE_TEAM_249, "price_1TycqNAaDElV6hZxvedkVIYg" /* legacy $299/yr/seat */].filter(Boolean);
+              const teamItem = subscription.items.data.find((item) => item.price?.id && TEAM_PRICES.includes(item.price.id));
               if (!teamItem || !teamItem.quantity) return;
 
               const orgId: string | undefined = meta.orgId;
@@ -3472,8 +3479,10 @@ Rules:
           const INDIVIDUAL_PRICES = [
             process.env.STRIPE_PRICE_MONTHLY,
             process.env.STRIPE_PRICE_ANNUAL,
-            "price_1Tycq3AaDElV6hZxP4W6qC7M", // $25/mo individual — current
-            "price_1TycqCAaDElV6hZxKM0uIEu2", // $229/yr individual — current
+            TODO_STRIPE_PRICE_MONTHLY_19, // $19/mo individual (130 credits/mo) — current, Aug 2026
+            TODO_STRIPE_PRICE_ANNUAL_199, // $199/yr individual (130 credits/mo) — current, Aug 2026
+            "price_1Tycq3AaDElV6hZxP4W6qC7M", // legacy $25/mo
+            "price_1TycqCAaDElV6hZxKM0uIEu2", // legacy $229/yr
             "price_1Thc2tAaDElV6hZxMwA0Wxgk", // legacy $19/mo
             "price_1Tx9ixAaDElV6hZxZ6vb54pl", // legacy $179/yr
             "price_1Thc2sAaDElV6hZx3M4Ua1kM", // legacy $149/yr
@@ -3636,7 +3645,7 @@ Rules:
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { seats, clerkUserId } = req.body;
       const qty = Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(seats) || 2));
-      const TEAM_PRICE = "price_1TycqNAaDElV6hZxvedkVIYg"; // $299/yr/seat (175 credits/mo/seat)
+      const TEAM_PRICE = TODO_STRIPE_PRICE_TEAM_249; // $249/yr/seat (145 credits/mo/seat), Aug 2026
 
       const session = await stripe.checkout.sessions.create({
         mode: "subscription",
@@ -3676,12 +3685,12 @@ Rules:
         return res.status(400).json({ error: "Missing required fields" });
       }
 
-      const total = (parseInt(seats) || 2) * 299;
+      const total = (parseInt(seats) || 2) * 249;
       const body = [
         `Institution: ${institutionName}`,
         `Type: ${institutionType}`,
         `Contact: ${contactName} — ${contactEmail}${contactPhone ? ` — ${contactPhone}` : ""}`,
-        `Seats: ${seats} × $299 = $${total.toLocaleString()}/year (175 credits/seat/month)`,
+        `Seats: ${seats} × $249 = $${total.toLocaleString()}/year (145 credits/seat/month)`,
         `PO Number: ${poNumber || "Not provided"}`,
         `Timeline: ${timeline}`,
         `Notes: ${notes || "None"}`,
@@ -3756,8 +3765,10 @@ Rules:
         process.env.STRIPE_PRICE_MONTHLY,
         process.env.STRIPE_PRICE_ANNUAL,
         // live mode prices
-        "price_1Tycq3AaDElV6hZxP4W6qC7M", // $25/mo individual (150 credits/mo) — current
-        "price_1TycqCAaDElV6hZxKM0uIEu2", // $229/yr individual (150 credits/mo) — current
+        TODO_STRIPE_PRICE_MONTHLY_19, // $19/mo individual (130 credits/mo) — current, Aug 2026
+        TODO_STRIPE_PRICE_ANNUAL_199, // $199/yr individual (130 credits/mo) — current, Aug 2026
+        "price_1Tycq3AaDElV6hZxP4W6qC7M", // old $25/mo — kept valid for legacy subscribers only
+        "price_1TycqCAaDElV6hZxKM0uIEu2", // old $229/yr — kept valid for legacy subscribers only
         "price_1Thc2tAaDElV6hZxMwA0Wxgk", // old $19/mo — kept valid for legacy subscribers only
         "price_1Tx9ixAaDElV6hZxZ6vb54pl", // old $179/yr — kept valid for legacy subscribers only
         "price_1Thc2sAaDElV6hZx3M4Ua1kM", // old $149/yr — kept valid for legacy subscribers only
@@ -3801,8 +3812,8 @@ Rules:
 
     // Individual plan prices customers can self-serve switch between
     // (monthly <-> annual). Team plan changes are handled outside the portal.
-    const monthly = process.env.STRIPE_PRICE_MONTHLY || "price_1Tycq3AaDElV6hZxP4W6qC7M";
-    const annual = process.env.STRIPE_PRICE_ANNUAL || "price_1TycqCAaDElV6hZxKM0uIEu2";
+    const monthly = process.env.STRIPE_PRICE_MONTHLY || TODO_STRIPE_PRICE_MONTHLY_19;
+    const annual = process.env.STRIPE_PRICE_ANNUAL || TODO_STRIPE_PRICE_ANNUAL_199;
 
     const config = await stripe.billingPortal.configurations.create({
       business_profile: {

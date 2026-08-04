@@ -18,7 +18,7 @@ interface TeamMemberUsage {
   creditsRemaining: number;
 }
 
-const TEAM_CREDITS_PER_SEAT = 175; // must match server/routes.ts TEAM_CREDITS_PER_SEAT
+const TEAM_CREDITS_PER_SEAT = 145; // must match server/routes.ts TEAM_CREDITS_PER_SEAT
 
 export default function TeamSetup() {
   const { user } = useUser();
@@ -379,7 +379,7 @@ export default function TeamSetup() {
                 <p className="text-sm text-gray-500 mb-4">
                   {seatMode === "add" ? (
                     <>
-                      You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $299/seat/yr,
+                      You currently have {seats} seat{seats === 1 ? "" : "s"}. New seats are billed at $249/seat/yr,
                       prorated for the rest of your current billing year. You'll see the exact charge before anything
                       is billed.
                     </>
@@ -428,7 +428,7 @@ export default function TeamSetup() {
                     +
                   </button>
                   <span className="text-sm text-gray-400 ml-1">
-                    ≈ ${(addSeatsQty * 299).toLocaleString()}/yr full price
+                    ≈ ${(addSeatsQty * 249).toLocaleString()}/yr full price
                   </span>
                 </div>
                 {addSeatsError && (

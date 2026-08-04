@@ -7,8 +7,8 @@ import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
-const PRICE_MONTHLY = "price_1Tycq3AaDElV6hZxP4W6qC7M"; // $25/mo
-const PRICE_ANNUAL  = "price_1TycqCAaDElV6hZxKM0uIEu2"; // $229/yr
+const PRICE_MONTHLY = "price_1U0nJxAaDElV6hZxPUcTnm6i"; // $19/mo
+const PRICE_ANNUAL  = "price_1U0nK2AaDElV6hZxv9vmPBz4"; // $199/yr
 
 const INDIVIDUAL_FEATURES = [
   "Remedy Docs (Word & PDF)",
@@ -115,20 +115,20 @@ export default function PricingPage() {
                           annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-600"
                         }`}
                       >
-                        Annual <span className="text-[#0d9488]">−24%</span>
+                        Annual <span className="text-[#0d9488]">−13%</span>
                       </button>
                     </div>
                   </div>
                   <div className="flex items-end gap-1 mb-1">
                     <span className="text-5xl font-bold text-[#3a485b]">
-                      {annual ? "$19" : "$25"}
+                      {annual ? "$17" : "$19"}
                     </span>
                     <span className="mb-2 text-base text-gray-900">/mo</span>
                   </div>
                   {annual ? (
-                    <p className="text-base text-gray-900">$229/year — paid in full upfront, not refundable</p>
+                    <p className="text-base text-gray-900">$199/year — paid in full upfront, not refundable</p>
                   ) : (
-                    <p className="text-base text-gray-900">or $229/yr — save 24%</p>
+                    <p className="text-base text-gray-900">or $199/yr — save 13%</p>
                   )}
                 </div>
 
@@ -138,7 +138,7 @@ export default function PricingPage() {
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  150 Credits / month
+                  130 Credits / month
                 </div>
                 <p className="text-sm mb-6 pl-1 text-gray-900">Individual use only — one seat per account</p>
 
@@ -171,7 +171,7 @@ export default function PricingPage() {
                 <div className="mb-6">
                   <p className="text-2xl font-bold text-white mb-4">Team</p>
                   <div className="flex items-end gap-1 mb-1">
-                    <span className="text-5xl font-bold text-white">$299</span>
+                    <span className="text-5xl font-bold text-white">$249</span>
                     <span className="mb-2 text-base text-white">/seat/yr</span>
                   </div>
                   <p className="text-base text-white">Annual only · 2+ seats · paid in full upfront, not refundable</p>
@@ -183,9 +183,9 @@ export default function PricingPage() {
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-white/10 text-white">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-                  175 Credits / month per seat
+                  145 Credits / month per seat
                 </div>
-                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan · each teammate gets their own 175/month, not shared</p>
+                <p className="text-sm mb-6 pl-1 text-white">2+ seats — annual plan · each teammate gets their own 145/month, not shared</p>
 
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
@@ -219,7 +219,7 @@ export default function PricingPage() {
               { q: "What is a Credit?", a: "Credits are the usage currency across all four tools, weighted by how much processing each one takes: Remedy Docs costs 1 Credit per page (a 10-page PDF uses 10 Credits), Remedy Image costs 1 Credit per image, Remedy Video costs 1 Credit per transcript, and Remedy HTML (Canvas) costs 3 Credits per fix. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime." },
               { q: "Can I cancel my plan?", a: "Monthly plans can be cancelled anytime — you won't be billed again. Annual plans are paid in full upfront and are not refundable, but you can cancel before your renewal date to stop future charges. Your access continues until the end of the paid period." },
               { q: "Why can't institutions use the Individual plan?", a: "The Individual plan is licensed for single-user personal use only. Institutional use — meaning multiple staff, departments, or campus-wide access — costs about the same per Credit either way, so a Team plan is the better fit: it adds an admin dashboard and its own Credit allotment for each teammate." },
-              { q: "How does the Team plan work?", a: "Team plans are $299/seat/year, billed annually. Each teammate gets their own 175 Credits/month — it's not a shared pool. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
+              { q: "How does the Team plan work?", a: "Team plans are $249/seat/year, billed annually. Each teammate gets their own 145 Credits/month — it's not a shared pool. You get an admin dashboard to manage members, invite by link or email, and can pay by credit card or invoice/PO. Minimum 2 seats." },
               { q: "Is my data secure?", a: "Yes. Documents are processed in memory and not retained after your result is returned. We do not store copies of your uploaded files." },
             ].map(({ q, a }) => (
               <div key={q} className="border-b border-gray-200 pb-6">

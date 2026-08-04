@@ -138,7 +138,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Remedy Video:</strong> 1 Credit = 1 Transcript</li>
   <li><strong>Remedy HTML:</strong> 3 Credits = 1 HTML Fix</li>
 </ul>
-<p>Individual plans include <strong>150 credits per month</strong>. Team plans allocate <strong>175 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
+<p>Individual plans include <strong>130 credits per month</strong>. Team plans allocate <strong>145 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
 <h3>Quick-access tools</h3>
 <p>The four Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
 <h3>Credit pack balance</h3>
@@ -180,7 +180,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Remedy Video:</strong> 1 Credit = 1 Transcript</li>
   <li><strong>Remedy HTML:</strong> 3 Credits = 1 HTML Fix</li>
 </ul>
-<p>Individual plans include 150 credits per month, and Team plans include 175 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
+<p>Individual plans include 130 credits per month, and Team plans include 145 credits per seat per month. If you run out, you can purchase a page-credit pack as a top-up, or upgrade your plan.</p>`,
   "understanding-your-results": `<h2>What Remedy508 fixes</h2>
 <p>Depending on the tool used, Remedy508 applies some or all of the following fixes automatically:</p>
 <ul>

@@ -27,8 +27,16 @@ function softwareApplicationJsonLd(): string {
     offers: [
       {
         "@type": "Offer",
-        name: "Individual",
-        price: "229.00",
+        name: "Individual Monthly",
+        price: "19.00",
+        priceCurrency: "USD",
+        priceValidUntil: "2027-12-31",
+        url: `${SITE_URL}/pricing`,
+      },
+      {
+        "@type": "Offer",
+        name: "Individual Annual",
+        price: "199.00",
         priceCurrency: "USD",
         priceValidUntil: "2027-12-31",
         url: `${SITE_URL}/pricing`,
@@ -36,7 +44,7 @@ function softwareApplicationJsonLd(): string {
       {
         "@type": "Offer",
         name: "Team",
-        price: "299.00",
+        price: "249.00",
         priceCurrency: "USD",
         priceValidUntil: "2027-12-31",
         url: `${SITE_URL}/pricing`,
