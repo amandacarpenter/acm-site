@@ -521,21 +521,10 @@ function RemedyDocsTab() {
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
-                {visionResult.pages > 0 ? `${visionResult.pages}-page` : ""} tagged PDF ready
+                {visionResult.pages > 0 ? `${visionResult.pages}-page` : ""} PDF ready
               </span>
             </div>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
-            {visionResult.fixes.length > 0 ? (
-              <ul className="space-y-1">
-                {visionResult.fixes.slice(0, 8).map((s, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied to all pages.</p>
-            )}
+            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
           </div>
           <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
             <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
