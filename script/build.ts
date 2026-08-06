@@ -1,6 +1,6 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile } from "fs/promises";
+import { rm, readFile, mkdir, readdir, copyFile } from "fs/promises";
 import { generateSitemap } from "./generate-sitemap";
 
 // server deps to bundle to reduce openat(2) syscalls
@@ -63,6 +63,18 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  // The flyer pipeline shells out to standalone Python scripts at runtime
+  // (server/pdf_pipelines/*.py) -- esbuild only bundles JS/TS, so these need
+  // to be copied into dist alongside index.cjs. handleFlyerFix resolves them
+  // via __dirname + "pdf_pipelines", which after bundling is dist/, so the
+  // copy destination must match exactly.
+  console.log("copying pdf_pipelines scripts...");
+  await mkdir("dist/pdf_pipelines", { recursive: true });
+  const pipelineFiles = (await readdir("server/pdf_pipelines")).filter((f) => f.endsWith(".py"));
+  for (const file of pipelineFiles) {
+    await copyFile(`server/pdf_pipelines/${file}`, `dist/pdf_pipelines/${file}`);
+  }
 }
 
 buildAll().catch((err) => {
