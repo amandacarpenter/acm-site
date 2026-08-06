@@ -14,6 +14,12 @@ declare module "http" {
 
 app.use(
   express.json({
+    // Default express.json() cap is 100kb -- too small for the Remedy Docs
+    // "Keep as PDF" endpoint, which re-submits a full structuredHtml document
+    // (can be several hundred KB for large documents). Raised globally since
+    // this is a document-processing app; webhook signature verification below
+    // still works unaffected since those payloads are small.
+    limit: "25mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },

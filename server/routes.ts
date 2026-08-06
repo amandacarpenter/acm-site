@@ -1,5 +1,4 @@
 import type { Express, Request } from "express";
-import express from "express";
 import { kbDb } from "./kb";
 import fs from "fs";
 import { Server } from "http";
@@ -3405,12 +3404,10 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
 
   app.post("/api/flyer/fix", upload.single("file"), (req, res, next) => { req.setTimeout(180000); res.setTimeout(180000); next(); }, handleFlyerFix);
 
-  // Route-specific JSON body limit (default express.json() cap is 100kb, too
-  // small for a full structuredHtml document) -- scoped to this one route so
-  // the global body-size limit used everywhere else is left untouched.
+  // Body-size limit for this JSON payload (a full structuredHtml document)
+  // is handled by the global express.json({ limit: "25mb" }) in index.ts.
   app.post(
     "/api/remedy-docs/fix-as-pdf",
-    express.json({ limit: "25mb" }),
     (req, res, next) => { req.setTimeout(120000); res.setTimeout(120000); next(); },
     handleDocumentFixAsPdf,
   );
