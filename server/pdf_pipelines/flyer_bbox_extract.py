@@ -5,6 +5,19 @@ and tracking the current transformation matrix (CTM) plus the extent of
 every drawing operator (path construction, line/curve segments, inline
 and XObject images) executed while inside that region.
 
+Recurses into Form XObjects invoked via `Do`. Many real-world designed
+PDFs (Illustrator/InDesign/Canva exports, in particular) draw almost all
+page content -- including the marked-content /Figure and /P regions that
+carry the actual struct-tree MCIDs -- inside one or more nested Form
+XObjects rather than directly in the page's own content stream. A
+non-recursive walk sees only whatever MCIDs happen to be tagged directly
+on the page (often just one or two, e.g. a QR code), and silently returns
+no bbox at all for every other MCID -- including large, meaningful
+figures. Those MCIDs must still be treated as "found, but empty bbox"
+rather than confused with "genuinely no drawing content", so callers can
+tell the difference between a shape that legitimately covers zero area
+and an MCID that was never visited at all.
+
 This does NOT need to be pixel-perfect -- it only needs to produce a
 reasonably tight crop rectangle so a vision model can look at "the figure"
 in isolation alongside its nearby text, for classification purposes. We
@@ -39,25 +52,20 @@ def apply_mat(mat, x, y):
     return (a * x + c * y + e, b * x + d * y + f)
 
 
-def extract_mcid_bboxes(pdf: pikepdf.Pdf, page_index: int = 0) -> dict:
+def extract_mcid_bboxes(pdf: pikepdf.Pdf, page_index: int = 0, max_depth: int = 12) -> dict:
     """Returns {mcid: [x0, y0, x1, y1]} in PDF user-space points (origin
-    bottom-left, matching PDF page coordinate conventions)."""
+    bottom-left, matching PDF page coordinate conventions). Recurses into
+    Form XObjects so MCIDs tagged inside nested forms are still found."""
     page = pdf.pages[page_index]
-    instructions = pikepdf.parse_content_stream(page)
 
     identity = (1, 0, 0, 1, 0, 0)
-    gs_stack = []
-    ctm = identity
-
-    # Stack of active marked-content mcids (None if not tracked, e.g. non-MCID BDC/BMC)
-    mc_stack = []
     bboxes = {}  # mcid -> [x0,y0,x1,y1]
-    cur_path_start = None
-    cur_point = None
+    seen_mcids = set()  # mcids we entered a BDC for, even if bbox stays empty
 
     def expand(mcid, x, y):
         if mcid is None:
             return
+        seen_mcids.add(mcid)
         b = bboxes.get(mcid)
         if b is None:
             bboxes[mcid] = [x, y, x, y]
@@ -71,85 +79,116 @@ def extract_mcid_bboxes(pdf: pikepdf.Pdf, page_index: int = 0) -> dict:
             if y > b[3]:
                 b[3] = y
 
-    def expand_for_active(x, y):
-        for mcid in mc_stack:
-            expand(mcid, x, y)
+    def walk_stream(content_obj, resources, ctm, mc_stack, depth):
+        if depth > max_depth:
+            return
+        try:
+            instructions = pikepdf.parse_content_stream(content_obj)
+        except Exception:
+            return
 
-    def active_mcid():
-        for m in reversed(mc_stack):
-            if m is not None:
-                return m
-        return None
+        gs_stack = []
+        cur_ctm = ctm
+        cur_path_start = None
 
-    for instr in instructions:
-        op = str(instr.operator)
-        ops = instr.operands
+        def expand_for_active(x, y):
+            for mcid in mc_stack:
+                expand(mcid, x, y)
+            if not mc_stack:
+                # Track visitation even for content with no active MCID --
+                # nothing to record, just keeps parity with expand()'s
+                # seen-tracking for symmetry/debugging if ever needed.
+                pass
 
-        if op == "q":
-            gs_stack.append(ctm)
-        elif op == "Q":
-            if gs_stack:
-                ctm = gs_stack.pop()
-        elif op == "cm":
-            vals = [float(v) for v in ops]
-            ctm = mat_mul(tuple(vals), ctm)
-        elif op == "BDC":
-            tag = str(ops[0]) if ops else ""
-            props = ops[1] if len(ops) > 1 else None
-            mcid = None
-            if isinstance(props, pikepdf.Dictionary) and "/MCID" in props:
-                mcid = int(props["/MCID"])
-            mc_stack.append(mcid)
-        elif op == "BMC":
-            mc_stack.append(None)
-        elif op == "EMC":
-            if mc_stack:
-                mc_stack.pop()
-        elif op == "re":
-            x, y, w, h = [float(v) for v in ops]
-            for corner in [(x, y), (x + w, y), (x, y + h), (x + w, y + h)]:
-                px, py = apply_mat(ctm, *corner)
+        def active_mcid_stack_mark(mcid):
+            # Called on BDC entry so an MCID with zero drawing content
+            # (e.g. a Figure whose Do never emits recordable geometry
+            # under our tracked operator set) is still marked "seen".
+            if mcid is not None:
+                seen_mcids.add(mcid)
+
+        for instr in instructions:
+            op = str(instr.operator)
+            ops = instr.operands
+
+            if op == "q":
+                gs_stack.append(cur_ctm)
+            elif op == "Q":
+                if gs_stack:
+                    cur_ctm = gs_stack.pop()
+            elif op == "cm":
+                vals = [float(v) for v in ops]
+                cur_ctm = mat_mul(tuple(vals), cur_ctm)
+            elif op == "BDC":
+                tag = str(ops[0]) if ops else ""
+                props = ops[1] if len(ops) > 1 else None
+                mcid = None
+                if isinstance(props, pikepdf.Dictionary) and "/MCID" in props:
+                    mcid = int(props["/MCID"])
+                mc_stack.append(mcid)
+                active_mcid_stack_mark(mcid)
+            elif op == "BMC":
+                mc_stack.append(None)
+            elif op == "EMC":
+                if mc_stack:
+                    mc_stack.pop()
+            elif op == "re":
+                x, y, w, h = [float(v) for v in ops]
+                for corner in [(x, y), (x + w, y), (x, y + h), (x + w, y + h)]:
+                    px, py = apply_mat(cur_ctm, *corner)
+                    expand_for_active(px, py)
+                cur_point = (x, y)
+                cur_path_start = (x, y)
+            elif op == "m":
+                x, y = [float(v) for v in ops]
+                px, py = apply_mat(cur_ctm, x, y)
                 expand_for_active(px, py)
-            cur_point = (x, y)
-            cur_path_start = (x, y)
-        elif op == "m":
-            x, y = [float(v) for v in ops]
-            px, py = apply_mat(ctm, x, y)
-            expand_for_active(px, py)
-            cur_point = (x, y)
-            cur_path_start = (x, y)
-        elif op == "l":
-            x, y = [float(v) for v in ops]
-            px, py = apply_mat(ctm, x, y)
-            expand_for_active(px, py)
-            cur_point = (x, y)
-        elif op == "c":
-            vals = [float(v) for v in ops]
-            for i in range(0, 6, 2):
-                px, py = apply_mat(ctm, vals[i], vals[i + 1])
+                cur_path_start = (x, y)
+            elif op == "l":
+                x, y = [float(v) for v in ops]
+                px, py = apply_mat(cur_ctm, x, y)
                 expand_for_active(px, py)
-            cur_point = (vals[4], vals[5])
-        elif op in ("v", "y"):
-            vals = [float(v) for v in ops]
-            for i in range(0, len(vals), 2):
-                px, py = apply_mat(ctm, vals[i], vals[i + 1])
-                expand_for_active(px, py)
-            cur_point = (vals[-2], vals[-1])
-        elif op == "h":
-            if cur_path_start:
-                px, py = apply_mat(ctm, *cur_path_start)
-                expand_for_active(px, py)
-        elif op == "Do":
-            # XObject (image or form). Its unit square [0,1]x[0,1] is mapped
-            # by the current CTM.
-            for corner in [(0, 0), (1, 0), (0, 1), (1, 1)]:
-                px, py = apply_mat(ctm, *corner)
-                expand_for_active(px, py)
-        elif op in ("Tj", "TJ", "'", '"'):
-            # Text drawing -- approximate with the current text position's
-            # transformed origin (not tracking full text matrix here; text
-            # MCIDs aren't the figures we care about for bbox purposes).
-            pass
+            elif op == "c":
+                vals = [float(v) for v in ops]
+                for i in range(0, 6, 2):
+                    px, py = apply_mat(cur_ctm, vals[i], vals[i + 1])
+                    expand_for_active(px, py)
+            elif op in ("v", "y"):
+                vals = [float(v) for v in ops]
+                for i in range(0, len(vals), 2):
+                    px, py = apply_mat(cur_ctm, vals[i], vals[i + 1])
+                    expand_for_active(px, py)
+            elif op == "h":
+                if cur_path_start:
+                    px, py = apply_mat(cur_ctm, *cur_path_start)
+                    expand_for_active(px, py)
+            elif op == "Do":
+                name = str(ops[0]) if ops else None
+                for corner in [(0, 0), (1, 0), (0, 1), (1, 1)]:
+                    px, py = apply_mat(cur_ctm, *corner)
+                    expand_for_active(px, py)
+                if name and resources is not None and "/XObject" in resources:
+                    xobj_dict = resources.XObject
+                    if name in xobj_dict:
+                        xobj = xobj_dict[name]
+                        subtype = str(xobj.get("/Subtype", ""))
+                        if subtype == "/Form":
+                            form_matrix = identity
+                            if "/Matrix" in xobj:
+                                m = [float(v) for v in xobj.Matrix]
+                                if len(m) == 6:
+                                    form_matrix = tuple(m)
+                            nested_ctm = mat_mul(form_matrix, cur_ctm)
+                            nested_resources = xobj.get("/Resources", resources)
+                            walk_stream(xobj, nested_resources, nested_ctm, list(mc_stack), depth + 1)
+            elif op in ("Tj", "TJ", "'", '"'):
+                # Text drawing -- approximate with the current text position's
+                # transformed origin (not tracking full text matrix here; text
+                # MCIDs aren't the figures we care about for bbox purposes).
+                pass
+
+    top_resources = page.get("/Resources")
+    walk_stream(page, top_resources, identity, [], 0)
 
     return bboxes
 

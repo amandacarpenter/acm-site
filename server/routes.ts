@@ -3187,7 +3187,9 @@ print('ok')
     const ts = Date.now();
     const tmpPdf = join(tmpdir(), `flyer-${ts}.pdf`);
     const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
+    const tmpOrphanOut = join(tmpdir(), `flyer-${ts}-orphan-out.pdf`);
     const tmpDecisions = join(tmpdir(), `flyer-${ts}-decisions.json`);
+    const tmpOrphanDecisions = join(tmpdir(), `flyer-${ts}-orphan-decisions.json`);
 
     try {
       await writeFile(tmpPdf, req.file.buffer);
@@ -3207,10 +3209,35 @@ print('ok')
 
       const { page_text: pageText, figures } = JSON.parse(extractJson) as {
         page_text: string;
-        figures: Array<{ mcid: number; existing_alt: string; bbox: number[] | null; crop_b64: string | null }>;
+        figures: Array<{ mcid: number; existing_alt: string; bbox: number[] | null; crop_b64: string | null; is_full_bleed: boolean }>;
       };
 
+      // Every figure with a valid bbox gets a crop now (Pass 1 no longer
+      // drops full-bleed figures), so this filter only excludes figures
+      // whose bbox computation genuinely failed (e.g. no drawing ops found).
       const figuresWithCrops = figures.filter((f) => f.crop_b64);
+
+      // ── Step 1b: detect "orphaned" figures -- BDC /Figure or /Image blocks
+      // in the content stream with NO /MCID at all. These are invisible to
+      // the struct-tree walk above entirely (no struct element, no ParentTree
+      // slot), which is common in Illustrator/InDesign/Canva PDF exports that
+      // half-tag a layer as a Figure role without building real struct tree
+      // wiring. Handled as a fully separate detection + apply path since they
+      // have no mcid to key off of.
+      const orphanExtractJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_orphan_figures.py"), "extract", tmpPdf],
+          { maxBuffer: 50 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Orphan figure extraction failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const { orphans } = JSON.parse(orphanExtractJson) as {
+        orphans: Array<{ orphan_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
+      };
 
       // ── Step 2: classify each figure with Claude Vision (parallel) ──
       const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert. You are shown one small cropped image -- a single figure/icon/graphic from a larger designed flyer -- plus the full text content of that flyer for context.
@@ -3229,46 +3256,77 @@ If MEANINGFUL, write a concise, specific alt-text description (under 125 charact
 Respond with ONLY a JSON object, no markdown fences, no explanation:
 {"decorative": true or false, "alt_text": "" or "description if meaningful"}`;
 
+      const classifyFigure = async (cropB64: string, existingAlt: string, isFullBleed: boolean, logLabel: string) => {
+        try {
+          const visionResp = await anthropic.messages.create({
+            model: "claude-sonnet-4-6",
+            max_tokens: 300,
+            system: visionSystemPrompt,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "image", source: { type: "base64", media_type: "image/png", data: cropB64 } },
+                  {
+                    type: "text",
+                    text: `Full flyer text for context:\n"""\n${pageText}\n"""\n\nExisting alt text on this figure (may be empty, vague, or wrong -- do not trust it): "${existingAlt}"${isFullBleed ? "\n\nNote: this crop spans nearly the entire page -- it is a full-bleed background/hero photo or graphic, not a mis-cropped icon. Classify it the same way: decorative if it's purely a stylistic/thematic background or generic stock photo, meaningful if it's a specific identifiable photo, chart, diagram, or graphic conveying information not present in the text." : ""}\n\nClassify this figure.`,
+                  },
+                ],
+              },
+            ],
+          });
+          let raw = (visionResp.content[0] as any).text.trim();
+          raw = raw.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+          const parsed = JSON.parse(raw);
+          return { decorative: !!parsed.decorative, alt_text: String(parsed.alt_text || "") };
+        } catch (visionErr: any) {
+          console.error(`[FLYER] Vision classification failed for ${logLabel}:`, visionErr.message);
+          // Fail safe: keep the figure with its existing alt text rather than
+          // guessing wrong in either direction.
+          return { decorative: false, alt_text: existingAlt || "Image" };
+        }
+      };
+
       const decisions = await Promise.all(
         figuresWithCrops.map(async (fig) => {
-          try {
-            const visionResp = await anthropic.messages.create({
-              model: "claude-sonnet-4-6",
-              max_tokens: 300,
-              system: visionSystemPrompt,
-              messages: [
-                {
-                  role: "user",
-                  content: [
-                    { type: "image", source: { type: "base64", media_type: "image/png", data: fig.crop_b64! } },
-                    {
-                      type: "text",
-                      text: `Full flyer text for context:\n"""\n${pageText}\n"""\n\nExisting alt text on this figure (may be empty, vague, or wrong -- do not trust it): "${fig.existing_alt}"\n\nClassify this figure.`,
-                    },
-                  ],
-                },
-              ],
-            });
-            let raw = (visionResp.content[0] as any).text.trim();
-            raw = raw.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
-            const parsed = JSON.parse(raw);
-            return { mcid: fig.mcid, decorative: !!parsed.decorative, alt_text: String(parsed.alt_text || "") };
-          } catch (visionErr: any) {
-            console.error(`[FLYER] Vision classification failed for mcid ${fig.mcid}:`, visionErr.message);
-            // Fail safe: keep the figure with its existing alt text rather than
-            // guessing wrong in either direction.
-            return { mcid: fig.mcid, decorative: false, alt_text: fig.existing_alt || "Image" };
-          }
+          const d = await classifyFigure(fig.crop_b64!, fig.existing_alt, fig.is_full_bleed, `mcid ${fig.mcid}`);
+          return { mcid: fig.mcid, ...d };
+        })
+      );
+
+      const orphanDecisions = await Promise.all(
+        orphans.map(async (orphan) => {
+          const d = await classifyFigure(orphan.crop_b64, "", orphan.is_full_bleed, `orphan ${orphan.orphan_id}`);
+          return { orphan_id: orphan.orphan_id, ...d };
         })
       );
 
       await writeFile(tmpDecisions, JSON.stringify(decisions));
+      await writeFile(tmpOrphanDecisions, JSON.stringify(orphanDecisions));
 
-      // ── Step 3: apply the tagging decisions to the PDF in place ──
+      // ── Step 3a: apply orphan-figure decisions first (writes an
+      // intermediate PDF). This must run before the struct-tree-based apply
+      // step below since it can add brand-new struct elements/MCIDs that the
+      // struct-tree walk needs to see. If there are no orphans, this is a
+      // pure passthrough copy so downstream logic doesn't need to branch.
+      const orphanApplyResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_orphan_figures.py"), "apply", tmpPdf, tmpOrphanOut, tmpOrphanDecisions],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Orphan figure tag application failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const orphanApplyResult = JSON.parse(orphanApplyResultJson);
+
+      // ── Step 3b: apply the struct-tree figure decisions on top ──
       const applyResultJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_apply_tags.py"), tmpPdf, tmpOut, tmpDecisions],
+          [join(pipelineDir, "flyer_apply_tags.py"), tmpOrphanOut, tmpOut, tmpDecisions],
           { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Tag application failed: " + (stderr?.slice(-500) || err.message)));
@@ -3282,7 +3340,8 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
 
       // Credit cost: one Claude Vision call per figure classified (minimum 1),
       // consistent with the existing per-call cost-normalized weights above.
-      const creditsUsed = Math.max(1, figuresWithCrops.length);
+      // Orphan figures also cost one vision call each.
+      const creditsUsed = Math.max(1, figuresWithCrops.length + orphans.length);
       if (clerkUserId) {
         try {
           await deductCredits(clerkUserId, creditsUsed);
@@ -3294,9 +3353,10 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const filename = req.file.originalname.replace(/\.pdf$/i, "") + "-accessible.pdf";
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.setHeader("X-Flyer-Total-Figures", String(applyResult.total_figures));
-      res.setHeader("X-Flyer-Decorative-Removed", String(applyResult.decorative_removed));
-      res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept));
+      res.setHeader("X-Flyer-Total-Figures", String(applyResult.total_figures + orphanApplyResult.orphans_found));
+      res.setHeader("X-Flyer-Decorative-Removed", String(applyResult.decorative_removed + orphanApplyResult.decorative_converted));
+      res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept + orphanApplyResult.meaningful_added));
+      res.setHeader("X-Flyer-Orphan-Figures-Found", String(orphanApplyResult.orphans_found));
 
       if (clerkUserId) {
         try {
@@ -3342,7 +3402,9 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
     } finally {
       await unlink(tmpPdf).catch(() => {});
       await unlink(tmpOut).catch(() => {});
+      await unlink(tmpOrphanOut).catch(() => {});
       await unlink(tmpDecisions).catch(() => {});
+      await unlink(tmpOrphanDecisions).catch(() => {});
     }
   }
 

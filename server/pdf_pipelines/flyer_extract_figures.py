@@ -78,24 +78,31 @@ def extract(input_path: str, page_index: int = 0) -> dict:
         box = boxes.get(mcid)
         crop_b64 = None
         bbox_out = None
+        is_full_bleed = False
         if box:
             x0, y0, x1, y1 = box
-            # Skip figures whose computed bbox is (near) full-page -- almost
-            # certainly a text-clip artifact of the bbox interpreter, not a
-            # real figure region.
-            if (x1 - x0) < (page.rect.width * 0.9) and (y1 - y0) < (page.rect.height * 0.9):
-                pad = 8
-                rect = fitz.Rect(x0 - pad, page_h - y1 - pad, x1 + pad, page_h - y0 + pad)
-                rect = rect & page.rect
-                pix = page.get_pixmap(clip=rect, dpi=200)
-                crop_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
-                bbox_out = [x0, y0, x1, y1]
+            is_full_bleed = (x1 - x0) >= (page.rect.width * 0.9) and (y1 - y0) >= (page.rect.height * 0.9)
+            # Full-bleed figures (hero photos, background art) are real,
+            # common flyer content -- always crop and classify them too,
+            # just at a lower render DPI since the crop is the whole page.
+            # (Previously these were skipped entirely as "text-clip
+            # artifacts", which meant real full-bleed photos silently
+            # never reached classification and were left completely
+            # untagged in the output PDF.)
+            pad = 8
+            rect = fitz.Rect(x0 - pad, page_h - y1 - pad, x1 + pad, page_h - y0 + pad)
+            rect = rect & page.rect
+            dpi = 120 if is_full_bleed else 200
+            pix = page.get_pixmap(clip=rect, dpi=dpi)
+            crop_b64 = base64.b64encode(pix.tobytes("png")).decode("ascii")
+            bbox_out = [x0, y0, x1, y1]
 
         figures.append({
             "mcid": mcid,
             "existing_alt": alt,
             "bbox": bbox_out,
             "crop_b64": crop_b64,
+            "is_full_bleed": is_full_bleed,
         })
 
     doc.close()

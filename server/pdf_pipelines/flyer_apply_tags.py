@@ -57,9 +57,18 @@ def collect_figure_mcids(pdf: pikepdf.Pdf):
     return figures
 
 
-def strip_figure_tags_from_content_stream(pdf: pikepdf.Pdf, page, mcids_to_artifact: set) -> None:
-    instructions = pikepdf.parse_content_stream(page)
+def _rewrite_stream_recursive(stream_obj, resources, mcids_to_artifact: set, depth: int = 0) -> bool:
+    """Rewrite BDC /Figure <</MCID n>> -> BDC /Artifact <<>> for any n in
+    mcids_to_artifact, walking into nested Form XObjects (via /Do) since
+    designed PDFs (Illustrator/InDesign/Canva exports) commonly draw real
+    content inside nested Form XObjects rather than the page's own content
+    stream. Returns True if this stream_obj's own bytes were rewritten."""
+    if depth > 12:
+        return False
+
+    instructions = pikepdf.parse_content_stream(stream_obj)
     new_instructions = []
+    changed = False
 
     for instr in instructions:
         operator = str(instr.operator)
@@ -77,11 +86,65 @@ def strip_figure_tags_from_content_stream(pdf: pikepdf.Pdf, page, mcids_to_artif
                         pikepdf.Operator("BDC"),
                     )
                 )
+                changed = True
                 continue
+        elif operator == "Do":
+            name = str(instr.operands[0]) if instr.operands else None
+            if name and resources is not None and "/XObject" in resources and name in resources.XObject:
+                xobj = resources.XObject[name]
+                if str(xobj.get("/Subtype", "")) == "/Form":
+                    nested_resources = xobj.get("/Resources", resources)
+                    _rewrite_stream_recursive(xobj, nested_resources, mcids_to_artifact, depth + 1)
         new_instructions.append(instr)
 
-    new_stream = pikepdf.unparse_content_stream(new_instructions)
-    page.Contents = pdf.make_stream(new_stream)
+    if changed:
+        new_stream = pikepdf.unparse_content_stream(new_instructions)
+        stream_obj.write(new_stream)
+
+    return changed
+
+
+def strip_figure_tags_from_content_stream(pdf: pikepdf.Pdf, page, mcids_to_artifact: set) -> None:
+    if not mcids_to_artifact:
+        return
+
+    resources = page.get("/Resources")
+    instructions = pikepdf.parse_content_stream(page)
+    new_instructions = []
+    changed = False
+
+    for instr in instructions:
+        operator = str(instr.operator)
+        if operator == "BDC":
+            ops = instr.operands
+            tag_name = str(ops[0]) if ops else ""
+            props = ops[1] if len(ops) > 1 else None
+            mcid = None
+            if isinstance(props, pikepdf.Dictionary) and "/MCID" in props:
+                mcid = int(props["/MCID"])
+            if tag_name == "/Figure" and mcid is not None and mcid in mcids_to_artifact:
+                new_instructions.append(
+                    pikepdf.ContentStreamInstruction(
+                        [pikepdf.Name("/Artifact"), pikepdf.Dictionary({})],
+                        pikepdf.Operator("BDC"),
+                    )
+                )
+                changed = True
+                continue
+        elif operator == "Do":
+            name = str(instr.operands[0]) if instr.operands else None
+            if name and resources is not None and "/XObject" in resources and name in resources.XObject:
+                xobj = resources.XObject[name]
+                if str(xobj.get("/Subtype", "")) == "/Form":
+                    nested_resources = xobj.get("/Resources", resources)
+                    # Nested Form XObjects are their own stream objects --
+                    # rewrite them in place directly (not via page.Contents).
+                    _rewrite_stream_recursive(xobj, nested_resources, mcids_to_artifact)
+        new_instructions.append(instr)
+
+    if changed:
+        new_stream = pikepdf.unparse_content_stream(new_instructions)
+        page.Contents = pdf.make_stream(new_stream)
 
 
 def remove_struct_elements(pdf: pikepdf.Pdf, objgens_to_remove: set) -> None:
@@ -137,9 +200,16 @@ def apply_tags(input_path: str, output_path: str, decisions: list, page_index: i
     for mcid, element in figure_mcids.items():
         decision = decisions_by_mcid.get(mcid)
         if decision is None:
-            # No decision provided (e.g. vision call failed) -- fail safe by
-            # keeping the figure as-is with whatever /Alt it already had,
-            # rather than silently dropping potentially meaningful content.
+            # No decision provided (e.g. this figure never got a crop, or
+            # the vision call failed upstream and was dropped rather than
+            # falling back). Fail safe by KEEPING the figure tagged as
+            # meaningful with a non-empty /Alt, rather than leaving a bare
+            # /Figure with no /Alt at all -- an untagged figure reads to a
+            # screen reader as an unlabeled graphic, which is worse than a
+            # generic-but-present description.
+            existing = str(element.get("/Alt", "")).strip() if "/Alt" in element else ""
+            element.Alt = existing if existing else "Image"
+            meaningful_count += 1
             continue
         if decision.get("decorative"):
             decorative_mcids.add(mcid)
