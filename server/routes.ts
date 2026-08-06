@@ -3132,6 +3132,204 @@ print('ok')
     return handleDocumentFix(req, res);
   });
 
+  // ── FLYER / DESIGNED DOCUMENT: PDF-native tagging pipeline ──────────────────
+  // For visually-designed, born-digital PDFs (flyers, posters, one-pagers) that
+  // already have a structure tree from their export tool. Unlike the vision/
+  // rebuild path above, this NEVER rebuilds the document -- it edits the PDF's
+  // own structure tree and content stream in place, so the visual design is
+  // preserved pixel-for-pixel. Output stays a PDF; there is no Word conversion
+  // option for this path.
+  //
+  // Pass 1 (Python/pikepdf): find every /Figure struct element, compute its
+  // bounding box by replaying the content stream CTM, crop it out of the
+  // rendered page.
+  // Pass 2 (Node/Claude Vision): for each figure crop, classify decorative
+  // (content fully conveyed by nearby text -- safe to drop) vs meaningful
+  // (carries unique information -- keep, with a real /Alt description).
+  // Pass 3 (Python/pikepdf): apply the decisions -- decorative figures get
+  // their content-stream tag rewritten from BDC /Figure to BDC /Artifact
+  // (drawing operators untouched) and their struct element removed; meaningful
+  // figures keep their struct element with the AI-written /Alt text.
+  async function handleFlyerFix(req: Request, res: any) {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
+
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    if (clerkUserId) {
+      try {
+        const usage = await checkHasCredits(clerkUserId);
+        if (!usage.allowed) {
+          return res.status(403).json({ error: usage.reason, code: "USAGE_LIMIT" });
+        }
+      } catch (gateErr: any) {
+        console.error("[FLYER USAGE GATE] Error:", gateErr.message);
+      }
+    }
+
+    const { writeFile, unlink, readFile } = await import("fs/promises");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+    const python3 = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+    const pipelineDir = join(__dirname, "pdf_pipelines");
+    const ts = Date.now();
+    const tmpPdf = join(tmpdir(), `flyer-${ts}.pdf`);
+    const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
+    const tmpDecisions = join(tmpdir(), `flyer-${ts}-decisions.json`);
+
+    try {
+      await writeFile(tmpPdf, req.file.buffer);
+
+      // ── Step 1: extract every figure's bbox + crop + page text ──
+      const extractJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_extract_figures.py"), tmpPdf],
+          { maxBuffer: 50 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Figure extraction failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+
+      const { page_text: pageText, figures } = JSON.parse(extractJson) as {
+        page_text: string;
+        figures: Array<{ mcid: number; existing_alt: string; bbox: number[] | null; crop_b64: string | null }>;
+      };
+
+      const figuresWithCrops = figures.filter((f) => f.crop_b64);
+
+      // ── Step 2: classify each figure with Claude Vision (parallel) ──
+      const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert. You are shown one small cropped image -- a single figure/icon/graphic from a larger designed flyer -- plus the full text content of that flyer for context.
+
+Decide:
+1. Is this figure DECORATIVE (its visual content is already fully conveyed by the flyer's nearby text -- e.g. a generic icon next to a heading that already says the same thing, a bullet-point graphic, a decorative border shape) or MEANINGFUL (it carries information a screen-reader user would otherwise completely miss -- e.g. a chart, a diagram with labels/data, a photo of a specific identifiable thing not described in the text, a QR code, a map)?
+2. If MEANINGFUL, write a concise, specific alt-text description (under 125 characters) of exactly what the image shows.
+
+Respond with ONLY a JSON object, no markdown fences, no explanation:
+{"decorative": true or false, "alt_text": "" or "description if meaningful"}`;
+
+      const decisions = await Promise.all(
+        figuresWithCrops.map(async (fig) => {
+          try {
+            const visionResp = await anthropic.messages.create({
+              model: "claude-sonnet-4-6",
+              max_tokens: 300,
+              system: visionSystemPrompt,
+              messages: [
+                {
+                  role: "user",
+                  content: [
+                    { type: "image", source: { type: "base64", media_type: "image/png", data: fig.crop_b64! } },
+                    {
+                      type: "text",
+                      text: `Full flyer text for context:\n"""\n${pageText}\n"""\n\nExisting alt text on this figure (may be empty, vague, or wrong -- do not trust it): "${fig.existing_alt}"\n\nClassify this figure.`,
+                    },
+                  ],
+                },
+              ],
+            });
+            let raw = (visionResp.content[0] as any).text.trim();
+            raw = raw.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+            const parsed = JSON.parse(raw);
+            return { mcid: fig.mcid, decorative: !!parsed.decorative, alt_text: String(parsed.alt_text || "") };
+          } catch (visionErr: any) {
+            console.error(`[FLYER] Vision classification failed for mcid ${fig.mcid}:`, visionErr.message);
+            // Fail safe: keep the figure with its existing alt text rather than
+            // guessing wrong in either direction.
+            return { mcid: fig.mcid, decorative: false, alt_text: fig.existing_alt || "Image" };
+          }
+        })
+      );
+
+      await writeFile(tmpDecisions, JSON.stringify(decisions));
+
+      // ── Step 3: apply the tagging decisions to the PDF in place ──
+      const applyResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_apply_tags.py"), tmpPdf, tmpOut, tmpDecisions],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Tag application failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const applyResult = JSON.parse(applyResultJson);
+
+      const outBuffer = await readFile(tmpOut);
+
+      // Credit cost: one Claude Vision call per figure classified (minimum 1),
+      // consistent with the existing per-call cost-normalized weights above.
+      const creditsUsed = Math.max(1, figuresWithCrops.length);
+      if (clerkUserId) {
+        try {
+          await deductCredits(clerkUserId, creditsUsed);
+        } catch (creditErr: any) {
+          console.error("[FLYER CREDIT DEDUCT] Error:", creditErr.message);
+        }
+      }
+
+      const filename = req.file.originalname.replace(/\.pdf$/i, "") + "-accessible.pdf";
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("X-Flyer-Total-Figures", String(applyResult.total_figures));
+      res.setHeader("X-Flyer-Decorative-Removed", String(applyResult.decorative_removed));
+      res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept));
+
+      if (clerkUserId) {
+        try {
+          storage.createJob({
+            type: "flyer",
+            status: "completed",
+            inputName: req.file.originalname,
+            result: null,
+            errorMessage: null,
+            createdAt: Date.now(),
+            clerkUserId,
+            pageCount: 1,
+            creditsUsed,
+            inputTokens: null,
+            outputTokens: null,
+          });
+        } catch (jobErr: any) {
+          console.error("[JOB LOG] Error:", jobErr.message);
+        }
+      }
+
+      return res.send(outBuffer);
+    } catch (err: any) {
+      console.error(`[FLYER] ${req.file?.originalname || "unknown file"} -- tagging pipeline failed:`, err.message);
+      try {
+        storage.createJob({
+          type: "flyer",
+          status: "failed",
+          inputName: req.file?.originalname || null,
+          result: null,
+          errorMessage: String(err.message || err).slice(0, 500),
+          createdAt: Date.now(),
+          clerkUserId: (req.body?.clerkUserId as string) || null,
+          pageCount: null,
+          creditsUsed: null,
+          inputTokens: null,
+          outputTokens: null,
+        });
+      } catch (logErr: any) {
+        console.error("[JOB LOG] Failed to log failure:", logErr.message);
+      }
+      res.status(500).json({ error: err.message });
+    } finally {
+      await unlink(tmpPdf).catch(() => {});
+      await unlink(tmpOut).catch(() => {});
+      await unlink(tmpDecisions).catch(() => {});
+    }
+  }
+
+  app.post("/api/flyer/fix", upload.single("file"), (req, res, next) => { req.setTimeout(180000); res.setTimeout(180000); next(); }, handleFlyerFix);
+
+
 
   app.post("/api/contact", async (req, res) => {
     try {
