@@ -534,8 +534,8 @@ function RemedyDocsTab() {
         <div className="grid grid-cols-2 gap-2">
           {([
             { value: "auto", label: "Auto-detect", sub: "Recommended", Icon: Zap },
-            { value: "pdf", label: "Keep as PDF", sub: "Tag in place", Icon: FileText },
-            { value: "docx", label: "Convert to Word", sub: ".docx output", Icon: FileText },
+            { value: "pdf", label: "PDF", sub: "Tag in place", Icon: FileText },
+            { value: "docx", label: "Word", sub: ".docx output", Icon: FileText },
             { value: "flyer", label: "Flyer / designed doc", sub: "PDF only", Icon: ImageIcon },
           ] as { value: DocsOutputMode; label: string; sub: string; Icon: typeof Zap }[]).map(({ value, label, sub, Icon }) => (
             <button
@@ -557,11 +557,14 @@ function RemedyDocsTab() {
             </button>
           ))}
         </div>
+        {outputMode === "pdf" && (
+          <p className="text-xs text-muted-foreground px-1">✓ Works from a Word or PDF upload — either way, you get back a tagged, accessible PDF.</p>
+        )}
+        {outputMode === "docx" && (
+          <p className="text-xs text-muted-foreground px-1">✓ Works from a Word or PDF upload — either way, you get back a tagged, accessible Word document.</p>
+        )}
         {outputMode === "flyer" && (
           <p className="text-xs text-muted-foreground px-1">✓ For visually-designed flyers/posters — preserves the original layout pixel-for-pixel, PDF in and PDF out.</p>
-        )}
-        {outputMode === "auto" && (
-          <p className="text-xs text-muted-foreground px-1">✓ Remedy508 automatically detects your document's structure and picks the right remediation approach.</p>
         )}
       </div>
 
