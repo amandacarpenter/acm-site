@@ -3188,6 +3188,7 @@ print('ok')
     const tmpPdf = join(tmpdir(), `flyer-${ts}.pdf`);
     const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
     const tmpOrphanOut = join(tmpdir(), `flyer-${ts}-orphan-out.pdf`);
+    const tmpReorderOut = join(tmpdir(), `flyer-${ts}-reorder-out.pdf`);
     const tmpDecisions = join(tmpdir(), `flyer-${ts}-decisions.json`);
     const tmpOrphanDecisions = join(tmpdir(), `flyer-${ts}-orphan-decisions.json`);
 
@@ -3336,7 +3337,31 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       });
       const applyResult = JSON.parse(applyResultJson);
 
-      const outBuffer = await readFile(tmpOut);
+      // ── Step 3c: fix struct-tree reading order ──
+      // Canva/InDesign/Illustrator exports commonly assign MCIDs in the
+      // order design layers were created rather than their final on-page
+      // position, and never reorder the struct tree to match. Individual
+      // figures/paragraphs can be correctly tagged with correct /Alt text
+      // and still produce a struct tree whose flat child array is out of
+      // visual order -- which is what actually drives screen-reader reading
+      // order and click-drag text highlighting in Acrobat/Preview/browsers.
+      // This must run last, after both apply steps above, so it sees the
+      // final complete set of MCIDs (including any newly added by the
+      // orphan-figure pass) when computing the correct order.
+      const reorderResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_reading_order.py"), tmpOut, tmpReorderOut],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Reading order fix failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const reorderResult = JSON.parse(reorderResultJson);
+
+      const outBuffer = await readFile(tmpReorderOut);
 
       // Credit cost: one Claude Vision call per figure classified (minimum 1),
       // consistent with the existing per-call cost-normalized weights above.
@@ -3357,6 +3382,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       res.setHeader("X-Flyer-Decorative-Removed", String(applyResult.decorative_removed + orphanApplyResult.decorative_converted));
       res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept + orphanApplyResult.meaningful_added));
       res.setHeader("X-Flyer-Orphan-Figures-Found", String(orphanApplyResult.orphans_found));
+      res.setHeader("X-Flyer-Reading-Order-Fixed", String(!!reorderResult.reordered));
 
       if (clerkUserId) {
         try {
@@ -3403,6 +3429,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       await unlink(tmpPdf).catch(() => {});
       await unlink(tmpOut).catch(() => {});
       await unlink(tmpOrphanOut).catch(() => {});
+      await unlink(tmpReorderOut).catch(() => {});
       await unlink(tmpDecisions).catch(() => {});
       await unlink(tmpOrphanDecisions).catch(() => {});
     }

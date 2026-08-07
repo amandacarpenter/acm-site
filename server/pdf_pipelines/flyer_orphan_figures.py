@@ -327,10 +327,18 @@ def _next_mcid(pdf, page_index):
 def _register_new_figures(pdf, page, new_struct_elements):
     """Append new /Figure struct elements as direct children of the
     top-level /Document (or /Part) node, and extend the page's ParentTree
-    Nums array so each new MCID resolves back to its element. Order in
-    the tree doesn't affect reading order correctness for screen readers
-    the way it would for body text, but we still append in ascending MCID
-    order for a sane, deterministic tree."""
+    Nums array so each new MCID resolves back to its element.
+
+    NOTE: appending here is deliberately temporary/order-agnostic. Struct
+    tree /K order DOES determine reading order for every element type,
+    including figures -- it drives both screen-reader traversal and
+    click-drag text-highlight order in viewers like Acrobat/Preview. This
+    function only needs to get new figures into the tree at all; the
+    flyer pipeline always runs flyer_reading_order.py as its final step
+    (after this and after flyer_apply_tags.py), which re-sorts the full
+    struct tree -- including these newly appended figures -- to match the
+    true content-stream drawing order. Do not treat this function's
+    append-at-end placement as the final position."""
     st = pdf.Root.StructTreeRoot
 
     # Find (or create) the array we should append new top-level kids into.
