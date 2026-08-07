@@ -504,15 +504,15 @@ function RemedyDocsTab() {
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0d9488]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
-            { value: "auto", label: "Auto-Detect", sub: "Recommended — we'll choose PDF or Word based on your file", Icon: Zap },
-            { value: "pdf", label: "PDF", sub: "Tag your file in place and get back an accessible PDF", Icon: FileText },
-            { value: "docx", label: "Word", sub: "Get back an accessible .docx file", Icon: FileText },
-          ] as { value: DocsOutputMode; label: string; sub: string; Icon: typeof Zap }[]).map(({ value, label, sub, Icon }) => (
+            { value: "auto", label: "Auto-Detect", Icon: Zap },
+            { value: "pdf", label: "PDF", Icon: FileText },
+            { value: "docx", label: "Word", Icon: FileText },
+          ] as { value: DocsOutputMode; label: string; Icon: typeof Zap }[]).map(({ value, label, Icon }) => (
             <label
               key={value}
               htmlFor={`mode-${value}`}
               data-testid={`mode-${value}`}
-              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 outputMode === value
                   ? "border-[#0d9488] bg-white dark:bg-background ring-1 ring-[#0d9488]"
                   : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0d9488]/50"
@@ -525,14 +525,11 @@ function RemedyDocsTab() {
                 value={value}
                 checked={outputMode === value}
                 onChange={() => setOutputMode(value)}
-                className="mt-0.5 w-4 h-4 shrink-0 accent-[#0d9488]"
+                className="w-4 h-4 shrink-0 accent-[#0d9488]"
               />
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0d9488]" : "text-muted-foreground"}`} />
-                  <span className="text-sm font-semibold text-foreground">{label}</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+              <div className="flex items-center gap-1.5">
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0d9488]" : "text-muted-foreground"}`} />
+                <span className="text-sm font-semibold text-foreground">{label}</span>
               </div>
             </label>
           ))}
