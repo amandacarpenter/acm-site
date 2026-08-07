@@ -252,14 +252,13 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditN
 // so this component branches on Content-Type to render the correct result UI --
 // each branch reuses the exact, unchanged result-handling logic from the two
 // original tabs (docx-building for fast, blob-download for vision).
-type DocsOutputMode = "auto" | "pdf" | "docx" | "flyer";
+type DocsOutputMode = "auto" | "pdf" | "docx";
 
 function RemedyDocsTab() {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [fastResult, setFastResult] = useState<any>(null);
   const [visionResult, setVisionResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
-  const [flyerResult, setFlyerResult] = useState<{ blob: Blob; filename: string; totalFigures: number; decorativeRemoved: number; meaningfulKept: number } | null>(null);
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
@@ -267,39 +266,11 @@ function RemedyDocsTab() {
   const { toast } = useToast();
   const { user: docsUser } = useUser();
 
-  const startOver = () => { setFile(null); setFastResult(null); setVisionResult(null); setFlyerResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
-
-  const runFlyer = async () => {
-    if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
-    if (!/\.pdf$/i.test(file.name)) {
-      setError("The flyer/designed-document option only accepts PDF files. Please upload a PDF, or switch to Auto-detect / Convert to Word for a .docx file.");
-      return;
-    }
-    setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null); setFlyerResult(null);
-    try {
-      const fd = new FormData(); fd.append("file", file);
-      if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
-      const resp = await fetch("/api/flyer/fix", { method: "POST", body: fd });
-      if (!resp.ok) {
-        const errData = await parseApiResponse(resp).catch((e) => ({ error: e.message }));
-        setErrorCode(errData.code || "");
-        throw new Error(errData.error || `Server error ${resp.status}`);
-      }
-      const blob = await resp.blob();
-      const totalFigures = parseInt(resp.headers.get("X-Flyer-Total-Figures") || "0", 10);
-      const decorativeRemoved = parseInt(resp.headers.get("X-Flyer-Decorative-Removed") || "0", 10);
-      const meaningfulKept = parseInt(resp.headers.get("X-Flyer-Meaningful-Kept") || "0", 10);
-      const baseName = file.name.replace(/\.pdf$/i, "");
-      setFlyerResult({ blob, filename: `${baseName}-accessible.pdf`, totalFigures, decorativeRemoved, meaningfulKept });
-    } catch (e: any) {
-      setError(e.message);
-    } finally { setLoading(false); }
-  };
+  const startOver = () => { setFile(null); setFastResult(null); setVisionResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
-    if (outputMode === "flyer") { return runFlyer(); }
-    setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null); setFlyerResult(null);
+    setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
     let chargedJobId: number | null = null;
     try {
       const fd = new FormData(); fd.append("file", file);
@@ -529,44 +500,44 @@ function RemedyDocsTab() {
         <p>✓ Documents up to 50 pages</p>
       </div>
 
-      <div className="space-y-2" data-testid="doc-output-mode">
-        <p className="text-xs font-semibold text-foreground px-1">Output format</p>
-        <div className="grid grid-cols-2 gap-2">
+      <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5" data-testid="doc-output-mode">
+        <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0d9488]">*</span></legend>
+        <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
-            { value: "auto", label: "Auto-detect", sub: "Recommended", Icon: Zap },
-            { value: "pdf", label: "PDF", sub: "Tag in place", Icon: FileText },
-            { value: "docx", label: "Word", sub: ".docx output", Icon: FileText },
-            { value: "flyer", label: "Flyer / designed doc", sub: "PDF only", Icon: ImageIcon },
+            { value: "auto", label: "Auto-Detect", sub: "Recommended — we'll choose PDF or Word based on your file", Icon: Zap },
+            { value: "pdf", label: "PDF", sub: "Tag your file in place and get back an accessible PDF", Icon: FileText },
+            { value: "docx", label: "Word", sub: "Get back an accessible .docx file", Icon: FileText },
           ] as { value: DocsOutputMode; label: string; sub: string; Icon: typeof Zap }[]).map(({ value, label, sub, Icon }) => (
-            <button
+            <label
               key={value}
-              type="button"
-              onClick={() => setOutputMode(value)}
+              htmlFor={`mode-${value}`}
               data-testid={`mode-${value}`}
-              className={`text-left p-2.5 rounded-xl border transition-colors ${
+              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 outputMode === value
-                  ? "border-[#0d9488] bg-[#0d9488]/10 ring-1 ring-[#0d9488]"
-                  : "border-border bg-background hover:border-[#0d9488]/50"
+                  ? "border-[#0d9488] bg-white dark:bg-background ring-1 ring-[#0d9488]"
+                  : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0d9488]/50"
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0d9488]" : "text-muted-foreground"}`} />
-                <span className="text-xs font-semibold text-foreground">{label}</span>
+              <input
+                type="radio"
+                id={`mode-${value}`}
+                name="doc-output-mode"
+                value={value}
+                checked={outputMode === value}
+                onChange={() => setOutputMode(value)}
+                className="mt-0.5 w-4 h-4 shrink-0 accent-[#0d9488]"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0d9488]" : "text-muted-foreground"}`} />
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
               </div>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
-            </button>
+            </label>
           ))}
         </div>
-        {outputMode === "pdf" && (
-          <p className="text-xs text-muted-foreground px-1">✓ Works from a Word or PDF upload — either way, you get back a tagged, accessible PDF.</p>
-        )}
-        {outputMode === "docx" && (
-          <p className="text-xs text-muted-foreground px-1">✓ Works from a Word or PDF upload — either way, you get back a tagged, accessible Word document.</p>
-        )}
-        {outputMode === "flyer" && (
-          <p className="text-xs text-muted-foreground px-1">✓ For visually-designed flyers/posters — preserves the original layout pixel-for-pixel, PDF in and PDF out.</p>
-        )}
-      </div>
+      </fieldset>
 
       <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
@@ -647,39 +618,6 @@ function RemedyDocsTab() {
         </div>
       )}
 
-      {flyerResult && (
-        <div className="space-y-4" data-testid="doc-result">
-          <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">Flyer tagged</span>
-            </div>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">
-              {flyerResult.totalFigures} figure{flyerResult.totalFigures === 1 ? "" : "s"} reviewed &mdash; {flyerResult.meaningfulKept} kept with alt text, {flyerResult.decorativeRemoved} marked decorative. Original layout preserved exactly.
-            </p>
-          </div>
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
-            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good &mdash; you'd need to re-upload and spend credits again to get it back.
-            </p>
-          </div>
-          <Button
-            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
-            onClick={() => {
-              const url = URL.createObjectURL(flyerResult.blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = flyerResult.filename;
-              a.click();
-              URL.revokeObjectURL(url);
-            }}
-          >
-            <Download className="w-4 h-4 mr-2" />Download {flyerResult.filename}
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
