@@ -128,26 +128,75 @@ def fix_reading_order(input_path: str, output_path: str, page_index: int = 0) ->
     st = pdf.Root.StructTreeRoot
     mcid_order = _get_content_stream_order(pdf, page)
 
-    # Find the flat array of children to reorder: prefer the /Part child of
-    # /Document (this pipeline's consistent tree shape), else /Document's
-    # own /K, else StructTreeRoot's own /K.
-    top_k = st.K
-    doc_elem = top_k[0] if isinstance(top_k, pikepdf.Array) and len(top_k) == 1 else top_k
+    # Find the flat array of children to reorder. Different export tools
+    # produce different top-level tree shapes:
+    #   - This pipeline's own output / some tools: /Document > /Part > [children]
+    #   - Canva exports: StructTreeRoot.K = [/Annot, /Slide, /Annot] at the
+    #     ROOT, with the real content children living inside /Slide's own /K.
+    #     A naive walk that only recognizes /Document would silently reorder
+    #     the meaningless 3-item root array instead of /Slide's real children,
+    #     making the whole reading-order fix a no-op for every Canva flyer.
+    # General approach: find the single struct element in the tree (searched
+    # breadth-first from StructTreeRoot.K) that itself has the largest /K
+    # array of MCID-resolvable children -- that is almost certainly the
+    # actual content container, regardless of its /S tag name.
+    def _resolvable_child_count(elem) -> int:
+        k = elem.get("/K") if isinstance(elem, pikepdf.Dictionary) else None
+        if not isinstance(k, pikepdf.Array):
+            return 0
+        count = 0
+        for child in k:
+            mcid = _first_mcid(child) if isinstance(child, pikepdf.Dictionary) else (
+                int(child) if isinstance(child, int) else None
+            )
+            if mcid is not None:
+                count += 1
+        return count
 
+    def _collect_candidates(elem, depth=0, max_depth=4):
+        """Yield every struct element dict reachable within max_depth, along
+        with how many of its own /K children resolve to an MCID."""
+        if depth > max_depth:
+            return
+        if isinstance(elem, pikepdf.Array):
+            for item in elem:
+                yield from _collect_candidates(item, depth, max_depth)
+            return
+        if not isinstance(elem, pikepdf.Dictionary):
+            return
+        yield (elem, _resolvable_child_count(elem))
+        k = elem.get("/K")
+        if isinstance(k, pikepdf.Array):
+            for child in k:
+                yield from _collect_candidates(child, depth + 1, max_depth)
+        elif isinstance(k, pikepdf.Dictionary):
+            yield from _collect_candidates(k, depth + 1, max_depth)
+
+    candidates = list(_collect_candidates(st.K))
     target = None
-    if isinstance(doc_elem, pikepdf.Dictionary) and str(doc_elem.get("/S", "")) == "/Document":
-        inner_k = doc_elem.get("/K")
-        if (
-            isinstance(inner_k, pikepdf.Array)
-            and len(inner_k) >= 1
-            and isinstance(inner_k[0], pikepdf.Dictionary)
-            and str(inner_k[0].get("/S", "")) == "/Part"
-        ):
-            target = inner_k[0]
+    if candidates:
+        target, best_count = max(candidates, key=lambda pair: pair[1])
+        if best_count < 2:
+            target = None
+    if target is None:
+        # Fall back to the previous, narrower /Document > /Part convention,
+        # then StructTreeRoot itself, to preserve prior behavior when no
+        # richer container is found.
+        top_k = st.K
+        doc_elem = top_k[0] if isinstance(top_k, pikepdf.Array) and len(top_k) == 1 else top_k
+        if isinstance(doc_elem, pikepdf.Dictionary) and str(doc_elem.get("/S", "")) == "/Document":
+            inner_k = doc_elem.get("/K")
+            if (
+                isinstance(inner_k, pikepdf.Array)
+                and len(inner_k) >= 1
+                and isinstance(inner_k[0], pikepdf.Dictionary)
+                and str(inner_k[0].get("/S", "")) == "/Part"
+            ):
+                target = inner_k[0]
+            else:
+                target = doc_elem
         else:
-            target = doc_elem
-    else:
-        target = st
+            target = st
 
     existing_k = target.get("/K")
     if not isinstance(existing_k, pikepdf.Array) or len(existing_k) < 2:
