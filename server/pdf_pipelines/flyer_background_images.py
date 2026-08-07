@@ -82,6 +82,7 @@ def find_background_candidates(page, top_resources, page_area):
         gs_stack = []
         cur_ctm = ctm
         artifact_stack = []  # stack of dicts or None (non-artifact BDC/BMC)
+        q_index_stack = []  # parallel stack of instruction indices for each "q"
 
         def expand_active(x, y):
             for a in artifact_stack:
@@ -106,9 +107,16 @@ def find_background_candidates(page, top_resources, page_area):
 
             if op == "q":
                 gs_stack.append(cur_ctm)
+                q_index_stack.append(i)
             elif op == "Q":
                 if gs_stack:
                     cur_ctm = gs_stack.pop()
+                if q_index_stack:
+                    popped_q_index = q_index_stack.pop()
+                    for frame in reversed(artifact_stack):
+                        if frame is not None and frame["do_q_start"] == popped_q_index and frame["do_q_end"] is None:
+                            frame["do_q_end"] = i
+                            break
             elif op == "cm":
                 vals = [float(v) for v in ops]
                 cur_ctm = mat_mul(tuple(vals), cur_ctm)
@@ -125,6 +133,9 @@ def find_background_candidates(page, top_resources, page_area):
                         "image_bbox": None,
                         "has_image": False,
                         "has_nested_artifact_image": False,
+                        "do_instr_index": None,
+                        "do_q_start": None,
+                        "do_q_end": None,
                     })
                 else:
                     artifact_stack.append(None)
@@ -169,6 +180,17 @@ def find_background_candidates(page, top_resources, page_area):
                                     b[1] = min(b[1], img_bbox[1])
                                     b[2] = max(b[2], img_bbox[2])
                                     b[3] = max(b[3], img_bbox[3])
+                                # Record the tightest q..Q pair (if any) that
+                                # directly wraps this Do call, and this Do's own
+                                # instruction index, so a promotion to /Figure can
+                                # later be scoped to ONLY this image draw instead
+                                # of the whole (possibly much larger) artifact
+                                # frame, which may also contain unrelated
+                                # decorative vector shapes drawn before/after it.
+                                if frame["do_instr_index"] is None:
+                                    frame["do_instr_index"] = i
+                                    if q_index_stack:
+                                        frame["do_q_start"] = q_index_stack[-1]
                                 break
                     elif subtype == "/Form":
                         form_matrix = IDENTITY
@@ -353,8 +375,39 @@ def apply_decisions(input_path: str, output_path: str, decisions: list, page_ind
 
         for instr_index, decision, cand in sorted(edits, key=lambda e: -e[0]):
             mcid = _next_free_mcid(pdf)
-            props = pikepdf.Dictionary({"/MCID": mcid})
-            _rewrite_bdc_tag(instructions, instr_index, "/Figure", new_props=props)
+
+            # Scope the new /Figure tag to ONLY the image's own Do call (plus its
+            # tightest enclosing q..Q pair, if any), not the whole original
+            # /Artifact frame. Source PDFs (e.g. Canva exports) often bundle a
+            # background photo together with unrelated decorative vector shapes
+            # (logo glyphs, color-block fills) inside one BDC /Artifact ... EMC
+            # frame. Promoting the frame's own BDC/EMC in place would tag ALL of
+            # that combined content as one giant /Figure, which is structurally
+            # wrong (the vector shapes are not part of the photo) and can also
+            # make the tag's effective bounding region so large/oddly-shaped
+            # that tools like Acrobat's Reading Order panel fail to render a
+            # clean marker for it.
+            do_index = cand.get("do_instr_index")
+            q_start = cand.get("do_q_start")
+            q_end = cand.get("do_q_end")
+
+            if do_index is None:
+                # Fallback: no Do call was tracked (shouldn't happen since only
+                # has_image frames become candidates) -- promote the whole frame
+                # as before rather than risk a broken split.
+                _rewrite_bdc_tag(instructions, instr_index, "/Figure", new_props=pikepdf.Dictionary({"/MCID": mcid}))
+            else:
+                open_idx = q_start if q_start is not None else do_index
+                close_idx = q_end if q_end is not None else do_index
+                bdc_instr = pikepdf.ContentStreamInstruction(
+                    [pikepdf.Name("/Figure"), pikepdf.Dictionary({"/MCID": mcid})],
+                    pikepdf.Operator("BDC"),
+                )
+                emc_instr = pikepdf.ContentStreamInstruction([], pikepdf.Operator("EMC"))
+                # Insert EMC first (higher index) so the earlier BDC insertion
+                # doesn't shift close_idx out from under us.
+                instructions.insert(close_idx + 1, emc_instr)
+                instructions.insert(open_idx, bdc_instr)
 
             alt_text = decision.get("alt_text") or ""
             new_elem = pdf.make_indirect(pikepdf.Dictionary({
