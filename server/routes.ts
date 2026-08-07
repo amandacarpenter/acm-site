@@ -3186,20 +3186,44 @@ print('ok')
     const pipelineDir = join(__dirname, "pdf_pipelines");
     const ts = Date.now();
     const tmpPdf = join(tmpdir(), `flyer-${ts}.pdf`);
+    const tmpAnnotsOut = join(tmpdir(), `flyer-${ts}-annots-out.pdf`);
     const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
     const tmpOrphanOut = join(tmpdir(), `flyer-${ts}-orphan-out.pdf`);
+    const tmpBgOut = join(tmpdir(), `flyer-${ts}-bg-out.pdf`);
     const tmpReorderOut = join(tmpdir(), `flyer-${ts}-reorder-out.pdf`);
+    const tmpTitleOut = join(tmpdir(), `flyer-${ts}-title-out.pdf`);
     const tmpDecisions = join(tmpdir(), `flyer-${ts}-decisions.json`);
     const tmpOrphanDecisions = join(tmpdir(), `flyer-${ts}-orphan-decisions.json`);
+    const tmpBgDecisions = join(tmpdir(), `flyer-${ts}-bg-decisions.json`);
 
     try {
       await writeFile(tmpPdf, req.file.buffer);
+
+      // ── Step 0: fix broken/dangling /Annot scaffolding text ──
+      // Design tools (Canva, in particular) leave self-referential
+      // template disclaimer text ("this document is an example...")
+      // tagged as /Annot struct elements with no matching page /Annots
+      // entry -- a dangling reference that most assistive tech either
+      // ignores or mishandles. This has no MCID/decision dependency on
+      // anything else, so it runs first, directly on the raw upload.
+      const annotsResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_fix_annots.py"), tmpPdf, tmpAnnotsOut],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Annotation scaffolding fix failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const annotsResult = JSON.parse(annotsResultJson);
 
       // ── Step 1: extract every figure's bbox + crop + page text ──
       const extractJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_extract_figures.py"), tmpPdf],
+          [join(pipelineDir, "flyer_extract_figures.py"), tmpAnnotsOut],
           { maxBuffer: 50 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Figure extraction failed: " + (stderr?.slice(-500) || err.message)));
@@ -3228,7 +3252,7 @@ print('ok')
       const orphanExtractJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_orphan_figures.py"), "extract", tmpPdf],
+          [join(pipelineDir, "flyer_orphan_figures.py"), "extract", tmpAnnotsOut],
           { maxBuffer: 50 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Orphan figure extraction failed: " + (stderr?.slice(-500) || err.message)));
@@ -3313,7 +3337,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const orphanApplyResultJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_orphan_figures.py"), "apply", tmpPdf, tmpOrphanOut, tmpOrphanDecisions],
+          [join(pipelineDir, "flyer_orphan_figures.py"), "apply", tmpAnnotsOut, tmpOrphanOut, tmpOrphanDecisions],
           { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Orphan figure tag application failed: " + (stderr?.slice(-500) || err.message)));
@@ -3337,7 +3361,53 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       });
       const applyResult = JSON.parse(applyResultJson);
 
-      // ── Step 3c: fix struct-tree reading order ──
+      // ── Step 3c: detect + classify full-bleed/background images tagged
+      // /Artifact /Background that are actually meaningful photos, not
+      // decoration. Canva hero banners commonly get this treatment --
+      // legitimate for a purely decorative background, wrong for a photo
+      // that's the sole carrier of information. Must run after the
+      // figure/orphan apply steps (on tmpOut) since it needs the current
+      // content-stream state, and before reading-order fix, since any
+      // candidate promoted to /Figure gets a brand-new MCID that reading
+      // order must account for.
+      const bgExtractJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_background_images.py"), "extract", tmpOut],
+          { maxBuffer: 50 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Background image extraction failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const { candidates: bgCandidates } = JSON.parse(bgExtractJson) as {
+        page_text: string;
+        candidates: Array<{ cand_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
+      };
+
+      const bgDecisions = await Promise.all(
+        bgCandidates.map(async (cand) => {
+          const d = await classifyFigure(cand.crop_b64, "", cand.is_full_bleed, `background ${cand.cand_id}`);
+          return { cand_id: cand.cand_id, ...d };
+        })
+      );
+      await writeFile(tmpBgDecisions, JSON.stringify(bgDecisions));
+
+      const bgApplyResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_background_images.py"), "apply", tmpOut, tmpBgOut, tmpBgDecisions],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Background image tag application failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const bgApplyResult = JSON.parse(bgApplyResultJson);
+
+      // ── Step 3d: fix struct-tree reading order ──
       // Canva/InDesign/Illustrator exports commonly assign MCIDs in the
       // order design layers were created rather than their final on-page
       // position, and never reorder the struct tree to match. Individual
@@ -3345,13 +3415,14 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       // and still produce a struct tree whose flat child array is out of
       // visual order -- which is what actually drives screen-reader reading
       // order and click-drag text highlighting in Acrobat/Preview/browsers.
-      // This must run last, after both apply steps above, so it sees the
-      // final complete set of MCIDs (including any newly added by the
-      // orphan-figure pass) when computing the correct order.
+      // This must run last of the structural passes, after all three apply
+      // steps above, so it sees the final complete set of MCIDs (including
+      // any newly added by the orphan-figure and background-image passes)
+      // when computing the correct order.
       const reorderResultJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_reading_order.py"), tmpOut, tmpReorderOut],
+          [join(pipelineDir, "flyer_reading_order.py"), tmpBgOut, tmpReorderOut],
           { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Reading order fix failed: " + (stderr?.slice(-500) || err.message)));
@@ -3361,12 +3432,31 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       });
       const reorderResult = JSON.parse(reorderResultJson);
 
-      const outBuffer = await readFile(tmpReorderOut);
+      // ── Step 4: fix placeholder/missing document title metadata ──
+      // Purely metadata (docinfo /Title + XMP dc:title) -- no MCID/struct
+      // dependency on anything above, so it runs last, right before the
+      // final PDF is read back into memory.
+      const titleResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_fix_title.py"), tmpReorderOut, tmpTitleOut],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 30000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Title fix failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const titleResult = JSON.parse(titleResultJson);
+      const finalOutPath = titleResult.changed ? tmpTitleOut : tmpReorderOut;
+
+      const outBuffer = await readFile(finalOutPath);
 
       // Credit cost: one Claude Vision call per figure classified (minimum 1),
       // consistent with the existing per-call cost-normalized weights above.
-      // Orphan figures also cost one vision call each.
-      const creditsUsed = Math.max(1, figuresWithCrops.length + orphans.length);
+      // Orphan figures and background-image candidates also cost one vision
+      // call each.
+      const creditsUsed = Math.max(1, figuresWithCrops.length + orphans.length + bgCandidates.length);
       if (clerkUserId) {
         try {
           await deductCredits(clerkUserId, creditsUsed);
@@ -3378,10 +3468,13 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const filename = req.file.originalname.replace(/\.pdf$/i, "") + "-accessible.pdf";
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.setHeader("X-Flyer-Total-Figures", String(applyResult.total_figures + orphanApplyResult.orphans_found));
+      res.setHeader("X-Flyer-Total-Figures", String(applyResult.total_figures + orphanApplyResult.orphans_found + bgApplyResult.converted));
       res.setHeader("X-Flyer-Decorative-Removed", String(applyResult.decorative_removed + orphanApplyResult.decorative_converted));
-      res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept + orphanApplyResult.meaningful_added));
+      res.setHeader("X-Flyer-Meaningful-Kept", String(applyResult.meaningful_kept + orphanApplyResult.meaningful_added + bgApplyResult.converted));
       res.setHeader("X-Flyer-Orphan-Figures-Found", String(orphanApplyResult.orphans_found));
+      res.setHeader("X-Flyer-Background-Images-Converted", String(bgApplyResult.converted));
+      res.setHeader("X-Flyer-Annots-Fixed", String(annotsResult.converted_to_artifact + annotsResult.removed_empty));
+      res.setHeader("X-Flyer-Title-Fixed", String(!!titleResult.changed));
       res.setHeader("X-Flyer-Reading-Order-Fixed", String(!!reorderResult.reordered));
 
       if (clerkUserId) {
@@ -3427,11 +3520,15 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       res.status(500).json({ error: err.message });
     } finally {
       await unlink(tmpPdf).catch(() => {});
+      await unlink(tmpAnnotsOut).catch(() => {});
       await unlink(tmpOut).catch(() => {});
       await unlink(tmpOrphanOut).catch(() => {});
+      await unlink(tmpBgOut).catch(() => {});
       await unlink(tmpReorderOut).catch(() => {});
+      await unlink(tmpTitleOut).catch(() => {});
       await unlink(tmpDecisions).catch(() => {});
       await unlink(tmpOrphanDecisions).catch(() => {});
+      await unlink(tmpBgDecisions).catch(() => {});
     }
   }
 
