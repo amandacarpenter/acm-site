@@ -2759,7 +2759,7 @@ def _patched_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
             if element.get('S') == '/TH' and box.element is not None:
                 scope_attr = box.element.attrib.get('scope')
                 pdf_scope = 'Row' if scope_attr == 'row' else 'Column'
-                element['A'] = _pydyf.Dictionary({'O': '/Table', 'S': f'/{pdf_scope}'})
+                element['A'] = _pydyf.Dictionary({'O': '/Table', 'Scope': f'/{pdf_scope}'})
         except Exception:
             pass
         yield element
@@ -2951,12 +2951,12 @@ def _pp_verify_scope(elem, in_header_row=False):
                 continue
             _pp_th_total += 1
             attrs = _pp_get_attr(c)
-            has_scope = attrs is not None and '/S' in attrs
+            has_scope = attrs is not None and '/Scope' in attrs
             if not has_scope:
                 _pp_th_missing_scope += 1
                 fallback_scope = 'Column' if (all_th or ci == 0) else 'Column'
                 attrs = _pp_get_attr(c, create=True)
-                attrs['/S'] = pikepdf.Name('/' + fallback_scope)
+                attrs['/Scope'] = pikepdf.Name('/' + fallback_scope)
         return
     for k in _pp_get_kids(elem):
         _pp_verify_scope(k)
