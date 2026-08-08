@@ -2642,6 +2642,35 @@ for _i in range(len(_all_tables) - 1, 0, -1):
         for _row in _cur_tbody.find_all('tr', recursive=False):
             _prev_tbody.append(_row.extract())
         _cur.decompose()
+
+# WeasyPrint bug workaround (see get_wrapped_table patch below for the full
+# explanation): when a table's box tree fragments across a page break in a
+# certain way, the fragment WeasyPrint creates for one side of the break can
+# end up with zero TableBox children, and the crash-avoidance patch below
+# substitutes a synthetic EMPTY TableBox for that fragment -- silently
+# dropping that fragment's real header/data cells from the accessibility
+# tree even though the content still renders visually on the page. This is
+# confirmed to happen on genuinely small tables (e.g. a 5-row, 2-column
+# table) that simply straddle a page boundary by a line or two -- there is
+# no reason a short table like that needs to split at all. Rather than try
+# to patch WeasyPrint's internal fragment-to-struct-element mapping (fragile,
+# version-specific), prevent the split from happening in the first place for
+# any table small enough to plausibly fit in the remaining space on one
+# page: mark it with CSS 'break-inside: avoid' so WeasyPrint pushes the
+# whole table onto the next page instead of fragmenting it. Large multi-page
+# tables (VPAT criteria tables can run 16+ rows across several pages) must
+# NOT get this treatment -- forcing those to stay unbroken would push them
+# into a single unbreakable block that overflows the page entirely. Use row
+# count as the threshold: tables with a small number of rows are exactly the
+# ones short enough to avoid breaking AND the ones most likely to be pushed
+# right up against a page boundary by preceding content.
+_SMALL_TABLE_MAX_ROWS = 8
+for _t in _pre_merge_soup.find_all('table'):
+    _row_count = len(_t.find_all('tr'))
+    if 0 < _row_count <= _SMALL_TABLE_MAX_ROWS:
+        _existing_style = _t.get('style', '')
+        _t['style'] = (_existing_style + '; break-inside: avoid; page-break-inside: avoid;').lstrip('; ')
+
 html_parts = [str(_pre_merge_soup)]
 
 combined_for_headings = BeautifulSoup(''.join(html_parts), 'html.parser')

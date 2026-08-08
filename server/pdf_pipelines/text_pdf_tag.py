@@ -103,6 +103,22 @@ def clean_html(raw_html: str) -> str:
             if not th.get("scope"):
                 th["scope"] = "col"
 
+    # WeasyPrint bug workaround (see get_wrapped_table patch below): when a
+    # table's box tree fragments across a page break in a certain way, one
+    # fragment can end up with zero TableBox children, and the crash-avoidance
+    # patch substitutes a synthetic EMPTY TableBox for it -- silently dropping
+    # that fragment's real header/data cells from the accessibility tree even
+    # though the content still renders visually. Confirmed on genuinely small
+    # tables that simply straddle a page boundary. Prevent the split from
+    # happening at all for tables short enough to plausibly fit on one page;
+    # large multi-page tables must keep splitting normally or they'd overflow.
+    _SMALL_TABLE_MAX_ROWS = 8
+    for table in soup.find_all("table"):
+        row_count = len(table.find_all("tr"))
+        if 0 < row_count <= _SMALL_TABLE_MAX_ROWS:
+            existing_style = table.get("style", "")
+            table["style"] = (existing_style + "; break-inside: avoid; page-break-inside: avoid;").lstrip("; ")
+
     return str(soup)
 
 
