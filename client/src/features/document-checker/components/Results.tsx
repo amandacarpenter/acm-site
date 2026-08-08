@@ -93,7 +93,7 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => downloadReport(report)}
+            onClick={() => void downloadReport(report)}
             data-testid="button-download"
           >
             <Download size={17} aria-hidden="true" />

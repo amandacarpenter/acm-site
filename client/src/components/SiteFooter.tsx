@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import logoHero from "@/assets/logo-hero.jpg";
 
 const footerLinks = [
-  { href: "/accessibility-checker", label: "Accessibility Checker" },
+  { href: "/accessibility-checker", label: "Check Accessibility" },
   { href: "/privacy", label: "Privacy Policy" },
   { href: "/terms", label: "Terms of Service" },
   { href: "/accessibility", label: "Accessibility" },

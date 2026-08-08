@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { TriangleAlert } from "lucide-react";
+import { SearchCheck, TriangleAlert } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { Analyzing } from "@/features/document-checker/components/Analyzing";
 import { Results } from "@/features/document-checker/components/Results";
@@ -83,6 +84,27 @@ export default function DocumentChecker() {
         Skip to document checker
       </a>
       <SiteHeader />
+      <section
+        className="relative overflow-hidden bg-[#3a485b] py-20 sm:py-24"
+        aria-labelledby="checker-page-title"
+      >
+        <HeroWatermark corner="right" />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
+            <SearchCheck className="w-4 h-4" aria-hidden="true" />
+            Free Document Accessibility Checker
+          </div>
+          <h1
+            id="checker-page-title"
+            className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight"
+          >
+            Check Accessibility
+          </h1>
+          <p className="text-lg text-white max-w-2xl mx-auto">
+            Check a PDF, Word document, or PowerPoint for common accessibility problems. No account required.
+          </p>
+        </div>
+      </section>
       <div className="document-checker-page">
         <main
           id="document-checker-main"

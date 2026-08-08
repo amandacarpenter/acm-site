@@ -1,13 +1,11 @@
 import { useId, useRef, useState } from 'react';
 import {
   TriangleAlert,
-  Check,
   FileText,
   Image as ImageIcon,
   Languages,
   Link2,
   ListTree,
-  Lock,
   ScanLine,
   Table2,
   CloudUpload,
@@ -73,42 +71,8 @@ export function Uploader({ onFile, error, setError }: Props) {
 
   return (
     <>
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="wrap hero-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">
-              <Lock size={14} aria-hidden="true" />
-              Free Document Accessibility Checker
-            </p>
-            <h1 className="hero-title" id="hero-title">
-              Check your document for <span className="accent">accessibility problems</span>.
-            </h1>
-            <p className="hero-lede">
-              Drop in a PDF, Word document, or PowerPoint deck. The Remedy508 Accessibility Checker inspects the file’s
-              structure and returns a prioritized list of what to fix, usually in a few seconds.
-            </p>
-            <ul className="hero-points">
-              <li>
-                <Check size={18} aria-hidden="true" />
-                <span>
-                  Your file never leaves this device. Parsing happens locally with JavaScript; nothing is uploaded,
-                  stored, or sent to a server.
-                </span>
-              </li>
-              <li>
-                <Check size={18} aria-hidden="true" />
-                <span>
-                  Findings are written in plain language and mapped to the WCAG 2.1 AA and Section 508 criteria they
-                  relate to.
-                </span>
-              </li>
-              <li>
-                <Check size={18} aria-hidden="true" />
-                <span>Free, no account, no email address required.</span>
-              </li>
-            </ul>
-          </div>
-
+      <section className="checker-upload" aria-labelledby={`${inputId}-label`}>
+        <div className="wrap upload-wrap">
           <div className="upload-card">
             <div
               className={`dropzone${dragging ? ' is-over' : ''}`}
@@ -176,7 +140,7 @@ export function Uploader({ onFile, error, setError }: Props) {
       <section className="section" aria-labelledby="checks-title">
         <div className="wrap">
           <div className="section-head">
-            <h2 id="checks-title">What this accessibility checker looks at</h2>
+            <h2 id="checks-title">What Remedy508 Accessibility Checker looks for</h2>
             <p>
               These are the properties an automated tool can read directly out of a document file. They catch the
               errors that block assistive technology most often — and they are the ones that are cheapest to fix
@@ -200,7 +164,7 @@ export function Uploader({ onFile, error, setError }: Props) {
       <section className="section" aria-labelledby="method-title">
         <div className="wrap">
           <div className="section-head">
-            <h2 id="method-title">How the check works</h2>
+            <h2 id="method-title">How it works</h2>
             <p>
               Nothing here is a black box. Word and PowerPoint files are ZIP packages of XML, and PDFs expose their
               catalog through a browser PDF engine — so the whole inspection can run on your machine.
