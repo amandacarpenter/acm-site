@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Router, Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
@@ -25,6 +26,8 @@ import KbHome from "@/pages/kb/KbHome";
 import KbArticlePage from "@/pages/kb/KbArticle";
 import KbAdmin from "@/pages/kb/KbAdmin";
 import ScrollToTop from "@/components/ScrollToTop";
+
+const DocumentChecker = lazy(() => import("@/pages/DocumentChecker"));
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -71,6 +74,22 @@ export default function App() {
             <Route path="/home" component={Home} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
+            <Route path="/document-checker">
+              {() => (
+                <Suspense
+                  fallback={
+                    <div
+                      className="min-h-screen bg-[#faf6f1] p-8 text-[#3a485b]"
+                      role="status"
+                    >
+                      Loading document checker…
+                    </div>
+                  }
+                >
+                  <DocumentChecker />
+                </Suspense>
+              )}
+            </Route>
             <Route path="/pricing" component={PricingPage} />
             <Route path="/login" component={LoginPage} />
             <Route path="/signup" component={SignupPage} />

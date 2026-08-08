@@ -17,6 +17,7 @@ function Logo() {
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
+  { href: "/document-checker", label: "Free Checker" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
   { href: "/kb", label: "Knowledge Base" },
