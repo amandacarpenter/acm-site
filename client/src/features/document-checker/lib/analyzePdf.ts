@@ -187,7 +187,7 @@ export async function analyzePdf(file: File, onPage?: (n: number, total: number)
         ? 'Open the tag tree in Acrobat (View → Show/Hide → Navigation Panes → Tags) or a remediation tool and confirm headings, lists, tables, and figures are tagged correctly and in the right order.'
         : 'Re-export the PDF from the source file with “Document structure tags for accessibility” enabled, or add tags with a remediation tool. Exporting by printing to PDF always discards tags.',
     details: [
-      'This preflight inspects table roles and selected cell attributes in the tag tree. It does not validate the complete PDF/UA specification, visual reading order, or assistive-technology behavior.',
+      'This accessibility check inspects table roles and selected cell attributes in the tag tree. It does not validate the complete PDF/UA specification, visual reading order, or assistive-technology behavior.',
     ],
     refs: ['WCAG 1.3.1 Info and Relationships', 'PDF/UA-1'],
   });
@@ -198,7 +198,7 @@ export async function analyzePdf(file: File, onPage?: (n: number, total: number)
     title: 'Reading order',
     status: 'review',
     category: 'Structure',
-    summary: 'Reading order cannot be verified by this preflight.',
+    summary: 'Reading order cannot be verified by this automated check.',
     why: 'Multi-column layouts, sidebars, and captions frequently read back in the wrong order even when the file is tagged.',
     fix: 'Read the document with a screen reader, or use the reading-order tool in a PDF editor, and confirm the sequence matches the visual layout.',
     refs: ['WCAG 1.3.2 Meaningful Sequence'],
@@ -296,7 +296,7 @@ export async function analyzePdf(file: File, onPage?: (n: number, total: number)
       tableStructure.tableCount === 0
         ? 'If the document visually contains tables, tag them before evaluating their row-and-column grid.'
         : 'Use Acrobat’s Table Editor or another PDF accessibility tool to verify that each row resolves to the expected number of columns and that merged cells use accurate RowSpan and ColSpan values.',
-    details: ['Not evaluated by this browser preflight. This result is not equivalent to Acrobat’s Table Regularity check.'],
+    details: ['Not evaluated by this browser-based checker. This result is not equivalent to Acrobat’s Table Regularity check.'],
     refs: ['WCAG 1.3.1 Info and Relationships', 'PDF/UA-1'],
   });
 
@@ -463,7 +463,7 @@ export async function analyzePdf(file: File, onPage?: (n: number, total: number)
     title: 'Colour contrast and use of colour',
     status: 'review',
     category: 'Visual design',
-    summary: 'Contrast ratios are not measured by this preflight.',
+    summary: 'Contrast ratios are not measured by this automated check.',
     why: 'Low-contrast body text and colour-coded tables exclude people with low vision or colour vision deficiency.',
     fix: 'Sample the text and background colours and confirm 4.5:1 for body text, 3:1 for large text. Add a second cue anywhere colour carries meaning.',
     refs: ['WCAG 1.4.3 Contrast (Minimum)', 'WCAG 1.4.1 Use of Color'],

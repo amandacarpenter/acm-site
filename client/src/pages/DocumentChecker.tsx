@@ -18,7 +18,7 @@ import "@/features/document-checker/document-checker.css";
 type View = "idle" | "analyzing" | "results";
 
 export default function DocumentChecker() {
-  useDocumentTitle("Free Document Accessibility Checker | Remedy508");
+  useDocumentTitle("Remedy508 Accessibility Checker | Free Document Check");
 
   const [view, setView] = useState<View>("idle");
   const [error, setError] = useState<ValidationError | null>(null);

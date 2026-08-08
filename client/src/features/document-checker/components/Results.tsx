@@ -68,7 +68,7 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
     <section className="results wrap" aria-labelledby="results-title">
       <div className="results-head">
         <div>
-          <h1 id="results-title">Preflight results</h1>
+          <h1 id="results-title">Accessibility check results</h1>
           <p className="file-chip" data-testid="text-file-summary">
             <strong>{report.fileName}</strong>
             <span className="dot" aria-hidden="true">
@@ -137,7 +137,7 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
           <div
             className="score-meter"
             role="img"
-            aria-label={`Automated preflight score ${report.score} out of 100. ${scoreBand(report.score)}.`}
+            aria-label={`Automated accessibility check score ${report.score} out of 100. ${scoreBand(report.score)}.`}
           >
             <div style={{ width: `${report.score}%` }} />
           </div>

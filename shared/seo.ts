@@ -40,8 +40,8 @@ export const ROUTES: RouteMeta[] = [
     priority: 0.9,
   },
   {
-    path: "/document-checker",
-    title: "Free Document Accessibility Checker | Remedy508",
+    path: "/accessibility-checker",
+    title: "Remedy508 Accessibility Checker | Free Document Check",
     description:
       "Check PDF, Word, and PowerPoint files for accessibility problems, including PDF table tags and header associations. Files stay in your browser and no account is required.",
     changefreq: "monthly",

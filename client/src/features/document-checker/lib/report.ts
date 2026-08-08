@@ -44,7 +44,7 @@ export function buildReportHtml(report: Report): string {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Remedy508 Document Check report — ${esc(report.fileName)}</title>
+<title>Remedy508 Accessibility Check report — ${esc(report.fileName)}</title>
 <style>
   :root { color-scheme: light; }
   body { font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #111827; background: #faf6f1; margin: 0; padding: 40px 20px; line-height: 1.6; }
@@ -79,7 +79,7 @@ export function buildReportHtml(report: Report): string {
 </head>
 <body>
 <main>
-  <h1>Remedy508 Document Check report</h1>
+  <h1>Remedy508 Accessibility Check report</h1>
   <p class="meta">${esc(report.fileName)} · ${esc(report.kind)} · ${esc(report.fileSizeLabel)} · generated ${esc(report.generatedAt)}${report.isSample ? ' · SAMPLE REPORT (fabricated demonstration data)' : ''}</p>
 
   <h2>Automated findings score</h2>
@@ -107,7 +107,7 @@ export function buildReportHtml(report: Report): string {
   }
 
   <p class="disclaimer"><strong>Important:</strong> ${esc(DISCLAIMER)}</p>
-  <p class="meta" style="margin-top:16px">Produced by Remedy508 Document Check — a free preflight from Remedy508, a product of Left Coast Learning LLC. Remediation help: <a href="https://remedy508.com/tools">remedy508.com/tools</a></p>
+  <p class="meta" style="margin-top:16px">Produced by the Remedy508 Accessibility Checker, a free document check from Remedy508, a product of Left Coast Learning LLC. Remediation help: <a href="https://remedy508.com/tools">remedy508.com/tools</a></p>
 </main>
 </body>
 </html>`;
@@ -120,7 +120,7 @@ export function downloadReport(report: Report): void {
   const a = document.createElement('a');
   const base = report.fileName.replace(/\.[^.]+$/, '').replace(/[^a-z0-9-_]+/gi, '-');
   a.href = url;
-  a.download = `remedy508-preflight-${base || 'report'}.html`;
+  a.download = `remedy508-accessibility-check-${base || 'report'}.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

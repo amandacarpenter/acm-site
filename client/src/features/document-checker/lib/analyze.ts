@@ -11,7 +11,7 @@ export const STAGES = [
   { id: 'parse', label: 'Opening the document package' },
   { id: 'structure', label: 'Inspecting structure, text, and images' },
   { id: 'semantics', label: 'Checking links, tables, and metadata' },
-  { id: 'compile', label: 'Compiling findings and preflight score' },
+  { id: 'compile', label: 'Compiling findings and accessibility score' },
 ] as const;
 
 export type StageId = (typeof STAGES)[number]['id'];

@@ -79,13 +79,13 @@ export function Uploader({ onFile, onSample, error, setError }: Props) {
           <div className="hero-copy">
             <p className="eyebrow">
               <Lock size={14} aria-hidden="true" />
-              Runs in your browser
+              Remedy508 Accessibility Checker
             </p>
             <h1 className="hero-title" id="hero-title">
-              Check a document for <span className="accent">accessibility problems</span> before you publish it.
+              Check your document for <span className="accent">accessibility problems</span>.
             </h1>
             <p className="hero-lede">
-              Drop in a PDF, Word document, or PowerPoint deck. Remedy508 Document Check inspects the file’s
+              Drop in a PDF, Word document, or PowerPoint deck. The Remedy508 Accessibility Checker inspects the file’s
               structure and returns a prioritized list of what to fix, usually in a few seconds.
             </p>
             <ul className="hero-points">
@@ -183,7 +183,7 @@ export function Uploader({ onFile, onSample, error, setError }: Props) {
       <section className="section" aria-labelledby="checks-title">
         <div className="wrap">
           <div className="section-head">
-            <h2 id="checks-title">What this preflight looks at</h2>
+            <h2 id="checks-title">What this accessibility checker looks at</h2>
             <p>
               These are the properties an automated tool can read directly out of a document file. They catch the
               errors that block assistive technology most often — and they are the ones that are cheapest to fix

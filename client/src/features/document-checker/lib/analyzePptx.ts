@@ -312,7 +312,7 @@ export async function analyzePptx(file: File): Promise<PptxResult> {
     title: 'Colour contrast and use of colour',
     status: 'review',
     category: 'Visual design',
-    summary: 'Contrast ratios are not measured by this preflight.',
+    summary: 'Contrast ratios are not measured by this automated check.',
     why: 'Slide templates often place light text on busy photographs, which is unreadable for people with low vision and in bright rooms.',
     fix: 'Check text against its background at 4.5:1 (3:1 for text 18pt and larger) and avoid conveying meaning with colour alone.',
     refs: ['WCAG 1.4.3 Contrast (Minimum)', 'WCAG 1.4.1 Use of Color'],

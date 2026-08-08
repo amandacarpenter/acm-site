@@ -342,7 +342,7 @@ export async function analyzeDocx(file: File): Promise<DocxResult> {
       title: 'Colour contrast and use of colour',
       status: 'review',
       category: 'Visual design',
-      summary: 'Contrast ratios are not measured by this preflight.',
+      summary: 'Contrast ratios are not measured by this automated check.',
       why: 'Low-contrast text is hard to read for people with low vision, and information conveyed by colour alone is lost for people who cannot distinguish it.',
       fix: 'Check body text against its background at 4.5:1 (3:1 for large text) with a contrast checker, and make sure colour is never the only cue.',
       refs: ['WCAG 1.4.3 Contrast (Minimum)', 'WCAG 1.4.1 Use of Color'],

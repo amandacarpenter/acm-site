@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Router, Route, Switch } from "wouter";
+import { Redirect, Router, Route, Switch } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -74,7 +74,7 @@ export default function App() {
             <Route path="/home" component={Home} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
-            <Route path="/document-checker">
+            <Route path="/accessibility-checker">
               {() => (
                 <Suspense
                   fallback={
@@ -89,6 +89,9 @@ export default function App() {
                   <DocumentChecker />
                 </Suspense>
               )}
+            </Route>
+            <Route path="/document-checker">
+              <Redirect to="/accessibility-checker" replace />
             </Route>
             <Route path="/pricing" component={PricingPage} />
             <Route path="/login" component={LoginPage} />
