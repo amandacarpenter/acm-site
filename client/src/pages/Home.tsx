@@ -238,15 +238,15 @@ export default function Home() {
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0f5f59] mb-5">
             <SearchCheck className="w-4 h-4" aria-hidden="true" />
-            Free, no account or Credits required
+            Free Document Accessibility Checker
           </div>
           <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
             Not sure if your documents are accessible?
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-            Use our free Accessibility Checker to find out. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
+            Use our free Accessibility Checker to find out. No account is required, and checking a document does not use any Remedy508 Credits. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
           </p>
         </div>
         <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
@@ -255,7 +255,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
           <Link href="/accessibility-checker">
             <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
-              Learn more about the Free Accessibility Checker
+              Learn more about the Free Document Accessibility Checker
             </span>
           </Link>
         </div>
