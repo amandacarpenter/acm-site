@@ -13,9 +13,29 @@ import {
   type ValidationError,
 } from "@/features/document-checker/lib/analyze";
 import type { Report } from "@/features/document-checker/lib/types";
+import { countByStatus } from "@/features/document-checker/lib/types";
+import { apiRequest } from "@/lib/queryClient";
 import "@/features/document-checker/document-checker.css";
 
 type View = "idle" | "analyzing" | "results";
+
+function fileTypeFromName(fileName: string): "PDF" | "DOCX" | "PPTX" | "UNKNOWN" {
+  const extension = fileName.split(".").pop()?.toUpperCase();
+  return extension === "PDF" || extension === "DOCX" || extension === "PPTX" ? extension : "UNKNOWN";
+}
+
+function logCheckerUsage(payload: {
+  fileName: string;
+  fileType: "PDF" | "DOCX" | "PPTX" | "UNKNOWN";
+  status: "completed" | "failed";
+  score?: number;
+  criticalCount?: number;
+  warningCount?: number;
+}) {
+  void apiRequest("POST", "/api/checker-usage", payload).catch(() => {
+    // Usage reporting must never interrupt a visitor's accessibility check.
+  });
+}
 
 export default function DocumentChecker() {
   useDocumentTitle("Remedy508 Accessibility Checker | Free Document Check");
@@ -49,11 +69,25 @@ export default function DocumentChecker() {
           setStageDetail(detail);
         });
         if (cancelled.current) return;
+        const counts = countByStatus(result.findings);
+        logCheckerUsage({
+          fileName: file.name,
+          fileType: result.kind,
+          status: "completed",
+          score: result.score,
+          criticalCount: counts.critical,
+          warningCount: counts.warning,
+        });
         setReport(result);
         setView("results");
         focusMain();
       } catch (err) {
         if (cancelled.current) return;
+        logCheckerUsage({
+          fileName: file.name,
+          fileType: fileTypeFromName(file.name),
+          status: "failed",
+        });
         setError({
           title: "This document could not be checked",
           message:
@@ -101,7 +135,7 @@ export default function DocumentChecker() {
             Check Accessibility
           </h1>
           <p className="text-lg text-white max-w-2xl mx-auto">
-            Check documents for common accessibility barriers. No account required.
+            Check documents for common accessibility barriers. Free to use, with no account required.
           </p>
         </div>
       </section>

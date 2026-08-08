@@ -166,6 +166,14 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
         </span>
       </p>
 
+      <p className="disclaimer" data-testid="text-results-privacy">
+        <Info size={18} aria-hidden="true" />
+        <span>
+          <strong>Your document was not uploaded or saved.</strong> Remedy508 retains the filename and basic check
+          metadata for internal usage reporting for up to 90 days.
+        </span>
+      </p>
+
       {report.parseNotes && report.parseNotes.length > 0 && (
         <p className="disclaimer" data-testid="text-scan-notes">
           <SearchCheck size={18} aria-hidden="true" />

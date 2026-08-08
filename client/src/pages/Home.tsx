@@ -60,10 +60,10 @@ export default function Home() {
 
       <main id="main-content">
       {/* ── HERO ── */}
-      <section className="relative flex flex-col lg:flex-row lg:[min-height:100svh]" aria-labelledby="hero-heading">
+      <section className="relative flex flex-col lg:flex-row lg:min-h-[max(560px,65svh)]" aria-labelledby="hero-heading">
 
         {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
-        <div className="hidden lg:flex flex-col relative overflow-hidden bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12" style={{ minHeight: "100svh" }}>
+        <div className="hidden lg:flex flex-col relative overflow-hidden bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12 min-h-[max(560px,65svh)]">
           <HeroWatermark corner="left" className="top-auto bottom-[-10%]" />
           {/* Logo row at very top */}
           <div className="relative pt-6 pb-4">
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
 
         {/* ─ RIGHT: full-bleed photo + nav + overlay text ─ */}
-        <div className="relative lg:flex-1 flex flex-col lg:min-h-svh">
+        <div className="relative lg:flex-1 flex flex-col lg:min-h-[max(560px,65svh)]">
 
           {/* Desktop: photo fills entire column absolutely */}
           <img
@@ -185,7 +185,7 @@ export default function Home() {
               alt=""
               aria-hidden="true"
               className="w-full object-cover"
-              style={{ height: "65vw", minHeight: 240, maxHeight: 360, objectPosition: "50% 15%" }}
+              style={{ height: "52vw", minHeight: 210, maxHeight: 290, objectPosition: "50% 15%" }}
             />
             <div className="absolute inset-0 flex items-end px-5 pb-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%)" }}>
               <p className="text-white font-black leading-none" style={{ fontSize: "clamp(2.2rem, 9vw, 3rem)", textShadow: "0 2px 20px rgba(0,0,0,0.7)" }}>
@@ -207,7 +207,7 @@ export default function Home() {
         </div>
 
         {/* Mobile-only copy block — below the photo */}
-        <div className="lg:hidden relative overflow-hidden bg-[#111827] px-6 py-10">
+        <div className="lg:hidden relative overflow-hidden bg-[#111827] px-6 py-8">
           <HeroWatermark corner="right" />
           <h1 id="hero-heading" className="relative text-2xl font-extrabold text-white leading-tight mb-4">
             Not Accessible,<br />Not Acceptable™
@@ -234,7 +234,6 @@ export default function Home() {
 
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="free-checker-heading">
-        <HeroWatermark corner="right" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
             <div className="max-w-2xl">
@@ -246,7 +245,7 @@ export default function Home() {
                 Free Accessibility Checker
               </h2>
               <p className="text-lg text-white/80 leading-relaxed">
-                Check documents for common accessibility barriers before you publish. The private, browser-based check is free to use.
+                Check documents for common accessibility barriers before you publish. It is free, requires no account, and document contents never leave your browser.
               </p>
             </div>
             <Link href="/accessibility-checker">

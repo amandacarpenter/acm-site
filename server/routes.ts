@@ -14,6 +14,7 @@ import * as path from "path";
 import * as child_process from "child_process";
 import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import { z } from "zod";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -1109,6 +1110,32 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  // The checker runs entirely in the browser. This endpoint receives only a
+  // filename and basic result metadata so the owner can understand adoption.
+  // It intentionally does not accept document bytes or extracted document text.
+  app.post("/api/checker-usage", (req, res) => {
+    const parsed = z.object({
+      fileName: z.string().min(1).max(255),
+      fileType: z.enum(["PDF", "DOCX", "PPTX", "UNKNOWN"]),
+      status: z.enum(["completed", "failed"]),
+      score: z.number().int().min(0).max(100).nullable().optional(),
+      criticalCount: z.number().int().min(0).nullable().optional(),
+      warningCount: z.number().int().min(0).nullable().optional(),
+    }).strict().safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Invalid checker usage event" });
+    }
+    const event = storage.createCheckerUsage({
+      ...parsed.data,
+      fileName: path.basename(parsed.data.fileName),
+      score: parsed.data.score ?? null,
+      criticalCount: parsed.data.criticalCount ?? null,
+      warningCount: parsed.data.warningCount ?? null,
+      createdAt: Date.now(),
+    });
+    res.status(201).json({ id: event.id });
+  });
+
   // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
   // Single-call summary powering the mobile admin dashboard: revenue/subscribers
   // (from Clerk user metadata, since that's the source of truth for plan state
@@ -1246,6 +1273,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }));
 
       const dailyCounts14d = storage.getDailyJobCounts(14);
+      const checkerUsage = storage.getCheckerUsageSummary();
       const analytics = await googleAnalyticsPromise;
 
       res.json({
@@ -1288,6 +1316,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           last7d: jobCounts7d,
           recentFailures,
         },
+        checkerUsage,
         recentActivity: recentJobs,
       });
     } catch (err: any) {

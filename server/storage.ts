@@ -1,7 +1,14 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { jobs, type Job, type InsertJob } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import {
+  jobs,
+  checkerUsage,
+  type Job,
+  type InsertJob,
+  type CheckerUsage,
+  type InsertCheckerUsage,
+} from "@shared/schema";
+import { eq, desc, lt } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 
@@ -29,6 +36,19 @@ sqlite.exec(`
     input_name TEXT,
     result TEXT,
     error_message TEXT,
+    created_at INTEGER NOT NULL
+  )
+`);
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS checker_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    file_name TEXT NOT NULL,
+    file_type TEXT NOT NULL,
+    status TEXT NOT NULL,
+    score INTEGER,
+    critical_count INTEGER,
+    warning_count INTEGER,
     created_at INTEGER NOT NULL
   )
 `);
@@ -61,6 +81,14 @@ export interface CostSummary {
   byType: Record<string, { jobs: number; pages: number; inputTokens: number; outputTokens: number }>;
 }
 
+export interface CheckerUsageSummary {
+  last90Days: number;
+  last30Days: number;
+  completed: number;
+  failed: number;
+  recent: CheckerUsage[];
+}
+
 export interface IStorage {
   createJob(job: InsertJob): Job;
   getJob(id: number): Job | undefined;
@@ -71,6 +99,8 @@ export interface IStorage {
   getRecentFailedJobs(limit?: number): Job[];
   getJobCountsSince(sinceMs: number): { total: number; failed: number; completed: number };
   getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[];
+  createCheckerUsage(event: InsertCheckerUsage): CheckerUsage;
+  getCheckerUsageSummary(): CheckerUsageSummary;
   backupTo(destPath: string): Promise<void>;
 }
 
@@ -158,6 +188,25 @@ export class Storage implements IStorage {
     return Array.from(byDate.entries())
       .map(([date, v]) => ({ date, ...v }))
       .sort((a, b) => a.date.localeCompare(b.date));
+  }
+  createCheckerUsage(event: InsertCheckerUsage): CheckerUsage {
+    const retentionCutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    db.delete(checkerUsage).where(lt(checkerUsage.createdAt, retentionCutoff)).run();
+    return db.insert(checkerUsage).values(event).returning().get();
+  }
+  getCheckerUsageSummary(): CheckerUsageSummary {
+    const now = Date.now();
+    const cutoff90 = now - 90 * 24 * 60 * 60 * 1000;
+    const cutoff30 = now - 30 * 24 * 60 * 60 * 1000;
+    db.delete(checkerUsage).where(lt(checkerUsage.createdAt, cutoff90)).run();
+    const all = db.select().from(checkerUsage).orderBy(desc(checkerUsage.createdAt)).all();
+    return {
+      last90Days: all.length,
+      last30Days: all.filter((event) => event.createdAt >= cutoff30).length,
+      completed: all.filter((event) => event.status === "completed").length,
+      failed: all.filter((event) => event.status === "failed").length,
+      recent: all.slice(0, 20),
+    };
   }
 }
 

@@ -20,3 +20,18 @@ export const jobs = sqliteTable("jobs", {
 export const insertJobSchema = createInsertSchema(jobs).omit({ id: true });
 export type InsertJob = z.infer<typeof insertJobSchema>;
 export type Job = typeof jobs.$inferSelect;
+
+export const checkerUsage = sqliteTable("checker_usage", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fileName: text("file_name").notNull(),
+  fileType: text("file_type").notNull(),
+  status: text("status").notNull(),
+  score: integer("score"),
+  criticalCount: integer("critical_count"),
+  warningCount: integer("warning_count"),
+  createdAt: integer("created_at").notNull(),
+});
+
+export const insertCheckerUsageSchema = createInsertSchema(checkerUsage).omit({ id: true });
+export type InsertCheckerUsage = z.infer<typeof insertCheckerUsageSchema>;
+export type CheckerUsage = typeof checkerUsage.$inferSelect;

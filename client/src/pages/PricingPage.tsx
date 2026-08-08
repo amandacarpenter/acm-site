@@ -11,6 +11,7 @@ const PRICE_MONTHLY = "price_1U0nJxAaDElV6hZxPUcTnm6i"; // $19/mo
 const PRICE_ANNUAL  = "price_1U0nK2AaDElV6hZxv9vmPBz4"; // $199/yr
 
 const INDIVIDUAL_FEATURES = [
+  "Free Accessibility Checker (no Credits required)",
   "Remedy Docs (Word & PDF)",
   "Remedy Image",
   "Remedy HTML",
@@ -20,6 +21,7 @@ const INDIVIDUAL_FEATURES = [
 ];
 
 const TEAM_FEATURES = [
+  "Free Accessibility Checker (no Credits required)",
   "Everything in Individual",
   "Admin dashboard for your team",
   "Invite by link or email",
@@ -216,6 +218,7 @@ export default function PricingPage() {
           <h2 id="faq-heading" className="text-2xl font-bold text-[#3a485b] mb-8 text-center">Common questions</h2>
           <div className="space-y-6">
             {[
+              { q: "What is the Free Accessibility Checker?", a: "It is a browser-based document check for common accessibility barriers. It is free, requires no account, and uses no Credits. Document contents are not uploaded or saved; the filename and basic check metadata are retained for internal usage reporting for up to 90 days." },
               {
                 q: "What is a Credit?",
                 a: (

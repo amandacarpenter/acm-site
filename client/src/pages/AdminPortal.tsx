@@ -55,6 +55,22 @@ interface DashboardData {
     last7d: { total: number; failed: number; completed: number };
     recentFailures: { id: number; type: string; inputName: string | null; errorMessage: string | null; createdAt: number }[];
   };
+  checkerUsage: {
+    last90Days: number;
+    last30Days: number;
+    completed: number;
+    failed: number;
+    recent: {
+      id: number;
+      fileName: string;
+      fileType: string;
+      status: string;
+      score: number | null;
+      criticalCount: number | null;
+      warningCount: number | null;
+      createdAt: number;
+    }[];
+  };
   recentActivity: { id: number; type: string; status: string; inputName: string | null; pageCount: number | null; creditsUsed: number | null; createdAt: number; submittedBy: string | null }[];
 }
 
@@ -228,7 +244,7 @@ function LiveDashboard() {
 
   if (!data) return null;
 
-  const { revenue, usageAndCost, health, recentActivity, analytics } = data;
+  const { revenue, usageAndCost, health, checkerUsage, recentActivity, analytics } = data;
   const failRate24h = health.last24h.total > 0 ? (health.last24h.failed / health.last24h.total) * 100 : 0;
 
   return (
@@ -364,6 +380,64 @@ function LiveDashboard() {
             </div>
           </>
         )}
+      </div>
+
+      {/* Free Accessibility Checker */}
+      <div style={{ marginBottom: 28 }}>
+        <SectionHeader
+          title="Free Checker Usage"
+          subtitle="Filename and basic check metadata only — document contents stay in the visitor's browser"
+        />
+        <StatGrid>
+          <StatCard label="Checks (90d)" value={String(checkerUsage.last90Days)} tone="good" />
+          <StatCard label="Checks (30d)" value={String(checkerUsage.last30Days)} />
+          <StatCard label="Completed" value={String(checkerUsage.completed)} />
+          <StatCard label="Failed" value={String(checkerUsage.failed)} tone={checkerUsage.failed > 0 ? "warn" : "good"} />
+        </StatGrid>
+        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
+          {checkerUsage.recent.length === 0 && (
+            <div style={{ padding: "16px", fontSize: "0.8rem", color: "#9ca3af" }}>No checker activity yet</div>
+          )}
+          {checkerUsage.recent.map((event, index) => (
+            <div
+              key={event.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "10px 14px",
+                borderTop: index === 0 ? "none" : "1px solid #f3f4f6",
+              }}
+            >
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {event.fileName}
+                </div>
+                <div style={{ fontSize: "0.68rem", color: "#9ca3af", marginTop: 2 }}>
+                  {event.fileType}
+                  {event.score != null ? ` · ${event.score}/100` : ""}
+                  {event.criticalCount != null ? ` · ${event.criticalCount} critical` : ""}
+                  {event.warningCount != null ? ` · ${event.warningCount} warnings` : ""}
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "0.65rem",
+                  fontWeight: 700,
+                  padding: "2px 8px",
+                  borderRadius: 20,
+                  whiteSpace: "nowrap",
+                  background: event.status === "completed" ? "#dcfce7" : "#fee2e2",
+                  color: event.status === "completed" ? "#15803d" : "#991b1b",
+                }}
+              >
+                {event.status.toUpperCase()}
+              </span>
+              <span style={{ fontSize: "0.7rem", color: "#9ca3af", whiteSpace: "nowrap" }}>{timeAgo(event.createdAt)}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Usage & Cost */}

@@ -19,7 +19,7 @@ export default function Privacy() {
             Legal
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: July 29, 2026</p>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 8, 2026</p>
         </div>
       </section>
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
@@ -31,6 +31,7 @@ export default function Privacy() {
           <Section title="1. Information We Collect">
             <Sub title="Account Information">When you create a Remedy508 account, we collect your email address and the credential information you use to authenticate (managed through Clerk, our authentication provider). We may also collect your name if you provide it.</Sub>
             <Sub title="Uploaded Files and Content">To provide the remediation service, you may upload files such as PDFs, images, video files, and Canvas course content. These files are processed in memory to generate accessible output. <strong>Uploaded files are not retained after your result is returned.</strong> We do not store copies of your uploaded documents.</Sub>
+            <Sub title="Free Accessibility Checker">When you use the free checker, document contents are processed locally in your browser and are not uploaded or saved. We retain the filename, file type, check status, score and summary counts when available, and timestamp for internal usage reporting. This metadata is retained for up to 90 days. Avoid including personal or sensitive information in filenames.</Sub>
             <Sub title="Payment Information">Billing is handled by Stripe. We do not collect or store your credit card number, CVV, or banking credentials. We receive only a payment token and summary billing information from Stripe.</Sub>
             <Sub title="Usage and Analytics Data">We collect information about how you use the Service, including pages visited, session duration, browser type, device type, IP address (country-level only), and error logs. This helps us improve the product.</Sub>
           </Section>
@@ -141,6 +142,7 @@ export default function Privacy() {
               <tbody>
                 {[
                   ["Uploaded files", "Not retained — deleted immediately after processing"],
+                  ["Free checker usage metadata", "Up to 90 days"],
                   ["Processed output", "Available until you delete or subscription ends"],
                   ["Account information", "Retained while subscription is active"],
                   ["Billing records", "As required by law (typically 7 years)"],
@@ -198,4 +200,3 @@ function Sub({ title, children }: { title: string; children: React.ReactNode }) 
     </div>
   );
 }
-

@@ -18,7 +18,7 @@ export default function Terms() {
             Legal
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Terms of Service</h1>
-          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 8, 2026</p>
         </div>
       </section>
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
@@ -86,7 +86,7 @@ export default function Terms() {
           <Section title="8. Accessibility Compliance Disclaimer">
             <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg text-sm">
               <p className="font-semibold text-amber-700 mb-1">Important</p>
-              <p>Use of Remedy508 does not guarantee legal compliance. Accessibility compliance under the ADA, Section 508, WCAG, or any other law is a complex, context-dependent determination. <strong>You remain responsible for your institution's accessibility obligations.</strong> We make no warranty that the Service will render any content fully accessible or satisfy any legal requirement.</p>
+              <p>Use of Remedy508 does not guarantee legal compliance. Accessibility compliance under the ADA, Section 508, WCAG, or any other law is a complex, context-dependent determination. The Free Accessibility Checker's score reflects only Remedy508's automated checks; it is not equivalent to Adobe Acrobat's checker and is not a certification. <strong>You remain responsible for your institution's accessibility obligations.</strong> We make no warranty that the Service will render any content fully accessible or satisfy any legal requirement.</p>
             </div>
           </Section>
 
@@ -139,4 +139,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
-

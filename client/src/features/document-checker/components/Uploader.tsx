@@ -118,8 +118,25 @@ export function Uploader({ onFile, error, setError }: Props) {
                 Documents up to 50 MB
               </span>
               <span>Checked in your browser</span>
-              <span>No upload, no account</span>
+              <span>Document contents are not uploaded</span>
             </div>
+
+            <p className="disclaimer" data-testid="checker-privacy-note">
+              <ScanLine size={18} aria-hidden="true" />
+              <span>
+                <strong>Private document processing.</strong> Your document contents stay in your browser and are not
+                saved. Remedy508 records the filename and basic check metadata for internal usage reporting for up to
+                90 days.
+              </span>
+            </p>
+
+            <p className="disclaimer" data-testid="checker-automation-note">
+              <TriangleAlert size={18} aria-hidden="true" />
+              <span>
+                <strong>Automated guidance, not certification.</strong> The checker identifies machine-detectable
+                barriers. Manual review is still needed to confirm accessibility and compliance.
+              </span>
+            </p>
 
             <div role="alert" aria-live="assertive" data-testid="upload-error">
               {error && (
@@ -166,8 +183,7 @@ export function Uploader({ onFile, error, setError }: Props) {
           <div className="section-head">
             <h2 id="method-title">How it works</h2>
             <p>
-              Documents are inspected directly in your browser, so the entire accessibility check runs privately on
-              your device.
+              Document contents are inspected directly in your browser and are never uploaded or saved.
             </p>
           </div>
           <div className="method">
@@ -177,7 +193,8 @@ export function Uploader({ onFile, error, setError }: Props) {
                   <h3>The file is opened locally</h3>
                   <p>
                     Document packages are opened in memory and PDFs are parsed with Mozilla’s pdf.js and pdf-lib. No
-                    network request carries your document.
+                    network request carries your document contents. Only the filename and basic check metadata are
+                    recorded for internal usage reporting.
                   </p>
                 </div>
               </li>

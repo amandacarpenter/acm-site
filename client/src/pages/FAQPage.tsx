@@ -66,6 +66,27 @@ interface FAQSection {
 
 const FAQ_SECTIONS: FAQSection[] = [
   {
+    title: "Free Accessibility Checker",
+    items: [
+      {
+        q: "What is the Free Accessibility Checker?",
+        a: "It is a free, browser-based check that reviews documents for common machine-detectable accessibility barriers. You do not need an account, and the check uses no Remedy508 Credits.",
+      },
+      {
+        q: "Does Remedy508 upload or save my document?",
+        a: "No. The document contents stay in your browser and are not uploaded or saved. Remedy508 records the filename, file type, check outcome, and time for internal usage reporting, and retains that metadata for up to 90 days.",
+      },
+      {
+        q: "Does a high score mean my document is fully accessible?",
+        a: "No. The score summarizes Remedy508's automated findings only; it is not a compliance certification and is not the same as an Adobe Acrobat score. Manual review is still needed for reading order, meaningful alternative text, visual logic, and other context-dependent requirements.",
+      },
+      {
+        q: "What is the difference between the checker and Remedy Docs?",
+        a: "The Free Accessibility Checker identifies and explains common barriers. Remedy Docs is the paid remediation service that provides automated remediation assistance and produces an updated document.",
+      },
+    ],
+  },
+  {
     title: "About Remedy508",
     items: [
       {
