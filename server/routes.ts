@@ -1078,6 +1078,37 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  // ── Debug: fetch the most recent raw pre-render HTML sidecar produced by
+  // the vision pipeline (handleComplexPdfFix writes <output>.pdf.html and
+  // never deletes it on the success path). Read-only, admin-key gated,
+  // temporary diagnostic aid -- not part of normal product surface.
+  app.get("/api/admin/debug-last-html", async (req, res) => {
+    const key = req.query.key as string | undefined;
+    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
+      return res.status(404).json({ error: "Not found" });
+    }
+    try {
+      const { tmpdir } = await import("os");
+      const fsMod = require("fs");
+      const dir = tmpdir();
+      const files = fsMod.readdirSync(dir)
+        .filter((f: string) => f.startsWith("accessible-") && f.endsWith(".pdf.html"))
+        .map((f: string) => ({ f, mtime: fsMod.statSync(path.join(dir, f)).mtimeMs }))
+        .sort((a: any, b: any) => b.mtime - a.mtime);
+      if (files.length === 0) {
+        return res.status(404).json({ error: "No sidecar HTML files found", tmpdir: dir });
+      }
+      const latest = files[0].f;
+      const content = fsMod.readFileSync(path.join(dir, latest), "utf-8");
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      res.setHeader("X-Debug-Filename", latest);
+      res.setHeader("X-Debug-Candidates", String(files.length));
+      res.send(content);
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
   // Single-call summary powering the mobile admin dashboard: revenue/subscribers
   // (from Clerk user metadata, since that's the source of truth for plan state
