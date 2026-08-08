@@ -78,9 +78,9 @@
 .document-checker-page h3,
 .document-checker-page h4 {
   font-family: var(--font-display);
+  font-weight: 700;
   color: var(--text);
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.1;
   margin: 0;
 }
 
@@ -337,8 +337,10 @@
   margin-bottom: 32px;
 }
 .document-checker-page .section-head h2 {
-  font-size: clamp(24px, 3vw, 30px);
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--slate);
 }
 .document-checker-page .section-head p {
   margin-top: 12px;
@@ -365,9 +367,9 @@
   margin-top: 3px;
 }
 .document-checker-page .check-list h3 {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: 15px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .document-checker-page .check-list p {
   font-size: 14px;
@@ -409,9 +411,9 @@
   place-items: center;
 }
 .document-checker-page .method-steps h3 {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
 }
 .document-checker-page .method-steps p {
   font-size: 14.5px;
@@ -426,9 +428,9 @@
   padding: 22px;
 }
 .document-checker-page .note-card h3 {
-  font-family: var(--font-body);
+  font-family: var(--font-display);
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 10px;
 }
 .document-checker-page .note-card p + p {

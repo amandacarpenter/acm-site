@@ -250,7 +250,7 @@ export default function Home() {
               </p>
             </div>
             <Link href="/accessibility-checker">
-              <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-7 py-3.5 text-base font-bold text-[#0f766e] hover:bg-[#eef8f7] transition cursor-pointer whitespace-nowrap" data-testid="home-checker-cta">
+              <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#d63b1f] px-7 py-3.5 text-base font-bold text-white hover:bg-[#b8321b] transition cursor-pointer whitespace-nowrap" data-testid="home-checker-cta">
                 Check a Document Free
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </span>
