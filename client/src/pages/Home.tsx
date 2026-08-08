@@ -241,7 +241,7 @@ export default function Home() {
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-5">
             <SearchCheck className="w-4 h-4" aria-hidden="true" />
             Free, no account or Credits required
           </div>
@@ -270,8 +270,8 @@ export default function Home() {
 
           {/* Section header */}
           <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/20 text-xs font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
-              <Sparkles className="w-3 h-3" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
               What’s included with Remedy508
             </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
