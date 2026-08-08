@@ -2386,6 +2386,7 @@ CRITICAL RULES:
 - However, a bracket, brace, or shaded band drawn ON TOP OF or immediately touching the table's own rows/right edge — grouping several rows under a label like "Deactivating groups" / "Activating groups" / "Group A" — IS a real column of that table (just visually merged). Reproduce it as a genuine column: repeat the same text value as an ordinary <td> in EVERY row it covers (do not use rowspan, do not leave the covered rows blank), and leave the cell truly empty (<td></td>) only for rows the bracket does not cover. Every row must end up with the exact same number of <td> cells as the header has <th> cells — never fewer.
 - Test before finalizing: count the <th> cells in your <thead> row, then count the <td> cells in every single <tbody> row. If any row's count does not exactly equal the header's count, you have a mistake — fix it before moving on.
 - NEVER leave trailing empty <td> cells at the end of a row — every <tr> must have exactly as many cells as the <thead> row has, no more, no fewer.
+- CRITICAL — never emit a table row whose row-label column (the leftmost <th scope="row"> column, if this table has one) is blank while a later column in that same row has real text. If you see what looks like an extra grid row where only the LAST column has content and the earlier columns (including the row-label column) are empty, that is NOT a new row — it is the continuation of the previous row's long cell text (the drawn table just gave that cell's paragraph enough vertical space that it visually looks like its own ruled row). Merge that continuation text into the END of the correct cell in the row directly above it (joined with a space, or a new <p> inside that same <td>/<th> if the source shows a clear paragraph break), and do NOT create a separate <tr> for it. Every <tr> you emit must have a real, non-empty row label in its row-label column if the table has one.
 - If a table's data rows are split across two page images (the table's grid visually continues from the bottom of one page to the top of the next with no gap, no repeated header row, and no other content in between), treat it as one table split only by the page boundary: on the FIRST page emit <table data-pdf-table-id="T1"> with the header and the rows shown on that page; on the SECOND page emit a table with the SAME data-pdf-table-id value ("T1") containing ONLY the additional rows with no <thead> and no repeated header cells, so it can be recombined into a single table. Use the table's caption text (if visible) to help you recognize this is the same table — do not repeat the caption on the continuation fragment either.
 - For numbered equations (e.g. 6.7.1): wrap in <p class="equation" id="eq-NUMBER">...(NUMBER)</p>
 - Use <h1> for main page/section title (first page only), <h2> for section headings, <h3> for subsections
@@ -2642,6 +2643,47 @@ for _i in range(len(_all_tables) - 1, 0, -1):
         for _row in _cur_tbody.find_all('tr', recursive=False):
             _prev_tbody.append(_row.extract())
         _cur.decompose()
+
+# Safety net for a distinct model failure mode, seen in real VPAT-style
+# documents: when one row's Remarks/description cell is a long paragraph,
+# the source PDF sometimes draws that cell tall enough that a follow-on
+# paragraph *within the same logical cell* lands in its own ruled grid band.
+# The vision model can misread that visual band as a brand-new <tr>, so it
+# emits a row where the row-label column (and any other leading columns) are
+# empty but the LAST column has real text -- a row with no row identity at
+# all. The prompt above now tells the model not to do this, but since
+# compliance isn't guaranteed, catch and repair it here too: any <tr> whose
+# leading cells (all but the last) are empty/whitespace-only, in a table
+# where at least one other row DOES have real content in those leading
+# columns, is treated as orphaned continuation text and its last cell's
+# content is appended into the same-index cell of the immediately preceding
+# row (joined as a new paragraph), then the orphan row is removed entirely.
+for _t in _pre_merge_soup.find_all('table'):
+    _body_rows = [_r for _r in _t.find_all('tr') if _r.find_parent('thead') is None]
+    _rows_have_real_leading_label = any(
+        (_r.find(['th', 'td']) and _r.find(['th', 'td']).get_text(strip=True))
+        for _r in _body_rows
+    )
+    if not _rows_have_real_leading_label:
+        continue
+    _prev_real_row = None
+    for _r in _body_rows:
+        _cells = _r.find_all(['th', 'td'], recursive=False)
+        if len(_cells) < 2:
+            _prev_real_row = _r
+            continue
+        _leading_empty = all(not _c.get_text(strip=True) for _c in _cells[:-1])
+        _last_has_text = bool(_cells[-1].get_text(strip=True))
+        if _leading_empty and _last_has_text and _prev_real_row is not None:
+            _prev_cells = _prev_real_row.find_all(['th', 'td'], recursive=False)
+            if len(_prev_cells) == len(_cells):
+                _target = _prev_cells[-1]
+                _new_p = _pre_merge_soup.new_tag('p')
+                _new_p.string = _cells[-1].get_text(' ', strip=True)
+                _target.append(_new_p)
+                _r.decompose()
+                continue
+        _prev_real_row = _r
 
 # WeasyPrint bug workaround (see get_wrapped_table patch below for the full
 # explanation): when a table's box tree fragments across a page break in a
