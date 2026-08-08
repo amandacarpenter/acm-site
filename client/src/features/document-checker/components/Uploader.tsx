@@ -22,7 +22,7 @@ const CHECKS = [
   {
     icon: ListTree,
     title: 'Structure and headings',
-    body: 'Heading styles in Word, title placeholders in PowerPoint, and the document tag tree in PDF.',
+    body: 'Heading styles, document titles, and the structural tag tree used by assistive technology.',
   },
   {
     icon: ImageIcon,
@@ -115,9 +115,9 @@ export function Uploader({ onFile, error, setError }: Props) {
             <div className="upload-meta">
               <span>
                 <FileText size={14} aria-hidden="true" />
-                PDF, DOCX, PPTX
+                Documents up to 50 MB
               </span>
-              <span>Up to 50 MB</span>
+              <span>Checked in your browser</span>
               <span>No upload, no account</span>
             </div>
 
@@ -143,8 +143,8 @@ export function Uploader({ onFile, error, setError }: Props) {
             <h2 id="checks-title">What Remedy508 Accessibility Checker looks for</h2>
             <p>
               These are the properties an automated tool can read directly out of a document file. They catch the
-              errors that block assistive technology most often — and they are the ones that are cheapest to fix
-              before publication.
+              barriers that affect assistive technology most often and are most efficient to address before
+              publication.
             </p>
           </div>
           <ul className="check-list">
@@ -166,8 +166,8 @@ export function Uploader({ onFile, error, setError }: Props) {
           <div className="section-head">
             <h2 id="method-title">How it works</h2>
             <p>
-              Nothing here is a black box. Word and PowerPoint files are ZIP packages of XML, and PDFs expose their
-              catalog through a browser PDF engine — so the whole inspection can run on your machine.
+              Documents are inspected directly in your browser, so the entire accessibility check runs privately on
+              your device.
             </p>
           </div>
           <div className="method">
@@ -176,8 +176,8 @@ export function Uploader({ onFile, error, setError }: Props) {
                 <div>
                   <h3>The file is opened locally</h3>
                   <p>
-                    DOCX and PPTX packages are unzipped in memory with JSZip. PDFs are parsed with Mozilla’s pdf.js
-                    and pdf-lib. No network request carries your document.
+                    Document packages are opened in memory and PDFs are parsed with Mozilla’s pdf.js and pdf-lib. No
+                    network request carries your document.
                   </p>
                 </div>
               </li>
@@ -185,8 +185,8 @@ export function Uploader({ onFile, error, setError }: Props) {
                 <div>
                   <h3>Structural properties are read</h3>
                   <p>
-                    Heading styles, slide titles, alt text attributes, hyperlink targets, table structures and header
-                    associations, form field tooltips, language values, and text layers are pulled from the file.
+                    Heading styles, document titles, alt text attributes, hyperlink targets, table structures and
+                    header associations, form field labels, language values, and text layers are read from the file.
                   </p>
                 </div>
               </li>

@@ -101,7 +101,7 @@ export default function DocumentChecker() {
             Check Accessibility
           </h1>
           <p className="text-lg text-white max-w-2xl mx-auto">
-            Check a PDF, Word document, or PowerPoint for common accessibility problems. No account required.
+            Check documents for common accessibility barriers. No account required.
           </p>
         </div>
       </section>

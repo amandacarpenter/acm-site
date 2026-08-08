@@ -233,24 +233,25 @@ export default function Home() {
       </section>
 
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
-      <section className="relative overflow-hidden bg-[#eef8f7] py-14 sm:py-16" aria-labelledby="free-checker-heading">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8 rounded-2xl border border-[#0d9488]/25 bg-white p-8 sm:p-10 shadow-sm">
+      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="free-checker-heading">
+        <HeroWatermark corner="right" />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 text-sm font-semibold text-[#0f766e] mb-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-semibold text-white mb-5">
                 <SearchCheck className="w-4 h-4" aria-hidden="true" />
                 Free, no account required
               </div>
-              <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-3">
+              <h2 id="free-checker-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
                 Free Accessibility Checker
               </h2>
-              <p className="text-lg text-gray-600 leading-relaxed">
-                Check PDF, Word, and PowerPoint files for common accessibility problems before you publish.
+              <p className="text-lg text-white/80 leading-relaxed">
+                Check documents for common accessibility barriers before you publish. The private, browser-based check is free to use.
               </p>
             </div>
             <Link href="/accessibility-checker">
-              <span className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0d9488] px-7 py-3.5 text-base font-bold text-white hover:bg-[#0f766e] transition cursor-pointer whitespace-nowrap" data-testid="home-checker-cta">
-                Check Accessibility
+              <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-7 py-3.5 text-base font-bold text-[#0f766e] hover:bg-[#eef8f7] transition cursor-pointer whitespace-nowrap" data-testid="home-checker-cta">
+                Check a Document Free
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </span>
             </Link>

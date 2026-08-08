@@ -72,10 +72,10 @@ export function computeScore(findings: Finding[]): number {
 }
 
 export function scoreBand(score: number): string {
-  if (score >= 85) return 'Few automated issues detected';
-  if (score >= 65) return 'Some automated issues detected';
-  if (score >= 40) return 'Several automated issues detected';
-  return 'Many automated issues detected';
+  if (score >= 85) return 'Strong automated accessibility result';
+  if (score >= 65) return 'A few accessibility improvements identified';
+  if (score >= 40) return 'Additional accessibility improvements identified';
+  return 'Automated remediation assistance recommended';
 }
 
 export function formatBytes(bytes: number): string {

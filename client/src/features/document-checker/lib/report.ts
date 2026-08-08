@@ -335,7 +335,7 @@ export async function buildReportPdf(report: Report): Promise<Uint8Array> {
     borderColor: COLORS.teal,
     borderWidth: 1,
   });
-  page.drawText('Sign up for Remedy508 to fix accessibility issues in your documents.', {
+  page.drawText('Get automated document remediation assistance with Remedy508.', {
     x: MARGIN + 16,
     y: y - 27,
     size: 10.5,

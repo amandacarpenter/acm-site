@@ -283,10 +283,10 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
 
       <div className="cta-panel">
         <div>
-          <h2>Want the fixes done for you?</h2>
+          <h2>Ready for remediation assistance?</h2>
           <p>
-            Remedy508 remediates PDF, Word, and PowerPoint files — tagging, reading order, alt text, and form labels —
-            and returns the corrected document with a summary of what changed.
+            Remedy508 provides automated document accessibility remediation for structure, reading order, alternative
+            text, and form labels, then returns the updated document with a summary of enhancements.
           </p>
         </div>
         <a
