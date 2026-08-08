@@ -2,13 +2,10 @@ import { Link, useLocation } from "wouter";
 import { lazy, Suspense, useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SiteFooter from "@/components/SiteFooter";
-import teaserVideo from "@/assets/teaser.mp4";
 import iconDocument from "@/assets/icon-document.png";
 import iconVideo from "@/assets/icon-video.png";
 import iconCanvas from "@/assets/icon-canvas.png";
 import iconAlttext from "@/assets/icon-alttext.png";
-import teaserCaptions from "@/assets/teaser.vtt";
-import phoneFrame from "@/assets/phone-frame.png";
 import heroPerson from "@/assets/hero-person.png";
 import logoUrl from "@/assets/logo.png";
 import logoHero from "@/assets/logo-hero.jpg";
@@ -282,32 +279,7 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Two-column: phone left, tools right */}
-          <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-
-            {/* Phone mockup */}
-            <div className="flex-shrink-0 flex justify-center">
-              <div style={{ position: "relative", width: 300 }}>
-                <img src={phoneFrame} alt="" aria-hidden="true"
-                  style={{ width: "100%", display: "block", pointerEvents: "none", userSelect: "none" }} />
-                <div style={{
-                  position: "absolute", top: "10.5%", left: "13.5%",
-                  width: "73%", height: "74.5%",
-                  overflow: "hidden", borderRadius: "6% / 4%",
-                }}>
-                  <video
-                    autoPlay muted loop playsInline controls
-                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  >
-                    <source src={teaserVideo} type="video/mp4" />
-                    <track kind="captions" src={teaserCaptions} srcLang="en" label="English" default />
-                  </video>
-                </div>
-              </div>
-            </div>
-
-            {/* Tool cards — single column */}
-            <div className="flex-1 flex flex-col gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
               {TOOLS.map((tool) => (
                 <div key={tool.tab} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
@@ -322,8 +294,6 @@ export default function Home() {
                   </div>
                 </div>
               ))}
-            </div>
-
           </div>
         </div>
       </section>
