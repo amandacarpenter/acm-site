@@ -2529,18 +2529,21 @@ def clean_html(raw_html, page_images):
     # direct children are ONLY block-level elements -- wrap any bare text
     # node (or inline element run) that is a direct child into its own <p>,
     # preserving order relative to existing block children.
+    _INLINE_MIX_BLOCK_TAGS = ['p', 'div', 'ul', 'ol', 'table']
+
     def _normalize_cell_content(cell):
-        _direct_text = any(
+        _has_inline_run = any(
             (isinstance(_c, str) and _c.strip())
+            or (getattr(_c, 'name', None) is not None and _c.name not in _INLINE_MIX_BLOCK_TAGS)
             for _c in cell.contents
         )
-        _has_block_child = cell.find(['p', 'div', 'ul', 'ol'], recursive=False) is not None
-        if not (_direct_text and _has_block_child):
+        _has_block_child = cell.find(_INLINE_MIX_BLOCK_TAGS, recursive=False) is not None
+        if not (_has_inline_run and _has_block_child):
             return
         _run = []
         _new_children = []
         for _c in list(cell.contents):
-            _is_block = getattr(_c, 'name', None) in ('p', 'div', 'ul', 'ol')
+            _is_block = getattr(_c, 'name', None) in _INLINE_MIX_BLOCK_TAGS
             if _is_block:
                 if _run:
                     _p = soup.new_tag('p')

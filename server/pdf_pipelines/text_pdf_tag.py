@@ -62,28 +62,37 @@ def clean_html(raw_html: str) -> str:
                 _nest_repair_changed = True
                 break
 
-    # WeasyPrint bug: a <td>/<th> whose content MIXES a bare text node with
-    # a block-level child (most commonly <p>) causes its tagged-PDF box-tree
-    # builder to emit a spurious NESTED /TD (or /TH) inside the real one --
-    # confirmed on the vision pipeline's real output by isolating the exact
-    # minimal case and inspecting the resulting struct tree directly. This
-    # is the actual root cause of residual 'Headers'-failed cells, not an
-    # unclosed source tag (the repair pass above is defensive/no-op on real
-    # output). Normalize every <td>/<th> so its direct children are ONLY
-    # block-level elements -- wrap any bare text node (or inline element
-    # run) that is a direct child into its own <p>, preserving order.
+    # WeasyPrint bug: a <td>/<th> whose content MIXES inline-level content
+    # (a bare text node OR an inline element like <strong>/<em>/<a>) with a
+    # block-level sibling (most commonly <p> or <ul>) causes its tagged-PDF
+    # box-tree builder to emit a spurious NESTED /TD (or /TH) inside the
+    # real one -- confirmed on real documents by isolating the exact
+    # minimal case and inspecting the resulting struct tree directly.
+    # Originally only bare text nodes were detected as the inline-mix
+    # trigger, but a real VPAT document surfaced the same bug from a
+    # <strong>criteria label</strong> immediately followed by a <ul> of
+    # standard references -- confirmed via isolated repro to reproduce the
+    # identical nested-/TD struct-tree defect. This is the actual root
+    # cause of residual 'Headers'-failed cells, not an unclosed source tag
+    # (the repair pass above is defensive/no-op on real output). Normalize
+    # every <td>/<th> so its direct children are ONLY block-level elements
+    # -- wrap any leading inline run (text nodes and/or inline elements)
+    # that is a direct child into its own <p>, preserving order.
+    _INLINE_MIX_BLOCK_TAGS = ("p", "div", "ul", "ol", "table")
+
     def _normalize_cell_content(cell):
-        _direct_text = any(
+        _has_inline_run = any(
             (isinstance(_c, str) and _c.strip())
+            or (getattr(_c, "name", None) is not None and _c.name not in _INLINE_MIX_BLOCK_TAGS)
             for _c in cell.contents
         )
-        _has_block_child = cell.find(["p", "div", "ul", "ol"], recursive=False) is not None
-        if not (_direct_text and _has_block_child):
+        _has_block_child = cell.find(list(_INLINE_MIX_BLOCK_TAGS), recursive=False) is not None
+        if not (_has_inline_run and _has_block_child):
             return
         _run = []
         _new_children = []
         for _c in list(cell.contents):
-            _is_block = getattr(_c, "name", None) in ("p", "div", "ul", "ol")
+            _is_block = getattr(_c, "name", None) in _INLINE_MIX_BLOCK_TAGS
             if _is_block:
                 if _run:
                     _p = soup.new_tag("p")
