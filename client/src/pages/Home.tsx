@@ -265,7 +265,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 sm:py-28 bg-white" aria-labelledby="how-heading">
+      <section className="py-20 sm:py-28 bg-[#FAF6F1]" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           {/* Section header */}
@@ -309,7 +309,7 @@ export default function Home() {
             {/* Tool cards — single column */}
             <div className="flex-1 flex flex-col gap-4">
               {TOOLS.map((tool) => (
-                <div key={tool.tab} className="bg-gray-50 rounded-2xl border border-gray-200 p-5" data-testid={`tool-card-${tool.tab}`}>
+                <div key={tool.tab} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
                     <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
                     <div className="flex-1 min-w-0">
