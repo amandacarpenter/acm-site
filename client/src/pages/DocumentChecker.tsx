@@ -11,7 +11,6 @@ import {
   type StageId,
   type ValidationError,
 } from "@/features/document-checker/lib/analyze";
-import { buildSampleReport } from "@/features/document-checker/lib/sample";
 import type { Report } from "@/features/document-checker/lib/types";
 import "@/features/document-checker/document-checker.css";
 
@@ -67,13 +66,6 @@ export default function DocumentChecker() {
     [focusMain],
   );
 
-  const handleSample = useCallback(() => {
-    setError(null);
-    setReport(buildSampleReport());
-    setView("results");
-    focusMain();
-  }, [focusMain]);
-
   const reset = useCallback(() => {
     cancelled.current = true;
     setReport(null);
@@ -101,7 +93,6 @@ export default function DocumentChecker() {
           {view === "idle" && (
             <Uploader
               onFile={handleFile}
-              onSample={handleSample}
               error={error}
               setError={setError}
             />

@@ -93,7 +93,6 @@ export async function analyzeFile(
     fileSizeLabel: formatBytes(file.size),
     kind,
     generatedAt: new Date().toLocaleString(),
-    isSample: false,
     score: computeScore(findings),
     facts,
     findings,

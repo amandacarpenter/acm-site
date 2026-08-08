@@ -41,6 +41,7 @@ const STATS = [
 ];
 
 const NAV_LINKS = [
+  { href: "/accessibility-checker", label: "Check Accessibility" },
   { href: "/about", label: "About" },
   { href: "/faq", label: "FAQ" },
   { href: "/kb", label: "Knowledge Base" },
@@ -121,7 +122,7 @@ export default function Home() {
               <div className="hidden lg:block" />
 
               {/* Desktop nav */}
-              <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
+              <nav className="hidden xl:flex items-center gap-1 whitespace-nowrap" aria-label="Main navigation">
                 {NAV_LINKS.map((link) => (
                   <Link key={link.href} href={link.href}>
                     <span className={`px-3 py-2 rounded-lg text-base font-semibold transition-colors cursor-pointer ${
@@ -147,7 +148,7 @@ export default function Home() {
 
               {/* Mobile hamburger */}
               <button
-                className="sm:hidden p-2 rounded-lg text-white/80 hover:text-white"
+                className="xl:hidden p-2 rounded-lg text-white/80 hover:text-white"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
               >
@@ -157,7 +158,7 @@ export default function Home() {
 
             {/* Mobile dropdown */}
             {mobileOpen && (
-              <div className="sm:hidden bg-[#111827]/95 border-t border-white/10">
+              <div className="xl:hidden bg-[#111827]/95 border-t border-white/10">
                 <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
                   {NAV_LINKS.map((link) => (
                     <Link key={link.href} href={link.href}>

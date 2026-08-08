@@ -21,7 +21,7 @@ import {
 } from '../lib/types';
 import { DISCLAIMER, downloadReport } from '../lib/report';
 
-const PRODUCT_URL = '/tools';
+const PRODUCT_URL = '/pricing';
 
 type FilterKey = 'all' | Status;
 
@@ -83,11 +83,6 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
               ·
             </span>
             <span>Checked {report.generatedAt}</span>
-            {report.isSample && (
-              <span className="status-badge status-review" data-testid="badge-sample">
-                Sample report
-              </span>
-            )}
           </p>
         </div>
         <div className="results-actions">
@@ -114,16 +109,6 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
           </a>
         </div>
       </div>
-
-      {report.isSample && (
-        <div className="alert alert-info" style={{ marginTop: 0, marginBottom: 20 }} data-testid="notice-sample">
-          <Info size={18} aria-hidden="true" />
-          <span>
-            <strong>This is a sample report.</strong>
-            Every finding below was written for demonstration purposes. Upload a real file to see your own results.
-          </span>
-        </div>
-      )}
 
       <div className="score-panel">
         <div className="score-box">

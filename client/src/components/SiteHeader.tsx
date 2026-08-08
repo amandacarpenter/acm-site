@@ -39,8 +39,8 @@ export default function SiteHeader() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden sm:flex items-center gap-1" aria-label="Main navigation">
-          <ul className="flex items-center gap-1 list-none p-0 m-0">
+        <nav className="hidden xl:flex items-center gap-1" aria-label="Main navigation">
+          <ul className="flex items-center gap-1 list-none p-0 m-0 whitespace-nowrap">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href}>
@@ -87,7 +87,7 @@ export default function SiteHeader() {
 
         {/* Mobile hamburger */}
         <button
-          className="sm:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          className="xl:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           data-testid="mobile-menu-toggle"
@@ -98,7 +98,7 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="sm:hidden border-t border-gray-100 bg-white">
+        <div className="xl:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href}>

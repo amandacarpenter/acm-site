@@ -80,7 +80,7 @@ export function buildReportHtml(report: Report): string {
 <body>
 <main>
   <h1>Remedy508 Accessibility Check report</h1>
-  <p class="meta">${esc(report.fileName)} · ${esc(report.kind)} · ${esc(report.fileSizeLabel)} · generated ${esc(report.generatedAt)}${report.isSample ? ' · SAMPLE REPORT (fabricated demonstration data)' : ''}</p>
+  <p class="meta">${esc(report.fileName)} · ${esc(report.kind)} · ${esc(report.fileSizeLabel)} · generated ${esc(report.generatedAt)}</p>
 
   <h2>Automated findings score</h2>
   <p class="score">${report.score} / 100</p>
@@ -107,7 +107,7 @@ export function buildReportHtml(report: Report): string {
   }
 
   <p class="disclaimer"><strong>Important:</strong> ${esc(DISCLAIMER)}</p>
-  <p class="meta" style="margin-top:16px">Produced by the Remedy508 Accessibility Checker, a free document check from Remedy508, a product of Left Coast Learning LLC. Remediation help: <a href="https://remedy508.com/tools">remedy508.com/tools</a></p>
+  <p class="meta" style="margin-top:16px">Produced by the Remedy508 Accessibility Checker, a free document check from Remedy508, a product of Left Coast Learning LLC. Remediation plans: <a href="https://remedy508.com/pricing">remedy508.com/pricing</a></p>
 </main>
 </body>
 </html>`;

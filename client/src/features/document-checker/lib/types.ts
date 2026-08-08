@@ -33,7 +33,6 @@ export interface Report {
   fileSizeLabel: string;
   kind: FileKind;
   generatedAt: string;
-  isSample: boolean;
   score: number;
   facts: Fact[];
   findings: Finding[];

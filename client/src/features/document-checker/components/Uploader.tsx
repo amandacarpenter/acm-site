@@ -16,7 +16,6 @@ import { ACCEPTED_EXTENSIONS, validateFile, type ValidationError } from '../lib/
 
 interface Props {
   onFile: (file: File) => void;
-  onSample: () => void;
   error: ValidationError | null;
   setError: (e: ValidationError | null) => void;
 }
@@ -54,7 +53,7 @@ const CHECKS = [
   },
 ];
 
-export function Uploader({ onFile, onSample, error, setError }: Props) {
+export function Uploader({ onFile, error, setError }: Props) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
@@ -79,7 +78,7 @@ export function Uploader({ onFile, onSample, error, setError }: Props) {
           <div className="hero-copy">
             <p className="eyebrow">
               <Lock size={14} aria-hidden="true" />
-              Remedy508 Accessibility Checker
+              Free Document Accessibility Checker
             </p>
             <h1 className="hero-title" id="hero-title">
               Check your document for <span className="accent">accessibility problems</span>.
@@ -170,12 +169,6 @@ export function Uploader({ onFile, onSample, error, setError }: Props) {
               )}
             </div>
 
-            <div className="sample-row">
-              <p>No file to hand? Open a sample report built from fabricated data.</p>
-              <button type="button" className="btn btn-secondary" onClick={onSample} data-testid="button-sample">
-                Try a sample report
-              </button>
-            </div>
           </div>
         </div>
       </section>

@@ -347,22 +347,6 @@
   align-items: center;
   gap: 6px;
 }
-.document-checker-page .sample-row {
-  margin-top: 18px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.document-checker-page .sample-row p {
-  font-size: 14px;
-  color: var(--text-muted);
-  max-width: 34ch;
-}
-
 .document-checker-page .alert {
   display: flex;
   gap: 10px;
