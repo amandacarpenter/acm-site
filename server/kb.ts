@@ -87,6 +87,7 @@ const SEED: Omit<KbArticle, "updated_at">[] = [
   { id: "accessibility-law-title-ii", section: 5, section_name: "Accessibility Tips & Best Practices", order_num: 28, title: "Accessibility & the law: Title II, Section 508, ADA", summary: "What higher education institutions are legally required to do under Title II, Section 508, and the ADA.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["accessibility-101-wcag", "common-accessibility-myths"] },
   { id: "common-accessibility-myths", section: 5, section_name: "Accessibility Tips & Best Practices", order_num: 29, title: "Common accessibility myths, debunked", summary: "Addressing the most common misconceptions about accessibility — what it is, who it's for, and why it's everyone's job.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["accessibility-101-wcag", "accessibility-law-title-ii"] },
   { id: "before-after-real-document", section: 5, section_name: "Accessibility Tips & Best Practices", order_num: 30, title: "Before & after: a real document remediated", summary: "A side-by-side walkthrough of an inaccessible document before and after running it through Remedy508.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["document-fixer-word-doc", "understanding-your-results"] },
+  { id: "how-to-check-your-output-is-accessible", section: 5, section_name: "Accessibility Tips & Best Practices", order_num: 31, title: "How to check that your output is actually accessible", summary: "Remedy508 gets you most of the way there automatically -- here's exactly how to verify the result yourself before you publish it, with free tools and a 10-minute checklist.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["accessibility-101-wcag", "understanding-your-results", "writing-good-alt-text"] },
 ];
 
 const ARTICLE_CONTENT: Record<string, string> = {
@@ -829,6 +830,73 @@ const ARTICLE_CONTENT: Record<string, string> = {
 </ul>
 <h2>The result</h2>
 <p>Visually, the document looks identical. For a screen reader user, it went from an inaccessible wall of text to a structured, navigable document that communicates the same information available to sighted readers.</p>`,
+  "how-to-check-your-output-is-accessible": `<h2>Automated tools get you most of the way -- not all the way</h2>
+<p>Remedy508 fixes the majority of common accessibility problems automatically: reading order, heading structure, alt text, tags, and language settings. That is a major improvement over an untouched document. But no automated tool -- ours included -- can guarantee full WCAG 2.1 AA compliance on its own. Some things genuinely require a human judgment call: does this alt text actually describe what a screen reader user needs to know? Does this heading order make sense in context? Is this table too complex for a simple header structure?</p>
+<p>Before you publish or distribute a remediated file, especially anything going to students or the public, give it a quick manual check. Here is exactly how, using free tools you likely already have.</p>
+
+<h2>1. Check the tag structure (PDFs)</h2>
+<p>In Adobe Acrobat (Reader or Pro):</p>
+<ul>
+  <li>Open the file, then go to <strong>View &gt; Show/Hide &gt; Navigation Panes &gt; Tags</strong></li>
+  <li>You should see a tag tree with elements like <code>&lt;H1&gt;</code>, <code>&lt;P&gt;</code>, <code>&lt;Figure&gt;</code>, <code>&lt;Table&gt;</code> in a logical order matching the visual layout</li>
+  <li>Click a tag to see it highlight the corresponding content on the page -- use this to confirm the reading order actually matches what a sighted reader would read top to bottom, left to right</li>
+  <li>If the Tags panel is empty or missing entirely, the file needs to be re-run or manually tagged before it is safe to publish</li>
+</ul>
+<p>Don't have Acrobat Pro? The free <strong>PAC 2024</strong> tool (PDF Accessibility Checker) from the Access for All Foundation gives a full pass/fail report against PDF/UA, including tag structure, reading order, and contrast -- and it's free to download.</p>
+
+<h2>2. Listen to it with a screen reader</h2>
+<p>This is the single most reliable check, because it tells you what your actual audience will experience.</p>
+<ul>
+  <li><strong>Windows:</strong> Press <code>Ctrl+Win+Enter</code> to launch Narrator (built in, free), then open your document and listen through it from the top</li>
+  <li><strong>Mac:</strong> Press <code>Cmd+F5</code> to launch VoiceOver (built in, free)</li>
+  <li><strong>Chrome:</strong> Install the free <strong>Screen Reader</strong> extension if you'd rather test in-browser</li>
+</ul>
+<p>Listen for: does the reading order make sense? Does it announce images with useful descriptions instead of "image" or a filename? Does it announce table headers as you move across cells? Does anything get skipped or read twice?</p>
+
+<h2>3. Review every piece of alt text</h2>
+<p>Remedy508 generates alt text automatically, and it's usually good -- but it hasn't seen your course, your students, or your intent. Skim every image and ask:</p>
+<ul>
+  <li>Does this describe what a student actually needs to know, not just what's literally in the picture?</li>
+  <li>For charts and graphs: does the alt text convey the data trend or key takeaway, not just "a bar chart"?</li>
+  <li>For purely decorative images (dividers, background flourishes): confirm they're marked decorative/artifact so a screen reader skips them instead of announcing something meaningless</li>
+</ul>
+<p>See the companion article, <em>Writing good alt text: a quick guide</em>, for what makes alt text actually useful.</p>
+
+<h2>4. Check color contrast</h2>
+<p>WCAG 2.1 AA requires a 4.5:1 contrast ratio for normal text and 3:1 for large text (18pt+, or 14pt+ bold). Remedy508 does not repaint your document's colors -- if the original had low-contrast text (light gray on white is the most common offender), that will carry through.</p>
+<ul>
+  <li>Use the free <strong>WebAIM Contrast Checker</strong> (webaim.org/resources/contrastchecker) -- plug in your text color and background color and it tells you pass or fail instantly</li>
+  <li>Common trouble spots: light gray body text, yellow or light-colored text on white, text over busy background images</li>
+</ul>
+
+<h2>5. Check tables</h2>
+<p>Open any data table and confirm:</p>
+<ul>
+  <li>The header row is actually marked as a header (in the Tags panel, it should show as <code>&lt;TH&gt;</code>, not <code>&lt;TD&gt;</code>)</li>
+  <li>Merged or spanning cells are avoided or minimal -- these are difficult for screen readers to announce correctly no matter what tool remediates them</li>
+  <li>The table has a real purpose for structuring data -- tables used purely for visual layout (common in older Word docs) should ideally be converted to regular paragraphs, which Remedy508 does when it can detect them, but complex layout tables are worth a manual look</li>
+</ul>
+
+<h2>6. Confirm the language and title are set</h2>
+<p>Quick but easy to miss:</p>
+<ul>
+  <li><strong>PDF:</strong> In Acrobat, go to <strong>File &gt; Properties &gt; Advanced</strong> and confirm the Language field is set correctly</li>
+  <li><strong>Document title:</strong> Still in Properties, under the Description tab, confirm the Title field is a real, descriptive title -- not the original filename</li>
+</ul>
+
+<h2>A practical 10-minute checklist</h2>
+<ol>
+  <li>Open the Tags panel (PDF) or Styles pane (Word) -- confirm structure exists and looks logical</li>
+  <li>Turn on your OS's built-in screen reader and listen through the whole document once</li>
+  <li>Skim every image's alt text for accuracy and usefulness</li>
+  <li>Spot-check text/background color combinations that looked low-contrast in the original</li>
+  <li>Open any data table and confirm header cells are marked correctly</li>
+  <li>Confirm document title and language are set</li>
+</ol>
+<p>If everything checks out, you're in great shape. If something's off, you can re-run the file through Remedy508 after making small source edits, or make the fix directly in Acrobat/Word before distributing -- see <em>Editing a PDF After Remedy508</em> for guidance on safe manual edits that won't undo the automated fixes.</p>
+
+<h2>Why this matters</h2>
+<p>An automated tool is what makes fixing hundreds of documents feasible at all -- doing this by hand for every file your institution produces is not realistic. But the legal standard under Title II, Section 508, and the ADA is the actual experience of a person using assistive technology, not just whether a tool ran. A quick manual check closes that gap and protects both your students and your institution.</p>`,
 };
 
 // ── Seed (only if table is empty) ─────────────────────────────────────────────
@@ -869,6 +937,10 @@ const reconcileStmt = db.prepare(`
       related_ids = @related_ids, updated_at = datetime('now')
   WHERE id = @id
 `);
+const insertMissingStmt = db.prepare(`
+  INSERT INTO kb_articles (id, section, section_name, order_num, title, summary, video_url, video_status, transcript, captions_url, duration, related_ids)
+  VALUES (@id, @section, @section_name, @order_num, @title, @summary, @video_url, @video_status, @transcript, @captions_url, @duration, @related_ids)
+`);
 const deleteOrphanStmt = db.prepare("DELETE FROM kb_articles WHERE id = ?");
 const liveRows = db.prepare("SELECT * FROM kb_articles").all() as any[];
 const seedIds = new Set(SEED.map((a) => a.id));
@@ -885,8 +957,20 @@ const reconcile = db.transaction(() => {
   }
   for (const a of SEED) {
     const row = liveRows.find((r) => r.id === a.id);
-    if (!row) continue; // handled by the seed-once block on empty tables
     const sourceTranscript = ARTICLE_CONTENT[a.id] ?? null;
+    if (!row) {
+      // Article added to SEED after the table was already seeded once --
+      // the seed-once block above only fires on an empty table, so without
+      // this branch a newly added article would never actually appear live.
+      insertMissingStmt.run({
+        ...a,
+        related_ids: JSON.stringify(a.related_ids),
+        transcript: sourceTranscript,
+      });
+      refreshedCount++;
+      console.log(`[KB] Inserted new article added to source: ${a.id}`);
+      continue;
+    }
     const sourceRelatedIds = JSON.stringify(a.related_ids);
     const differs =
       row.section !== a.section ||

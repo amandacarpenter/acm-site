@@ -499,6 +499,13 @@ function RemedyDocsTab() {
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Documents up to 50 pages</p>
       </div>
+      <p className="text-xs text-muted-foreground px-1">
+        <Shield className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-[#0d9488]" />
+        Remedy Docs gets you most of the way to compliant — always give the result a quick manual check before publishing.{" "}
+        <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="text-[#0d9488] font-medium underline underline-offset-2">
+          Learn how →
+        </Link>
+      </p>
 
       <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5" data-testid="doc-output-mode">
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0d9488]">*</span></legend>
@@ -547,7 +554,6 @@ function RemedyDocsTab() {
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
           <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
             <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80 mb-2">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially any images, tables, or math.</p>
             {fastResult.fixesMade?.length > 0 ? (
               <ul className="space-y-1">
                 {fastResult.fixesMade.slice(0, 8).map((s: string, i: number) => (
@@ -559,6 +565,18 @@ function RemedyDocsTab() {
             ) : (
               <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied.</p>
             )}
+          </div>
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
+            <div className="flex items-center gap-2 mb-1.5">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">This is a starting point, not a finished accessible document</span>
+            </div>
+            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
+              No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially images, tables, and reading order.{" "}
+              <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
+                See exactly how to check it in 10 minutes →
+              </Link>
+            </p>
           </div>
           {fastResult.blob && (
             <>
@@ -591,7 +609,18 @@ function RemedyDocsTab() {
                 {visionResult.pages > 0 ? `${visionResult.pages}-page` : ""} PDF ready
               </span>
             </div>
-            <p className="text-xs text-emerald-700/80 dark:text-emerald-400/80">This is a major improvement, not a guarantee of full compliance — give the result a quick look before publishing, especially diagrams, equations, and tables.</p>
+          </div>
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
+            <div className="flex items-center gap-2 mb-1.5">
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">This is a starting point, not a finished accessible document</span>
+            </div>
+            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
+              No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially diagrams, equations, and tables.{" "}
+              <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
+                See exactly how to check it in 10 minutes →
+              </Link>
+            </p>
           </div>
           <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
             <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
