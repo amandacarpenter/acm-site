@@ -39,6 +39,29 @@ def clean_html(raw_html: str) -> str:
     for tag in soup.find_all(["style", "script"]):
         tag.decompose()
 
+    # Repair cell-in-cell nesting caused by an unclosed <td>/<th> tag
+    # upstream. html.parser does not auto-close unclosed block tags, so a
+    # source document with a stray missing closing tag ends up with one
+    # cell nested INSIDE another rather than as its sibling, which silently
+    # breaks cell-count-dependent logic below (colspan splitting, row-width
+    # padding, header/Row-TH association). Same fix applied to the vision
+    # pipeline's clean_html in routes.ts after this exact defect was found
+    # to cause residual 'Headers' check failures in real documents.
+    _nest_repair_changed = True
+    while _nest_repair_changed:
+        _nest_repair_changed = False
+        for _cell in soup.find_all(["td", "th"]):
+            _inner_cells = _cell.find_all(["td", "th"], recursive=False)
+            if _inner_cells:
+                _parent_row = _cell.parent
+                if _parent_row is None or _parent_row.name != "tr":
+                    continue
+                for _inner in _inner_cells:
+                    _inner.extract()
+                    _cell.insert_after(_inner)
+                _nest_repair_changed = True
+                break
+
     # Strip tables/rows with no real content -- same WeasyPrint "Table
     # wrapper without a table" crash guard used by the vision pipeline.
     for table in soup.find_all("table"):

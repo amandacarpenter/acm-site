@@ -2450,6 +2450,34 @@ TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAA
 def clean_html(raw_html, page_images):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
+    # Repair cell-in-cell nesting caused by an unclosed <td>/<th> tag in the
+    # model's raw output. html.parser (unlike a browser or html5lib) does NOT
+    # auto-close unclosed block tags -- a model that forgets a closing tag,
+    # e.g. writes <td>text<td>more text</td></tr> instead of
+    # <td>text</td><td>more text</td></tr>, ends up with the second cell
+    # nested INSIDE the first rather than as its sibling. This silently
+    # breaks every downstream cell-counting step (colspan splitting, row-
+    # width padding, header/Row-TH association) because find_all(...,
+    # recursive=False) never sees the nested cell as a cell of the row at
+    # all -- confirmed as the root cause of residual 'Headers' failures in
+    # real VPAT-style tables with long multi-paragraph Remarks cells (where
+    # the model is more likely to lose track of a closing tag). Detect any
+    # <td>/<th> containing a direct <td>/<th> child and pull the inner
+    # cell(s) back out to be proper siblings in the row, preserving order.
+    _nest_repair_changed = True
+    while _nest_repair_changed:
+        _nest_repair_changed = False
+        for _cell in soup.find_all(['td', 'th']):
+            _inner_cells = _cell.find_all(['td', 'th'], recursive=False)
+            if _inner_cells:
+                _parent_row = _cell.parent
+                if _parent_row is None or _parent_row.name != 'tr':
+                    continue
+                for _inner in _inner_cells:
+                    _inner.extract()
+                    _cell.insert_after(_inner)
+                _nest_repair_changed = True
+                break
     # Strip table sub-elements that have no row/cell content, and unwrap
     # any table that ends up with no actual rows -- WeasyPrint's tagged-PDF
     # box-tree walker raises 'Table wrapper without a table' when a table
