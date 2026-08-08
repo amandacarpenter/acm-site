@@ -237,6 +237,9 @@
   padding: 56px 0 24px;
   background: #ffffff;
 }
+.document-checker-page.document-checker-compact .checker-upload {
+  padding: 8px 0 24px;
+}
 .document-checker-page .upload-wrap {
   max-width: 720px;
 }

@@ -16,6 +16,7 @@ interface Props {
   onFile: (file: File) => void;
   error: ValidationError | null;
   setError: (e: ValidationError | null) => void;
+  compact?: boolean;
 }
 
 const CHECKS = [
@@ -51,7 +52,7 @@ const CHECKS = [
   },
 ];
 
-export function Uploader({ onFile, error, setError }: Props) {
+export function Uploader({ onFile, error, setError, compact = false }: Props) {
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
@@ -154,7 +155,7 @@ export function Uploader({ onFile, error, setError }: Props) {
         </div>
       </section>
 
-      <section className="section" aria-labelledby="checks-title">
+      {!compact && <section className="section" aria-labelledby="checks-title">
         <div className="wrap">
           <div className="section-head">
             <h2 id="checks-title">What Remedy508 Accessibility Checker looks for</h2>
@@ -176,9 +177,9 @@ export function Uploader({ onFile, error, setError }: Props) {
             ))}
           </ul>
         </div>
-      </section>
+      </section>}
 
-      <section className="section" aria-labelledby="method-title">
+      {!compact && <section className="section" aria-labelledby="method-title">
         <div className="wrap">
           <div className="section-head">
             <h2 id="method-title">How it works</h2>
@@ -232,7 +233,7 @@ export function Uploader({ onFile, error, setError }: Props) {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
     </>
   );
 }

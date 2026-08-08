@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import SiteFooter from "@/components/SiteFooter";
 import teaserVideo from "@/assets/teaser.mp4";
@@ -21,7 +21,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  ArrowRight, SearchCheck,
+  SearchCheck,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -47,6 +47,12 @@ const NAV_LINKS = [
   { href: "/kb", label: "Knowledge Base" },
   { href: "/pricing", label: "Plans & Pricing" },
 ];
+
+const CheckerExperience = lazy(() =>
+  import("@/features/document-checker/components/CheckerExperience").then((module) => ({
+    default: module.CheckerExperience,
+  })),
+);
 
 export default function Home() {
   useDocumentTitle("Remedy508 | AI Accessibility Remediation for Higher Ed");
@@ -78,7 +84,7 @@ export default function Home() {
               Not Accessible,<br />Not Acceptable™
             </h1>
             <p className="text-white/90 text-base leading-relaxed mb-8">
-              Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
+              Remedy508 is an accessibility remediation platform that helps improve documents, video captions, Canvas HTML, and image descriptions. No accessibility expertise required.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
@@ -213,7 +219,7 @@ export default function Home() {
             Not Accessible,<br />Not Acceptable™
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-7">
-            Create compliant content, no expertise required. Remedy508 fixes documents, transcribes videos, cleans Canvas HTML, and generates alt text — so every student can learn.
+            Remedy508 is an accessibility remediation platform that helps improve documents, video captions, Canvas HTML, and image descriptions. No accessibility expertise required.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/signup">
@@ -233,28 +239,28 @@ export default function Home() {
       </section>
 
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
-      <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="free-checker-heading">
-        <div className="relative max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
-            <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-sm font-semibold text-white mb-5">
-                <SearchCheck className="w-4 h-4" aria-hidden="true" />
-                Free, no account required
-              </div>
-              <h2 id="free-checker-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
-                Free Accessibility Checker
-              </h2>
-              <p className="text-lg text-white/80 leading-relaxed">
-                Check documents for common accessibility barriers before you publish. It is free, requires no account, and document contents never leave your browser.
-              </p>
-            </div>
-            <Link href="/accessibility-checker">
-              <span className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-[#d63b1f] px-7 py-3.5 text-base font-bold text-white hover:bg-[#b8321b] transition cursor-pointer whitespace-nowrap" data-testid="home-checker-cta">
-                Check a Document Free
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </span>
-            </Link>
+      <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-5">
+            <SearchCheck className="w-4 h-4" aria-hidden="true" />
+            Free, no account or Credits required
           </div>
+          <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
+            Not sure if your documents are accessible?
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
+            Use our free Accessibility Checker to find out. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
+          </p>
+        </div>
+        <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
+          <CheckerExperience compact mainId="homepage-document-checker" />
+        </Suspense>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
+          <Link href="/accessibility-checker">
+            <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
+              Learn more about the Free Accessibility Checker
+            </span>
+          </Link>
         </div>
       </section>
 
@@ -266,12 +272,14 @@ export default function Home() {
           <div className="text-center mb-14">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/20 text-xs font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
               <Sparkles className="w-3 h-3" aria-hidden="true" />
-              How It Works
+              What’s included with Remedy508
             </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Four Tools. <span className="text-[#0d9488]">Zero Excuses.</span>
+              Four accessibility remediation tools
             </h2>
-
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Every paid Remedy508 plan includes access to all four tools. Use your monthly Credits to improve documents, videos, Canvas content, and images.
+            </p>
           </div>
 
           {/* Two-column: phone left, tools right */}
