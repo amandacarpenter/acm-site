@@ -198,7 +198,7 @@ export default function Home() {
           <div className="hidden lg:flex relative z-10 flex-1 items-center px-6 sm:px-10 pb-0 pt-16">
             <p
               className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(2.75rem, 5.5vw, 5rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
+              style={{ fontSize: "clamp(2.5rem, 4.5vw, 4rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
               aria-hidden="true"
             >
               Accessibility<br />Made Easy.
