@@ -21,7 +21,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  Zap, Shield, GraduationCap, Users, ChevronRight, BookOpen, Menu, X
+  SearchCheck,
+  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 // Note: tool cards on homepage are display-only, not linked
@@ -240,14 +241,15 @@ export default function Home() {
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <p className="text-base font-bold text-[#0f766e] mb-4">
-            Free Accessibility Checker
-          </p>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-5">
+            <SearchCheck className="w-4 h-4" aria-hidden="true" />
+            Free, no account or Credits required
+          </div>
           <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
             Not sure if your documents are accessible?
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-            Use our free Accessibility Checker to find out. No account or Credits are required. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
+            Use our free Accessibility Checker to find out. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
           </p>
         </div>
         <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
@@ -268,9 +270,10 @@ export default function Home() {
 
           {/* Section header */}
           <div className="text-center mb-14">
-            <p className="text-base font-bold text-[#0f766e] mb-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#0d9488]/20 text-xs font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
+              <Sparkles className="w-3 h-3" aria-hidden="true" />
               What’s included with Remedy508
-            </p>
+            </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
               Four accessibility remediation tools
             </h2>
