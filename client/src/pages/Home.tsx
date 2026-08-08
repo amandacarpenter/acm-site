@@ -272,7 +272,7 @@ export default function Home() {
               What’s included with Remedy508
             </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Four accessibility remediation tools
+              Four Accessibility Remediation Tools
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Every paid Remedy508 plan includes access to all four tools. Use your monthly Credits to improve documents, videos, Canvas content, and images.
