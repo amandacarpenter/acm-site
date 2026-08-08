@@ -62,6 +62,49 @@ def clean_html(raw_html: str) -> str:
                 _nest_repair_changed = True
                 break
 
+    # WeasyPrint bug: a <td>/<th> whose content MIXES a bare text node with
+    # a block-level child (most commonly <p>) causes its tagged-PDF box-tree
+    # builder to emit a spurious NESTED /TD (or /TH) inside the real one --
+    # confirmed on the vision pipeline's real output by isolating the exact
+    # minimal case and inspecting the resulting struct tree directly. This
+    # is the actual root cause of residual 'Headers'-failed cells, not an
+    # unclosed source tag (the repair pass above is defensive/no-op on real
+    # output). Normalize every <td>/<th> so its direct children are ONLY
+    # block-level elements -- wrap any bare text node (or inline element
+    # run) that is a direct child into its own <p>, preserving order.
+    def _normalize_cell_content(cell):
+        _direct_text = any(
+            (isinstance(_c, str) and _c.strip())
+            for _c in cell.contents
+        )
+        _has_block_child = cell.find(["p", "div", "ul", "ol"], recursive=False) is not None
+        if not (_direct_text and _has_block_child):
+            return
+        _run = []
+        _new_children = []
+        for _c in list(cell.contents):
+            _is_block = getattr(_c, "name", None) in ("p", "div", "ul", "ol")
+            if _is_block:
+                if _run:
+                    _p = soup.new_tag("p")
+                    for _r in _run:
+                        _p.append(_r.extract() if hasattr(_r, "extract") else _r)
+                    _new_children.append(_p)
+                    _run = []
+                _new_children.append(_c.extract())
+            else:
+                _run.append(_c)
+        if _run:
+            _p = soup.new_tag("p")
+            for _r in _run:
+                _p.append(_r.extract() if hasattr(_r, "extract") else _r)
+            _new_children.append(_p)
+        cell.clear()
+        for _nc in _new_children:
+            cell.append(_nc)
+    for _cell in soup.find_all(["td", "th"]):
+        _normalize_cell_content(_cell)
+
     # Strip tables/rows with no real content -- same WeasyPrint "Table
     # wrapper without a table" crash guard used by the vision pipeline.
     for table in soup.find_all("table"):

@@ -2509,6 +2509,58 @@ def clean_html(raw_html, page_images):
                     _cell.insert_after(_inner)
                 _nest_repair_changed = True
                 break
+    # WeasyPrint bug: a <td>/<th> whose content MIXES a bare text node with
+    # a block-level child (most commonly <p>) causes its tagged-PDF box-tree
+    # builder to emit a spurious NESTED /TD (or /TH) inside the real one --
+    # confirmed by isolating this exact minimal case and inspecting the
+    # resulting struct tree directly (weasyprint/pdf/tags.py's box walker
+    # mis-tags the anonymous block box WeasyPrint creates to wrap the bare
+    # text alongside the real <p> sibling). This produces cells that Acrobat
+    # correctly flags as missing /Headers, since the nested /TD is never
+    # seen as a real cell of the row by any downstream tooling (including
+    # WeasyPrint's own Headers-linking pass). This is the actual root cause
+    # of the residual 'Headers'-failed cells in real VPAT-style tables --
+    # NOT an unclosed source tag (that repair pass above is retained as a
+    # defensive no-op; it does not fire on real pipeline output). It bites
+    # both cells the model emits with this shape natively, and cells this
+    # code appends a continuation <p> onto (the orphan-row merge below, and
+    # any other future direct '.append(new_tag)' onto a cell that already
+    # has bare text). Fix at the source: normalize every <td>/<th> so its
+    # direct children are ONLY block-level elements -- wrap any bare text
+    # node (or inline element run) that is a direct child into its own <p>,
+    # preserving order relative to existing block children.
+    def _normalize_cell_content(cell):
+        _direct_text = any(
+            (isinstance(_c, str) and _c.strip())
+            for _c in cell.contents
+        )
+        _has_block_child = cell.find(['p', 'div', 'ul', 'ol'], recursive=False) is not None
+        if not (_direct_text and _has_block_child):
+            return
+        _run = []
+        _new_children = []
+        for _c in list(cell.contents):
+            _is_block = getattr(_c, 'name', None) in ('p', 'div', 'ul', 'ol')
+            if _is_block:
+                if _run:
+                    _p = soup.new_tag('p')
+                    for _r in _run:
+                        _p.append(_r.extract() if hasattr(_r, 'extract') else _r)
+                    _new_children.append(_p)
+                    _run = []
+                _new_children.append(_c.extract())
+            else:
+                _run.append(_c)
+        if _run:
+            _p = soup.new_tag('p')
+            for _r in _run:
+                _p.append(_r.extract() if hasattr(_r, 'extract') else _r)
+            _new_children.append(_p)
+        cell.clear()
+        for _nc in _new_children:
+            cell.append(_nc)
+    for _cell in soup.find_all(['td', 'th']):
+        _normalize_cell_content(_cell)
     # Strip table sub-elements that have no row/cell content, and unwrap
     # any table that ends up with no actual rows -- WeasyPrint's tagged-PDF
     # box-tree walker raises 'Table wrapper without a table' when a table
@@ -2737,6 +2789,22 @@ for _t in _pre_merge_soup.find_all('table'):
             _prev_cells = _prev_real_row.find_all(['th', 'td'], recursive=False)
             if len(_prev_cells) == len(_cells):
                 _target = _prev_cells[-1]
+                # Appending a <p> here can leave _target with MIXED bare
+                # text + block content (e.g. the model emitted the cell's
+                # first paragraph as plain text, no <p> wrapper) -- this
+                # exact shape is what triggers WeasyPrint's nested-/TD
+                # tagging bug (see _normalize_cell_content above). Wrap any
+                # existing bare text into its own <p> first so the cell only
+                # ever has block-level direct children after this append.
+                _existing_bare_text = [
+                    _c for _c in list(_target.contents)
+                    if isinstance(_c, str) and _c.strip()
+                ]
+                if _existing_bare_text:
+                    _wrap_p = _pre_merge_soup.new_tag('p')
+                    for _bt in _existing_bare_text:
+                        _wrap_p.append(_bt.extract())
+                    _target.insert(0, _wrap_p)
                 _new_p = _pre_merge_soup.new_tag('p')
                 _new_p.string = _cells[-1].get_text(' ', strip=True)
                 _target.append(_new_p)
