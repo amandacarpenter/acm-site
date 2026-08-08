@@ -2833,12 +2833,25 @@ for _t in _pre_merge_soup.find_all('table'):
 # count as the threshold: tables with a small number of rows are exactly the
 # ones short enough to avoid breaking AND the ones most likely to be pushed
 # right up against a page boundary by preceding content.
+#
+# IMPORTANT correction: putting break-inside directly on the <table>
+# element alone is NOT sufficient -- confirmed on a real document that
+# several small captioned tables still fragmented and hit the
+# crash-avoidance substitution even with this style present, because
+# WeasyPrint's table-wrapper box sits ABOVE the <table> element and can
+# still split independently of it. Wrapping the whole table (including its
+# <caption>) in a block-level <div> that itself carries break-inside: avoid
+# is what actually prevents the fragmentation -- confirmed via direct
+# WeasyPrint struct-tree inspection on this real document: 5 real
+# fragmentation cases went from 5 -> 0 with the div-wrapper approach, vs.
+# table-level style alone which still hit all 5.
 _SMALL_TABLE_MAX_ROWS = 8
 for _t in _pre_merge_soup.find_all('table'):
     _row_count = len(_t.find_all('tr'))
     if 0 < _row_count <= _SMALL_TABLE_MAX_ROWS:
-        _existing_style = _t.get('style', '')
-        _t['style'] = (_existing_style + '; break-inside: avoid; page-break-inside: avoid;').lstrip('; ')
+        _wrapper = _pre_merge_soup.new_tag('div')
+        _wrapper['style'] = 'break-inside: avoid; page-break-inside: avoid;'
+        _t.wrap(_wrapper)
 
 html_parts = [str(_pre_merge_soup)]
 
@@ -2929,6 +2942,27 @@ def _patched_get_wrapped_table(self):
 
 _wp_boxes.ParentBox.get_wrapped_table = _patched_get_wrapped_table
 
+# Second WeasyPrint bug, found on real large multi-page tables (confirmed on
+# a 27-row and a 10-row table in a real document): on the LAST page a large
+# table fragments onto, WeasyPrint can emit a page-local "table wrapper" box
+# whose only child is a TableCaptionBox -- a genuine visible caption
+# fragment, but with NO TableBox sibling on that page (all its actual rows
+# already rendered on the prior page). The crash-avoidance patch above
+# still fires for this case since there's no real TableBox to return, and
+# the caller (weasyprint/pdf/tags.py _build_box_tree, tag == 'Table' branch)
+# then builds a struct element containing only that orphan Caption -- an
+# empty /Table node in the accessibility tree with the real row/cell
+# content silently missing (though the caption text does render on the
+# page). This is NOT something break-inside/page-break-inside CSS can
+# prevent -- these are large tables that MUST span multiple pages by design
+# (forcing them onto one page would overflow it), and the orphan-caption
+# fragment is a WeasyPrint pagination artifact independent of table size.
+# Fixed below by folding into the combined _build_box_tree patch: when a
+# box is a table wrapper with no real TableBox child, skip emitting a
+# /Table struct element for that fragment and recurse directly into its
+# children (the orphan Caption) instead of nesting them under a fabricated,
+# contentless /Table.
+#
 # WeasyPrint bug: _build_box_tree() reads element.attrib.get('scope') off each
 # <th> ONLY to decide internally whether that header groups into row_headers
 # or column_headers (for building the /Headers array on <td> cells) -- it
@@ -2945,13 +2979,24 @@ _wp_boxes.ParentBox.get_wrapped_table = _patched_get_wrapped_table
 # WeasyPrint itself already performs, so Acrobat's Headers/Scope check has a
 # real Scope value to find -- without touching any other behavior of the
 # original recursive builder (delegates to it entirely, just augments the
-# yielded TH elements before they're consumed by the caller).
+# yielded TH elements before they're consumed by the caller). Both fixes are
+# combined into one _build_box_tree wrapper since only one function can be
+# installed at weasyprint.pdf.tags._build_box_tree.
 import weasyprint.pdf.tags as _wp_tags
 import pydyf as _pydyf
 
 _original_build_box_tree = _wp_tags._build_box_tree
 
 def _patched_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
+    is_orphan_table_wrapper = (
+        getattr(box, 'is_table_wrapper', False)
+        and not any(isinstance(c, _wp_boxes.TableBox) for c in box.children)
+    )
+    if is_orphan_table_wrapper:
+        for child in box.children:
+            yield from _patched_build_box_tree(
+                child, parent, pdf, page_number, nums, links, tags)
+        return
     for element in _original_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
         try:
             if element.get('S') == '/TH' and box.element is not None:
