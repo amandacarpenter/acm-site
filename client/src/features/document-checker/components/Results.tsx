@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useAuth } from '@clerk/clerk-react';
 import {
   CircleCheck,
   Download,
@@ -21,8 +22,6 @@ import {
 } from '../lib/types';
 import { DISCLAIMER, downloadReport } from '../lib/report';
 
-const PRODUCT_URL = '/pricing';
-
 type FilterKey = 'all' | Status;
 
 const STATUS_ICON: Record<Status, typeof CircleCheck> = {
@@ -43,8 +42,10 @@ function StatusBadge({ status }: { status: Status }) {
 }
 
 export function Results({ report, onReset }: { report: Report; onReset: () => void }) {
+  const { isSignedIn } = useAuth();
   const [filter, setFilter] = useState<FilterKey>('all');
   const [open, setOpen] = useState<Record<string, boolean>>({});
+  const remediationUrl = isSignedIn ? '/dashboard' : '/pricing';
 
   const counts = useMemo(() => countByStatus(report.findings), [report.findings]);
   const ordered = useMemo(
@@ -101,7 +102,7 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
           </button>
           <a
             className="btn btn-primary ext"
-            href={PRODUCT_URL}
+            href={remediationUrl}
             data-testid="link-remedy508"
           >
             <Wrench size={17} aria-hidden="true" />
@@ -299,7 +300,7 @@ export function Results({ report, onReset }: { report: Report; onReset: () => vo
         </div>
         <a
           className="btn btn-primary btn-lg ext"
-          href={PRODUCT_URL}
+          href={remediationUrl}
           data-testid="link-remedy508-cta"
         >
           Fix with Remedy508
