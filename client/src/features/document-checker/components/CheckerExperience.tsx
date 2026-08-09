@@ -46,7 +46,7 @@ export function CheckerExperience({ compact = false, mainId }: CheckerExperience
   const [stageDetail, setStageDetail] = useState<string | undefined>();
   const [analyzingName, setAnalyzingName] = useState("");
   const cancelled = useRef(false);
-  const mainRef = useRef<HTMLElement>(null);
+  const mainRef = useRef<HTMLElement | null>(null);
   const ExperienceRoot = compact ? "div" : "main";
 
   const focusMain = useCallback(() => {
@@ -113,7 +113,9 @@ export function CheckerExperience({ compact = false, mainId }: CheckerExperience
     <div className={`document-checker-page${compact ? " document-checker-compact" : ""}`}>
       <ExperienceRoot
         id={mainId}
-        ref={mainRef}
+        ref={(node) => {
+          mainRef.current = node;
+        }}
         tabIndex={-1}
         style={{ outline: "none" }}
       >

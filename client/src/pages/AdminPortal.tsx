@@ -131,7 +131,7 @@ function Card({ children, onClick }: { children: React.ReactNode; onClick?: () =
         alignItems: "center",
         gap: 12,
       }}
-      onMouseEnter={e => { if (onClick) { (e.currentTarget as HTMLDivElement).style.borderColor = "#0d9488"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(13,148,136,0.12)"; }}}
+      onMouseEnter={e => { if (onClick) { (e.currentTarget as HTMLDivElement).style.borderColor = "#0f766e"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(13,148,136,0.12)"; }}}
       onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "#e5e7eb"; (e.currentTarget as HTMLDivElement).style.boxShadow = "none"; }}
     >
       {children}
@@ -140,7 +140,7 @@ function Card({ children, onClick }: { children: React.ReactNode; onClick?: () =
 }
 
 function StatCard({ label, value, sub, tone = "default" }: { label: string; value: string; sub?: string; tone?: "default" | "good" | "bad" | "warn" }) {
-  const toneColor = tone === "good" ? "#0d9488" : tone === "bad" ? "#dc2626" : tone === "warn" ? "#d97706" : "#111827";
+  const toneColor = tone === "good" ? "#0f766e" : tone === "bad" ? "#dc2626" : tone === "warn" ? "#d97706" : "#111827";
   return (
     <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "16px 18px", minWidth: 0 }}>
       <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.03em" }}>{label}</div>
@@ -176,7 +176,7 @@ function MiniBarChart({ data }: { data: { date: string; jobs: number; failed: nu
         const hasFailed = d.failed > 0;
         return (
           <div key={d.date} style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: "1 0 18px", minWidth: 18 }} title={`${d.date}: ${d.jobs} jobs, ${d.failed} failed`}>
-            <div style={{ width: "100%", maxWidth: 20, height: h, background: hasFailed ? "#f59e0b" : "#0d9488", borderRadius: 3 }} />
+            <div style={{ width: "100%", maxWidth: 20, height: h, background: hasFailed ? "#f59e0b" : "#0f766e", borderRadius: 3 }} />
             <div style={{ fontSize: "0.55rem", color: "#9ca3af", marginTop: 4, whiteSpace: "nowrap" }}>{d.date.slice(5)}</div>
           </div>
         );

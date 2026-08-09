@@ -65,8 +65,8 @@ export default function ComingSoon() {
 
             {/* Text + CTA */}
             <div className="w-full lg:w-1/2 flex flex-col justify-center text-center lg:text-left order-1 lg:order-2" style={{ paddingBottom: 60 }}>
-              <div className="mb-5 inline-flex lg:self-start items-center justify-center bg-[#0d9488]/10 border border-[#0d9488]/25 rounded-full px-5 py-2">
-                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0d9488", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching July 2026</span>
+              <div className="mb-5 inline-flex lg:self-start items-center justify-center bg-[#0f766e]/10 border border-[#0f766e]/25 rounded-full px-5 py-2">
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f766e", letterSpacing: "0.05em", textTransform: "uppercase" }}>Launching July 2026</span>
               </div>
               <h1 className="text-4xl sm:text-5xl font-bold text-[#111827] mb-4 tracking-tight leading-tight">
                 Something big is coming.
@@ -76,28 +76,28 @@ export default function ComingSoon() {
               </p>
 
               {submitted ? (
-                <div className="bg-[#0d9488]/10 border border-[#0d9488]/30 rounded-xl px-6 py-4 text-[#0d9488] font-medium max-w-md">
+                <div className="bg-[#0f766e]/10 border border-[#0f766e]/30 rounded-xl px-6 py-4 text-[#0f766e] font-medium max-w-md">
                   You're on the list — we'll be in touch soon!
                 </div>
               ) : !showForm ? (
                 <div>
                   <button onClick={() => setShowForm(true)}
-                    className="px-8 py-3.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition">
+                    className="px-8 py-3.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition">
                     Get Early Access
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="flex flex-col gap-3 w-full max-w-md">
                   <input type="text" name="name" required placeholder="Full Name"
-                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
+                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] text-sm" />
                   <input type="email" name="email" required placeholder="Email Address"
-                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
+                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] text-sm" />
                   <input type="tel" name="phone" placeholder="Phone Number"
-                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
+                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] text-sm" />
                   <input type="text" name="organization" required placeholder="Organization (or Individual)"
-                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] text-sm" />
+                    className="px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] text-sm" />
                   <button type="submit" disabled={loading}
-                    className="px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition disabled:opacity-60">
+                    className="px-6 py-3 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition disabled:opacity-60">
                     {loading ? "Submitting..." : "Request Early Access"}
                   </button>
 

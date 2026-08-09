@@ -14,10 +14,10 @@ function ArticleCard({ article }: { article: KbArticle }) {
   return (
     <Link href={`/kb/articles/${article.id}`}>
       <a
-        className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488] focus-visible:outline-offset-2"
+        className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e] focus-visible:outline-offset-2"
         aria-label={article.title}
       >
-        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0d9488]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center mt-0.5">
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0f766e]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center mt-0.5">
           {article.order_num}
         </span>
         <div className="flex-1 min-w-0">
@@ -84,13 +84,13 @@ export default function KbHome() {
                 placeholder="Search articles…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
+                className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
                 aria-label="Search the knowledge base"
               />
               {query && (
                 <button
                   onClick={() => setQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]"
                   aria-label="Clear search"
                 >
                   ✕
@@ -104,7 +104,7 @@ export default function KbHome() {
             <SearchResults q={query.trim()} />
           ) : loading ? (
             <div className="flex justify-center py-16" aria-live="polite" aria-label="Loading knowledge base">
-              <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <div className="flex flex-col gap-8">

@@ -7,8 +7,8 @@ import { useKbArticle, useKbSections, type KbArticle } from "./useKb";
 function RelatedCard({ article }: { article: KbArticle }) {
   return (
     <Link href={`/kb/articles/${article.id}`}>
-      <a className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0d9488]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0d9488]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center">
+      <a className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0f766e]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0f766e]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center">
           {article.order_num}
         </span>
         <p className="text-sm text-gray-900 font-medium leading-snug">{article.title}</p>
@@ -68,11 +68,11 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
         )}
 
         {/* Help CTA */}
-        <div className="mt-12 bg-[#0d9488]/5 border border-[#0d9488]/20 rounded-xl p-5 text-center">
+        <div className="mt-12 bg-[#0f766e]/5 border border-[#0f766e]/20 rounded-xl p-5 text-center">
           <p className="text-sm text-gray-700 font-medium mb-1">Still have questions?</p>
           <p className="text-sm text-gray-500">
             Email us at{" "}
-            <a href="mailto:hello@remedy508.com" className="text-[#0f766e] hover:underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]">
+            <a href="mailto:hello@remedy508.com" className="text-[#0f766e] hover:underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
               hello@remedy508.com
             </a>
           </p>
@@ -93,7 +93,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
     <KbGate>
       {loading ? (
         <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" aria-label="Loading article" />
+          <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" aria-label="Loading article" />
         </div>
       ) : !article ? (
         <div className="min-h-screen bg-white flex items-center justify-center">

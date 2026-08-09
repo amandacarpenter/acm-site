@@ -77,8 +77,8 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
           {iconImg ? (
             <img src={iconImg} alt="" aria-hidden="true" className="w-20 h-20 object-contain" />
           ) : (
-            <div className="w-20 h-20 rounded-2xl bg-[#0d9488]/10 flex items-center justify-center">
-              <Icon className="w-10 h-10 text-[#0d9488]" />
+            <div className="w-20 h-20 rounded-2xl bg-[#0f766e]/10 flex items-center justify-center">
+              <Icon className="w-10 h-10 text-[#0f766e]" />
             </div>
           )}
           <div><p className="font-semibold">{label}</p><p className="text-sm text-muted-foreground">{sublabel}</p></div>
@@ -144,14 +144,14 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
   });
 
   return (
-    <div className="space-y-3 p-4 rounded-xl bg-[#3a485b]/5 border border-[#0d9488]/20">
+    <div className="space-y-3 p-4 rounded-xl bg-[#3a485b]/5 border border-[#0f766e]/20">
       <div className="flex items-center gap-2">
-        <Loader2 className="w-4 h-4 text-[#0d9488] animate-spin shrink-0" />
-        <span className="text-sm text-[#0d9488] font-medium">{defaultSteps[stepIndex]}</span>
+        <Loader2 className="w-4 h-4 text-[#0f766e] animate-spin shrink-0" />
+        <span className="text-sm text-[#0f766e] font-medium">{defaultSteps[stepIndex]}</span>
       </div>
-      <div className="relative w-full h-2 bg-[#0d9488]/15 rounded-full overflow-hidden">
+      <div className="relative w-full h-2 bg-[#0f766e]/15 rounded-full overflow-hidden">
         <div
-          className="absolute left-0 top-0 h-full bg-[#0d9488] rounded-full transition-all duration-700 ease-out"
+          className="absolute left-0 top-0 h-full bg-[#0f766e] rounded-full transition-all duration-700 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -500,15 +500,15 @@ function RemedyDocsTab() {
         <p>✓ Documents up to 50 pages</p>
       </div>
       <p className="text-xs text-muted-foreground px-1">
-        <Shield className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-[#0d9488]" />
+        <Shield className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-[#0f766e]" />
         Remedy Docs gets you most of the way to compliant — always give the result a quick manual check before publishing.{" "}
-        <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="text-[#0d9488] font-medium underline underline-offset-2">
+        <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="text-[#0f766e] font-medium underline underline-offset-2">
           Learn how →
         </Link>
       </p>
 
-      <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0d9488]/30 bg-[#0d9488]/5" data-testid="doc-output-mode">
-        <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0d9488]">*</span></legend>
+      <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
+        <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
             { value: "auto", label: "Auto-Detect", Icon: Zap },
@@ -521,8 +521,8 @@ function RemedyDocsTab() {
               data-testid={`mode-${value}`}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 outputMode === value
-                  ? "border-[#0d9488] bg-white dark:bg-background ring-1 ring-[#0d9488]"
-                  : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0d9488]/50"
+                  ? "border-[#0f766e] bg-white dark:bg-background ring-1 ring-[#0f766e]"
+                  : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0f766e]/50"
               }`}
             >
               <input
@@ -532,10 +532,10 @@ function RemedyDocsTab() {
                 value={value}
                 checked={outputMode === value}
                 onChange={() => setOutputMode(value)}
-                className="w-4 h-4 shrink-0 accent-[#0d9488]"
+                className="w-4 h-4 shrink-0 accent-[#0f766e]"
               />
               <div className="flex items-center gap-1.5">
-                <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0d9488]" : "text-muted-foreground"}`} />
+                <Icon className={`w-3.5 h-3.5 shrink-0 ${outputMode === value ? "text-[#0f766e]" : "text-muted-foreground"}`} />
                 <span className="text-sm font-semibold text-foreground">{label}</span>
               </div>
             </label>
@@ -543,7 +543,7 @@ function RemedyDocsTab() {
         </div>
       </fieldset>
 
-      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
+      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
@@ -681,7 +681,7 @@ function VideoTab() {
     <div className="space-y-5">
       <FileDropZone accept=".mp4,.mov,.avi,.mkv,.webm,.mp3,.wav,.m4a" onFile={setFile} label="Upload Video or Audio" sublabel="MP4, MOV, AVI, WebM, MP3, WAV, M4A" icon={Video} iconImg={iconVideo} testId="video-upload" resetKey={resetKey} />
 
-      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
+      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-transcribe">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Transcribing…" steps={["Uploading file…", "Extracting audio track…", "Running AI transcription…", "Generating timecoded transcript…"]} />}
@@ -766,7 +766,7 @@ function CanvasTab() {
           {(html || result) && <Button variant="ghost" size="sm" onClick={() => { setHtml(""); setResult(null); setError(""); }}><X className="w-3.5 h-3.5 mr-1" />Clear</Button>}
         </div>
       </div>
-      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
+      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !html.trim()} data-testid="btn-fix-canvas">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
@@ -792,7 +792,7 @@ function CanvasTab() {
               <div className="space-y-1.5 max-h-40 overflow-y-auto">
                 {result.changes.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-2 text-sm p-2 rounded-lg bg-muted">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#0d9488] shrink-0" />
+                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#0f766e] shrink-0" />
                     <div><span className="font-medium">{c.issue}</span>{c.fix && <span className="text-muted-foreground"> → {c.fix}</span>}</div>
                   </div>
                 ))}
@@ -849,13 +849,13 @@ function AltTextTab() {
       {previewUrl && <div className="rounded-xl overflow-hidden border max-h-48"><img src={previewUrl} alt="Preview of uploaded image" className="w-full h-full object-contain bg-muted" /></div>}
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="img-url">Or enter image URL</label>
-        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
+        <input id="img-url" type="url" placeholder="https://example.com/image.png" className="w-full px-3 py-2 rounded-lg border bg-background text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]" value={imageUrl} onChange={(e) => { setImageUrl(e.target.value); setFile(null); setPreviewUrl(null); }} data-testid="input-img-url" />
       </div>
       <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="alt-context">Context <span className="text-muted-foreground font-normal">(optional — describe the page this image is for)</span></label>
         <Textarea id="alt-context" placeholder="e.g. This is a chart showing student enrollment trends…" className="text-sm min-h-[80px] resize-y" value={context} onChange={(e) => setContext(e.target.value)} data-testid="input-context" />
       </div>
-      <Button className="w-full bg-[#0d9488] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
+      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
       {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Image (Alt Text)", errorCode, userEmail: altTextUser?.primaryEmailAddress?.emailAddress, file, htmlFallback: !file && imageUrl ? `Image URL: ${imageUrl}` : undefined }} />}
@@ -883,7 +883,7 @@ function AltTextTab() {
                   <div className="p-3 rounded-lg bg-muted border text-sm">{result.longDescription}</div>
                 </div>
               )}
-              {result.reasoning && <div className="p-3 rounded-lg bg-[#3a485b]/5 border border-[#0d9488]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
+              {result.reasoning && <div className="p-3 rounded-lg bg-[#3a485b]/5 border border-[#0f766e]/20 text-sm text-muted-foreground"><span className="font-medium text-foreground">Why: </span>{result.reasoning}</div>}
             </>
           )}
         </div>
@@ -895,8 +895,8 @@ function AltTextTab() {
 // ── TOOLS PAGE SHELL ─────────────────────────────────────────────────────────
 // One shared teal accent marks which tool is active — the active tab gets a
 // teal border, inactive tabs stay faded/muted. Labels and titles stay black.
-const ACCENT = "#0d9488";
-const ACCENT_SOFT_HOVER = "#0d94881f";
+const ACCENT = "#0f766e";
+const ACCENT_SOFT_HOVER = "#0f766e1f";
 const TAB_META = [
   {
     id: "document", label: "Remedy\nDocs", icon: iconDocument, beta: false, badge: ".docx & .pdf",
@@ -939,7 +939,7 @@ export default function ToolsPage() {
   if (!isLoaded) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0d9488]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#0f766e]" />
       </div>
     );
   }
@@ -977,7 +977,7 @@ export default function ToolsPage() {
         {/* Page heading */}
         <div>
           <h1 className="text-2xl font-bold text-[#3a485b]">
-            Accessibility <span className="text-[#0d9488]">Tools</span>
+            Accessibility <span className="text-[#0f766e]">Tools</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Upload, paste, or drop — Remedy508 handles the accessibility fixes.</p>
         </div>
@@ -1031,7 +1031,7 @@ export default function ToolsPage() {
         </Tabs>
 
         <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4 text-center">
-          <Shield className="w-3.5 h-3.5 text-[#0d9488] shrink-0" aria-hidden="true" />
+          <Shield className="w-3.5 h-3.5 text-[#0f766e] shrink-0" aria-hidden="true" />
           Built toward WCAG 2.1 AA — always review results before publishing, since no automated tool can guarantee 100% compliance
         </div>
       </div>

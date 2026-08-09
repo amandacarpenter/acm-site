@@ -8,7 +8,7 @@ import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
 const TOOLS = [
-  { label: "Remedy Docs", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0d9488]" },
+  { label: "Remedy Docs", desc: "Word & PDF", icon: FileText, tab: "document", color: "bg-teal-50 text-[#0f766e]" },
   { label: "Remedy Video", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
   { label: "Remedy HTML", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
   { label: "Remedy Image", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
@@ -138,7 +138,7 @@ export default function Dashboard() {
           <div className="md:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-[#0d9488]" />
+                <Zap className="w-4 h-4 text-[#0f766e]" />
                 <span className="font-semibold text-[#3a485b] text-sm">Credit Usage</span>
               </div>
               <span className="text-sm text-gray-700">Resets {resetDateStr}</span>
@@ -149,7 +149,7 @@ export default function Dashboard() {
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
               <div
-                className={`h-2.5 rounded-full transition-all ${isLow ? "bg-amber-500" : "bg-[#0d9488]"}`}
+                className={`h-2.5 rounded-full transition-all ${isLow ? "bg-amber-500" : "bg-[#0f766e]"}`}
                 style={{ width: `${usagePct}%` }}
               />
             </div>
@@ -167,7 +167,7 @@ export default function Dashboard() {
                 </div>
                 <button
                   onClick={() => setBuyCreditsOpen(true)}
-                  className="ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition"
+                  className="ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition"
                 >
                   <ShoppingCart className="w-3 h-3" />
                   Buy More Credits
@@ -180,7 +180,7 @@ export default function Dashboard() {
               <p className="text-xs text-gray-500 mb-3">Shared across all four tools.</p>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                     <FileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -189,7 +189,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                     <Image className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -198,7 +198,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                     <Video className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -207,7 +207,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                     <Code className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -221,8 +221,8 @@ export default function Dashboard() {
             {/* Purchased credits balance */}
             {purchasedCredits > 0 && (
               <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-teal-50 border border-teal-100 rounded-xl">
-                <ShoppingCart className="w-3.5 h-3.5 text-[#0d9488] shrink-0" />
-                <p className="text-sm text-[#0d9488] font-medium">
+                <ShoppingCart className="w-3.5 h-3.5 text-[#0f766e] shrink-0" />
+                <p className="text-sm text-[#0f766e] font-medium">
                   {purchasedCredits} purchased Credit{purchasedCredits !== 1 ? "s" : ""} available — used after your monthly pool runs out.
                 </p>
               </div>
@@ -232,11 +232,11 @@ export default function Dashboard() {
           {/* Plan card */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-4">
-              <CreditCard className="w-4 h-4 text-[#0d9488]" />
+              <CreditCard className="w-4 h-4 text-[#0f766e]" />
               <span className="font-semibold text-[#3a485b] text-sm">Your Plan</span>
             </div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0d9488] text-white">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0f766e] text-white">
                 {plan === "team" ? "Team" : "Individual"}
               </span>
               {meta.stripeCustomerId && (
@@ -259,7 +259,7 @@ export default function Dashboard() {
               )}
               <button
                 onClick={() => setBuyCreditsOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
+                className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0f766e] text-[#0f766e] hover:bg-teal-50 transition"
               >
                 <ShoppingCart className="w-3 h-3" />
                 Buy More Credits
@@ -286,13 +286,13 @@ export default function Dashboard() {
                       setPortalLoading(false);
                     }
                   }}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition disabled:opacity-60"
                 >
                   {portalLoading ? "Loading…" : "Manage Plan"} <ArrowRight className="w-3 h-3" />
                 </button>
               ) : (
                 <Link href="/pricing">
-                  <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                  <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
                     Upgrade Plan <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
@@ -312,7 +312,7 @@ export default function Dashboard() {
         {/* Tools CTA */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
           <Link href="/tools">
-            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
+            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
               <Zap className="w-4 h-4" />
               Access the Tools
             </button>
@@ -350,7 +350,7 @@ export default function Dashboard() {
                   <li key={job.id} className="flex items-center justify-between px-5 py-3.5">
                     <div className="flex items-center gap-3 min-w-0">
                       {job.status === "completed" ? (
-                        <CheckCircle2 className="w-4 h-4 text-[#0d9488] shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-[#0f766e] shrink-0" />
                       ) : (
                         <XCircle className="w-4 h-4 text-red-400 shrink-0" />
                       )}

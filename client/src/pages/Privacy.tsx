@@ -11,6 +11,7 @@ export default function Privacy() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
         <HeroWatermark corner="left" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
@@ -22,7 +23,7 @@ export default function Privacy() {
           <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 8, 2026</p>
         </div>
       </section>
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
         <div className="prose prose-gray max-w-none space-y-8 text-gray-700 leading-relaxed">
 
           <p>Remedy508 is operated by Left Coast Learning LLC, a California limited liability company ("Left Coast Learning," "we," "us," or "our"). This Privacy Policy explains how we collect, use, and protect information when you use Remedy508 (available at remedy508.com) — a SaaS accessibility tool designed to help higher education professionals remediate inaccessible course materials.</p>
@@ -172,11 +173,12 @@ export default function Privacy() {
 
           <Section title="13. Contact Us">
             <p><strong>Left Coast Learning LLC, doing business as Remedy508</strong><br />
-            Email: <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a><br />
-            Website: <a href="https://remedy508.com" className="text-[#0d9488] hover:underline">remedy508.com</a></p>
+            Email: <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline underline-offset-2">hello@remedy508.com</a><br />
+            Website: <a href="https://remedy508.com" className="text-[#0f766e] underline underline-offset-2">remedy508.com</a></p>
           </Section>
 
         </div>
+      </div>
       </main>
       <SiteFooter />
     </div>

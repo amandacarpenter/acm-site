@@ -52,7 +52,7 @@ export default function InvoiceRequest() {
     }
   }
 
-  const inputClass = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#0d9488] bg-white";
+  const inputClass = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#0f766e] bg-white";
   const labelClass = "block text-sm font-semibold text-[#3a485b] mb-1.5";
 
   if (submitted) {
@@ -60,14 +60,14 @@ export default function InvoiceRequest() {
       <div className="min-h-screen bg-white">
         <SiteHeader />
         <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
-          <div className="w-16 h-16 rounded-full bg-[#0d9488]/10 flex items-center justify-center mb-6">
-            <CheckCircle2 className="w-8 h-8 text-[#0d9488]" />
+          <div className="w-16 h-16 rounded-full bg-[#0f766e]/10 flex items-center justify-center mb-6">
+            <CheckCircle2 className="w-8 h-8 text-[#0f766e]" />
           </div>
           <h1 className="text-3xl font-bold text-[#3a485b] mb-4">Thanks. We're on it.</h1>
           <p className="text-gray-500 max-w-md mb-2">
             We'll email you an invoice within one business day. Once paid, your team dashboard will be ready to set up.
           </p>
-          <p className="text-sm text-gray-400">Questions? Email us at <a href="mailto:hello@remedy508.com" className="text-[#0d9488] underline">hello@remedy508.com</a></p>
+          <p className="text-sm text-gray-400">Questions? Email us at <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline">hello@remedy508.com</a></p>
         </div>
         <SiteFooter />
       </div>
@@ -134,7 +134,7 @@ export default function InvoiceRequest() {
               <p className="text-xs text-gray-400 mt-1">
                 Up to {MAX_TEAM_SEATS} seats per team — need more seats?{" "}
                 <Link href="/contact?topic=more-seats">
-                  <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
+                  <span className="underline font-medium cursor-pointer text-[#0f766e]">Contact us</span>
                 </Link>
               </p>
             </div>
@@ -162,13 +162,13 @@ export default function InvoiceRequest() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition bg-[#0f766e] text-white hover:bg-[#115e59] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</> : "Submit Invoice Request"}
             </button>
 
             <p className="text-xs text-gray-400 text-center">
-              By submitting, you confirm this request is for institutional use as described in our <a href="/terms" className="text-[#0d9488] underline">Terms of Service</a>.
+              By submitting, you confirm this request is for institutional use as described in our <a href="/terms" className="text-[#0f766e] underline">Terms of Service</a>.
             </p>
           </form>
         </div>

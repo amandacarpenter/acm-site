@@ -19,7 +19,7 @@ function CreditBreakdown() {
       <p className="mb-3">Credits are shared across all four tools.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
             <FileText className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -28,7 +28,7 @@ function CreditBreakdown() {
           </div>
         </div>
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
             <Image className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -37,7 +37,7 @@ function CreditBreakdown() {
           </div>
         </div>
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
             <Video className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -46,7 +46,7 @@ function CreditBreakdown() {
           </div>
         </div>
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
             <Code className="h-4 w-4" />
           </div>
           <div className="min-w-0">
@@ -183,11 +183,11 @@ function FAQAccordion({ item }: { item: FAQItem }) {
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
-        <span className="text-base font-bold text-[#3a485b] group-hover:text-[#0d9488] transition-colors leading-snug">
+        <span className="text-base font-bold text-[#3a485b] group-hover:text-[#0f766e] transition-colors leading-snug">
           {item.q}
         </span>
         <ChevronDown
-          className={`w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#0d9488]" : ""}`}
+          className={`w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5 transition-transform duration-200 ${open ? "rotate-180 text-[#0f766e]" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -205,6 +205,7 @@ export default function FAQPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <SiteHeader />
+      <main>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="faq-heading">
@@ -219,7 +220,7 @@ export default function FAQPage() {
           </h1>
           <p className="text-lg text-white">
             Everything you need to know about Remedy508. Can't find what you're looking for?{" "}
-            <a href="/contact" className="text-[#0d9488] hover:underline font-medium">
+              <a href="/contact" className="text-white underline underline-offset-2 font-semibold">
               Contact us
             </a>.
           </p>
@@ -231,7 +232,7 @@ export default function FAQPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-12">
           {FAQ_SECTIONS.map((section) => (
             <div key={section.title}>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-[#0d9488] mb-4">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-[#0f766e] mb-4">
                 {section.title}
               </h2>
               <div className="bg-white border border-gray-100 rounded-2xl px-6 divide-y divide-gray-100">
@@ -256,12 +257,13 @@ export default function FAQPage() {
           </p>
           <a
             href="/contact"
-            className="inline-block px-6 py-3 rounded-lg bg-[#0d9488] text-white font-semibold hover:bg-[#0f766e] transition"
+            className="inline-block px-6 py-3 rounded-lg bg-[#0f766e] text-white font-semibold hover:bg-[#115e59] transition"
           >
             Get in Touch
           </a>
         </div>
       </section>
+      </main>
 
       <SiteFooter />
     </div>

@@ -86,7 +86,7 @@ export default function TeamCheckout() {
             <ul className="space-y-3 mb-8">
               {TEAM_FEATURES.map((f) => (
                 <li key={f} className="flex items-start gap-2.5 text-base text-gray-900">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                  <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0f766e]" aria-hidden="true" />
                   {f}
                 </li>
               ))}
@@ -112,7 +112,7 @@ export default function TeamCheckout() {
                   max={MAX_TEAM_SEATS}
                   value={seats}
                   onChange={(e) => setSeats(Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(e.target.value) || 2)))}
-                  className="w-20 text-center text-2xl font-bold text-[#3a485b] border border-gray-200 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
+                  className="w-20 text-center text-2xl font-bold text-[#3a485b] border border-gray-200 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
                   aria-label="Seat count"
                 />
                 <button
@@ -127,7 +127,7 @@ export default function TeamCheckout() {
               <p className="text-sm text-gray-700 mb-1">
                 Minimum 2 seats, up to {MAX_TEAM_SEATS} per team — need more seats?{" "}
                 <Link href="/contact?topic=more-seats">
-                  <span className="underline font-medium cursor-pointer text-[#0d9488]">Contact us</span>
+                  <span className="underline font-medium cursor-pointer text-[#0f766e]">Contact us</span>
                 </Link>
               </p>
               <p className="text-sm text-gray-700 mb-1">
@@ -138,10 +138,10 @@ export default function TeamCheckout() {
               </p>
 
               {/* Live total */}
-              <div className="mt-4 rounded-xl bg-[#0d9488]/10 border border-[#0d9488]/20 px-5 py-4">
+              <div className="mt-4 rounded-xl bg-[#0f766e]/10 border border-[#0f766e]/20 px-5 py-4">
                 <p className="text-lg font-bold text-[#3a485b]">
                   {seats} seat{seats !== 1 ? "s" : ""} × $249 ={" "}
-                  <span className="text-[#0d9488]">${total.toLocaleString()}/year</span>
+                  <span className="text-[#0f766e]">${total.toLocaleString()}/year</span>
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
                   {seats * 145} Credits/month total ({"145/seat"}) · Billed annually · Not refundable
@@ -153,36 +153,36 @@ export default function TeamCheckout() {
             <div className="mb-6">
               <p className="text-sm font-semibold text-[#3a485b] mb-3">Payment method</p>
               <div className="space-y-3">
-                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "card" ? "border-[#0d9488] bg-[#0d9488]/5" : "border-gray-200 hover:border-gray-300"}`}>
+                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "card" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-gray-200 hover:border-gray-300"}`}>
                   <input
                     type="radio"
                     name="payment"
                     value="card"
                     checked={paymentMethod === "card"}
                     onChange={() => setPaymentMethod("card")}
-                    className="mt-0.5 accent-[#0d9488]"
+                    className="mt-0.5 accent-[#0f766e]"
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-[#0d9488]" aria-hidden="true" />
+                      <CreditCard className="w-4 h-4 text-[#0f766e]" aria-hidden="true" />
                       <span className="font-semibold text-sm text-[#3a485b]">Pay by credit card</span>
                     </div>
                     <p className="text-sm text-gray-700 mt-0.5">Instant access after checkout</p>
                   </div>
                 </label>
 
-                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "invoice" ? "border-[#0d9488] bg-[#0d9488]/5" : "border-gray-200 hover:border-gray-300"}`}>
+                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "invoice" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-gray-200 hover:border-gray-300"}`}>
                   <input
                     type="radio"
                     name="payment"
                     value="invoice"
                     checked={paymentMethod === "invoice"}
                     onChange={() => setPaymentMethod("invoice")}
-                    className="mt-0.5 accent-[#0d9488]"
+                    className="mt-0.5 accent-[#0f766e]"
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#0d9488]" aria-hidden="true" />
+                      <FileText className="w-4 h-4 text-[#0f766e]" aria-hidden="true" />
                       <span className="font-semibold text-sm text-[#3a485b]">Pay by invoice / PO</span>
                     </div>
                     <p className="text-sm text-gray-700 mt-0.5">Perfect for institutions, government agencies, and healthcare organizations</p>
@@ -194,7 +194,7 @@ export default function TeamCheckout() {
             <button
               onClick={handleCheckout}
               disabled={loading}
-              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition bg-[#0f766e] text-white hover:bg-[#115e59] disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting…</>

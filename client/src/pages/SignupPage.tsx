@@ -23,7 +23,7 @@ export default function SignupPage() {
             afterSignUpUrl="/pricing"
             appearance={{
               variables: {
-                colorPrimary: "#0d9488",
+                colorPrimary: "#0f766e",
                 colorText: "#3a485b",
                 borderRadius: "0.75rem",
               }

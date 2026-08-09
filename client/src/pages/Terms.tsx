@@ -10,6 +10,7 @@ export default function Terms() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
         <HeroWatermark corner="right" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
@@ -21,7 +22,7 @@ export default function Terms() {
           <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 8, 2026</p>
         </div>
       </section>
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
         <div className="space-y-8 text-gray-700 leading-relaxed">
 
           <p>These Terms of Service ("Terms") govern your access to and use of Remedy508, operated by Left Coast Learning LLC, a California limited liability company ("Left Coast Learning," "we," "us," or "our"). By creating an account or accessing any part of the Service, you agree to be bound by these Terms.</p>
@@ -35,7 +36,7 @@ export default function Terms() {
           </Section>
 
           <Section title="3. Account Registration and Responsibilities">
-            <p>You must provide a valid email address and complete authentication through Clerk. You are responsible for maintaining the confidentiality of your login credentials and all activity under your account. Individual accounts may not be shared. Notify us immediately at <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> if you suspect unauthorized access.</p>
+            <p>You must provide a valid email address and complete authentication through Clerk. You are responsible for maintaining the confidentiality of your login credentials and all activity under your account. Individual accounts may not be shared. Notify us immediately at <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline underline-offset-2">hello@remedy508.com</a> if you suspect unauthorized access.</p>
           </Section>
 
           <Section title="4. Subscription Plans and Billing">
@@ -77,8 +78,8 @@ export default function Terms() {
           </Section>
 
           <Section title="7. AI Processing Disclosure">
-            <div className="bg-teal-50 border-l-4 border-[#0d9488] p-4 rounded-r-lg text-sm">
-              <p className="font-semibold text-[#0d9488] mb-1">Important</p>
+            <div className="bg-teal-50 border-l-4 border-[#0f766e] p-4 rounded-r-lg text-sm">
+              <p className="font-semibold text-[#0f766e] mb-1">Important</p>
               <p>Remedy508 uses Anthropic's Claude models to process uploaded content. <strong>We do not use your uploaded content to train AI models</strong>, and our agreement with Anthropic does not permit them to use API inputs for model training. AI-generated output may contain errors — you are responsible for reviewing output before use.</p>
             </div>
           </Section>
@@ -120,11 +121,12 @@ export default function Terms() {
 
           <Section title="16. Contact Us">
             <p><strong>Left Coast Learning LLC, doing business as Remedy508</strong><br />
-            Email: <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a><br />
-            Website: <a href="https://remedy508.com" className="text-[#0d9488] hover:underline">remedy508.com</a></p>
+            Email: <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline underline-offset-2">hello@remedy508.com</a><br />
+            Website: <a href="https://remedy508.com" className="text-[#0f766e] underline underline-offset-2">remedy508.com</a></p>
           </Section>
 
         </div>
+      </div>
       </main>
       <SiteFooter />
     </div>

@@ -46,7 +46,7 @@ export default function SiteHeader() {
                   <span
                     className={`px-3 py-1.5 rounded-lg text-base font-bold transition-colors cursor-pointer ${
                       location === link.href
-                        ? "text-[#0d9488] bg-[#0d9488]/10"
+                        ? "text-[#0f766e] bg-[#0f766e]/10"
                         : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                     }`}
                   >
@@ -65,7 +65,7 @@ export default function SiteHeader() {
               </li>
               <li>
                 <Link href="/signup">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
                     Get Started →
                   </span>
                 </Link>
@@ -116,7 +116,7 @@ export default function SiteHeader() {
                 </span>
               </Link>
               <Link href="/signup">
-                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0d9488] text-white text-center cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
                   Get Started →
                 </span>
               </Link>

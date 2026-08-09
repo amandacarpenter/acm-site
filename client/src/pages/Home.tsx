@@ -58,7 +58,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0d9488] focus:text-white focus:rounded-lg focus:font-semibold">Skip to main content</a>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0f766e] focus:text-white focus:rounded-lg focus:font-semibold">Skip to main content</a>
       <IncidentBanner />
 
       <main id="main-content">
@@ -85,7 +85,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
-                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer" data-testid="hero-cta">
+                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0f766e] text-white font-bold text-sm hover:bg-[#115e59] transition cursor-pointer" data-testid="hero-cta">
                   <Zap className="w-4 h-4" aria-hidden="true" />
                   Get Started →
                 </span>
@@ -111,7 +111,7 @@ export default function Home() {
           />
 
           {/* Nav bar — always on top */}
-          <header role="banner" className="relative z-20 w-full lg:absolute lg:top-0 lg:left-0 lg:right-0">
+          <div className="relative z-20 w-full lg:absolute lg:top-0 lg:left-0 lg:right-0">
             {/* Mobile bg — solid dark bar */}
             <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827] lg:hidden" />
             {/* Desktop bg — gradient over photo */}
@@ -138,7 +138,7 @@ export default function Home() {
                     <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
                   </Link>
                   <Link href="/signup">
-                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition cursor-pointer">Get Started →</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">Get Started →</span>
                   </Link>
                 </SignedOut>
                 <SignedIn>
@@ -170,7 +170,7 @@ export default function Home() {
                   ))}
                   <SignedOut>
                     <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0d9488] text-white text-center cursor-pointer">Get Started →</span></Link>
+                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0f766e] text-white text-center cursor-pointer">Get Started →</span></Link>
                   </SignedOut>
                   <SignedIn>
                     <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
@@ -179,7 +179,7 @@ export default function Home() {
                 </nav>
               </div>
             )}
-          </header>
+          </div>
 
           {/* Mobile: photo below nav with Accessibility Made Easy overlaid */}
           <div className="lg:hidden relative">
@@ -220,7 +220,7 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/signup">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0d9488] text-white font-bold text-sm hover:bg-[#0f766e] transition cursor-pointer">
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0f766e] text-white font-bold text-sm hover:bg-[#115e59] transition cursor-pointer">
                 <Zap className="w-4 h-4" aria-hidden="true" />
                 Get Started →
               </span>
@@ -238,7 +238,7 @@ export default function Home() {
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/10 border border-[#0d9488]/20 text-sm font-medium text-[#0f5f59] mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 text-sm font-medium text-[#0f5f59] mb-5">
             <SearchCheck className="w-4 h-4" aria-hidden="true" />
             Free Document Accessibility Checker
           </div>
@@ -267,7 +267,7 @@ export default function Home() {
 
           {/* Section header */}
           <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0d9488]/20 text-sm font-semibold text-[#0f5f59] mb-4 border border-[#0d9488]/30">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/20 text-sm font-semibold text-[#0f5f59] mb-4 border border-[#0f766e]/30">
               <Sparkles className="w-4 h-4" aria-hidden="true" />
               What’s included with Remedy508
             </div>
@@ -353,7 +353,7 @@ export default function Home() {
             <AccordionItem value="operable" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#0f766e] text-white text-xs font-bold flex items-center justify-center shrink-0">2</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Operable</div>
                     <div className="text-base text-gray-600 font-medium">Interface components must be operable by all users</div>
@@ -416,7 +416,7 @@ export default function Home() {
             <AccordionItem value="robust" className="bg-white border border-gray-200 rounded-2xl px-6 shadow-sm">
               <AccordionTrigger className="text-left hover:no-underline py-5">
                 <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-[#0d9488] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
+                  <span className="w-8 h-8 rounded-lg bg-[#0f766e] text-white text-xs font-bold flex items-center justify-center shrink-0">4</span>
                   <div>
                     <div className="font-bold text-[#3a485b] text-base">Robust</div>
                     <div className="text-base text-gray-600 font-medium">Content must be interpreted by assistive technologies</div>
@@ -455,7 +455,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h2 id="why-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-6">
-              Why This <span className="text-[#0d9488]">Matters</span>
+              Why This <span className="text-[#0f766e]">Matters</span>
             </h2>
             <p className="text-gray-500 leading-relaxed mb-12">
               When course materials aren't accessible, students using assistive technology can't complete their work.
@@ -470,7 +470,7 @@ export default function Home() {
                 { icon: Shield, title: "For Institutions", desc: "Meet ADA, Section 508, and WCAG 2.1 AA requirements — reduce legal risk proactively." },
               ].map((card) => (
                 <div key={card.title} className="p-6 rounded-xl bg-gray-50 border border-gray-200">
-                  <div className="w-10 h-10 rounded-lg bg-[#0d9488] flex items-center justify-center mb-3">
+                  <div className="w-10 h-10 rounded-lg bg-[#0f766e] flex items-center justify-center mb-3">
                     <card.icon className="w-5 h-5 text-white" aria-hidden="true" />
                   </div>
                   <h3 className="font-bold text-[#3a485b] mb-1 text-sm">{card.title}</h3>
@@ -493,7 +493,7 @@ export default function Home() {
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/signup">
-              <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition cursor-pointer shadow-sm">
+              <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition cursor-pointer shadow-sm">
                 <Zap className="w-4 h-4" aria-hidden="true" />
                 Get Started →
               </span>

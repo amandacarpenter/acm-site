@@ -50,6 +50,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
         <HeroWatermark corner="left" />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
@@ -61,29 +62,29 @@ export default function Contact() {
           <p className="text-white max-w-xl mx-auto">Have a question, need help with a document, or want to talk about a team plan? We're here.</p>
         </div>
       </section>
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
 
           {/* Info cards */}
           <div className="space-y-4">
             <InfoCard
-              icon={<Mail className="w-5 h-5 text-[#0d9488]" />}
+              icon={<Mail className="w-5 h-5 text-[#0f766e]" />}
               title="Email Us"
-              body={<a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline text-sm">hello@remedy508.com</a>}
+              body={<a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline underline-offset-2 text-sm">hello@remedy508.com</a>}
             />
             <InfoCard
-              icon={<Clock className="w-5 h-5 text-[#0d9488]" />}
+              icon={<Clock className="w-5 h-5 text-[#0f766e]" />}
               title="Response Time"
               body={<p className="text-sm text-gray-600">We respond within one business day. Accessibility issues are prioritized.</p>}
             />
             <InfoCard
-              icon={<Building2 className="w-5 h-5 text-[#0d9488]" />}
+              icon={<Building2 className="w-5 h-5 text-[#0f766e]" />}
               title="Team Inquiries"
               body={<p className="text-sm text-gray-600">Looking for a team plan? Use the form and select "Team / Pricing Inquiry."</p>}
             />
             <InfoCard
-              icon={<MessageSquare className="w-5 h-5 text-[#0d9488]" />}
+              icon={<MessageSquare className="w-5 h-5 text-[#0f766e]" />}
               title="Accessibility Issues"
               body={<p className="text-sm text-gray-600">Found an accessibility barrier on our site? We take these seriously. Use subject "Accessibility Issue."</p>}
             />
@@ -93,12 +94,12 @@ export default function Contact() {
           <div className="md:col-span-2">
             {submitted ? (
               <div className="flex flex-col items-center justify-center h-full py-16 text-center">
-                <CheckCircle2 className="w-14 h-14 text-[#0d9488] mb-4" aria-hidden="true" />
+                <CheckCircle2 className="w-14 h-14 text-[#0f766e] mb-4" aria-hidden="true" />
                 <h2 className="text-2xl font-bold text-[#3a485b] mb-2">Message received</h2>
                 <p className="text-gray-500">We'll get back to you within one business day.</p>
                 <button
                   onClick={() => { setSubmitted(false); setForm({ name: "", email: "", subject: "General Question", message: "" }); }}
-                  className="mt-6 text-sm text-[#0d9488] hover:underline"
+                  className="mt-6 text-sm text-[#0f766e] underline underline-offset-2"
                 >
                   Send another message
                 </button>
@@ -114,7 +115,7 @@ export default function Contact() {
                       required
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
                       placeholder="Your name"
                     />
                   </div>
@@ -126,7 +127,7 @@ export default function Contact() {
                       required
                       value={form.email}
                       onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent"
+                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
                       placeholder="you@institution.edu"
                     />
                   </div>
@@ -137,7 +138,7 @@ export default function Contact() {
                     id="subject"
                     value={form.subject}
                     onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent bg-white"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent bg-white"
                   >
                     {subjects.map(s => <option key={s}>{s}</option>)}
                   </select>
@@ -150,14 +151,14 @@ export default function Contact() {
                     rows={6}
                     value={form.message}
                     onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0d9488] focus:border-transparent resize-none"
+                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent resize-none"
                     placeholder="How can we help?"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-[#0d9488] hover:bg-[#0b7a6e] text-white font-semibold py-3 rounded-lg transition disabled:opacity-60"
+                  className="w-full bg-[#0f766e] hover:bg-[#115e59] text-white font-semibold py-3 rounded-lg transition disabled:opacity-60"
                 >
                   {loading ? "Sending…" : "Send Message"}
                 </button>
@@ -165,6 +166,7 @@ export default function Contact() {
             )}
           </div>
         </div>
+      </div>
       </main>
       <SiteFooter />
     </div>
@@ -182,4 +184,3 @@ function InfoCard({ icon, title, body }: { icon: React.ReactNode; title: string;
     </div>
   );
 }
-

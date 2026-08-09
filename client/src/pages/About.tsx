@@ -10,6 +10,7 @@ export default function About() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-[#3a485b] py-20">
@@ -53,10 +54,10 @@ export default function About() {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { icon: <Target className="w-5 h-5 text-[#0d9488]" />, title: "Precision", desc: "Remedy508 understands accessibility standards — not just formatting rules." },
-              { icon: <Lightbulb className="w-5 h-5 text-[#0d9488]" />, title: "Built for Higher Ed", desc: "Designed specifically for the tools and workflows instructional designers actually use." },
-              { icon: <CheckCircle2 className="w-5 h-5 text-[#0d9488]" />, title: "WCAG 2.1 AA", desc: "Every output targets the standard that ADA Title II compliance requires." },
-              { icon: <Heart className="w-5 h-5 text-[#0d9488]" />, title: "Student-Centered", desc: "Every accessible document is a student who can actually access their education." },
+              { icon: <Target className="w-5 h-5 text-[#0f766e]" />, title: "Precision", desc: "Remedy508 understands accessibility standards — not just formatting rules." },
+              { icon: <Lightbulb className="w-5 h-5 text-[#0f766e]" />, title: "Built for Higher Ed", desc: "Designed specifically for the tools and workflows instructional designers actually use." },
+              { icon: <CheckCircle2 className="w-5 h-5 text-[#0f766e]" />, title: "WCAG 2.1 AA", desc: "Every output targets the standard that ADA Title II compliance requires." },
+              { icon: <Heart className="w-5 h-5 text-[#0f766e]" />, title: "Student-Centered", desc: "Every accessible document is a student who can actually access their education." },
             ].map(({ icon, title, desc }) => (
               <div key={title} className="flex gap-4 p-5 bg-white rounded-xl border border-gray-200">
                 <div className="flex-shrink-0 mt-0.5">{icon}</div>
@@ -95,9 +96,9 @@ export default function About() {
               { value: "1 in 4", label: "college students has a disability", source: "NCES" },
             ].map(({ value, label, source }) => (
               <div key={value} className="p-6 bg-gray-50 rounded-2xl border border-gray-200">
-                <p className="text-4xl font-bold text-[#0d9488] mb-2">{value}</p>
+                <p className="text-4xl font-bold text-[#0f766e] mb-2">{value}</p>
                 <p className="text-gray-600 text-sm mb-1">{label}</p>
-                <p className="text-gray-400 text-xs">{source}</p>
+                    <p className="text-gray-600 text-xs">{source}</p>
               </div>
             ))}
           </div>
@@ -111,7 +112,7 @@ export default function About() {
           <p className="text-gray-500 mb-8">Try the tools, explore the pricing, or reach out with questions.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/pricing">
-              <span className="inline-block bg-[#0d9488] hover:bg-[#0b7a6e] text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">View Pricing</span>
+              <span className="inline-block bg-[#0f766e] hover:bg-[#115e59] text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">View Pricing</span>
             </Link>
             <Link href="/contact">
               <span className="inline-block border border-[#3a485b] text-[#3a485b] hover:bg-[#3a485b] hover:text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">Contact Us</span>
@@ -119,6 +120,7 @@ export default function About() {
           </div>
         </div>
       </section>
+      </main>
 
       {/* Footer */}
       <SiteFooter />

@@ -169,7 +169,7 @@ export default function TeamSetup() {
         <div className="min-h-screen bg-white">
           <SiteHeader />
           <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
-            <Loader2 className="w-8 h-8 text-[#0d9488] mb-4 animate-spin" />
+            <Loader2 className="w-8 h-8 text-[#0f766e] mb-4 animate-spin" />
             <p className="text-gray-500">Loading your team...</p>
           </div>
           <SiteFooter />
@@ -181,12 +181,12 @@ export default function TeamSetup() {
       <div className="min-h-screen bg-white">
         <SiteHeader />
         <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
-          <AlertCircle className="w-10 h-10 text-[#0d9488] mb-4" />
+          <AlertCircle className="w-10 h-10 text-[#0f766e] mb-4" />
           <h1 className="text-2xl font-bold text-[#3a485b] mb-3">No team found</h1>
           <p className="text-gray-500 mb-6 max-w-sm">
             If you just completed checkout, your team dashboard may take a moment to appear. Try refreshing.
           </p>
-          <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl bg-[#0d9488] text-white font-semibold text-sm hover:bg-[#0f766e] transition">
+          <button onClick={() => window.location.reload()} className="px-6 py-2.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition">
             Refresh
           </button>
         </div>
@@ -247,7 +247,7 @@ export default function TeamSetup() {
                 <div className="mt-3 flex items-center gap-2">
                   <button
                     onClick={() => { setSeatMode("add"); setAddSeatsQty(1); setAddSeatsOpen(true); }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#0d9488] text-[#0d9488] hover:bg-teal-50 transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-[#0f766e] text-[#0f766e] hover:bg-teal-50 transition"
                   >
                     <Plus className="w-3 h-3" />
                     Add Seats
@@ -281,7 +281,7 @@ export default function TeamSetup() {
                   </p>
                   <div className="mt-2 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-[#0d9488] rounded-full transition-all"
+                      className="h-full bg-[#0f766e] rounded-full transition-all"
                       style={{ width: `${Math.min(100, (teamUsage.totalUsed / Math.max(1, teamUsage.totalLimit)) * 100)}%` }}
                     />
                   </div>
@@ -437,7 +437,7 @@ export default function TeamSetup() {
                 <button
                   onClick={handlePreviewSeats}
                   disabled={addSeatsLoading}
-                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                  className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition disabled:opacity-60"
                 >
                   {addSeatsLoading ? "Calculating…" : seatMode === "add" ? "See exact charge" : "See exact credit"}
                 </button>
@@ -486,7 +486,7 @@ export default function TeamSetup() {
                   <button
                     onClick={handleConfirmSeats}
                     disabled={addSeatsLoading}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0d9488] text-white hover:bg-[#0f766e] transition disabled:opacity-60"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition disabled:opacity-60"
                   >
                     {addSeatsLoading
                       ? (seatMode === "add" ? "Charging…" : "Removing…")

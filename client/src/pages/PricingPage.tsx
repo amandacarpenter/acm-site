@@ -67,6 +67,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
 
       {/* Header */}
       <section className="relative overflow-hidden bg-[#3a485b] py-20 sm:py-24" aria-labelledby="pricing-heading">
@@ -93,9 +94,9 @@ export default function PricingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
 
             {/* Individual card */}
-            <div className="rounded-2xl bg-white border-2 border-[#0d9488] shadow-lg relative flex flex-col overflow-hidden">
+            <div className="rounded-2xl bg-white border-2 border-[#0f766e] shadow-lg relative flex flex-col overflow-hidden">
               {/* Teal top bar */}
-              <div className="h-1.5 w-full bg-[#0d9488]" />
+              <div className="h-1.5 w-full bg-[#0f766e]" />
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
@@ -117,7 +118,7 @@ export default function PricingPage() {
                           annual ? "bg-white text-[#3a485b] shadow-sm" : "text-gray-600"
                         }`}
                       >
-                        Annual <span className="text-[#0d9488]">−13%</span>
+                        Annual <span className="text-[#0f766e]">−13%</span>
                       </button>
                     </div>
                   </div>
@@ -138,7 +139,7 @@ export default function PricingPage() {
                   One seat. All four tools, all metered from one shared Credit pool. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
-                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0d9488]/10 text-[#0d9488]">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0f766e]/10 text-[#0f766e]">
                   <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
                   130 Credits / month
                 </div>
@@ -147,7 +148,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8">
                   {INDIVIDUAL_FEATURES.filter((f) => !(annual && f === "Cancel anytime")).map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-base text-gray-900">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0f766e]" aria-hidden="true" />
                       {f}
                     </li>
                   ))}
@@ -157,7 +158,7 @@ export default function PricingPage() {
                   <button
                     onClick={handleGetStarted}
                     disabled={loading}
-                    className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0d9488] text-white hover:bg-[#0f766e] disabled:opacity-70 disabled:cursor-not-allowed"
+                    className="w-full inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-base transition cursor-pointer bg-[#0f766e] text-white hover:bg-[#115e59] disabled:opacity-70 disabled:cursor-not-allowed"
                   >
                     {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Redirecting…</> : "Get Started →"}
                   </button>
@@ -167,7 +168,7 @@ export default function PricingPage() {
 
             {/* Team card */}
             <div className="rounded-2xl bg-[#3a485b] border-2 border-[#3a485b] shadow-lg relative flex flex-col overflow-hidden">
-              <div className="h-1.5 w-full bg-[#0d9488]" />
+              <div className="h-1.5 w-full bg-[#0f766e]" />
 
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6">
@@ -192,7 +193,7 @@ export default function PricingPage() {
                 <ul className="space-y-3 mb-8">
                   {TEAM_FEATURES.map((f) => (
                     <li key={f} className="flex items-start gap-2.5 text-base text-white">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0d9488]" aria-hidden="true" />
+                      <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0f766e]" aria-hidden="true" />
                       {f}
                     </li>
                   ))}
@@ -228,7 +229,7 @@ export default function PricingPage() {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                           <FileText className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -237,7 +238,7 @@ export default function PricingPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                           <Image className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -246,7 +247,7 @@ export default function PricingPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                           <Video className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -255,7 +256,7 @@ export default function PricingPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0d9488] text-white">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                           <Code className="h-4 w-4" />
                         </div>
                         <div className="min-w-0">
@@ -280,6 +281,7 @@ export default function PricingPage() {
           </div>
         </div>
       </section>
+      </main>
 
       <SiteFooter />
     </div>

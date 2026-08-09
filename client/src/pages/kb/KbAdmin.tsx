@@ -101,10 +101,10 @@ function EditModal({ article, onClose, onSaved, token }: {
         <div className="p-5 sm:p-6">
           <div className="flex items-start justify-between mb-5">
             <div>
-              <p className="text-xs text-[#0d9488] font-medium uppercase tracking-wide">Edit Article</p>
+              <p className="text-xs text-[#0f766e] font-medium uppercase tracking-wide">Edit Article</p>
               <h2 id="edit-modal-title" className="text-gray-900 font-semibold text-lg leading-snug mt-0.5">{article.title}</h2>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488] rounded" aria-label="Close">
+            <button onClick={onClose} className="text-gray-400 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e] rounded" aria-label="Close">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
             </button>
           </div>
@@ -117,7 +117,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 id="edit-status"
                 value={form.video_status}
                 onChange={e => setForm(f => ({ ...f, video_status: e.target.value as any }))}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
               >
                 <option value="coming_soon">Coming soon</option>
                 <option value="published">Published</option>
@@ -132,7 +132,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 value={form.summary}
                 onChange={e => setForm(f => ({ ...f, summary: e.target.value }))}
                 rows={2}
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488] resize-none"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e] resize-none"
               />
             </div>
 
@@ -145,7 +145,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 value={form.duration}
                 onChange={e => setForm(f => ({ ...f, duration: e.target.value }))}
                 placeholder="2:14"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
               />
             </div>
 
@@ -157,14 +157,14 @@ function EditModal({ article, onClose, onSaved, token }: {
                   type="file"
                   accept="video/mp4,video/*"
                   onChange={e => setVideoFile(e.target.files?.[0] || null)}
-                  className="text-sm text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#0d9488]/20 file:text-[#0d9488] hover:file:bg-[#0d9488]/30"
+                  className="text-sm text-gray-300 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-[#0f766e]/20 file:text-[#0f766e] hover:file:bg-[#0f766e]/30"
                   aria-label="Select video file to upload"
                 />
                 {videoFile && (
                   <button
                     onClick={handleUploadVideo}
                     disabled={uploading}
-                    className="px-3 py-1.5 rounded-lg bg-[#0d9488] text-white text-xs font-medium hover:bg-[#0d9488]/80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                    className="px-3 py-1.5 rounded-lg bg-[#0f766e] text-white text-xs font-medium hover:bg-[#115e59]/80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]"
                   >
                     {uploading ? "Uploading…" : "Upload"}
                   </button>
@@ -184,7 +184,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 value={form.video_url}
                 onChange={e => setForm(f => ({ ...f, video_url: e.target.value }))}
                 placeholder="https://…"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
               />
             </div>
 
@@ -197,7 +197,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 value={form.captions_url}
                 onChange={e => setForm(f => ({ ...f, captions_url: e.target.value }))}
                 placeholder="https://…captions.vtt"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488]"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
               />
             </div>
 
@@ -210,7 +210,7 @@ function EditModal({ article, onClose, onSaved, token }: {
                 onChange={e => setForm(f => ({ ...f, transcript: e.target.value }))}
                 rows={8}
                 placeholder="Paste the full transcript here…"
-                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0d9488] resize-y font-mono"
+                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#0f766e] resize-y font-mono"
               />
             </div>
 
@@ -221,14 +221,14 @@ function EditModal({ article, onClose, onSaved, token }: {
             <div className="flex gap-3 justify-end pt-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-4 py-2 rounded-lg bg-[#0d9488] text-white text-sm font-medium hover:bg-[#0d9488]/80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                className="px-4 py-2 rounded-lg bg-[#0f766e] text-white text-sm font-medium hover:bg-[#115e59]/80 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]"
               >
                 {saving ? "Saving…" : "Save changes"}
               </button>
@@ -252,7 +252,7 @@ export default function KbAdmin() {
 
   if (!isLoaded) return (
     <div className="min-h-screen bg-white flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" />
+      <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -260,7 +260,7 @@ export default function KbAdmin() {
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
         <p className="text-gray-900 text-lg font-semibold">Admin access only</p>
-        <Link href="/kb"><a className="text-[#0d9488] text-sm mt-2 hover:underline">← Back to Knowledge Base</a></Link>
+        <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline">← Back to Knowledge Base</a></Link>
       </div>
     </div>
   );
@@ -277,14 +277,14 @@ export default function KbAdmin() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/kb"><a className="text-[#0d9488] text-sm hover:underline">← Knowledge Base</a></Link>
+          <Link href="/kb"><a className="text-[#0f766e] text-sm hover:underline">← Knowledge Base</a></Link>
           <span className="text-gray-400" aria-hidden="true">/</span>
           <h1 className="text-2xl font-bold text-gray-900">Admin — Manage Videos</h1>
         </div>
 
         {loading ? (
           <div className="flex justify-center py-16">
-            <div className="w-8 h-8 border-2 border-[#0d9488] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="flex flex-col gap-6">
@@ -317,7 +317,7 @@ export default function KbAdmin() {
                                   const token = await getToken();
                                   setEditing({ ...article, _token: token } as any);
                                 }}
-                                className="px-3 py-1.5 rounded-lg bg-[#0d9488]/20 text-[#0d9488] text-xs font-medium hover:bg-[#0d9488]/30 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0d9488]"
+                                className="px-3 py-1.5 rounded-lg bg-[#0f766e]/20 text-[#0f766e] text-xs font-medium hover:bg-[#115e59]/30 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]"
                                 aria-label={`Edit ${article.title}`}
                               >
                                 Edit

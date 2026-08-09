@@ -22,7 +22,7 @@ export default function LoginPage() {
           afterSignInUrl="/"
           appearance={{
             variables: {
-              colorPrimary: "#0d9488",
+              colorPrimary: "#0f766e",
               colorText: "#3a485b",
               borderRadius: "0.75rem",
             }

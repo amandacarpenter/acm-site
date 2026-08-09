@@ -10,6 +10,7 @@ export default function Accessibility() {
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
+      <main>
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
         <HeroWatermark corner="right" />
         <div className="relative max-w-3xl mx-auto px-4 sm:px-6">
@@ -21,11 +22,11 @@ export default function Accessibility() {
           <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Last reviewed: May 17, 2026</p>
         </div>
       </section>
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
 
         {/* Commitment callout */}
-        <div className="bg-teal-50 border-l-4 border-[#0d9488] p-5 rounded-r-lg mb-10">
-          <p className="text-[#0d9488] font-semibold mb-1">Our Commitment</p>
+        <div className="bg-teal-50 border-l-4 border-[#0f766e] p-5 rounded-r-lg mb-10">
+          <p className="text-[#0f766e] font-semibold mb-1">Our Commitment</p>
           <p className="text-gray-700">Remedy508 exists to make higher education more accessible. It would be contradictory — and unacceptable — for an accessibility tool to have an inaccessible website. We follow the same standards we help our users meet.</p>
         </div>
 
@@ -39,7 +40,7 @@ export default function Accessibility() {
                 ["WAI-ARIA 1.2", "Applied where applicable to support dynamic content and custom UI components with proper semantics for assistive technologies"],
               ].map(([std, desc]) => (
                 <li key={std} className="flex gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#0d9488] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                  <CheckCircle2 className="w-5 h-5 text-[#0f766e] flex-shrink-0 mt-0.5" aria-hidden="true" />
                   <span><strong>{std}:</strong> {desc}</span>
                 </li>
               ))}
@@ -109,10 +110,10 @@ export default function Accessibility() {
           <Section title="Report an Accessibility Issue">
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
               <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-[#0d9488] flex-shrink-0 mt-0.5" aria-hidden="true" />
+                <Mail className="w-5 h-5 text-[#0f766e] flex-shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
                   <p className="font-semibold text-[#3a485b] mb-1">Contact Us</p>
-                  <p className="text-sm mb-3">Email <a href="mailto:hello@remedy508.com?subject=Accessibility Issue" className="text-[#0d9488] hover:underline">hello@remedy508.com</a> with subject line "Accessibility Issue." Please include:</p>
+                  <p className="text-sm mb-3">Email <a href="mailto:hello@remedy508.com?subject=Accessibility Issue" className="text-[#0f766e] underline underline-offset-2">hello@remedy508.com</a> with subject line "Accessibility Issue." Please include:</p>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     <li>A description of the barrier you encountered</li>
                     <li>The page or feature where you encountered it</li>
@@ -128,7 +129,7 @@ export default function Accessibility() {
           <Section title="Formal Complaints">
             <p>If you are not satisfied with our response, you may contact:</p>
             <ul className="list-disc pl-5 space-y-2 mt-2 text-sm">
-              <li><strong>U.S. Department of Education, Office for Civil Rights (OCR):</strong> <a href="mailto:ocr@ed.gov" className="text-[#0d9488] hover:underline">ocr@ed.gov</a> or 1-800-421-3481</li>
+              <li><strong>U.S. Department of Education, Office for Civil Rights (OCR):</strong> <a href="mailto:ocr@ed.gov" className="text-[#0f766e] underline underline-offset-2">ocr@ed.gov</a> or 1-800-421-3481</li>
               <li>EU users may contact their national supervisory authority.</li>
             </ul>
             <p className="mt-3 text-sm text-gray-500">We encourage you to contact us first — we are a small, purpose-driven company and we genuinely want to fix issues.</p>
@@ -143,7 +144,7 @@ export default function Accessibility() {
                 "Updating this statement to reflect our current conformance status and known issues",
               ].map((item) => (
                 <li key={item} className="flex gap-3">
-                  <CheckCircle2 className="w-4 h-4 text-[#0d9488] flex-shrink-0 mt-1" aria-hidden="true" />
+                  <CheckCircle2 className="w-4 h-4 text-[#0f766e] flex-shrink-0 mt-1" aria-hidden="true" />
                   <span className="text-sm">{item}</span>
                 </li>
               ))}
@@ -153,11 +154,12 @@ export default function Accessibility() {
 
           <Section title="Contact">
             <p><strong>Left Coast Learning LLC, doing business as Remedy508</strong><br />
-            Email: <a href="mailto:hello@remedy508.com" className="text-[#0d9488] hover:underline">hello@remedy508.com</a><br />
-            Website: <a href="https://remedy508.com" className="text-[#0d9488] hover:underline">remedy508.com</a></p>
+            Email: <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline underline-offset-2">hello@remedy508.com</a><br />
+            Website: <a href="https://remedy508.com" className="text-[#0f766e] underline underline-offset-2">remedy508.com</a></p>
           </Section>
 
         </div>
+      </div>
       </main>
       <SiteFooter />
     </div>
@@ -172,4 +174,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </section>
   );
 }
-
