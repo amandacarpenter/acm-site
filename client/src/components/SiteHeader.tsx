@@ -16,11 +16,11 @@ function Logo() {
 }
 
 const NAV_LINKS = [
-  { href: "/accessibility-checker", label: "Check Accessibility" },
-  { href: "/about", label: "About" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/kb", label: "Knowledge Base" },
+  { href: "/accessibility-checker", label: "Free Checker" },
   { href: "/pricing", label: "Plans & Pricing" },
+  { href: "/kb", label: "Knowledge Base" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/about", label: "About" },
 ];
 
 export default function SiteHeader() {
