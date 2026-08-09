@@ -15,7 +15,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteHeader />
-      <div className="flex-1 flex items-center justify-center py-16 px-4">
+      <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <h1 className="sr-only">Log in to Remedy508</h1>
         <SignIn
           routing="virtual"
           signUpUrl="/signup"
@@ -24,11 +25,12 @@ export default function LoginPage() {
             variables: {
               colorPrimary: "#0f766e",
               colorText: "#3a485b",
+              colorTextSecondary: "#566373",
               borderRadius: "0.75rem",
             }
           }}
         />
-      </div>
+      </main>
       <SiteFooter />
     </div>
   );

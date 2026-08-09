@@ -15,7 +15,8 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <SiteHeader />
-      <div className="flex-1 flex items-center justify-center py-16 px-4">
+      <main className="flex-1 flex items-center justify-center py-16 px-4">
+        <h1 className="sr-only">Create a Remedy508 account</h1>
         <div className="flex flex-col items-center">
           <SignUp
             routing="virtual"
@@ -25,16 +26,17 @@ export default function SignupPage() {
               variables: {
                 colorPrimary: "#0f766e",
                 colorText: "#3a485b",
+                colorTextSecondary: "#566373",
                 borderRadius: "0.75rem",
               }
             }}
           />
-          <div className="mt-3 text-center text-xs text-gray-400" style={{width: "inherit"}}>
+          <div className="mt-3 text-center text-xs text-gray-600" style={{width: "inherit"}}>
             <p>A verification code will be sent to your email.</p>
             <p>If you don't see it, check your spam or junk folder.</p>
           </div>
         </div>
-      </div>
+      </main>
       <SiteFooter />
     </div>
   );
