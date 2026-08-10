@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import KbGate from "./KbGate";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useKbSections, useKbSearch, type KbArticle } from "./useKb";
@@ -52,8 +51,7 @@ export default function KbHome() {
   const [query, setQuery] = useState("");
 
   return (
-    <KbGate>
-      <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900">
         <SiteHeader />
 
         {/* Page hero — matches Contact, Pricing, etc. */}
@@ -130,7 +128,6 @@ export default function KbHome() {
           )}
         </main>
         <SiteFooter />
-      </div>
-    </KbGate>
+    </div>
   );
 }

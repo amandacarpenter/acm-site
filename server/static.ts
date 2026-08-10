@@ -180,6 +180,10 @@ export function serveStatic(app: Express) {
   // the SEO injection below entirely.
   app.use(express.static(distPath, { index: false }));
 
+  // Consolidate legacy public URLs so search engines index one canonical page.
+  app.get("/home", (_req, res) => res.redirect(301, "/"));
+  app.get("/document-checker", (_req, res) => res.redirect(301, "/accessibility-checker"));
+
   // fall through to index.html if the file doesn't exist
   // Never intercept API routes — let Express handle those
   const indexHtmlTemplate = fs.readFileSync(path.resolve(distPath, "index.html"), "utf-8");

@@ -1,8 +1,8 @@
 import { Link } from "wouter";
-import KbGate from "./KbGate";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useKbArticle, useKbSections, type KbArticle } from "./useKb";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 function RelatedCard({ article }: { article: KbArticle }) {
   return (
@@ -88,9 +88,10 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
   const { article, loading } = useKbArticle(params.id);
   const { sections } = useKbSections();
   const allArticles = sections.flatMap(s => s.articles);
+  useDocumentTitle(`${article?.title || "Knowledge Base"} | Remedy508`);
 
   return (
-    <KbGate>
+    <>
       {loading ? (
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" aria-label="Loading article" />
@@ -105,6 +106,6 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
       ) : (
         <ArticleView article={article} allArticles={allArticles} />
       )}
-    </KbGate>
+    </>
   );
 }

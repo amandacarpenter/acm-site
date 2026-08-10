@@ -57,6 +57,33 @@ function softwareApplicationJsonLd(): string {
   });
 }
 
+function articleJsonLd(title: string, description: string, canonicalUrl: string): string {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    url: canonicalUrl,
+    mainEntityOfPage: canonicalUrl,
+    publisher: {
+      "@type": "Organization",
+      name: "Left Coast Learning LLC",
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/favicon-192.png`,
+      },
+    },
+  });
+}
+
+function injectNoIndex(html: string): string {
+  return html.replace(
+    "</head>",
+    '  <meta name="robots" content="noindex, nofollow" />\n</head>',
+  );
+}
+
 /**
  * Rewrites the <title>, meta description, and adds canonical/OG/Twitter/JSON-LD
  * tags for the given request path. Falls back to the template's existing
@@ -65,7 +92,9 @@ function softwareApplicationJsonLd(): string {
  */
 export function injectSeoMeta(html: string, requestPath: string): string {
   const meta = getRouteMeta(requestPath);
-  if (!meta) return html;
+  // Any route not intentionally registered as public is private, transactional,
+  // or unknown. Keep it out of search results by default.
+  if (!meta) return injectNoIndex(html);
 
   const canonicalUrl = `${SITE_URL}${requestPath === "/" ? "" : requestPath}`;
   const title = escapeHtml(meta.title);
@@ -83,6 +112,7 @@ export function injectSeoMeta(html: string, requestPath: string): string {
   );
 
   const extraTags: string[] = [
+    `<meta name="robots" content="index, follow, max-image-preview:large" />`,
     `<link rel="canonical" href="${canonicalUrl}" />`,
     `<meta property="og:type" content="website" />`,
     `<meta property="og:site_name" content="Remedy508" />`,
@@ -100,6 +130,11 @@ export function injectSeoMeta(html: string, requestPath: string): string {
 
   if (meta.jsonLd === "software") {
     extraTags.push(`<script type="application/ld+json">${softwareApplicationJsonLd()}</script>`);
+  }
+  if (meta.jsonLd === "article") {
+    extraTags.push(
+      `<script type="application/ld+json">${articleJsonLd(meta.title, meta.description, canonicalUrl)}</script>`,
+    );
   }
 
   result = result.replace("</head>", `  ${extraTags.join("\n  ")}\n</head>`);

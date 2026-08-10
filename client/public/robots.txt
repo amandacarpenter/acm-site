@@ -5,7 +5,11 @@ Allow: /
 Disallow: /dashboard
 Disallow: /admin
 Disallow: /kb/admin
+Disallow: /login
+Disallow: /signup
+Disallow: /coming-soon
 Disallow: /checkout/success
+Disallow: /team
 Disallow: /team/setup
 Disallow: /invoice-request
 

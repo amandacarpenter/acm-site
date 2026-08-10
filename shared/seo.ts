@@ -32,18 +32,10 @@ export const ROUTES: RouteMeta[] = [
     jsonLd: "software",
   },
   {
-    path: "/tools",
-    title: "Accessibility Tools | Remedy Docs, Image, HTML & Video | Remedy508",
-    description:
-      "Four AI-powered tools for course material accessibility: Remedy Docs (PDF/Word remediation), Remedy Image (alt text), Remedy HTML (Canvas cleanup), and Remedy Video (captions & transcripts).",
-    changefreq: "monthly",
-    priority: 0.9,
-  },
-  {
     path: "/accessibility-checker",
-    title: "Remedy508 Accessibility Checker | Free Document Check",
+    title: "Free Document Accessibility Checker | Remedy508",
     description:
-      "Check PDF, Word, and PowerPoint files for accessibility problems, including PDF table tags and header associations. Files stay in your browser and no account is required.",
+      "Check documents for accessibility barriers, including PDF table tags and header associations. Files stay in your browser, and no account or Remedy508 credits are required.",
     changefreq: "monthly",
     priority: 0.9,
   },
@@ -116,7 +108,26 @@ export function getRouteMeta(pathname: string): RouteMeta | undefined {
   // exact match first
   const exact = ROUTES.find((r) => r.path === pathname);
   if (exact) return exact;
-  // /tools/:tab -> fall back to /tools meta
-  if (pathname.startsWith("/tools/")) return ROUTES.find((r) => r.path === "/tools");
+  // Give every public knowledge-base article a unique, crawlable title,
+  // description, canonical URL, and Article schema without importing the
+  // database-backed KB module into the SEO layer.
+  if (pathname.startsWith("/kb/articles/")) {
+    const slug = pathname.slice("/kb/articles/".length);
+    if (!slug || slug.includes("/")) return undefined;
+    const articleTitle = slug
+      .split("-")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+    return {
+      path: pathname,
+      title: `${articleTitle} | Remedy508`,
+      description:
+        `Learn ${articleTitle.toLowerCase()} with practical document accessibility guidance from Remedy508.`,
+      changefreq: "monthly",
+      priority: 0.5,
+      jsonLd: "article",
+    };
+  }
   return undefined;
 }
