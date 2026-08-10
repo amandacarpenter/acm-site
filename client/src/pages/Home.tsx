@@ -262,7 +262,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section className="py-20 sm:py-28 bg-[#FAF6F1]" aria-labelledby="how-heading">
+      <section className="py-20 sm:py-28 bg-gray-50" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           {/* Section header */}
