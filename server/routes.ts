@@ -15,6 +15,7 @@ import * as child_process from "child_process";
 import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
+import { createHash } from "crypto";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -1152,6 +1153,48 @@ export function registerRoutes(httpServer: Server, app: Express) {
     res.status(201).json({ id: event.id });
   });
 
+  // First-party, privacy-conscious estimate of likely human visitors. A browser
+  // reports only after at least 3 seconds of visible time plus an interaction.
+  // The anonymous browser ID is hashed before storage and deduplicated per day.
+  app.post("/api/likely-human-visit", (req, res) => {
+    const parsed = z.object({
+      visitorId: z.string().uuid(),
+      path: z.string().min(1).max(500),
+      engagedMs: z.number().int().min(3000).max(24 * 60 * 60 * 1000),
+      interaction: z.literal(true),
+    }).strict().safeParse(req.body);
+    const userAgent = req.get("user-agent") || "";
+    const automated = /HeadlessChrome|Playwright|Puppeteer|bot|crawler|spider/i.test(userAgent);
+    if (!parsed.success || automated) {
+      return res.status(400).json({ error: "Invalid engaged visitor event" });
+    }
+    const safePath = parsed.data.path.split("?")[0].slice(0, 500);
+    if (
+      safePath === "/admin" ||
+      safePath.startsWith("/admin/") ||
+      safePath === "/kb/admin" ||
+      safePath.startsWith("/kb/admin/")
+    ) {
+      return res.status(204).end();
+    }
+    const visitDate = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const visitorIdHash = createHash("sha256")
+      .update(`${parsed.data.visitorId}:${process.env.ANALYTICS_HASH_SALT || "remedy508-first-party-analytics"}`)
+      .digest("hex");
+    const created = storage.createLikelyHumanVisit({
+      visitorIdHash,
+      visitDate,
+      firstPath: safePath,
+      createdAt: Date.now(),
+    });
+    res.status(created ? 201 : 200).json({ recorded: created });
+  });
+
   // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
   // Single-call summary powering the mobile admin dashboard: revenue/subscribers
   // (from Clerk user metadata, since that's the source of truth for plan state
@@ -1290,6 +1333,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
 
       const dailyCounts14d = storage.getDailyJobCounts(14);
       const checkerUsage = storage.getCheckerUsageSummary();
+      const likelyHumanVisitors = storage.getLikelyHumanVisitSummary();
       const analytics = await googleAnalyticsPromise;
 
       res.json({
@@ -1333,6 +1377,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           recentFailures,
         },
         checkerUsage,
+        likelyHumanVisitors,
         recentActivity: recentJobs,
       });
     } catch (err: any) {

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -35,3 +35,20 @@ export const checkerUsage = sqliteTable("checker_usage", {
 export const insertCheckerUsageSchema = createInsertSchema(checkerUsage).omit({ id: true });
 export type InsertCheckerUsage = z.infer<typeof insertCheckerUsageSchema>;
 export type CheckerUsage = typeof checkerUsage.$inferSelect;
+
+export const likelyHumanVisits = sqliteTable("likely_human_visits", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  visitorIdHash: text("visitor_id_hash").notNull(),
+  visitDate: text("visit_date").notNull(),
+  firstPath: text("first_path").notNull(),
+  createdAt: integer("created_at").notNull(),
+}, (table) => ({
+  visitorDayUnique: uniqueIndex("likely_human_visits_visitor_day_unique").on(
+    table.visitorIdHash,
+    table.visitDate,
+  ),
+}));
+
+export const insertLikelyHumanVisitSchema = createInsertSchema(likelyHumanVisits).omit({ id: true });
+export type InsertLikelyHumanVisit = z.infer<typeof insertLikelyHumanVisitSchema>;
+export type LikelyHumanVisit = typeof likelyHumanVisits.$inferSelect;

@@ -73,6 +73,12 @@ interface DashboardData {
       createdAt: number;
     }[];
   };
+  likelyHumanVisitors: {
+    today: number;
+    last7Days: number;
+    lastHour: number;
+    dailyCounts7d: { date: string; visitors: number }[];
+  };
   recentActivity: { id: number; type: string; status: string; inputName: string | null; pageCount: number | null; creditsUsed: number | null; createdAt: number; submittedBy: string | null }[];
 }
 
@@ -279,6 +285,19 @@ function LiveDashboard() {
       {/* Site Traffic (Google Analytics) */}
       <div style={{ marginBottom: 28 }}>
         <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Google Analytics unavailable" : "Live from Google Analytics (GA4) · admin, local, and automated QA sessions are excluded going forward"} />
+        <div style={{ background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
+          <div style={{ fontSize: "0.72rem", color: "#047857", fontWeight: 700, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+            Likely Human Visitors · First-Party
+          </div>
+          <div style={{ color: "#065f46", fontSize: "0.78rem", lineHeight: 1.5, marginBottom: 10 }}>
+            Anonymous visitors counted after at least 3 visible seconds and a scroll, tap, click, or keypress. Kept separate from GA4; bots, admin, and QA traffic are excluded.
+          </div>
+          <StatGrid>
+            <StatCard label="Likely Humans Today" value={data.likelyHumanVisitors.today.toLocaleString()} tone="good" sub="engaged anonymous visitors" />
+            <StatCard label="Likely Humans (7d)" value={data.likelyHumanVisitors.last7Days.toLocaleString()} tone="good" sub="distinct anonymous visitors" />
+            <StatCard label="Likely Humans (1h)" value={data.likelyHumanVisitors.lastHour.toLocaleString()} sub="recently engaged" />
+          </StatGrid>
+        </div>
         {analytics.error ? (
           <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px", color: "#991b1b", fontSize: "0.8rem" }}>
             {analytics.error}

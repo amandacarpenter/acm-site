@@ -3,10 +3,12 @@ import Database from "better-sqlite3";
 import {
   jobs,
   checkerUsage,
+  likelyHumanVisits,
   type Job,
   type InsertJob,
   type CheckerUsage,
   type InsertCheckerUsage,
+  type InsertLikelyHumanVisit,
 } from "@shared/schema";
 import { eq, desc, lt } from "drizzle-orm";
 import fs from "fs";
@@ -53,6 +55,18 @@ sqlite.exec(`
   )
 `);
 
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS likely_human_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    visitor_id_hash TEXT NOT NULL,
+    visit_date TEXT NOT NULL,
+    first_path TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS likely_human_visits_visitor_day_unique
+    ON likely_human_visits(visitor_id_hash, visit_date);
+`);
+
 // Backfill new columns for existing databases (no-op if they already exist)
 const existingCols = new Set(
   (sqlite.prepare("PRAGMA table_info(jobs)").all() as any[]).map((c) => c.name)
@@ -89,6 +103,13 @@ export interface CheckerUsageSummary {
   recent: CheckerUsage[];
 }
 
+export interface LikelyHumanVisitSummary {
+  today: number;
+  last7Days: number;
+  lastHour: number;
+  dailyCounts7d: { date: string; visitors: number }[];
+}
+
 export interface IStorage {
   createJob(job: InsertJob): Job;
   getJob(id: number): Job | undefined;
@@ -101,6 +122,8 @@ export interface IStorage {
   getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[];
   createCheckerUsage(event: InsertCheckerUsage): CheckerUsage;
   getCheckerUsageSummary(): CheckerUsageSummary;
+  createLikelyHumanVisit(event: InsertLikelyHumanVisit): boolean;
+  getLikelyHumanVisitSummary(): LikelyHumanVisitSummary;
   backupTo(destPath: string): Promise<void>;
 }
 
@@ -206,6 +229,44 @@ export class Storage implements IStorage {
       completed: all.filter((event) => event.status === "completed").length,
       failed: all.filter((event) => event.status === "failed").length,
       recent: all.slice(0, 20),
+    };
+  }
+  createLikelyHumanVisit(event: InsertLikelyHumanVisit): boolean {
+    const retentionCutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    db.delete(likelyHumanVisits).where(lt(likelyHumanVisits.createdAt, retentionCutoff)).run();
+    const result = db
+      .insert(likelyHumanVisits)
+      .values(event)
+      .onConflictDoNothing()
+      .run();
+    return result.changes > 0;
+  }
+  getLikelyHumanVisitSummary(): LikelyHumanVisitSummary {
+    const now = Date.now();
+    const cutoff90 = now - 90 * 24 * 60 * 60 * 1000;
+    const cutoff7d = now - 7 * 24 * 60 * 60 * 1000;
+    const cutoff1h = now - 60 * 60 * 1000;
+    db.delete(likelyHumanVisits).where(lt(likelyHumanVisits.createdAt, cutoff90)).run();
+    const all = db.select().from(likelyHumanVisits).orderBy(desc(likelyHumanVisits.createdAt)).all();
+    const today = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const daily = new Map<string, Set<string>>();
+    for (const visit of all.filter((v) => v.createdAt >= cutoff7d)) {
+      const visitors = daily.get(visit.visitDate) || new Set<string>();
+      visitors.add(visit.visitorIdHash);
+      daily.set(visit.visitDate, visitors);
+    }
+    return {
+      today: new Set(all.filter((v) => v.visitDate === today).map((v) => v.visitorIdHash)).size,
+      last7Days: new Set(all.filter((v) => v.createdAt >= cutoff7d).map((v) => v.visitorIdHash)).size,
+      lastHour: new Set(all.filter((v) => v.createdAt >= cutoff1h).map((v) => v.visitorIdHash)).size,
+      dailyCounts7d: Array.from(daily.entries())
+        .map(([date, visitors]) => ({ date, visitors: visitors.size }))
+        .sort((a, b) => a.date.localeCompare(b.date)),
     };
   }
 }

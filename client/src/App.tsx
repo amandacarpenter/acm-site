@@ -26,6 +26,7 @@ import KbHome from "@/pages/kb/KbHome";
 import KbArticlePage from "@/pages/kb/KbArticle";
 import KbAdmin from "@/pages/kb/KbAdmin";
 import ScrollToTop from "@/components/ScrollToTop";
+import LikelyHumanTracker from "@/components/LikelyHumanTracker";
 
 const DocumentChecker = lazy(() => import("@/pages/DocumentChecker"));
 
@@ -64,6 +65,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <Router base="">
           <ScrollToTop />
+          <LikelyHumanTracker />
           <Switch>
             {/* Root now serves the real homepage -- the site is live. Previously
                 this rendered the pre-launch "Coming Soon" waitlist page, which is
