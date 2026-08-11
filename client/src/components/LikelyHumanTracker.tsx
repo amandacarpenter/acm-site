@@ -21,7 +21,7 @@ function getVisitorId(): string {
   const existing = readCookie(VISITOR_COOKIE);
   if (existing) return existing;
   const visitorId = crypto.randomUUID();
-  writeCookie(VISITOR_COOKIE, visitorId, 180 * 24 * 60 * 60);
+  writeCookie(VISITOR_COOKIE, visitorId, 90 * 24 * 60 * 60);
   return visitorId;
 }
 
