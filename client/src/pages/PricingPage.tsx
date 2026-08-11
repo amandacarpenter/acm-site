@@ -32,7 +32,7 @@ const TEAM_FEATURES = [
 ];
 
 export default function PricingPage() {
-  useDocumentTitle("Pricing | Remedy508 Accessibility Remediation");
+  useDocumentTitle("PDF & Document Remediation Pricing | Remedy508");
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isSignedIn, userId } = useAuth();
@@ -82,7 +82,7 @@ export default function PricingPage() {
             <span className="text-white">break the budget.</span>
           </h1>
           <p className="text-lg text-white max-w-xl mx-auto mb-10">
-            Simple pricing for individuals and teams.
+            Simple pricing for PDF and document accessibility remediation software, with plans for individuals and teams.
           </p>
         </div>
       </section>

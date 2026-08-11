@@ -21,7 +21,7 @@ function softwareApplicationJsonLd(): string {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     description:
-      "AI-powered accessibility remediation for higher education course materials. Fix PDFs and Word docs, generate alt text, clean Canvas HTML, and caption videos to meet WCAG 2.1 AA.",
+      "Document accessibility remediation software for PDFs, Word files, Canvas HTML, images, and video, with a free browser-based accessibility checker.",
     url: SITE_URL,
     image: DEFAULT_OG_IMAGE,
     offers: [
@@ -54,6 +54,78 @@ function softwareApplicationJsonLd(): string {
       "@type": "Organization",
       name: "Left Coast Learning LLC",
     },
+  });
+}
+
+function checkerApplicationJsonLd(): string {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "Remedy508 Free PDF and Document Accessibility Checker",
+    applicationCategory: "UtilitiesApplication",
+    operatingSystem: "Web",
+    url: `${SITE_URL}/accessibility-checker`,
+    description:
+      "A free browser-based PDF and Word accessibility checker for machine-detectable document structure, including tags, headings, tables, alt text, language, links, and form labels.",
+    featureList: [
+      "PDF and Word document accessibility checks",
+      "PDF table tag and header association checks",
+      "Heading and document structure checks",
+      "Alternative text checks",
+      "Language and metadata checks",
+      "Local browser-based document processing",
+    ],
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "USD",
+    },
+    provider: {
+      "@type": "Organization",
+      name: "Left Coast Learning LLC",
+      url: SITE_URL,
+    },
+  });
+}
+
+function faqPageJsonLd(): string {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is the Free Accessibility Checker?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "It is a free, browser-based check that reviews documents for common machine-detectable accessibility barriers. No account or Remedy508 Credits are required.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "How do I check a PDF for accessibility?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Open the free PDF accessibility checker, choose your PDF, and review the results for tags, headings, tables, alternative text, language, links, forms, and text layers. Manual review is still required.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Does Remedy508 upload or save my document?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. Document contents stay in the browser and are not uploaded or saved. Remedy508 records limited check metadata for internal usage reporting for up to 90 days.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What is the difference between the checker and Remedy Docs?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The Free Accessibility Checker identifies and explains common barriers. Remedy Docs is the paid remediation service that provides automated remediation assistance and produces an updated document.",
+        },
+      },
+    ],
   });
 }
 
@@ -130,6 +202,12 @@ export function injectSeoMeta(html: string, requestPath: string): string {
 
   if (meta.jsonLd === "software") {
     extraTags.push(`<script type="application/ld+json">${softwareApplicationJsonLd()}</script>`);
+  }
+  if (meta.jsonLd === "checker") {
+    extraTags.push(`<script type="application/ld+json">${checkerApplicationJsonLd()}</script>`);
+  }
+  if (meta.jsonLd === "faq") {
+    extraTags.push(`<script type="application/ld+json">${faqPageJsonLd()}</script>`);
   }
   if (meta.jsonLd === "article") {
     extraTags.push(

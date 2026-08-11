@@ -160,9 +160,9 @@ export function Uploader({ onFile, error, setError, compact = false }: Props) {
           <div className="section-head">
             <h2 id="checks-title">What Remedy508 Accessibility Checker looks for</h2>
             <p>
-              These are the properties an automated tool can read directly out of a document file. They catch the
-              barriers that affect assistive technology most often and are most efficient to address before
-              publication.
+              The checker reviews machine-detectable PDF and Word document structure, including tags, headings,
+              tables, alternative text, language, links, and form labels. These checks are most useful before
+              publication and do not replace manual accessibility review.
             </p>
           </div>
           <ul className="check-list">

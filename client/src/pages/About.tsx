@@ -6,7 +6,7 @@ import { CheckCircle2, Target, Lightbulb, Heart, Info } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
 export default function About() {
-  useDocumentTitle("About Remedy508 | Accessibility Built for Higher Ed");
+  useDocumentTitle("About Remedy508 | Document Accessibility Software");
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
@@ -50,7 +50,7 @@ export default function About() {
         <div className="max-w-3xl mx-auto px-4 sm:px-6">
           <h2 className="text-3xl font-bold text-[#3a485b] mb-6">What We Built</h2>
           <p className="text-gray-600 leading-relaxed mb-8 text-lg">
-            Remedy508 automates the remediation work that used to take hours and turns it into seconds. Upload a PDF, paste Canvas HTML, submit a video — and get back content built toward WCAG 2.1 Level AA standards, ready for a final human review.
+            Remedy508 is document accessibility remediation software that reduces time-consuming technical work. Check a document free, upload a PDF or Word file for remediation, clean Canvas HTML, generate image descriptions, or submit video for captions, then complete a final human review.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
@@ -111,8 +111,11 @@ export default function About() {
           <h2 className="text-2xl font-bold text-[#3a485b] mb-4">Ready to make your materials accessible?</h2>
           <p className="text-gray-500 mb-8">Try the tools, explore the pricing, or reach out with questions.</p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link href="/accessibility-checker">
+              <span className="inline-block bg-[#0f766e] hover:bg-[#115e59] text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">Check a Document Free</span>
+            </Link>
             <Link href="/pricing">
-              <span className="inline-block bg-[#0f766e] hover:bg-[#115e59] text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">View Pricing</span>
+              <span className="inline-block border border-[#3a485b] text-[#3a485b] hover:bg-[#3a485b] hover:text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">View Pricing</span>
             </Link>
             <Link href="/contact">
               <span className="inline-block border border-[#3a485b] text-[#3a485b] hover:bg-[#3a485b] hover:text-white font-semibold px-8 py-3 rounded-lg transition cursor-pointer">Contact Us</span>

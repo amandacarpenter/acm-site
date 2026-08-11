@@ -1,6 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useState, type ReactNode } from "react";
+import { Link } from "wouter";
 import { ChevronDown, HelpCircle, FileText, Image, Video, Code } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -71,6 +72,21 @@ const FAQ_SECTIONS: FAQSection[] = [
       {
         q: "What is the Free Accessibility Checker?",
         a: "It is a free, browser-based check that reviews documents for common machine-detectable accessibility barriers. You do not need an account, and the check uses no Remedy508 Credits.",
+      },
+      {
+        q: "How do I check a PDF for accessibility?",
+        a: (
+          <p>
+            Open the{" "}
+            <Link href="/accessibility-checker">
+              <span className="font-semibold text-[#0f766e] underline underline-offset-2 cursor-pointer">
+                free PDF accessibility checker
+              </span>
+            </Link>
+            , choose your PDF, and review the results for tags, headings, tables, alternative text, language, links,
+            forms, and text layers. The automated report helps you decide what needs manual review or remediation.
+          </p>
+        ),
       },
       {
         q: "Does Remedy508 upload or save my document?",
@@ -201,7 +217,7 @@ function FAQAccordion({ item }: { item: FAQItem }) {
 }
 
 export default function FAQPage() {
-  useDocumentTitle("FAQ | Remedy508 Accessibility Remediation");
+  useDocumentTitle("Document Accessibility & PDF Remediation FAQ | Remedy508");
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <SiteHeader />
@@ -219,7 +235,7 @@ export default function FAQPage() {
             Frequently Asked<br />Questions
           </h1>
           <p className="text-lg text-white">
-            Everything you need to know about Remedy508. Can't find what you're looking for?{" "}
+            Answers about the free document accessibility checker, PDF and Word remediation, privacy, WCAG, Section 508, plans, and Credits. Can't find what you're looking for?{" "}
               <a href="/contact" className="text-white underline underline-offset-2 font-semibold">
               Contact us
             </a>.

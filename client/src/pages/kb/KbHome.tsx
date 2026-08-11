@@ -46,7 +46,7 @@ function SearchResults({ q }: { q: string }) {
 }
 
 export default function KbHome() {
-  useDocumentTitle("How-To Guides & Tips | Remedy508 Knowledge Base");
+  useDocumentTitle("Document Accessibility Guides & PDF Remediation Tips");
   const { sections, loading } = useKbSections();
   const [query, setQuery] = useState("");
 
@@ -63,7 +63,7 @@ export default function KbHome() {
               Knowledge Base
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 leading-tight">How-To Guides<br />& Tips</h1>
-            <p className="text-white max-w-xl mx-auto">Step-by-step articles for creating accessible content with Remedy508 — from uploading your first file to editing in Acrobat.</p>
+            <p className="text-white max-w-2xl mx-auto">Step-by-step document accessibility guides covering PDF remediation, Word accessibility, headings, tables, alt text, Adobe Acrobat, WCAG, and Section 508.</p>
           </div>
         </section>
 
@@ -79,7 +79,7 @@ export default function KbHome() {
               <input
                 id="kb-search"
                 type="search"
-                placeholder="Search articles…"
+                placeholder="Search document accessibility guides…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"

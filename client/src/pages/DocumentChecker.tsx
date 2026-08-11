@@ -6,7 +6,7 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 import { CheckerExperience } from "@/features/document-checker/components/CheckerExperience";
 
 export default function DocumentChecker() {
-  useDocumentTitle("Remedy508 Accessibility Checker | Free Document Check");
+  useDocumentTitle("Free PDF & Document Accessibility Checker | Remedy508");
 
   return (
     <>
@@ -34,7 +34,7 @@ export default function DocumentChecker() {
             Check Accessibility
           </h1>
           <p className="text-lg text-white max-w-2xl mx-auto">
-            Check documents for common accessibility barriers. Free to use, with no account required.
+            Run a free PDF and document accessibility check for tags, headings, tables, alt text, language, and other common barriers. No account or Remedy508 Credits required.
           </p>
         </div>
       </section>

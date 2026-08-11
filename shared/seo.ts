@@ -17,52 +17,54 @@ export interface RouteMeta {
   /** relative changefreq hint for sitemap.xml */
   changefreq: "daily" | "weekly" | "monthly" | "yearly";
   priority: number; // 0.0 - 1.0
-  /** Set true to emit SoftwareApplication JSON-LD (homepage/pricing only) */
-  jsonLd?: "software" | "faq" | "article";
+  /** Select the route-specific structured data emitted by the server. */
+  jsonLd?: "software" | "checker" | "faq" | "article";
 }
 
 export const ROUTES: RouteMeta[] = [
   {
     path: "/",
-    title: "Remedy508 | AI Accessibility Remediation for Higher Ed",
+    title: "Document Accessibility Remediation Software | Remedy508",
     description:
-      "Remedy508 automatically remediates inaccessible course materials to meet WCAG 2.1 AA. Fix PDFs and Word docs, generate alt text, clean Canvas HTML, and caption videos — built for higher education.",
+      "Check documents free, then remediate PDFs, Word files, Canvas HTML, images, and video with Remedy508 accessibility software for WCAG and Section 508 workflows.",
     changefreq: "weekly",
     priority: 1.0,
     jsonLd: "software",
   },
   {
     path: "/accessibility-checker",
-    title: "Free Document Accessibility Checker | Remedy508",
+    title: "Free PDF & Document Accessibility Checker | Remedy508",
     description:
-      "Check documents for accessibility barriers, including PDF table tags and header associations. Files stay in your browser, and no account or Remedy508 credits are required.",
+      "Check PDF and Word accessibility online for tags, headings, tables, alt text, language, and other structural barriers. Free, private, and no signup required.",
     changefreq: "monthly",
     priority: 0.9,
+    jsonLd: "checker",
   },
   {
     path: "/pricing",
-    title: "Pricing | Remedy508 Accessibility Remediation",
+    title: "PDF & Document Remediation Pricing | Remedy508",
     description:
-      "Simple per-seat pricing for AI-powered accessibility remediation. Individual and Team plans with monthly credit pools, WCAG 2.1 AA compliant output, built for higher education budgets.",
+      "Compare pricing for PDF and document accessibility remediation software. Individual and Team plans include all four Remedy508 tools plus the free checker.",
     changefreq: "monthly",
     priority: 0.9,
     jsonLd: "software",
   },
   {
     path: "/about",
-    title: "About Remedy508 | Accessibility Built for Higher Ed",
+    title: "About Remedy508 | Document Accessibility Software",
     description:
-      "Remedy508 was built by Left Coast Learning to help higher education institutions meet WCAG 2.1 AA and ADA Title II accessibility requirements without manual remediation bottlenecks.",
+      "Learn why Remedy508 built document accessibility software for higher education, government, healthcare, and teams working toward WCAG and Section 508.",
     changefreq: "monthly",
     priority: 0.6,
   },
   {
     path: "/faq",
-    title: "FAQ | Remedy508 Accessibility Remediation",
+    title: "Document Accessibility & PDF Remediation FAQ | Remedy508",
     description:
-      "Answers to common questions about Remedy508's accessibility remediation tools, pricing, credits, WCAG 2.1 AA compliance, and how it fits into your institution's workflow.",
+      "Answers about the free PDF accessibility checker, document remediation, privacy, WCAG, Section 508, supported files, plans, and Remedy508 Credits.",
     changefreq: "monthly",
     priority: 0.6,
+    jsonLd: "faq",
   },
   {
     path: "/contact",
@@ -82,9 +84,9 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: "/kb",
-    title: "How-To Guides & Tips | Remedy508 Knowledge Base",
+    title: "Document Accessibility Guides & PDF Remediation Tips",
     description:
-      "Step-by-step guides for using Remedy508's accessibility tools, preparing files for remediation, and understanding WCAG 2.1 AA best practices.",
+      "Practical document accessibility guides covering PDF remediation, Word accessibility, headings, tables, alt text, Adobe Acrobat, WCAG, and Section 508.",
     changefreq: "weekly",
     priority: 0.7,
   },
@@ -123,7 +125,7 @@ export function getRouteMeta(pathname: string): RouteMeta | undefined {
       path: pathname,
       title: `${articleTitle} | Remedy508`,
       description:
-        `Learn ${articleTitle.toLowerCase()} with practical document accessibility guidance from Remedy508.`,
+        `${articleTitle}: practical guidance for accessible PDFs, Word documents, and course materials, with WCAG and Section 508 guidance from Remedy508.`,
       changefreq: "monthly",
       priority: 0.5,
       jsonLd: "article",

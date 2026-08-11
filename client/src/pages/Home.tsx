@@ -52,7 +52,7 @@ const CheckerExperience = lazy(() =>
 );
 
 export default function Home() {
-  useDocumentTitle("Remedy508 | AI Accessibility Remediation for Higher Ed");
+  useDocumentTitle("Document Accessibility Remediation Software | Remedy508");
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -81,7 +81,7 @@ export default function Home() {
               Not Accessible,<br />Not Acceptable™
             </h1>
             <p className="text-white/90 text-base leading-relaxed mb-8">
-              Remedy508 is an accessibility remediation platform that helps improve documents, video captions, Canvas HTML, and image descriptions. No accessibility expertise required.
+              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions. Built for higher education, government, healthcare, and accessibility teams.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
@@ -216,7 +216,7 @@ export default function Home() {
             Not Accessible,<br />Not Acceptable™
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-7">
-            Remedy508 is an accessibility remediation platform that helps improve documents, video captions, Canvas HTML, and image descriptions. No accessibility expertise required.
+            Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions. Built for higher education, government, healthcare, and accessibility teams.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/signup">
@@ -246,7 +246,7 @@ export default function Home() {
             Not sure if your documents are accessible?
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-            Use our free Accessibility Checker to find out. No account is required, and checking a document does not use any Remedy508 Credits. Your document is checked privately in your browser, and you can review the results before deciding whether you need remediation.
+            Check PDF and Word document accessibility online for tags, headings, tables, alt text, language, and other machine-detectable barriers. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
           </p>
         </div>
         <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
@@ -275,7 +275,7 @@ export default function Home() {
               Four Accessibility Remediation Tools
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every paid Remedy508 plan includes access to all four tools. Use your monthly Credits to improve documents, videos, Canvas content, and images.
+              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Use monthly Credits only when you choose to remediate.
             </p>
           </div>
 
@@ -310,8 +310,8 @@ export default function Home() {
               WCAG 2.1 Level AA <span className="text-white">Explained</span>
             </h2>
             <p className="text-white/70 max-w-2xl mx-auto">
-              The Web Content Accessibility Guidelines (WCAG) 2.1 Level AA is the legal standard
-              required by ADA, Section 508, and most higher education accessibility policies.
+              The Web Content Accessibility Guidelines (WCAG) 2.1 Level AA are a widely used
+              technical benchmark referenced by accessibility policies and legal requirements.
               Here's what it actually means in practice.
             </p>
           </div>
