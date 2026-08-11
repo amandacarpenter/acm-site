@@ -116,11 +116,16 @@ export function getRouteMeta(pathname: string): RouteMeta | undefined {
   if (pathname.startsWith("/kb/articles/")) {
     const slug = pathname.slice("/kb/articles/".length);
     if (!slug || slug.includes("/")) return undefined;
+    const acronyms = new Set(["aa", "ada", "ai", "html", "lms", "ocr", "pdf", "vpat", "wcag"]);
     const articleTitle = slug
       .split("-")
       .filter(Boolean)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+      .map((word, index) => {
+        if (acronyms.has(word)) return word.toUpperCase();
+        return index === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word;
+      })
+      .join(" ")
+      .replace(/(\d) (\d)/g, "$1.$2");
     return {
       path: pathname,
       title: `${articleTitle} | Remedy508`,
