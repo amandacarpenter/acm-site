@@ -22,6 +22,8 @@ interface DashboardData {
     topCountriesToday: { country: string; count: number }[];
     trafficSourcesToday: { source: string; count: number }[];
     trafficSources7d: { source: string; count: number }[];
+    testingTrafficLikely: boolean;
+    dataQualityNote: string | null;
     error: string | null;
   };
   revenue: {
@@ -276,13 +278,22 @@ function LiveDashboard() {
 
       {/* Site Traffic (Google Analytics) */}
       <div style={{ marginBottom: 28 }}>
-        <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Google Analytics unavailable" : "Live from Google Analytics (GA4) — remedy508.com"} />
+        <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Google Analytics unavailable" : "Live from Google Analytics (GA4) · admin, local, and automated QA sessions are excluded going forward"} />
         {analytics.error ? (
           <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "14px 16px", color: "#991b1b", fontSize: "0.8rem" }}>
             {analytics.error}
           </div>
         ) : (
           <>
+            {analytics.testingTrafficLikely && analytics.dataQualityNote && (
+              <div
+                role="status"
+                data-testid="notice-analytics-testing-traffic"
+                style={{ background: "#fffbeb", border: "1px solid #f59e0b", borderRadius: 12, padding: "12px 14px", color: "#78350f", fontSize: "0.8rem", lineHeight: 1.5, marginBottom: 12 }}
+              >
+                <strong>Testing traffic detected.</strong> {analytics.dataQualityNote} New automated QA visits are excluded, but historical GA4 events cannot be removed from this report.
+              </div>
+            )}
             {/* Live Now — standalone callout, separate from the daily/7d stat grid */}
             <div style={{ background: "#111827", borderRadius: 12, padding: "14px 18px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -294,15 +305,15 @@ function LiveDashboard() {
                   {analytics.visitorsLastHour != null ? analytics.visitorsLastHour.toLocaleString() : "—"}
                 </span>
                 <span style={{ fontSize: "0.78rem", color: "#9ca3af" }}>
-                  visitors right now
+                  active GA4 users
                 </span>
               </div>
             </div>
 
             <StatGrid>
-              <StatCard label="Visitors (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" sub="real users" />
+              <StatCard label="GA4 Users (7d)" value={analytics.visitors7d != null ? analytics.visitors7d.toLocaleString() : "—"} tone="good" sub="browser-based estimate" />
               <StatCard label="Page Views (7d)" value={analytics.pageViews7d != null ? analytics.pageViews7d.toLocaleString() : "—"} />
-              <StatCard label="Visitors Today" value={analytics.visitorsToday != null ? analytics.visitorsToday.toLocaleString() : "—"} tone="good" sub="real users" />
+              <StatCard label="GA4 Users Today" value={analytics.visitorsToday != null ? analytics.visitorsToday.toLocaleString() : "—"} tone="good" sub="not verified people" />
               <StatCard label="Page Views Today" value={analytics.pageViewsToday != null ? analytics.pageViewsToday.toLocaleString() : "—"} />
             </StatGrid>
 
@@ -315,7 +326,7 @@ function LiveDashboard() {
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginTop: 12 }}>
               <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TRAFFIC SOURCES TODAY</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>SOURCE / MEDIUM TODAY</div>
                 {analytics.trafficSourcesToday.length === 0 ? (
                   <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
                 ) : (
@@ -331,7 +342,7 @@ function LiveDashboard() {
               </div>
 
               <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>TRAFFIC SOURCES (7 DAYS)</div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", fontWeight: 600, marginBottom: 8 }}>SOURCE / MEDIUM (7 DAYS)</div>
                 {analytics.trafficSources7d.length === 0 ? (
                   <div style={{ fontSize: "0.78rem", color: "#9ca3af" }}>No data</div>
                 ) : (

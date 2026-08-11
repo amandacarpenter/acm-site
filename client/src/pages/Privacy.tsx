@@ -20,7 +20,7 @@ export default function Privacy() {
             Legal
           </div>
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3">Privacy Policy</h1>
-          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 8, 2026</p>
+          <p className="text-white text-sm">Left Coast Learning LLC &nbsp;·&nbsp; Effective: May 17, 2025 &nbsp;·&nbsp; Last reviewed: August 10, 2026</p>
         </div>
       </section>
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-16">
@@ -34,7 +34,7 @@ export default function Privacy() {
             <Sub title="Uploaded Files and Content">To provide the remediation service, you may upload files such as PDFs, images, video files, and Canvas course content. These files are processed in memory to generate accessible output. <strong>Uploaded files are not retained after your result is returned.</strong> We do not store copies of your uploaded documents.</Sub>
             <Sub title="Free Accessibility Checker">When you use the free checker, document contents are processed locally in your browser and are not uploaded or saved. We retain the filename, file type, check status, score and summary counts when available, and timestamp for internal usage reporting. This metadata is retained for up to 90 days. Avoid including personal or sensitive information in filenames.</Sub>
             <Sub title="Payment Information">Billing is handled by Stripe. We do not collect or store your credit card number, CVV, or banking credentials. We receive only a payment token and summary billing information from Stripe.</Sub>
-            <Sub title="Usage and Analytics Data">We collect information about how you use the Service, including pages visited, session duration, browser type, device type, IP address (country-level only), and error logs. This helps us improve the product.</Sub>
+            <Sub title="Usage and Analytics Data">We use Google Analytics 4 to collect information about how the Service is used, including pages visited, session activity, browser type, device type, and approximate country-level location. We exclude the admin area, local development, and recognized automated QA sessions from analytics collection. This data helps us understand site performance and improve the product.</Sub>
           </Section>
 
           <Section title="2. How We Use Your Information">
@@ -75,6 +75,7 @@ export default function Privacy() {
                   ["Clerk", "User authentication", "Email address and login credentials"],
                   ["Resend", "Transactional email", "Email address and notification content"],
                   ["Anthropic (Claude)", "AI remediation", "Uploaded file content during processing only"],
+                  ["Google Analytics", "Website analytics", "Page activity, browser and device information, and approximate country-level location"],
                 ].map(([sp, role, data], i) => (
                   <tr key={sp} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-3 font-medium">{sp}</td>
@@ -87,7 +88,7 @@ export default function Privacy() {
           </Section>
 
           <Section title="5. Cookies and Similar Technologies">
-            <p className="mb-3">Remedy508 uses a limited set of cookies required to operate the Service. We do not use advertising or third-party tracking cookies, and we do not sell or share data collected through cookies.</p>
+            <p className="mb-3">Remedy508 uses cookies required to operate the Service and first-party analytics cookies associated with Google Analytics 4. We do not use advertising cookies, and we do not sell or share data collected through cookies for cross-context behavioral advertising.</p>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-[#3a485b]">
@@ -101,6 +102,7 @@ export default function Privacy() {
                   ["Authentication / session", "Clerk", "Keeps you signed in and secures your account session. Strictly necessary — the Service cannot function without it."],
                   ["Fraud prevention", "Stripe", "Detects fraudulent payment activity during checkout. Strictly necessary for processing payments securely."],
                   ["Interface preference", "Remedy508", "Remembers minor UI state, such as whether a sidebar is expanded. Functional, not tracking-related."],
+                  ["Analytics (_ga and related identifiers)", "Google Analytics", "Distinguishes browser sessions and measures page activity so we can understand and improve site usage. Not used for advertising by Remedy508."],
                 ].map(([cookie, setBy, purpose], i) => (
                   <tr key={cookie} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
                     <td className="p-3 font-medium">{cookie}</td>
@@ -110,7 +112,7 @@ export default function Privacy() {
                 ))}
               </tbody>
             </table>
-            <p className="mt-3">Because these cookies are strictly necessary for account authentication and payment security, no cookie consent banner is used. You can block or delete cookies through your browser settings, but doing so may prevent you from logging in or completing payment. We do not currently use analytics or advertising cookies; if that changes, we will update this section and this policy's effective date.</p>
+            <p className="mt-3">You can block or delete cookies through your browser settings. Blocking authentication or payment-security cookies may prevent you from logging in or completing payment, while blocking analytics cookies will not prevent you from using the Service.</p>
           </Section>
 
           <Section title="6. FERPA Compliance">

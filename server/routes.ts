@@ -476,6 +476,8 @@ async function getGoogleAnalytics(): Promise<{
   topCountriesToday: { country: string; count: number }[];
   trafficSourcesToday: { source: string; count: number }[];
   trafficSources7d: { source: string; count: number }[];
+  testingTrafficLikely: boolean;
+  dataQualityNote: string | null;
   error: string | null;
 }> {
   const empty = {
@@ -483,6 +485,7 @@ async function getGoogleAnalytics(): Promise<{
     visitorsToday: null, pageViewsToday: null, visitorsLastHour: null, requestsLastHour: null,
     topPagesToday: [] as { path: string; count: number }[], topCountriesToday: [] as { country: string; count: number }[],
     trafficSourcesToday: [] as { source: string; count: number }[], trafficSources7d: [] as { source: string; count: number }[],
+    testingTrafficLikely: false, dataQualityNote: null,
   };
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) {
@@ -530,16 +533,16 @@ async function getGoogleAnalytics(): Promise<{
       client.runReport({
         property,
         dateRanges: [{ startDate: "today", endDate: "today" }],
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }],
+        dimensions: [{ name: "sessionSourceMedium" }],
+        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 8,
       }),
       client.runReport({
         property,
         dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
-        dimensions: [{ name: "sessionDefaultChannelGroup" }],
-        metrics: [{ name: "sessions" }],
+        dimensions: [{ name: "sessionSourceMedium" }],
+        metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 8,
       }),
@@ -580,11 +583,24 @@ async function getGoogleAnalytics(): Promise<{
       source: r.dimensionValues?.[0]?.value || "Unassigned",
       count: Number(r.metricValues?.[0]?.value || 0),
     }));
+    const notSetPageViews = (sourcesToday[0]?.rows || []).reduce((sum, r) => {
+      const sourceMedium = r.dimensionValues?.[0]?.value || "";
+      return sourceMedium === "(not set)"
+        ? sum + Number(r.metricValues?.[1]?.value || 0)
+        : sum;
+    }, 0);
+    const pageViewsPerUser = visitorsToday > 0 ? pageViewsToday / visitorsToday : 0;
+    const notSetShare = pageViewsToday > 0 ? notSetPageViews / pageViewsToday : 0;
+    const testingTrafficLikely = pageViewsPerUser >= 8 || notSetShare >= 0.5;
+    const dataQualityNote = testingTrafficLikely
+      ? `This period includes likely automated or QA activity (${pageViewsPerUser.toFixed(1)} page views per GA4 user; ${Math.round(notSetShare * 100)}% of page views have no source). Treat totals as testing-contaminated.`
+      : null;
 
     return {
       visitors7d, pageViews7d, dailyCounts7d,
       visitorsToday, pageViewsToday, visitorsLastHour, requestsLastHour: null,
       topPagesToday, topCountriesToday, trafficSourcesToday, trafficSources7d,
+      testingTrafficLikely, dataQualityNote,
       error: null,
     };
   } catch (err: any) {
