@@ -1032,7 +1032,7 @@ export default function ToolsPage() {
 
         <div className="flex items-center justify-center gap-2 text-xs text-gray-600 py-4 text-center">
           <Shield className="w-3.5 h-3.5 text-[#0f766e] shrink-0" aria-hidden="true" />
-          Built toward WCAG 2.1 AA — always review results before publishing, since no automated tool can guarantee 100% compliance
+          Designed to support WCAG 2.1 AA accessibility. For best results, complete a final accessibility review before publishing.
         </div>
       </div>
       </main>
