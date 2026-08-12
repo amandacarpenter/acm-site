@@ -54,8 +54,7 @@ export default function BlogHome() {
         <section className="bg-gray-50 border-b border-[#0f766e]/15">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center">
             <div>
-              <p className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0f766e] mb-4">
-                <span aria-hidden="true" className="inline-block h-px w-10 bg-[#0f766e]" />
+              <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[#0f766e] mb-4">
                 Blog: Remedy508 Insights
               </p>
               <h1 className="max-w-[15ch] text-4xl sm:text-5xl font-bold leading-[1.1] text-[#111827] mb-5">
