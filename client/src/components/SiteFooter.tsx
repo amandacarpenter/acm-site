@@ -25,7 +25,7 @@ const footerGroups = [
     ],
   },
   {
-    heading: "Legal",
+    heading: "Policies",
     links: [
       { href: "/accessibility", label: "Accessibility" },
       { href: "/privacy", label: "Privacy Policy" },

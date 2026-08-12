@@ -18,7 +18,6 @@ function Logo() {
 const NAV_LINKS = [
   { href: "/accessibility-checker", label: "Free Checker" },
   { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/accessibility-guides", label: "Accessibility Guides" },
   { href: "/blog", label: "Blog" },
 ];
 
@@ -73,7 +72,7 @@ export default function SiteHeader() {
             <SignedIn>
               <li>
                 <Link href="/dashboard">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-base font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
                     Dashboard
                   </span>
                 </Link>
@@ -122,7 +121,7 @@ export default function SiteHeader() {
             </SignedOut>
             <SignedIn>
               <Link href="/dashboard">
-                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
                   Dashboard
                 </span>
               </Link>
