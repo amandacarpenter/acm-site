@@ -182,7 +182,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <p>Click your name or avatar in the top right to access account settings, billing, and plan management.</p>
 <h2>Navigation tips</h2>
 <ul>
-  <li>Use the top nav to jump between Tools, Pricing, FAQ, and this Knowledge Base.</li>
+  <li>Use the top nav to jump between Tools, Pricing, FAQ, and these Accessibility Guides.</li>
   <li>On mobile, tap the hamburger menu (≡) to access full navigation.</li>
   <li>The Remedy508 logo in the header always returns you to your dashboard.</li>
 </ul>`,

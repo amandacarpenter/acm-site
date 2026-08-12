@@ -7,6 +7,8 @@
 // that are public and should be indexed — never auth-gated pages (Dashboard,
 // AdminPortal, CheckoutSuccess, TeamSetup, InvoiceRequest, kb/admin).
 
+import { getBlogPost, getSortedBlogPosts } from "./blog";
+
 export const SITE_URL = "https://remedy508.com";
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
@@ -18,7 +20,15 @@ export interface RouteMeta {
   changefreq: "daily" | "weekly" | "monthly" | "yearly";
   priority: number; // 0.0 - 1.0
   /** Select the route-specific structured data emitted by the server. */
-  jsonLd?: "software" | "checker" | "faq" | "article";
+  jsonLd?: "software" | "checker" | "faq" | "article" | "blog-article";
+  /** Absolute URL of a route-specific social share image. */
+  ogImage?: string;
+  /** og:type for the route. Defaults to "website". */
+  ogType?: "website" | "article";
+  /** Set for /blog/:slug so the server can emit full Article structured data. */
+  blogSlug?: string;
+  /** ISO date used as <lastmod> in sitemap.xml. */
+  lastmod?: string;
 }
 
 export const ROUTES: RouteMeta[] = [
@@ -91,6 +101,14 @@ export const ROUTES: RouteMeta[] = [
     priority: 0.7,
   },
   {
+    path: "/blog",
+    title: "Remedy508 Insights | Document Accessibility Analysis",
+    description:
+      "Editorial analysis on document accessibility: how to read checker results, what automated testing misses, PDF structure, and practical remediation workflows.",
+    changefreq: "weekly",
+    priority: 0.8,
+  },
+  {
     path: "/privacy",
     title: "Privacy Policy | Remedy508",
     description: "Remedy508's privacy policy covering data collection, use, and protection.",
@@ -106,10 +124,39 @@ export const ROUTES: RouteMeta[] = [
   },
 ];
 
+/**
+ * Sitemap and SEO entries for every Remedy508 Insights article. Derived from
+ * shared/blog.ts so a new post is indexable without touching this file.
+ */
+export function getBlogRouteMeta(): RouteMeta[] {
+  return getSortedBlogPosts().map((post) => ({
+    path: `/blog/${post.slug}`,
+    title: post.seoTitle,
+    description: post.description,
+    changefreq: "monthly" as const,
+    priority: 0.7,
+    jsonLd: "blog-article" as const,
+    ogImage: `${SITE_URL}${post.ogImage}`,
+    ogType: "article" as const,
+    blogSlug: post.slug,
+    lastmod: post.updatedAt,
+  }));
+}
+
 export function getRouteMeta(pathname: string): RouteMeta | undefined {
   // exact match first
   const exact = ROUTES.find((r) => r.path === pathname);
   if (exact) return exact;
+
+  // Remedy508 Insights articles get a unique title, description, canonical URL,
+  // post-specific share image, and Article structured data.
+  if (pathname.startsWith("/blog/")) {
+    const slug = pathname.slice("/blog/".length);
+    if (!slug || slug.includes("/")) return undefined;
+    if (!getBlogPost(slug)) return undefined;
+    return getBlogRouteMeta().find((route) => route.blogSlug === slug);
+  }
+
   // Give every public knowledge-base article a unique, crawlable title,
   // description, canonical URL, and Article schema without importing the
   // database-backed KB module into the SEO layer.

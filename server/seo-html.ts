@@ -4,6 +4,7 @@
 // JS see real per-page metadata, since the app itself is a client-rendered
 // Vite/React SPA with no server-side rendering.
 import { getRouteMeta, SITE_URL, DEFAULT_OG_IMAGE } from "../shared/seo";
+import { BLOG_AUTHOR, BLOG_NAME, getBlogPost } from "../shared/blog";
 
 function escapeHtml(s: string): string {
   return s
@@ -149,6 +150,47 @@ function articleJsonLd(title: string, description: string, canonicalUrl: string)
   });
 }
 
+/**
+ * Full Article structured data for a Remedy508 Insights post, including the
+ * byline, publish/modified dates, section, and the post-specific share image.
+ */
+function blogArticleJsonLd(slug: string, canonicalUrl: string): string | undefined {
+  const post = getBlogPost(slug);
+  if (!post) return undefined;
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    url: canonicalUrl,
+    mainEntityOfPage: canonicalUrl,
+    image: `${SITE_URL}${post.ogImage}`,
+    articleSection: post.category,
+    datePublished: post.publishedAt,
+    dateModified: post.updatedAt,
+    inLanguage: "en-US",
+    isPartOf: {
+      "@type": "Blog",
+      name: BLOG_NAME,
+      url: `${SITE_URL}/blog`,
+    },
+    author: {
+      "@type": "Organization",
+      name: BLOG_AUTHOR,
+      url: `${SITE_URL}/blog`,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Left Coast Learning LLC",
+      url: SITE_URL,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE_URL}/favicon-192.png`,
+      },
+    },
+  });
+}
+
 function injectNoIndex(html: string): string {
   return html.replace(
     "</head>",
@@ -171,6 +213,7 @@ export function injectSeoMeta(html: string, requestPath: string): string {
   const canonicalUrl = `${SITE_URL}${requestPath === "/" ? "" : requestPath}`;
   const title = escapeHtml(meta.title);
   const description = escapeHtml(meta.description);
+  const ogImage = escapeHtml(meta.ogImage ?? DEFAULT_OG_IMAGE);
 
   let result = html;
 
@@ -186,18 +229,18 @@ export function injectSeoMeta(html: string, requestPath: string): string {
   const extraTags: string[] = [
     `<meta name="robots" content="index, follow, max-image-preview:large" />`,
     `<link rel="canonical" href="${canonicalUrl}" />`,
-    `<meta property="og:type" content="website" />`,
+    `<meta property="og:type" content="${meta.ogType ?? "website"}" />`,
     `<meta property="og:site_name" content="Remedy508" />`,
     `<meta property="og:title" content="${title}" />`,
     `<meta property="og:description" content="${description}" />`,
     `<meta property="og:url" content="${canonicalUrl}" />`,
-    `<meta property="og:image" content="${DEFAULT_OG_IMAGE}" />`,
+    `<meta property="og:image" content="${ogImage}" />`,
     `<meta property="og:image:width" content="1200" />`,
     `<meta property="og:image:height" content="630" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
     `<meta name="twitter:title" content="${title}" />`,
     `<meta name="twitter:description" content="${description}" />`,
-    `<meta name="twitter:image" content="${DEFAULT_OG_IMAGE}" />`,
+    `<meta name="twitter:image" content="${ogImage}" />`,
   ];
 
   if (meta.jsonLd === "software") {
@@ -208,6 +251,21 @@ export function injectSeoMeta(html: string, requestPath: string): string {
   }
   if (meta.jsonLd === "faq") {
     extraTags.push(`<script type="application/ld+json">${faqPageJsonLd()}</script>`);
+  }
+  if (meta.jsonLd === "blog-article" && meta.blogSlug) {
+    const post = getBlogPost(meta.blogSlug);
+    const blogLd = blogArticleJsonLd(meta.blogSlug, canonicalUrl);
+    if (post) {
+      extraTags.push(
+        `<meta property="article:published_time" content="${post.publishedAt}" />`,
+        `<meta property="article:modified_time" content="${post.updatedAt}" />`,
+        `<meta property="article:section" content="${escapeHtml(post.category)}" />`,
+        `<meta property="article:author" content="${escapeHtml(BLOG_AUTHOR)}" />`,
+        `<meta property="og:image:alt" content="${escapeHtml(post.imageAlt)}" />`,
+        `<meta name="twitter:image:alt" content="${escapeHtml(post.imageAlt)}" />`,
+      );
+    }
+    if (blogLd) extraTags.push(`<script type="application/ld+json">${blogLd}</script>`);
   }
   if (meta.jsonLd === "article") {
     extraTags.push(

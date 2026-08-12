@@ -31,7 +31,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm mb-6" aria-label="Breadcrumb">
-          <Link href="/kb"><a className="text-[#0f766e] hover:underline">Knowledge Base</a></Link>
+          <Link href="/kb"><a className="text-[#0f766e] hover:underline">Accessibility Guides</a></Link>
           <span className="text-gray-300" aria-hidden="true">/</span>
           <span className="text-gray-500 truncate">{article.section_name}</span>
         </nav>
@@ -88,7 +88,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
   const { article, loading } = useKbArticle(params.id);
   const { sections } = useKbSections();
   const allArticles = sections.flatMap(s => s.articles);
-  useDocumentTitle(`${article?.title || "Knowledge Base"} | Remedy508`);
+  useDocumentTitle(`${article?.title || "Accessibility Guides"} | Remedy508`);
 
   return (
     <>
@@ -100,7 +100,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-900 text-lg font-semibold">Article not found</p>
-            <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline block mt-2">← Back to Knowledge Base</a></Link>
+            <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline block mt-2">← Back to Accessibility Guides</a></Link>
           </div>
         </div>
       ) : (

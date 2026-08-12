@@ -40,7 +40,8 @@ const STATS = [
 const NAV_LINKS = [
   { href: "/accessibility-checker", label: "Free Checker" },
   { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/kb", label: "Knowledge Base" },
+  { href: "/kb", label: "Accessibility Guides" },
+  { href: "/blog", label: "Blog" },
   { href: "/faq", label: "FAQ" },
   { href: "/about", label: "About" },
 ];

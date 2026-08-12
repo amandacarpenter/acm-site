@@ -60,10 +60,19 @@ export default function KbHome() {
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
               <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
-              Knowledge Base
+              Accessibility Guides
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 leading-tight">How-To Guides<br />& Tips</h1>
             <p className="text-white max-w-2xl mx-auto">Step-by-step document accessibility guides covering PDF remediation, Word accessibility, headings, tables, alt text, Adobe Acrobat, WCAG, and Section 508.</p>
+            <p className="text-white/90 max-w-2xl mx-auto mt-4">
+              For editorial analysis and professional perspective, read{" "}
+              <Link href="/blog">
+                <a className="font-bold text-white underline underline-offset-2 hover:text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" data-testid="guides-insights-link">
+                  Remedy508 Insights
+                </a>
+              </Link>
+              .
+            </p>
           </div>
         </section>
 
@@ -71,7 +80,7 @@ export default function KbHome() {
 
           {/* Search */}
           <div className="mb-8">
-            <label htmlFor="kb-search" className="sr-only">Search the knowledge base</label>
+            <label htmlFor="kb-search" className="sr-only">Search the Accessibility Guides</label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -83,7 +92,7 @@ export default function KbHome() {
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="w-full bg-white border border-gray-300 rounded-lg pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
-                aria-label="Search the knowledge base"
+                aria-label="Search the Accessibility Guides"
               />
               {query && (
                 <button
@@ -101,7 +110,7 @@ export default function KbHome() {
           {query.trim() ? (
             <SearchResults q={query.trim()} />
           ) : loading ? (
-            <div className="flex justify-center py-16" aria-live="polite" aria-label="Loading knowledge base">
+            <div className="flex justify-center py-16" aria-live="polite" aria-label="Loading Accessibility Guides">
               <div className="w-8 h-8 border-2 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (

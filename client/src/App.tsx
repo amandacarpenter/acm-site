@@ -25,6 +25,8 @@ import TeamSetup from "@/pages/TeamSetup";
 import KbHome from "@/pages/kb/KbHome";
 import KbArticlePage from "@/pages/kb/KbArticle";
 import KbAdmin from "@/pages/kb/KbAdmin";
+import BlogHome from "@/pages/blog/BlogHome";
+import BlogArticle from "@/pages/blog/BlogArticle";
 import ScrollToTop from "@/components/ScrollToTop";
 import LikelyHumanTracker from "@/components/LikelyHumanTracker";
 
@@ -115,6 +117,8 @@ export default function App() {
             <Route path="/kb" component={KbHome} />
             <Route path="/kb/articles/:id" component={KbArticlePage} />
             <Route path="/kb/admin" component={KbAdmin} />
+            <Route path="/blog" component={BlogHome} />
+            <Route path="/blog/:slug" component={BlogArticle} />
           </Switch>
         </Router>
         <Toaster />

@@ -6,7 +6,7 @@
 // at import time -- we don't want a DB side-effect during a static build.
 import { writeFile, readFile } from "fs/promises";
 import path from "path";
-import { ROUTES, SITE_URL } from "../shared/seo";
+import { getBlogRouteMeta, ROUTES, SITE_URL } from "../shared/seo";
 
 const OUT_PATH = path.resolve(import.meta.dirname, "..", "dist", "public", "sitemap.xml");
 const KB_TS_PATH = path.resolve(import.meta.dirname, "..", "server", "kb.ts");
@@ -26,8 +26,9 @@ async function extractKbIds(): Promise<KbEntry[]> {
   return ids;
 }
 
-function urlEntry(loc: string, changefreq: string, priority: number): string {
-  return `  <url>\n    <loc>${loc}</loc>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority.toFixed(1)}</priority>\n  </url>`;
+function urlEntry(loc: string, changefreq: string, priority: number, lastmod?: string): string {
+  const lastmodLine = lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : "";
+  return `  <url>\n    <loc>${loc}</loc>\n${lastmodLine}    <changefreq>${changefreq}</changefreq>\n    <priority>${priority.toFixed(1)}</priority>\n  </url>`;
 }
 
 export async function generateSitemap() {
@@ -35,6 +36,12 @@ export async function generateSitemap() {
 
   for (const route of ROUTES) {
     entries.push(urlEntry(`${SITE_URL}${route.path}`, route.changefreq, route.priority));
+  }
+
+  // Remedy508 Insights posts come from shared/blog.ts, which is a plain data
+  // module with no database side effects, so it is safe to import here.
+  for (const post of getBlogRouteMeta()) {
+    entries.push(urlEntry(`${SITE_URL}${post.path}`, post.changefreq, post.priority, post.lastmod));
   }
 
   const kbArticles = await extractKbIds();

@@ -7,7 +7,8 @@ const footerLinks = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/accessibility", label: "Accessibility" },
   { href: "/faq", label: "FAQ" },
-  { href: "/kb", label: "Knowledge Base" },
+  { href: "/blog", label: "Insights" },
+  { href: "/kb", label: "Accessibility Guides" },
   { href: "/contact", label: "Contact" },
 ];
 
