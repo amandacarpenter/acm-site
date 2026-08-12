@@ -65,7 +65,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-checker-differences.webp",
     imageAlt:
       "An abstract white document is interpreted by overlapping teal scanning planes and a navy structural grid, with a gold marker at their intersection.",
-    ogImage: "/blog-images/insights-checker-differences-og.jpg",
+    ogImage: "/blog-images/insights-checker-differences.webp",
     featured: true,
   },
   {
@@ -83,7 +83,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-beyond-passing-check.webp",
     imageAlt:
       "A white paper path continues through teal, navy, and gold checkpoint frames to represent review that continues beyond an automated check.",
-    ogImage: "/blog-images/insights-beyond-passing-check-og.jpg",
+    ogImage: "/blog-images/insights-beyond-passing-check.webp",
   },
   {
     slug: "accessible-pdf-tables-what-tools-detect",
@@ -100,7 +100,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-pdf-tables.webp",
     imageAlt:
       "A sculptural white table grid with a navy header row and teal lines connecting header cells to data cells.",
-    ogImage: "/blog-images/insights-pdf-tables-og.jpg",
+    ogImage: "/blog-images/insights-pdf-tables.webp",
   },
   {
     slug: "free-check-to-remediation-workflow",
@@ -117,7 +117,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-remediation-workflow.webp",
     imageAlt:
       "A continuous white paper path moves through teal scanning, navy structure, transparent review, and a finished document marked in gold.",
-    ogImage: "/blog-images/insights-remediation-workflow-og.jpg",
+    ogImage: "/blog-images/insights-remediation-workflow.webp",
   },
   {
     slug: "how-to-check-pdf-accessibility-checklist",
@@ -134,7 +134,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-pdf-accessibility-checklist.webp",
     imageAlt:
       "A white document under a teal magnifier ring, layered over translucent inspection planes and a navy grid, with a single gold marker at the top right.",
-    ogImage: "/blog-images/insights-pdf-accessibility-checklist-og.jpg",
+    ogImage: "/blog-images/insights-pdf-accessibility-checklist.webp",
   },
   {
     slug: "what-is-pdf-remediation-process-cost-drivers",
@@ -151,7 +151,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-what-is-pdf-remediation.webp",
     imageAlt:
       "A disordered stack of white pages on the left resolves into a neat stack topped with a gold block on the right, separated by teal glass panels.",
-    ogImage: "/blog-images/insights-what-is-pdf-remediation-og.jpg",
+    ogImage: "/blog-images/insights-what-is-pdf-remediation.webp",
   },
   {
     slug: "pdf-ua-vs-wcag-vs-section-508",
@@ -168,7 +168,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-pdfua-wcag-section-508.webp",
     imageAlt:
       "Three folded paper structures in white, teal, and navy stand side by side on a layered base, joined by a thin gold line.",
-    ogImage: "/blog-images/insights-pdfua-wcag-section-508-og.jpg",
+    ogImage: "/blog-images/insights-pdfua-wcag-section-508.webp",
   },
   {
     slug: "scanned-pdf-accessibility-ocr-manual-review",
@@ -185,7 +185,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-scanned-pdf-ocr.webp",
     imageAlt:
       "A blank white sheet lifts away from a page of navy text lines under a teal scanning plane, with a gold pin marking the transition.",
-    ogImage: "/blog-images/insights-scanned-pdf-ocr-og.jpg",
+    ogImage: "/blog-images/insights-scanned-pdf-ocr.webp",
   },
   {
     slug: "accessible-pdf-forms-labels-instructions-keyboard-order",
@@ -202,7 +202,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-accessible-pdf-forms.webp",
     imageAlt:
       "A white sheet of raised blank form fields is threaded by a navy connecting line with teal and gold nodes marking the tab sequence.",
-    ogImage: "/blog-images/insights-accessible-pdf-forms-og.jpg",
+    ogImage: "/blog-images/insights-accessible-pdf-forms.webp",
   },
   {
     slug: "accessible-word-document-before-pdf-export",
@@ -219,7 +219,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-accessible-word-document.webp",
     imageAlt:
       "Layered white pages showing a heading bar, body lines, a teal chart block, and a small table, with a gold paper plane leaving the top layer.",
-    ogImage: "/blog-images/insights-accessible-word-document-og.jpg",
+    ogImage: "/blog-images/insights-accessible-word-document.webp",
   },
   {
     slug: "doj-title-ii-web-accessibility-deadlines-higher-education",
@@ -236,7 +236,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-title-ii-deadlines.webp",
     imageAlt:
       "Two open rectangular frames in teal and navy stand like gateways over a stack of white pages, with a gold disc on a horizontal line at the left.",
-    ogImage: "/blog-images/insights-title-ii-deadlines-og.jpg",
+    ogImage: "/blog-images/insights-title-ii-deadlines.webp",
   },
   {
     slug: "vpat-vs-acr-what-buyers-should-request",
@@ -253,7 +253,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-vpat-vs-acr.webp",
     imageAlt:
       "An empty white wire frame outline on the left contrasts with a solid stack of printed white pages on the right, linked by navy rails and a gold marker.",
-    ogImage: "/blog-images/insights-vpat-vs-acr-og.jpg",
+    ogImage: "/blog-images/insights-vpat-vs-acr.webp",
   },
   {
     slug: "pdf-tags-explained-structure-screen-readers-use",
@@ -270,7 +270,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-pdf-tags-explained.webp",
     imageAlt:
       "A white page floats above translucent teal layers connected by a navy branching tree of small white blocks, topped by a gold node.",
-    ogImage: "/blog-images/insights-pdf-tags-explained-og.jpg",
+    ogImage: "/blog-images/insights-pdf-tags-explained.webp",
   },
   {
     slug: "document-accessibility-program-colleges-universities",
@@ -287,7 +287,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: "/blog-images/insights-document-accessibility-program.webp",
     imageAlt:
       "Four stacks of white pages converge on a central teal panel crossed by navy connecting rails, with a small gold sphere at the intersection.",
-    ogImage: "/blog-images/insights-document-accessibility-program-og.jpg",
+    ogImage: "/blog-images/insights-document-accessibility-program.webp",
   },
 ];
 
