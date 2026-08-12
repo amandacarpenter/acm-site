@@ -107,6 +107,7 @@ export const ROUTES: RouteMeta[] = [
       "Editorial analysis on document accessibility: how to read checker results, what automated testing misses, PDF structure, and practical remediation workflows.",
     changefreq: "weekly",
     priority: 0.8,
+    ogImage: `${SITE_URL}/blog-images/insights-hero-og.jpg`,
   },
   {
     path: "/privacy",

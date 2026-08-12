@@ -64,7 +64,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-checker-differences.webp",
     imageAlt:
-      "Two identical stacks of printed pages on a cream desk, one tabbed with teal markers and the other with red markers at different positions.",
+      "An abstract white document is interpreted by overlapping teal scanning planes and a navy structural grid, with a gold marker at their intersection.",
     ogImage: "/blog-images/insights-checker-differences-og.jpg",
     featured: true,
   },
@@ -82,7 +82,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 4,
     image: "/blog-images/insights-beyond-passing-check.webp",
     imageAlt:
-      "A thick stack of printed pages on a cream desk with a single teal tab about a third of the way through and a red pencil resting alongside.",
+      "A white paper path continues through teal, navy, and gold checkpoint frames to represent review that continues beyond an automated check.",
     ogImage: "/blog-images/insights-beyond-passing-check-og.jpg",
   },
   {
@@ -99,7 +99,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-pdf-tables.webp",
     imageAlt:
-      "Close-up of a cream sheet printed with an empty ruled grid of rows and columns under a solid teal header row.",
+      "A sculptural white table grid with a navy header row and teal lines connecting header cells to data cells.",
     ogImage: "/blog-images/insights-pdf-tables-og.jpg",
   },
   {
@@ -116,7 +116,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-remediation-workflow.webp",
     imageAlt:
-      "Three document folders arranged left to right on a cream desk, progressing from plain to red-flagged to a closed teal folder, beside a laptop.",
+      "A continuous white paper path moves through teal scanning, navy structure, transparent review, and a finished document marked in gold.",
     ogImage: "/blog-images/insights-remediation-workflow-og.jpg",
   },
 ];

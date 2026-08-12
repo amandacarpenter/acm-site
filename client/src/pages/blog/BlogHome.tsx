@@ -83,7 +83,7 @@ export default function BlogHome() {
             <div className="lg:justify-self-end w-full">
               <img
                 src="/blog-images/insights-hero.webp"
-                alt="A quiet desk corner with a closed slate laptop, a stack of printed documents, a deep teal ceramic cup, and reading glasses in morning light."
+                alt="Layered white document forms intersect with translucent teal planes, navy structural lines, and a small gold focal point."
                 width={1600}
                 height={900}
                 className="w-full h-auto object-cover border border-[#0f766e]/20"
