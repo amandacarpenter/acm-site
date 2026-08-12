@@ -67,7 +67,7 @@ export default function BlogHome() {
               </p>
               <p className="text-base leading-relaxed text-gray-700 max-w-xl mb-8">
                 Looking for step-by-step instructions instead?{" "}
-                <Link href="/kb" className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
+                <Link href="/accessibility-guides" className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
                   Accessibility Guides
                 </Link>{" "}
                 covers the practical how-to work.

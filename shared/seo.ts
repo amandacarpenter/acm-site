@@ -93,7 +93,7 @@ export const ROUTES: RouteMeta[] = [
     priority: 0.4,
   },
   {
-    path: "/kb",
+    path: "/accessibility-guides",
     title: "Document Accessibility Guides & PDF Remediation Tips",
     description:
       "Practical document accessibility guides covering PDF remediation, Word accessibility, headings, tables, alt text, Adobe Acrobat, WCAG, and Section 508.",
@@ -161,8 +161,8 @@ export function getRouteMeta(pathname: string): RouteMeta | undefined {
   // Give every public knowledge-base article a unique, crawlable title,
   // description, canonical URL, and Article schema without importing the
   // database-backed KB module into the SEO layer.
-  if (pathname.startsWith("/kb/articles/")) {
-    const slug = pathname.slice("/kb/articles/".length);
+  if (pathname.startsWith("/accessibility-guides/articles/")) {
+    const slug = pathname.slice("/accessibility-guides/articles/".length);
     if (!slug || slug.includes("/")) return undefined;
     const acronyms = new Set(["aa", "ada", "ai", "html", "lms", "ocr", "pdf", "vpat", "wcag"]);
     const articleTitle = slug

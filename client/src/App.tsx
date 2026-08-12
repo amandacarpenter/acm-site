@@ -114,8 +114,9 @@ export default function App() {
             <Route path="/team/checkout" component={TeamCheckout} />
             <Route path="/team/setup" component={TeamSetup} />
             <Route path="/invoice-request" component={InvoiceRequest} />
-            <Route path="/kb" component={KbHome} />
-            <Route path="/kb/articles/:id" component={KbArticlePage} />
+            <Route path="/accessibility-guides" component={KbHome} />
+            <Route path="/accessibility-guides/articles/:id" component={KbArticlePage} />
+            <Route path="/kb">{() => <Redirect to="/accessibility-guides" />}</Route>
             <Route path="/kb/admin" component={KbAdmin} />
             <Route path="/blog" component={BlogHome} />
             <Route path="/blog/:slug" component={BlogArticle} />

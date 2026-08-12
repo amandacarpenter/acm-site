@@ -12,7 +12,7 @@ const SECTION_ICONS = ["🚀", "🛠️", "📄", "✏️", "♿"];
 function ArticleCard({ article }: { article: KbArticle }) {
   return (
     <Link
-      href={`/kb/articles/${article.id}`}
+      href={`/accessibility-guides/articles/${article.id}`}
       className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e] focus-visible:outline-offset-2"
       aria-label={article.title}
     >

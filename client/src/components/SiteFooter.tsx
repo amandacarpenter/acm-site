@@ -8,7 +8,7 @@ const footerLinks = [
   { href: "/accessibility", label: "Accessibility" },
   { href: "/faq", label: "FAQ" },
   { href: "/blog", label: "Blog" },
-  { href: "/kb", label: "Accessibility Guides" },
+  { href: "/accessibility-guides", label: "Accessibility Guides" },
   { href: "/contact", label: "Contact" },
 ];
 

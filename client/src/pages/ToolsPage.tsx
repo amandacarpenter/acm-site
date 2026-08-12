@@ -502,7 +502,7 @@ function RemedyDocsTab() {
       <p className="text-xs text-muted-foreground px-1">
         <Shield className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-[#0f766e]" />
         Remedy Docs gets you most of the way to compliant — always give the result a quick manual check before publishing.{" "}
-        <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="text-[#0f766e] font-medium underline underline-offset-2">
+        <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="text-[#0f766e] font-medium underline underline-offset-2">
           Learn how →
         </Link>
       </p>
@@ -573,7 +573,7 @@ function RemedyDocsTab() {
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
               No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially images, tables, and reading order.{" "}
-              <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
+              <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
                 See exactly how to check it in 10 minutes →
               </Link>
             </p>
@@ -617,7 +617,7 @@ function RemedyDocsTab() {
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
               No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially diagrams, equations, and tables.{" "}
-              <Link href="/kb/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
+              <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
                 See exactly how to check it in 10 minutes →
               </Link>
             </p>

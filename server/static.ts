@@ -183,6 +183,10 @@ export function serveStatic(app: Express) {
   // Consolidate legacy public URLs so search engines index one canonical page.
   app.get("/home", (_req, res) => res.redirect(301, "/"));
   app.get("/document-checker", (_req, res) => res.redirect(301, "/accessibility-checker"));
+  app.get("/kb", (_req, res) => res.redirect(301, "/accessibility-guides"));
+  app.get("/kb/articles/:slug", (req, res) =>
+    res.redirect(301, `/accessibility-guides/articles/${encodeURIComponent(req.params.slug)}`),
+  );
 
   // fall through to index.html if the file doesn't exist
   // Never intercept API routes — let Express handle those

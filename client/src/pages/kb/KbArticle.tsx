@@ -6,7 +6,7 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 
 function RelatedCard({ article }: { article: KbArticle }) {
   return (
-    <Link href={`/kb/articles/${article.id}`} className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0f766e]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
+    <Link href={`/accessibility-guides/articles/${article.id}`} className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0f766e]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
         <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0f766e] text-white text-xs font-bold flex items-center justify-center">
           {article.order_num}
         </span>
@@ -35,7 +35,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm mb-6" aria-label="Breadcrumb">
-          <Link href="/kb" className="text-[#0f766e] hover:underline">Accessibility Guides</Link>
+          <Link href="/accessibility-guides" className="text-[#0f766e] hover:underline">Accessibility Guides</Link>
           <span className="text-gray-300" aria-hidden="true">/</span>
           <span className="text-gray-500 truncate">{article.section_name}</span>
         </nav>
@@ -104,7 +104,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-900 text-lg font-semibold">Article not found</p>
-            <Link href="/kb" className="text-[#0f766e] text-sm mt-2 hover:underline block">← Back to Accessibility Guides</Link>
+            <Link href="/accessibility-guides" className="text-[#0f766e] text-sm mt-2 hover:underline block">← Back to Accessibility Guides</Link>
           </div>
         </div>
       ) : (

@@ -260,7 +260,7 @@ export default function KbAdmin() {
     <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
         <p className="text-gray-900 text-lg font-semibold">Admin access only</p>
-        <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline">← Back to Knowledge Base</a></Link>
+        <Link href="/accessibility-guides"><a className="text-[#0f766e] text-sm mt-2 hover:underline">← Back to Accessibility Guides</a></Link>
       </div>
     </div>
   );
@@ -277,7 +277,7 @@ export default function KbAdmin() {
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/kb"><a className="text-[#0f766e] text-sm hover:underline">← Knowledge Base</a></Link>
+          <Link href="/accessibility-guides"><a className="text-[#0f766e] text-sm hover:underline">← Accessibility Guides</a></Link>
           <span className="text-gray-400" aria-hidden="true">/</span>
           <h1 className="text-2xl font-bold text-gray-900">Admin — Manage Videos</h1>
         </div>

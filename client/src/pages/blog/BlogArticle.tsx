@@ -201,7 +201,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
                 {content.relatedGuides.map((guide) => (
                   <li key={guide.id}>
                     <Link
-                      href={`/kb/articles/${guide.id}`}
+                      href={`/accessibility-guides/articles/${guide.id}`}
                       className="flex min-h-[44px] items-center border border-[#0f766e]/20 bg-gray-50 px-4 py-3 text-base font-semibold text-[#0f766e] no-underline transition-colors motion-reduce:transition-none hover:bg-[#0f766e]/10 hover:border-[#0f766e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
                       data-testid={`related-guide-${guide.id}`}
                     >
@@ -212,7 +212,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
               </ul>
               <p className="mt-4 text-base text-gray-700">
                 <Link
-                  href="/kb"
+                  href="/accessibility-guides"
                   className="font-bold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
                   data-testid="article-guides-link"
                 >

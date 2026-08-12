@@ -46,7 +46,7 @@ export async function generateSitemap() {
 
   const kbArticles = await extractKbIds();
   for (const article of kbArticles) {
-    entries.push(urlEntry(`${SITE_URL}/kb/articles/${article.id}`, "monthly", 0.5));
+    entries.push(urlEntry(`${SITE_URL}/accessibility-guides/articles/${article.id}`, "monthly", 0.5));
   }
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.join("\n")}\n</urlset>\n`;

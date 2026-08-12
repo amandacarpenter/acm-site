@@ -417,7 +417,7 @@ const beyondPassingCheck: BlogPostContent = {
         <Cite href="https://www.w3.org/WAI/tips/writing/">writing for web accessibility</Cite> is a
         good calibration point: the description has to carry the purpose of the content in its
         context, which is a judgment about meaning, not markup. Our guide on{" "}
-        <Internal href="/kb/articles/writing-good-alt-text">writing good alt text</Internal> works
+        <Internal href="/accessibility-guides/articles/writing-good-alt-text">writing good alt text</Internal> works
         through the common cases.
       </P>
 
@@ -719,7 +719,7 @@ const pdfTables: BlogPostContent = {
         For federal document work, Section508.gov's guidance on{" "}
         <Cite href="https://www.section508.gov/create/pdfs/">creating accessible PDFs</Cite> includes
         authoring and testing steps that cover tables specifically. Our step-by-step guide on{" "}
-        <Internal href="/kb/articles/making-tables-accessible">making tables accessible</Internal>{" "}
+        <Internal href="/accessibility-guides/articles/making-tables-accessible">making tables accessible</Internal>{" "}
         walks through the same work in the tools most teams already have, and the{" "}
         <Internal href="/accessibility-checker">free Remedy508 checker</Internal> will tell you
         quickly whether a PDF's tables are tagged and whether header associations are present.
@@ -810,7 +810,7 @@ const remediationWorkflow: BlogPostContent = {
           <strong>Fix at the source.</strong> If the original Word, PowerPoint, or InDesign file
           still exists, repairing there and re-exporting is almost always faster and produces
           cleaner structure. Our guide on{" "}
-          <Internal href="/kb/articles/save-word-doc-as-pdf">
+          <Internal href="/accessibility-guides/articles/save-word-doc-as-pdf">
             saving a Word doc as a PDF, and when not to
           </Internal>{" "}
           covers the export settings that matter.
@@ -843,13 +843,13 @@ const remediationWorkflow: BlogPostContent = {
             Reading Order tool
           </Cite>{" "}
           is the standard place to do this, and our guide on{" "}
-          <Internal href="/kb/articles/fixing-reading-order">fixing reading order</Internal> walks
+          <Internal href="/accessibility-guides/articles/fixing-reading-order">fixing reading order</Internal> walks
           through it.
         </li>
         <li>
           <strong>Headings.</strong> Correct levels, no skips, and headings that describe the actual
           sections. See{" "}
-          <Internal href="/kb/articles/heading-structure-matters">
+          <Internal href="/accessibility-guides/articles/heading-structure-matters">
             why heading structure matters
           </Internal>
           .
@@ -930,7 +930,7 @@ const remediationWorkflow: BlogPostContent = {
         The steady state matters more than the sprint. Once new documents enter through stage one
         automatically, the backlog stops growing, and that is usually the point at which the work
         starts feeling finite. If a file comes out of stage three still imperfect, our guide on{" "}
-        <Internal href="/kb/articles/what-to-do-if-not-perfect">
+        <Internal href="/accessibility-guides/articles/what-to-do-if-not-perfect">
           what to do when remediation is not perfect
         </Internal>{" "}
         covers the judgment calls.
