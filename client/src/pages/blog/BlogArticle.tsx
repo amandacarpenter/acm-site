@@ -9,7 +9,7 @@ import {
   blogPostPath,
   formatBlogDate,
   getBlogPost,
-  getSortedBlogPosts,
+  getRelatedBlogPosts,
 } from "@shared/blog";
 import { BLOG_CONTENT } from "./content";
 
@@ -50,9 +50,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
 
   if (!post || !content) return <NotFound />;
 
-  const moreReading = getSortedBlogPosts()
-    .filter((entry) => entry.slug !== post.slug)
-    .slice(0, 3);
+  const moreReading = getRelatedBlogPosts(post.slug, 3);
 
   return (
     <div className="min-h-screen bg-white text-gray-900">

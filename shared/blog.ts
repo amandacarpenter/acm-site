@@ -119,11 +119,202 @@ export const BLOG_POSTS: BlogPostMeta[] = [
       "A continuous white paper path moves through teal scanning, navy structure, transparent review, and a finished document marked in gold.",
     ogImage: "/blog-images/insights-remediation-workflow-og.jpg",
   },
+  {
+    slug: "how-to-check-pdf-accessibility-checklist",
+    title: "How to check a PDF for accessibility: a practical checklist",
+    seoTitle: "How to Check a PDF for Accessibility: A Checklist",
+    description:
+      "A standards-based checklist for checking a PDF's title, tags, language, reading order, images, tables, and forms, plus what still has to be verified by hand.",
+    excerpt:
+      "You have a PDF in front of you and twenty minutes. This is the order to check it in, starting with the cheap disqualifying items and ending with the automated report.",
+    category: "Checker Interpretation",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-pdf-accessibility-checklist.webp",
+    imageAlt:
+      "A white document under a teal magnifier ring, layered over translucent inspection planes and a navy grid, with a single gold marker at the top right.",
+    ogImage: "/blog-images/insights-pdf-accessibility-checklist-og.jpg",
+  },
+  {
+    slug: "what-is-pdf-remediation-process-cost-drivers",
+    title: "What is PDF remediation? Process, cost drivers, and timelines",
+    seoTitle: "What Is PDF Remediation? Process and Cost Drivers",
+    description:
+      "PDF remediation explained: what the work involves step by step, which document features drive the effort, and how to scope a timeline you can defend.",
+    excerpt:
+      "Remediation is repair work on a file that was produced without structure. Knowing which features drive the effort is the difference between a real estimate and a guess.",
+    category: "Workflows",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-what-is-pdf-remediation.webp",
+    imageAlt:
+      "A disordered stack of white pages on the left resolves into a neat stack topped with a gold block on the right, separated by teal glass panels.",
+    ogImage: "/blog-images/insights-what-is-pdf-remediation-og.jpg",
+  },
+  {
+    slug: "pdf-ua-vs-wcag-vs-section-508",
+    title: "PDF/UA vs WCAG vs Section 508: what each standard means",
+    seoTitle: "PDF/UA vs WCAG vs Section 508: What Each Means",
+    description:
+      "PDF/UA, WCAG, and Section 508 are related but not interchangeable. Here is what each one covers, who requires it, and which to name in a policy or RFP.",
+    excerpt:
+      "One is a file format standard, one is a set of content guidelines, and one is a US legal standard. Naming the wrong one in a specification creates work nobody needed.",
+    category: "Standards & Practice",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-pdfua-wcag-section-508.webp",
+    imageAlt:
+      "Three folded paper structures in white, teal, and navy stand side by side on a layered base, joined by a thin gold line.",
+    ogImage: "/blog-images/insights-pdfua-wcag-section-508-og.jpg",
+  },
+  {
+    slug: "scanned-pdf-accessibility-ocr-manual-review",
+    title: "How to make scanned PDFs accessible with OCR and manual review",
+    seoTitle: "How to Make Scanned PDFs Accessible with OCR Review",
+    description:
+      "A scanned PDF is an image to a screen reader. Here is how detection, scan quality, OCR, suspect correction, and tagging turn it into a readable document.",
+    excerpt:
+      "Recognition is the first step, not the whole job. The errors that matter most are the ones the software was confident about, and only a person catches those.",
+    category: "Workflows",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-scanned-pdf-ocr.webp",
+    imageAlt:
+      "A blank white sheet lifts away from a page of navy text lines under a teal scanning plane, with a gold pin marking the transition.",
+    ogImage: "/blog-images/insights-scanned-pdf-ocr-og.jpg",
+  },
+  {
+    slug: "accessible-pdf-forms-labels-instructions-keyboard-order",
+    title: "Accessible PDF forms: labels, instructions, errors, and keyboard order",
+    seoTitle: "Accessible PDF Forms: Labels, Errors, Keyboard Order",
+    description:
+      "Fillable PDFs fail in predictable ways. How tooltips, instructions, tab order, and error handling make a form usable by keyboard and assistive technology.",
+    excerpt:
+      "A form can announce every field correctly and still be unusable if the tab order wanders. These four requirements fail independently, so they have to be checked separately.",
+    category: "PDF Structure",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-accessible-pdf-forms.webp",
+    imageAlt:
+      "A white sheet of raised blank form fields is threaded by a navy connecting line with teal and gold nodes marking the tab sequence.",
+    ogImage: "/blog-images/insights-accessible-pdf-forms-og.jpg",
+  },
+  {
+    slug: "accessible-word-document-before-pdf-export",
+    title: "How to create an accessible Word document before exporting to PDF",
+    seoTitle: "Create an Accessible Word Document Before PDF Export",
+    description:
+      "Most PDF accessibility problems start in Word. Fix headings, alt text, tables, links, and color first, then export with document structure tags intact.",
+    excerpt:
+      "Every problem you fix in the source costs a fraction of what it costs in the PDF. This is the pre-export routine that keeps documents out of the remediation queue.",
+    category: "Workflows",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-accessible-word-document.webp",
+    imageAlt:
+      "Layered white pages showing a heading bar, body lines, a teal chart block, and a small table, with a gold paper plane leaving the top layer.",
+    ogImage: "/blog-images/insights-accessible-word-document-og.jpg",
+  },
+  {
+    slug: "doj-title-ii-web-accessibility-deadlines-higher-education",
+    title: "DOJ Title II web accessibility deadlines: what higher education needs to know",
+    seoTitle: "DOJ Title II Deadlines: What Higher Ed Needs to Know",
+    description:
+      "DOJ extended the Title II web accessibility compliance dates in April 2026. What applies to public institutions now, what is unchanged, and what is contested.",
+    excerpt:
+      "The dates moved by a year. The standard did not, the ongoing obligations did not, and the extension is being challenged in court. Here is the state of play.",
+    category: "Standards & Practice",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-title-ii-deadlines.webp",
+    imageAlt:
+      "Two open rectangular frames in teal and navy stand like gateways over a stack of white pages, with a gold disc on a horizontal line at the left.",
+    ogImage: "/blog-images/insights-title-ii-deadlines-og.jpg",
+  },
+  {
+    slug: "vpat-vs-acr-what-buyers-should-request",
+    title: "VPAT vs ACR: what accessibility buyers should request",
+    seoTitle: "VPAT vs ACR: What Accessibility Buyers Request",
+    description:
+      "A VPAT is the blank template and an ACR is the completed report. What to request from vendors, what a credible report contains, and how to read the answer.",
+    excerpt:
+      "Ask for a VPAT and a vendor can hand you an empty template. Ask for a current ACR and you get a claim you can actually evaluate, if you know what to look for.",
+    category: "Standards & Practice",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-vpat-vs-acr.webp",
+    imageAlt:
+      "An empty white wire frame outline on the left contrasts with a solid stack of printed white pages on the right, linked by navy rails and a gold marker.",
+    ogImage: "/blog-images/insights-vpat-vs-acr-og.jpg",
+  },
+  {
+    slug: "pdf-tags-explained-structure-screen-readers-use",
+    title: "PDF tags explained: the structure screen readers actually use",
+    seoTitle: "PDF Tags Explained: The Structure Screen Readers Use",
+    description:
+      "Tags are the hidden outline that tells assistive technology what each part of a PDF is. What tags do, which ones you will meet, and how they break.",
+    excerpt:
+      "Two files can look identical on screen and behave completely differently out loud. The tags tree is where that difference lives, and it is readable once you know the vocabulary.",
+    category: "PDF Structure",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 5,
+    image: "/blog-images/insights-pdf-tags-explained.webp",
+    imageAlt:
+      "A white page floats above translucent teal layers connected by a navy branching tree of small white blocks, topped by a gold node.",
+    ogImage: "/blog-images/insights-pdf-tags-explained-og.jpg",
+  },
+  {
+    slug: "document-accessibility-program-colleges-universities",
+    title: "Building a document accessibility program for colleges and universities",
+    seoTitle: "Building a Document Accessibility Program for Colleges",
+    description:
+      "A practical framework for a campus document accessibility program: policy, roles, training, prioritized remediation, monitoring, and procurement guardrails.",
+    excerpt:
+      "Documents are produced by hundreds of people outside the web team, which is why they need their own program lane, their own owner, and their own routines.",
+    category: "Workflows",
+    publishedAt: "2026-08-12",
+    updatedAt: "2026-08-12",
+    readingMinutes: 6,
+    image: "/blog-images/insights-document-accessibility-program.webp",
+    imageAlt:
+      "Four stacks of white pages converge on a central teal panel crossed by navy connecting rails, with a small gold sphere at the intersection.",
+    ogImage: "/blog-images/insights-document-accessibility-program-og.jpg",
+  },
 ];
 
-/** Newest first, which is the order both the listing and the sitemap use. */
+/**
+ * Newest first, which is the order both the listing and the sitemap use.
+ * Posts published on the same day keep their order in BLOG_POSTS, so an
+ * editorial sequence within one publication date stays intentional.
+ */
 export function getSortedBlogPosts(): BlogPostMeta[] {
-  return [...BLOG_POSTS].sort((a, b) => (a.publishedAt < b.publishedAt ? 1 : -1));
+  return [...BLOG_POSTS].sort((a, b) => {
+    if (a.publishedAt === b.publishedAt) return 0;
+    return a.publishedAt < b.publishedAt ? 1 : -1;
+  });
+}
+
+/**
+ * Related reading for an article: same-category posts first, newest first,
+ * topped up with the most recent posts from other categories so every article
+ * has a full set even in a thinly populated category.
+ */
+export function getRelatedBlogPosts(slug: string, limit = 3): BlogPostMeta[] {
+  const post = getBlogPost(slug);
+  const others = getSortedBlogPosts().filter((entry) => entry.slug !== slug);
+  if (!post) return others.slice(0, limit);
+  const sameCategory = others.filter((entry) => entry.category === post.category);
+  const rest = others.filter((entry) => entry.category !== post.category);
+  return [...sameCategory, ...rest].slice(0, limit);
 }
 
 export function getBlogPost(slug: string): BlogPostMeta | undefined {
