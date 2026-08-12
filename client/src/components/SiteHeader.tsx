@@ -72,7 +72,7 @@ export default function SiteHeader() {
             <SignedIn>
               <li>
                 <Link href="/dashboard">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] hover:bg-[#0f766e]/10 transition cursor-pointer">
                     Dashboard
                   </span>
                 </Link>
@@ -121,7 +121,7 @@ export default function SiteHeader() {
             </SignedOut>
             <SignedIn>
               <Link href="/dashboard">
-                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
                   Dashboard
                 </span>
               </Link>
