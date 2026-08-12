@@ -40,10 +40,7 @@ const STATS = [
 const NAV_LINKS = [
   { href: "/accessibility-checker", label: "Free Checker" },
   { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/accessibility-guides", label: "Accessibility Guides" },
   { href: "/blog", label: "Blog" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/about", label: "About" },
 ];
 
 const CheckerExperience = lazy(() =>
@@ -126,25 +123,25 @@ export default function Home() {
               <div className="hidden lg:block" />
 
               {/* Desktop nav */}
-              <nav className="hidden xl:flex items-center gap-1 whitespace-nowrap" aria-label="Main navigation">
+              <nav className="hidden lg:flex items-center gap-1 whitespace-nowrap" aria-label="Main navigation">
                 {NAV_LINKS.map((link) => (
                   <Link key={link.href} href={link.href}>
-                    <span className={`px-3 py-2 rounded-lg text-base font-semibold transition-colors cursor-pointer ${
+                    <span className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
                       location === link.href ? "text-white" : "text-white hover:text-white hover:bg-white/10"
                     }`}>{link.label}</span>
                   </Link>
                 ))}
                 <SignedOut>
                   <Link href="/login">
-                    <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg border border-white/70 text-sm font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
                   </Link>
                   <Link href="/signup">
-                    <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">Get Started →</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">Get Started →</span>
                   </Link>
                 </SignedOut>
                 <SignedIn>
                   <Link href="/dashboard">
-                    <span className="ml-1 px-3 py-2 rounded-lg text-base font-semibold text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
+                    <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">Dashboard</span>
                   </Link>
                   <UserButton afterSignOutUrl="/" />
                 </SignedIn>
@@ -152,7 +149,7 @@ export default function Home() {
 
               {/* Mobile hamburger */}
               <button
-                className="xl:hidden p-2 rounded-lg text-white/80 hover:text-white"
+                className="lg:hidden p-2 rounded-lg text-white/80 hover:text-white"
                 onClick={() => setMobileOpen(!mobileOpen)}
                 aria-label={mobileOpen ? "Close menu" : "Open menu"}
               >
@@ -162,7 +159,7 @@ export default function Home() {
 
             {/* Mobile dropdown */}
             {mobileOpen && (
-              <div className="xl:hidden bg-[#111827]/95 border-t border-white/10">
+              <div className="lg:hidden bg-[#111827]/95 border-t border-white/10">
                 <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
                   {NAV_LINKS.map((link) => (
                     <Link key={link.href} href={link.href}>
@@ -170,11 +167,11 @@ export default function Home() {
                     </Link>
                   ))}
                   <SignedOut>
-                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold bg-[#0f766e] text-white text-center cursor-pointer">Get Started →</span></Link>
+                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-white/70 text-sm font-bold text-white text-center hover:bg-white/10 cursor-pointer">Log in</span></Link>
+                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center cursor-pointer">Get Started →</span></Link>
                   </SignedOut>
                   <SignedIn>
-                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
+                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center cursor-pointer">Dashboard</span></Link>
                     <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
                   </SignedIn>
                 </nav>
