@@ -1,15 +1,37 @@
 import { Link } from "wouter";
 import logoHero from "@/assets/logo-hero.jpg";
 
-const footerLinks = [
-  { href: "/accessibility-checker", label: "Check Accessibility" },
-  { href: "/privacy", label: "Privacy Policy" },
-  { href: "/terms", label: "Terms of Service" },
-  { href: "/accessibility", label: "Accessibility" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/blog", label: "Blog" },
-  { href: "/accessibility-guides", label: "Accessibility Guides" },
-  { href: "/contact", label: "Contact" },
+const footerGroups = [
+  {
+    heading: "Product",
+    links: [
+      { href: "/accessibility-checker", label: "Free Checker" },
+      { href: "/pricing", label: "Plans & Pricing" },
+    ],
+  },
+  {
+    heading: "Resources",
+    links: [
+      { href: "/accessibility-guides", label: "Accessibility Guides" },
+      { href: "/blog", label: "Blog" },
+      { href: "/faq", label: "FAQ" },
+    ],
+  },
+  {
+    heading: "Company",
+    links: [
+      { href: "/about", label: "About" },
+      { href: "/contact", label: "Contact" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { href: "/accessibility", label: "Accessibility" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/terms", label: "Terms of Service" },
+    ],
+  },
 ];
 
 const FLAG_SVG = (
@@ -51,22 +73,27 @@ export default function SiteFooter() {
           </Link>
         </div>
 
-        {/* Row 2 — Nav links + Social icons side by side on desktop */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-          <nav aria-label="Footer navigation">
-            <ul className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-3 list-none p-0 m-0">
-              {footerLinks.map(({ href, label }) => (
-                <li key={href}>
-                  <Link href={href} className="text-base font-bold text-white hover:text-gray-300 transition whitespace-nowrap">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
+        {/* Row 2 — Grouped navigation + social links */}
+        <div className="grid grid-cols-2 md:grid-cols-[repeat(4,minmax(0,1fr))_auto] gap-x-8 gap-y-8">
+          {footerGroups.map((group) => (
+            <nav key={group.heading} aria-label={`${group.heading} links`}>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-gray-400 mb-3">
+                {group.heading}
+              </h2>
+              <ul className="space-y-2 list-none p-0 m-0">
+                {group.links.map(({ href, label }) => (
+                  <li key={href}>
+                    <Link href={href} className="text-base font-bold text-white hover:text-gray-300 transition">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          ))}
 
           {/* Social icons */}
-          <div className="flex items-center justify-center sm:justify-end gap-5">
+          <div className="col-span-2 md:col-span-1 flex items-start justify-center md:justify-end gap-5 md:pt-8">
             <a href="https://www.linkedin.com/company/remedy508" target="_blank" rel="noopener noreferrer" aria-label="Remedy508 on LinkedIn (opens in new tab)" className="text-white hover:text-gray-300 transition">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
             </a>

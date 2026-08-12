@@ -20,8 +20,6 @@ const NAV_LINKS = [
   { href: "/pricing", label: "Plans & Pricing" },
   { href: "/accessibility-guides", label: "Accessibility Guides" },
   { href: "/blog", label: "Blog" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/about", label: "About" },
 ];
 
 export default function SiteHeader() {
@@ -39,13 +37,13 @@ export default function SiteHeader() {
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden xl:flex items-center gap-1" aria-label="Main navigation">
+        <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
           <ul className="flex items-center gap-1 list-none p-0 m-0 whitespace-nowrap">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href}>
                   <span
-                    className={`px-3 py-1.5 rounded-lg text-base font-bold transition-colors cursor-pointer ${
+                    className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer ${
                       location === link.href
                         ? "text-[#0f766e] bg-[#0f766e]/10"
                         : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
@@ -59,14 +57,14 @@ export default function SiteHeader() {
             <SignedOut>
               <li>
                 <Link href="/login">
-                  <span className="ml-1 px-3 py-1.5 rounded-lg text-base font-bold text-gray-700 hover:text-gray-900 hover:bg-gray-50 transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] hover:bg-[#0f766e]/10 transition cursor-pointer">
                     Log in
                   </span>
                 </Link>
               </li>
               <li>
                 <Link href="/signup">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-base font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
+                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
                     Get Started →
                   </span>
                 </Link>
@@ -87,7 +85,7 @@ export default function SiteHeader() {
 
         {/* Mobile hamburger */}
         <button
-          className="xl:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           data-testid="mobile-menu-toggle"
@@ -98,7 +96,7 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="xl:hidden border-t border-gray-100 bg-white">
+        <div className="lg:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href}>
@@ -112,12 +110,12 @@ export default function SiteHeader() {
             ))}
             <SignedOut>
               <Link href="/login">
-                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
                   Log in
                 </span>
               </Link>
               <Link href="/signup">
-                <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
                   Get Started →
                 </span>
               </Link>
