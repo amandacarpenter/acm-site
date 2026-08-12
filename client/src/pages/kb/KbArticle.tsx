@@ -6,13 +6,11 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 
 function RelatedCard({ article }: { article: KbArticle }) {
   return (
-    <Link href={`/kb/articles/${article.id}`}>
-      <a className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0f766e]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
-        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0f766e]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center">
+    <Link href={`/kb/articles/${article.id}`} className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 hover:bg-white border border-gray-200 hover:border-[#0f766e]/40 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#0f766e] text-white text-xs font-bold flex items-center justify-center">
           {article.order_num}
         </span>
         <p className="text-sm text-gray-900 font-medium leading-snug">{article.title}</p>
-      </a>
     </Link>
   );
 }
@@ -26,12 +24,18 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0f766e] focus:text-white focus:rounded-lg focus:font-semibold"
+      >
+        Skip to main content
+      </a>
       <SiteHeader />
       <main id="main-content" className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
 
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm mb-6" aria-label="Breadcrumb">
-          <Link href="/kb"><a className="text-[#0f766e] hover:underline">Accessibility Guides</a></Link>
+          <Link href="/kb" className="text-[#0f766e] hover:underline">Accessibility Guides</Link>
           <span className="text-gray-300" aria-hidden="true">/</span>
           <span className="text-gray-500 truncate">{article.section_name}</span>
         </nav>
@@ -42,7 +46,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
             Section {article.section} — {article.section_name}
           </p>
           <h1 className="text-2xl sm:text-3xl font-bold text-[#0f766e] leading-tight">{article.title}</h1>
-          <p className="mt-3 text-gray-500 text-base leading-relaxed">{article.summary}</p>
+          <p className="mt-3 text-gray-600 text-base leading-relaxed">{article.summary}</p>
         </div>
 
         {/* Main content */}
@@ -70,7 +74,7 @@ function ArticleView({ article, allArticles }: ArticleViewProps) {
         {/* Help CTA */}
         <div className="mt-12 bg-[#0f766e]/5 border border-[#0f766e]/20 rounded-xl p-5 text-center">
           <p className="text-sm text-gray-700 font-medium mb-1">Still have questions?</p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-600">
             Email us at{" "}
             <a href="mailto:hello@remedy508.com" className="text-[#0f766e] hover:underline font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e]">
               hello@remedy508.com
@@ -100,7 +104,7 @@ export default function KbArticlePage({ params }: { params: { id: string } }) {
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <p className="text-gray-900 text-lg font-semibold">Article not found</p>
-            <Link href="/kb"><a className="text-[#0f766e] text-sm mt-2 hover:underline block mt-2">← Back to Accessibility Guides</a></Link>
+            <Link href="/kb" className="text-[#0f766e] text-sm mt-2 hover:underline block">← Back to Accessibility Guides</Link>
           </div>
         </div>
       ) : (

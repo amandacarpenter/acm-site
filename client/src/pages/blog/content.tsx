@@ -74,17 +74,15 @@ function Cite({ href, children }: { href: string; children: string }) {
 /** Inline link to another page on remedy508.com. */
 function Internal({ href, children }: { href: string; children: ReactNode }) {
   return (
-    <Link href={href}>
-      <a className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
-        {children}
-      </a>
+    <Link href={href} className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
+      {children}
     </Link>
   );
 }
 
 function Callout({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="my-8 border-l-4 border-[#0f766e] bg-[#faf6f1] px-5 py-4">
+    <div className="my-8 border border-[#0f766e]/20 bg-[#faf6f1] px-5 py-4">
       <p className="text-sm font-bold uppercase tracking-wide text-[#0f766e] mb-2">{title}</p>
       <div className="text-[1rem] leading-relaxed text-gray-800 [&>p:last-child]:mb-0">{children}</div>
     </div>

@@ -7,7 +7,7 @@ const footerLinks = [
   { href: "/terms", label: "Terms of Service" },
   { href: "/accessibility", label: "Accessibility" },
   { href: "/faq", label: "FAQ" },
-  { href: "/blog", label: "Insights" },
+  { href: "/blog", label: "Blog" },
   { href: "/kb", label: "Accessibility Guides" },
   { href: "/contact", label: "Contact" },
 ];
@@ -57,10 +57,8 @@ export default function SiteFooter() {
             <ul className="flex flex-wrap items-center justify-center sm:justify-start gap-x-6 gap-y-3 list-none p-0 m-0">
               {footerLinks.map(({ href, label }) => (
                 <li key={href}>
-                  <Link href={href}>
-                    <span className="text-base font-bold text-white hover:text-gray-300 transition cursor-pointer whitespace-nowrap">
-                      {label}
-                    </span>
+                  <Link href={href} className="text-base font-bold text-white hover:text-gray-300 transition whitespace-nowrap">
+                    {label}
                   </Link>
                 </li>
               ))}

@@ -68,20 +68,17 @@ export default function BlogHome() {
               </p>
               <p className="text-base leading-relaxed text-gray-700 max-w-xl mb-8">
                 Looking for step-by-step instructions instead?{" "}
-                <Link href="/kb">
-                  <a className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
-                    Accessibility Guides
-                  </a>
+                <Link href="/kb" className="font-semibold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
+                  Accessibility Guides
                 </Link>{" "}
                 covers the practical how-to work.
               </p>
-              <Link href="/accessibility-checker">
-                <a
-                  className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-[#0f766e] text-white text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                  data-testid="blog-hero-checker-cta"
-                >
-                  Run a free accessibility check
-                </a>
+              <Link
+                href="/accessibility-checker"
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-[#0f766e] text-white text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                data-testid="blog-hero-checker-cta"
+              >
+                Run a free accessibility check
               </Link>
             </div>
             <div className="lg:justify-self-end w-full">
@@ -155,13 +152,12 @@ export default function BlogHome() {
               <div>
                 <Meta post={featured} />
                 <h3 className="mt-3 mb-4 text-2xl sm:text-3xl font-bold leading-tight text-[#111827]">
-                  <Link href={blogPostPath(featured.slug)}>
-                    <a
-                      className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                      data-testid={`blog-card-${featured.slug}`}
-                    >
-                      {featured.title}
-                    </a>
+                  <Link
+                    href={blogPostPath(featured.slug)}
+                    className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                    data-testid={`blog-card-${featured.slug}`}
+                  >
+                    {featured.title}
                   </Link>
                 </h3>
                 <p className="text-[1.0625rem] leading-relaxed text-gray-800 mb-4">{featured.excerpt}</p>
@@ -193,13 +189,12 @@ export default function BlogHome() {
                     <div>
                       <Meta post={post} />
                       <h3 className="mt-2 mb-3 text-xl sm:text-2xl font-bold leading-snug text-[#111827]">
-                        <Link href={blogPostPath(post.slug)}>
-                          <a
-                            className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                            data-testid={`blog-card-${post.slug}`}
-                          >
-                            {post.title}
-                          </a>
+                        <Link
+                          href={blogPostPath(post.slug)}
+                          className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                          data-testid={`blog-card-${post.slug}`}
+                        >
+                          {post.title}
                         </Link>
                       </h3>
                       <p className="text-[1.0625rem] leading-relaxed text-gray-800 max-w-2xl">
@@ -232,13 +227,12 @@ export default function BlogHome() {
               The free checker reports machine-detectable structure issues in PDFs and Word files.
               No account and no credits needed to run it.
             </p>
-            <Link href="/accessibility-checker">
-              <a
-                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                data-testid="blog-footer-checker-cta"
-              >
-                Open the free checker
-              </a>
+            <Link
+              href="/accessibility-checker"
+              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              data-testid="blog-footer-checker-cta"
+            >
+              Open the free checker
             </Link>
           </div>
         </section>

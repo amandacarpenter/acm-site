@@ -11,12 +11,12 @@ const SECTION_ICONS = ["🚀", "🛠️", "📄", "✏️", "♿"];
 
 function ArticleCard({ article }: { article: KbArticle }) {
   return (
-    <Link href={`/kb/articles/${article.id}`}>
-      <a
-        className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e] focus-visible:outline-offset-2"
-        aria-label={article.title}
-      >
-        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0f766e]/20 text-[#0f766e] text-xs font-bold flex items-center justify-center mt-0.5">
+    <Link
+      href={`/kb/articles/${article.id}`}
+      className="group flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0f766e] focus-visible:outline-offset-2"
+      aria-label={article.title}
+    >
+        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[#0f766e] text-white text-xs font-bold flex items-center justify-center mt-0.5">
           {article.order_num}
         </span>
         <div className="flex-1 min-w-0">
@@ -26,7 +26,6 @@ function ArticleCard({ article }: { article: KbArticle }) {
           <p className="text-sm text-gray-700 mt-0.5 leading-relaxed">{article.summary}</p>
         </div>
         <svg className="flex-shrink-0 w-4 h-4 text-gray-300 group-hover:text-[#0f766e] mt-0.5 transition-colors" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
-      </a>
     </Link>
   );
 }
@@ -52,31 +51,36 @@ export default function KbHome() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0f766e] focus:text-white focus:rounded-lg focus:font-semibold"
+        >
+          Skip to main content
+        </a>
         <SiteHeader />
 
+        <main id="main-content">
         {/* Page hero — matches Contact, Pricing, etc. */}
-        <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20">
+        <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="guides-page-heading">
           <HeroWatermark corner="right" />
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
               <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
               Accessibility Guides
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-3 leading-tight">How-To Guides<br />& Tips</h1>
+            <h1 id="guides-page-heading" className="text-4xl sm:text-5xl font-bold text-white mb-3 leading-tight">How-To Guides<br />& Tips</h1>
             <p className="text-white max-w-2xl mx-auto">Step-by-step document accessibility guides covering PDF remediation, Word accessibility, headings, tables, alt text, Adobe Acrobat, WCAG, and Section 508.</p>
             <p className="text-white/90 max-w-2xl mx-auto mt-4">
               For editorial analysis and professional perspective, read{" "}
-              <Link href="/blog">
-                <a className="font-bold text-white underline underline-offset-2 hover:text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" data-testid="guides-insights-link">
-                  Remedy508 Insights
-                </a>
+              <Link href="/blog" className="font-bold text-white underline underline-offset-2 hover:text-white/80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" data-testid="guides-insights-link">
+                Remedy508 Insights
               </Link>
               .
             </p>
           </div>
         </section>
 
-        <main id="main-content" className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
 
           {/* Search */}
           <div className="mb-8">
@@ -135,6 +139,7 @@ export default function KbHome() {
               ))}
             </div>
           )}
+        </div>
         </main>
         <SiteFooter />
     </div>

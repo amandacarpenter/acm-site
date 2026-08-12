@@ -17,19 +17,24 @@ function NotFound() {
   useDocumentTitle(`Article not found | ${BLOG_NAME}`);
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0f766e] focus:text-white focus:rounded-lg focus:font-semibold"
+      >
+        Skip to main content
+      </a>
       <SiteHeader />
       <main id="main-content" className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-20 text-center">
         <h1 className="text-3xl font-bold text-[#111827] mb-3">Article not found</h1>
         <p className="text-lg text-gray-800 mb-6">
           That Insights article does not exist, or its address has changed.
         </p>
-        <Link href="/blog">
-          <a
-            className="inline-flex items-center justify-center min-h-[44px] px-5 py-2 font-bold text-[#0f766e] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-            data-testid="blog-notfound-back"
-          >
-            Back to Remedy508 Insights
-          </a>
+        <Link
+          href="/blog"
+          className="inline-flex items-center justify-center min-h-[44px] px-5 py-2 font-bold text-[#0f766e] underline underline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+          data-testid="blog-notfound-back"
+        >
+          Back to Remedy508 Insights
         </Link>
       </main>
       <SiteFooter />
@@ -67,23 +72,20 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
               <nav aria-label="Breadcrumb" className="mb-6">
                 <ol className="flex flex-wrap items-center gap-2 text-sm list-none p-0 m-0">
                   <li>
-                    <Link href="/">
-                      <a className="text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
-                        Home
-                      </a>
+                    <Link href="/" className="text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]">
+                      Home
                     </Link>
                   </li>
                   <li aria-hidden="true" className="text-gray-400">
                     /
                   </li>
                   <li>
-                    <Link href="/blog">
-                      <a
-                        className="text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                        data-testid="breadcrumb-blog"
-                      >
-                        {BLOG_NAME}
-                      </a>
+                    <Link
+                      href="/blog"
+                      className="text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                      data-testid="breadcrumb-blog"
+                    >
+                      {BLOG_NAME}
                     </Link>
                   </li>
                   <li aria-hidden="true" className="text-gray-400">
@@ -198,25 +200,23 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
               <ul className="list-none p-0 m-0 space-y-3">
                 {content.relatedGuides.map((guide) => (
                   <li key={guide.id}>
-                    <Link href={`/kb/articles/${guide.id}`}>
-                      <a
-                        className="flex min-h-[44px] items-center border-l-4 border-[#0f766e] bg-[#faf6f1] px-4 py-3 text-base font-semibold text-[#0f766e] no-underline transition-colors motion-reduce:transition-none hover:bg-[#0f766e]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                        data-testid={`related-guide-${guide.id}`}
-                      >
-                        {guide.title}
-                      </a>
+                    <Link
+                      href={`/kb/articles/${guide.id}`}
+                      className="flex min-h-[44px] items-center border border-[#0f766e]/20 bg-[#faf6f1] px-4 py-3 text-base font-semibold text-[#0f766e] no-underline transition-colors motion-reduce:transition-none hover:bg-[#0f766e]/10 hover:border-[#0f766e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                      data-testid={`related-guide-${guide.id}`}
+                    >
+                      {guide.title}
                     </Link>
                   </li>
                 ))}
               </ul>
               <p className="mt-4 text-base text-gray-700">
-                <Link href="/kb">
-                  <a
-                    className="font-bold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                    data-testid="article-guides-link"
-                  >
-                    Browse all Accessibility Guides
-                  </a>
+                <Link
+                  href="/kb"
+                  className="font-bold text-[#0f766e] underline underline-offset-2 hover:text-[#115e59] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                  data-testid="article-guides-link"
+                >
+                  Browse all Accessibility Guides
                 </Link>
               </p>
             </section>
@@ -234,13 +234,12 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
                         {entry.category}
                       </p>
                       <h3 className="text-lg font-bold leading-snug">
-                        <Link href={blogPostPath(entry.slug)}>
-                          <a
-                            className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
-                            data-testid={`more-insights-${entry.slug}`}
-                          >
-                            {entry.title}
-                          </a>
+                        <Link
+                          href={blogPostPath(entry.slug)}
+                          className="text-[#111827] no-underline hover:text-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                          data-testid={`more-insights-${entry.slug}`}
+                        >
+                          {entry.title}
                         </Link>
                       </h3>
                       <p className="mt-1 text-base text-gray-800">{entry.excerpt}</p>
@@ -258,13 +257,12 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
                 {content.cta.heading}
               </h2>
               <p className="text-white/90 text-lg mb-7">{content.cta.body}</p>
-              <Link href="/accessibility-checker">
-                <a
-                  className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                  data-testid="blog-article-checker-cta"
-                >
-                  {content.cta.action}
-                </a>
+              <Link
+                href="/accessibility-checker"
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                data-testid="blog-article-checker-cta"
+              >
+                {content.cta.action}
               </Link>
             </div>
           </section>
