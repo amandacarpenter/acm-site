@@ -82,7 +82,7 @@ function Internal({ href, children }: { href: string; children: ReactNode }) {
 
 function Callout({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="my-8 border border-[#0f766e]/20 bg-[#faf6f1] px-5 py-4">
+    <div className="my-8 border border-[#0f766e]/20 bg-gray-50 px-5 py-4">
       <p className="text-sm font-bold uppercase tracking-wide text-[#0f766e] mb-2">{title}</p>
       <div className="text-[1rem] leading-relaxed text-gray-800 [&>p:last-child]:mb-0">{children}</div>
     </div>
@@ -121,7 +121,7 @@ function DetectionTable({
           </thead>
           <tbody>
             {rows.map((row, index) => (
-              <tr key={row.item} className={index % 2 === 1 ? "bg-[#faf6f1]" : "bg-white"}>
+              <tr key={row.item} className={index % 2 === 1 ? "bg-gray-50" : "bg-white"}>
                 <th scope="row" className="px-4 py-3 align-top font-semibold text-[#111827]">
                   {row.item}
                 </th>

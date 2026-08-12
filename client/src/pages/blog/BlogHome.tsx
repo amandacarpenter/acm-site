@@ -50,13 +50,13 @@ export default function BlogHome() {
       <SiteHeader />
 
       <main id="main-content">
-        {/* Editorial hero — asymmetric, cream, no card */}
-        <section className="bg-[#faf6f1] border-b border-[#0f766e]/15">
+        {/* Editorial hero — asymmetric, light gray, no card */}
+        <section className="bg-gray-50 border-b border-[#0f766e]/15">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16 grid gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:items-center">
             <div>
-              <p className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#991b1b] mb-4">
-                <span aria-hidden="true" className="inline-block h-px w-10 bg-[#991b1b]" />
-                Remedy508 Insights
+              <p className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0f766e] mb-4">
+                <span aria-hidden="true" className="inline-block h-px w-10 bg-[#0f766e]" />
+                Blog: Remedy508 Insights
               </p>
               <h1 className="max-w-[15ch] text-4xl sm:text-5xl font-bold leading-[1.1] text-[#111827] mb-5">
                 Analysis for people who fix the documents
@@ -135,9 +135,9 @@ export default function BlogHome() {
           <section aria-labelledby="featured-heading" className="max-w-6xl mx-auto px-4 sm:px-6 pt-12">
             <h2
               id="featured-heading"
-              className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#991b1b] mb-6"
+              className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0f766e] mb-6"
             >
-              <span aria-hidden="true" className="inline-block h-px w-10 bg-[#991b1b]" />
+              <span aria-hidden="true" className="inline-block h-px w-10 bg-[#0f766e]" />
               Featured
             </h2>
             <article className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:items-center">
@@ -229,7 +229,7 @@ export default function BlogHome() {
             </p>
             <Link
               href="/accessibility-checker"
-              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               data-testid="blog-footer-checker-cta"
             >
               Open the free checker

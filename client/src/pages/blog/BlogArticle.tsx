@@ -67,7 +67,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
       <main id="main-content">
         <article>
           {/* Masthead */}
-          <div className="bg-[#faf6f1] border-b border-[#0f766e]/15">
+          <div className="bg-gray-50 border-b border-[#0f766e]/15">
             <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
               <nav aria-label="Breadcrumb" className="mb-6">
                 <ol className="flex flex-wrap items-center gap-2 text-sm list-none p-0 m-0">
@@ -97,8 +97,8 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
                 </ol>
               </nav>
 
-              <p className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#991b1b] mb-4">
-                <span aria-hidden="true" className="inline-block h-px w-8 bg-[#991b1b]" />
+              <p className="flex items-center gap-3 text-sm font-bold uppercase tracking-[0.18em] text-[#0f766e] mb-4">
+                <span aria-hidden="true" className="inline-block h-px w-8 bg-[#0f766e]" />
                 {post.category}
               </p>
               <h1 className="text-3xl sm:text-[2.6rem] font-bold leading-[1.15] text-[#111827] mb-4">
@@ -202,7 +202,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
                   <li key={guide.id}>
                     <Link
                       href={`/kb/articles/${guide.id}`}
-                      className="flex min-h-[44px] items-center border border-[#0f766e]/20 bg-[#faf6f1] px-4 py-3 text-base font-semibold text-[#0f766e] no-underline transition-colors motion-reduce:transition-none hover:bg-[#0f766e]/10 hover:border-[#0f766e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
+                      className="flex min-h-[44px] items-center border border-[#0f766e]/20 bg-gray-50 px-4 py-3 text-base font-semibold text-[#0f766e] no-underline transition-colors motion-reduce:transition-none hover:bg-[#0f766e]/10 hover:border-[#0f766e]/35 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0f766e]"
                       data-testid={`related-guide-${guide.id}`}
                     >
                       {guide.title}
@@ -259,7 +259,7 @@ export default function BlogArticle({ params }: { params: { slug: string } }) {
               <p className="text-white/90 text-lg mb-7">{content.cta.body}</p>
               <Link
                 href="/accessibility-checker"
-                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-[#faf6f1] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                className="inline-flex items-center justify-center min-h-[48px] px-6 py-3 bg-white text-[#0f766e] text-base font-bold rounded-lg no-underline transition-colors motion-reduce:transition-none hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 data-testid="blog-article-checker-cta"
               >
                 {content.cta.action}
