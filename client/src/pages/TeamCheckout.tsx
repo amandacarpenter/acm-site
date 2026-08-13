@@ -134,7 +134,7 @@ export default function TeamCheckout() {
                 145 Credits/month per seat — each teammate gets their own, not shared
               </p>
               <p className="text-sm text-gray-700 mb-1">
-                Credits cover all four tools: Remedy Docs (1/page), Remedy Image (1/image), Remedy Video (1/transcript), Remedy HTML (3/fix)
+                Credits cover every available tool: Remedy Docs (1/page), Remedy Image (1/image), Remedy Video (1/transcript), and Remedy HTML (3/fix). Remedy Layout is coming soon for presentations and flyers, with a planned rate of 1 Credit/page.
               </p>
 
               {/* Live total */}

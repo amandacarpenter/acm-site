@@ -16,7 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
   FileText, Video, Code2, ImageIcon, Upload, CheckCircle2, AlertCircle,
-  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw, AlertTriangle
+  Copy, Download, Zap, Shield, Eye, ChevronRight, X, Loader2, ArrowLeft, RotateCcw, AlertTriangle, Presentation
 } from "lucide-react";
 import { Link } from "wouter";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -899,25 +899,29 @@ const ACCENT = "#0f766e";
 const ACCENT_SOFT_HOVER = "#0f766e1f";
 const TAB_META = [
   {
-    id: "document", label: "Remedy\nDocs", icon: iconDocument, beta: false, badge: ".docx & .pdf",
+    id: "document", label: "Remedy\nDocs", icon: iconDocument, Icon: null, beta: false, comingSoon: false, badge: ".docx & .pdf",
     title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.",
   },
   {
-    id: "video", label: "Remedy\nVideo", icon: iconVideo, beta: false, badge: "MP4, MOV, MP3",
+    id: "video", label: "Remedy\nVideo", icon: iconVideo, Icon: null, beta: false, comingSoon: false, badge: "MP4, MOV, MP3",
     title: "Remedy Video", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.",
   },
   {
-    id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, beta: false, badge: "Canvas LMS",
+    id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, Icon: null, beta: false, comingSoon: false, badge: "Canvas LMS",
     title: "Remedy HTML", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.",
   },
   {
-    id: "alttext", label: "Remedy\nImage", icon: iconAlttext, beta: false, badge: "Images & charts",
+    id: "alttext", label: "Remedy\nImage", icon: iconAlttext, Icon: null, beta: false, comingSoon: false, badge: "Images & charts",
     title: "Remedy Image", blurb: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.",
+  },
+  {
+    id: "layout", label: "Remedy\nLayout", icon: null, Icon: Presentation, beta: false, comingSoon: true, badge: "Presentations & Flyers",
+    title: "Remedy Layout", blurb: "Remediate presentations, flyers, and other visually designed documents while preserving their original layout and appearance.",
   },
 ] as const;
 
 export default function ToolsPage() {
-  useDocumentTitle("Accessibility Tools | Remedy Docs, Image, HTML & Video | Remedy508");
+  useDocumentTitle("Accessibility Tools | Documents, Layouts, Images, HTML & Video | Remedy508");
   const [, params] = useRoute("/tools/:tab");
   const initialTab = params?.tab || "document";
   const { isSignedIn, isLoaded } = useAuth();
@@ -987,7 +991,7 @@ export default function ToolsPage() {
             signal for "which tool am I on" instead of a separate description
             block above a disconnected tab strip. */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-0" data-testid="tool-tabs">
-          <TabsList className="grid grid-cols-4 w-full h-auto p-1 gap-1 bg-gray-100">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 w-full h-auto p-1 gap-1 bg-gray-100">
             {TAB_META.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
@@ -1000,9 +1004,14 @@ export default function ToolsPage() {
                   onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = ""; }}
                   data-testid={`tab-${tab.id}`}
                 >
-                  <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                  {tab.icon ? (
+                    <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                  ) : tab.Icon ? (
+                    <tab.Icon className="w-12 h-12 my-2 text-[#0f766e] shrink-0" strokeWidth={1.6} aria-hidden="true" />
+                  ) : null}
                   <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full text-black">{tab.label}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
+                  {tab.comingSoon && <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">COMING SOON</span>}
                 </TabsTrigger>
               );
             })}
@@ -1017,6 +1026,7 @@ export default function ToolsPage() {
                   <span className="font-bold text-lg text-black">{tab.title}</span>
                   <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tab.badge}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">BETA</span>}
+                  {tab.comingSoon && <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">COMING SOON</span>}
                 </div>
                 <p className="text-sm text-gray-500 leading-snug mb-4">{tab.blurb}</p>
                 <div className="border-t border-gray-100 pt-4">
@@ -1024,6 +1034,16 @@ export default function ToolsPage() {
                   {tab.id === "video" && <VideoTab />}
                   {tab.id === "canvas" && <CanvasTab />}
                   {tab.id === "alttext" && <AltTextTab />}
+                  {tab.id === "layout" && (
+                    <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 text-center">
+                      <Presentation className="w-10 h-10 text-[#0f766e] mx-auto mb-3" strokeWidth={1.6} aria-hidden="true" />
+                      <h2 className="text-lg font-bold text-[#3a485b] mb-2">Presentations and flyers are next</h2>
+                      <p className="text-sm text-gray-600 max-w-lg mx-auto">
+                        Remedy Layout is being built to improve accessibility in visually designed documents while preserving their layout and appearance.
+                      </p>
+                      <p className="text-sm font-semibold text-[#0f766e] mt-3">Planned rate: 1 Credit per page</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>

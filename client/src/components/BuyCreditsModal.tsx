@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, ShoppingCart, Zap, ChevronRight, FileText, Image, Video, Code } from "lucide-react";
+import { X, ShoppingCart, Zap, ChevronRight, FileText, Image, Video, Code, Presentation } from "lucide-react";
 
 interface Props {
   open: boolean;
@@ -68,7 +68,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
               <X className="w-5 h-5" />
             </button>
           </div>
-          <p className="text-white text-base mt-1">One-time purchase · usable across all four tools · No expiration</p>
+          <p className="text-white text-base mt-1">One-time purchase · usable across every available tool · No expiration</p>
         </div>
 
         <div className="p-6">
@@ -115,7 +115,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
           {/* How credits are used */}
           <div className="mb-4">
             <p className="text-sm font-semibold text-[#3a485b] mb-0.5">How credits are used</p>
-            <p className="text-xs text-gray-500 mb-2.5">Shared across all four tools, used after your monthly plan Credits run out.</p>
+            <p className="text-xs text-gray-500 mb-2.5">Shared across every available tool, with Remedy Layout joining the same pool when it launches.</p>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
@@ -151,6 +151,18 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                 <div className="min-w-0">
                   <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
                   <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                </div>
+              </div>
+              <div className="col-span-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-2.5 py-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
+                  <Presentation className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
+                    <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-tight">Planned: 1 credit / page</p>
                 </div>
               </div>
             </div>

@@ -2,7 +2,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
-import { ChevronDown, HelpCircle, FileText, Image, Video, Code } from "lucide-react";
+import { ChevronDown, HelpCircle, FileText, Image, Video, Code, Presentation } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 
@@ -17,7 +17,7 @@ interface FAQItem {
 function CreditBreakdown() {
   return (
     <>
-      <p className="mb-3">Credits are shared across all four tools.</p>
+      <p className="mb-3">Credits are shared across every available tool. Remedy Layout will join the same pool when it launches.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
@@ -53,6 +53,18 @@ function CreditBreakdown() {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
             <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+          </div>
+        </div>
+        <div className="sm:col-span-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
+            <Presentation className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
+              <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
+            </div>
+            <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · Planned: 1 credit / page</p>
           </div>
         </div>
       </div>
@@ -115,7 +127,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What tools does Remedy508 include?",
-        a: "Your subscription includes access to four tools: Remedy Docs (Word and PDF, including multi-column layouts, tables, and scanned pages), Remedy Video (transcription), Remedy HTML (Canvas LMS pages), and Remedy Image (alt text). Each tool targets a specific, common accessibility problem in higher ed content.",
+        a: "Remedy508 currently includes four tools: Remedy Docs (Word and PDF, including multi-column layouts, tables, and scanned pages), Remedy Video (transcription), Remedy HTML (Canvas LMS pages), and Remedy Image (alt text). Remedy Layout is coming soon for presentations, flyers, and other visually designed documents, with a planned rate of 1 Credit per page.",
       },
       {
         q: "Does Remedy508 make my content fully compliant?",
@@ -136,7 +148,7 @@ const FAQ_SECTIONS: FAQSection[] = [
     items: [
       {
         q: "What file types are supported?",
-        a: "Remedy Docs handles Word (.docx) and PDF files, including advanced layouts — multi-column text, tables, forms, and scanned documents. It automatically detects which kind of document you've uploaded and applies the right remediation approach. Remedy Video accepts common video and audio formats (MP4, MOV, MP3). Remedy HTML works with HTML content directly from Canvas LMS.",
+        a: "Remedy Docs handles Word (.docx) and PDF files, including advanced layouts — multi-column text, tables, forms, and scanned documents. It automatically detects which kind of document you've uploaded and applies the right remediation approach. Remedy Video accepts common video and audio formats (MP4, MOV, MP3). Remedy HTML works with HTML content directly from Canvas LMS. Remedy Layout will support presentations, flyers, and other visually designed documents when it launches.",
       },
       {
         q: "What happens to my files after I upload them?",
@@ -161,7 +173,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 130 Credits per month, shared across all four tools. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
+        a: "The Individual plan gives you 130 Credits per month, shared across every available tool. Remedy Layout will use the same Credit pool at a planned rate of 1 Credit per page when it launches. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
       },
       {
         q: "What does the Team plan include?",

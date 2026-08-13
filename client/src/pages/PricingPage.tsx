@@ -1,7 +1,7 @@
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Link, useLocation } from "wouter";
-import { CheckCircle2, Zap, Users, Loader2, Building2, FileText, Image, Video, Code } from "lucide-react";
+import { CheckCircle2, Zap, Users, Loader2, Building2, FileText, Image, Video, Code, Presentation } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
@@ -16,6 +16,7 @@ const INDIVIDUAL_FEATURES = [
   "Remedy Image",
   "Remedy HTML",
   "Remedy Video",
+  "Remedy Layout (Coming Soon)",
   "Email support",
   "Cancel anytime",
 ];
@@ -136,7 +137,7 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-gray-900">
-                  One seat. All four tools, all metered from one shared Credit pool. Built for anyone who needs to make course materials accessible on their own.
+                  One seat. Every available tool uses one shared Credit pool, and Remedy Layout will join it when it launches. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0f766e]/10 text-[#0f766e]">
@@ -225,7 +226,7 @@ export default function PricingPage() {
                 a: (
                   <>
                     <p className="mb-3">
-                      Credits are the usage currency across all four tools, weighted by how much processing each one takes. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime.
+                      Credits are the usage currency across every available tool, weighted by how much processing each one takes. Remedy Layout will join the same pool when it launches. Credits reset monthly on the anniversary of your signup date. Need more Credits? You can top up with a Credit pack anytime.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
@@ -262,6 +263,18 @@ export default function PricingPage() {
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
                           <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                        </div>
+                      </div>
+                      <div className="sm:col-span-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
+                          <Presentation className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
+                            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
+                          </div>
+                          <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · Planned: 1 credit / page</p>
                         </div>
                       </div>
                     </div>

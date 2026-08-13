@@ -18,17 +18,18 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  SearchCheck,
+  SearchCheck, Presentation,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
-  { icon: iconDocument, title: "Remedy Docs", desc: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.", tag: ".docx & .pdf", tab: "document" },
-  { icon: iconVideo, title: "Remedy Video", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video" },
-  { icon: iconCanvas, title: "Remedy HTML", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas" },
-  { icon: iconAlttext, title: "Remedy Image", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext" },
+  { icon: iconDocument, Icon: null, title: "Remedy Docs", desc: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.", tag: ".docx & .pdf", tab: "document", comingSoon: false },
+  { icon: iconVideo, Icon: null, title: "Remedy Video", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video", comingSoon: false },
+  { icon: iconCanvas, Icon: null, title: "Remedy HTML", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas", comingSoon: false },
+  { icon: iconAlttext, Icon: null, title: "Remedy Image", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext", comingSoon: false },
+  { icon: null, Icon: Presentation, title: "Remedy Layout", desc: "Remediate presentations, flyers, and other visually designed documents while preserving their original layout and appearance.", tag: "Presentations & Flyers", tab: "layout", comingSoon: true },
 ];
 
 const STATS = [
@@ -79,7 +80,7 @@ export default function Home() {
               Not Accessible,<br />Not Acceptable™
             </h1>
             <p className="text-white/90 text-base leading-relaxed mb-8">
-              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions. Built for higher education, government, healthcare, and accessibility teams.
+              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions, with presentation and flyer remediation coming soon. Built for higher education, government, healthcare, and accessibility teams.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
@@ -270,24 +271,34 @@ export default function Home() {
               What’s included with Remedy508
             </div>
             <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Four Accessibility Remediation Tools
+              Four Tools Available, One Coming Soon
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Use monthly Credits only when you choose to remediate.
+              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Remedy Layout for presentations and flyers is coming soon and is planned at 1 Credit per page.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
               {TOOLS.map((tool) => (
-                <div key={tool.tab} className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm" data-testid={`tool-card-${tool.tab}`}>
+                <div key={tool.tab} className={`bg-white rounded-2xl border border-gray-200 p-5 shadow-sm ${tool.comingSoon ? "md:col-span-2" : ""}`} data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
-                    <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
+                    {tool.icon ? (
+                      <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
+                    ) : tool.Icon ? (
+                      <div className="w-20 h-20 flex items-center justify-center shrink-0" aria-hidden="true">
+                        <tool.Icon className="w-14 h-14 text-[#0f766e]" strokeWidth={1.6} />
+                      </div>
+                    ) : null}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
                         <span className="px-2 py-0.5 rounded-full bg-gray-300 text-gray-700 text-xs font-medium">{tool.tag}</span>
+                        {tool.comingSoon && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold">Coming Soon</span>
+                        )}
                       </div>
                       <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
+                      {tool.comingSoon && <p className="text-sm font-semibold text-[#0f766e] mt-2">Planned rate: 1 Credit per page</p>}
                     </div>
                   </div>
                 </div>

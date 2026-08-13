@@ -56,11 +56,11 @@ const SEED: Omit<KbArticle, "updated_at">[] = [
   { id: "uploading-your-first-file", section: 1, section_name: "Getting Started", order_num: 4, title: "Uploading your first file", summary: "How to upload a document or PDF and send it through Remedy508 for the first time.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["welcome-to-remedy508", "understanding-your-results"] },
   { id: "understanding-your-results", section: 1, section_name: "Getting Started", order_num: 5, title: "Understanding your results", summary: "What the output means — how to read your remediated file and what each fix applied.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["uploading-your-first-file", "document-fixer-word-doc"] },
 
-  // Section 2 — Using the 4 Tools
-  { id: "document-fixer-word-doc", section: 2, section_name: "Using the 4 Tools", order_num: 6, title: "Remedy Docs — remediate a Word doc or PDF", summary: "Walk through fixing a real Word document or PDF using Remedy Docs, from upload to download, including how auto-detection picks the right pipeline.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["understanding-your-results"] },
-  { id: "alt-text-generator", section: 2, section_name: "Using the 4 Tools", order_num: 8, title: "Remedy Image — images made accessible", summary: "Generate accurate, descriptive alt text for images and charts using Remedy Image.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["writing-good-alt-text", "canvas-html-fixer"] },
-  { id: "canvas-html-fixer", section: 2, section_name: "Using the 4 Tools", order_num: 9, title: "Remedy HTML — accessible Canvas pages", summary: "Clean up Canvas LMS HTML to meet accessibility standards using Remedy HTML.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["alt-text-generator", "accessibility-101-wcag"] },
-  { id: "video-transcription-captions", section: 2, section_name: "Using the 4 Tools", order_num: 10, title: "Remedy Video — captions & transcripts", summary: "Upload a video or audio file and generate accurate captions and a full text transcript automatically.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["canvas-html-fixer", "welcome-to-remedy508"] },
+  // Section 2 — Using the Tools
+  { id: "document-fixer-word-doc", section: 2, section_name: "Using the Tools", order_num: 6, title: "Remedy Docs — remediate a Word doc or PDF", summary: "Walk through fixing a real Word document or PDF using Remedy Docs, from upload to download, including how auto-detection picks the right pipeline.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["understanding-your-results"] },
+  { id: "alt-text-generator", section: 2, section_name: "Using the Tools", order_num: 8, title: "Remedy Image — images made accessible", summary: "Generate accurate, descriptive alt text for images and charts using Remedy Image.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["writing-good-alt-text", "canvas-html-fixer"] },
+  { id: "canvas-html-fixer", section: 2, section_name: "Using the Tools", order_num: 9, title: "Remedy HTML — accessible Canvas pages", summary: "Clean up Canvas LMS HTML to meet accessibility standards using Remedy HTML.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["alt-text-generator", "accessibility-101-wcag"] },
+  { id: "video-transcription-captions", section: 2, section_name: "Using the Tools", order_num: 10, title: "Remedy Video — captions & transcripts", summary: "Upload a video or audio file and generate accurate captions and a full text transcript automatically.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["canvas-html-fixer", "welcome-to-remedy508"] },
 
   // Section 3 — Preparing Files for Remedy508
   { id: "save-powerpoint-as-pdf", section: 3, section_name: "Preparing Files for Remedy508", order_num: 11, title: "How to save a PowerPoint (.pptx) as a PDF", summary: "The right way to export a PowerPoint presentation as a PDF before running it through Remedy508.", video_url: null, video_status: "coming_soon", transcript: null, captions_url: null, duration: null, related_ids: ["what-file-types-accepted", "save-word-doc-as-pdf"] },
@@ -101,13 +101,14 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Compliance pressure is real.</strong> Title II of the ADA now requires digital accessibility for all public college content. Remedy508 helps you meet that standard quickly.</li>
   <li><strong>Most staff aren't trained in accessibility.</strong> You don't need to know WCAG inside and out — Remedy508 applies the correct fixes automatically.</li>
 </ul>
-<h2>The four tools</h2>
-<p>Remedy508 gives you four purpose-built tools:</p>
+<h2>The Remedy508 tools</h2>
+<p>Remedy508 currently gives you four purpose-built tools, with Remedy Layout coming soon:</p>
 <ol>
   <li><strong>Remedy Docs</strong> — remediates Word documents and PDFs, automatically detecting scanned pages, forms, and multi-column layouts and choosing the right remediation approach</li>
   <li><strong>Remedy Image</strong> — writes accurate, descriptive alt text for images and charts</li>
   <li><strong>Remedy HTML</strong> — cleans up Canvas LMS page HTML for accessibility</li>
   <li><strong>Remedy Video</strong> — generates captions and full transcripts from video or audio files</li>
+  <li><strong>Remedy Layout <span style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 7px;">Coming Soon</span></strong> — will remediate presentations, flyers, and other visually designed documents while preserving their layout and appearance; planned at 1 Credit per page</li>
 </ol>
 <h2>Next steps</h2>
 <p>Start by creating your account, then head to your dashboard to run your first file through Remedy Docs. Most users see results in under 60 seconds.</p>`,
@@ -132,7 +133,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h3>Usage meter</h3>
 <p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit.</p>
 <h4>How are my credits used?</h4>
-<p>Credits are shared across all four tools.</p>
+<p>Credits are shared across every available tool. Remedy Layout will join the same pool at a planned rate of 1 Credit per page when it launches.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px;">
   <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
     <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
@@ -173,7 +174,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 </div>
 <p>Individual plans include <strong>130 credits per month</strong>. Team plans allocate <strong>145 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
 <h3>Quick-access tools</h3>
-<p>The four Remedy508 tools are displayed as cards in the center of your dashboard. Click any card to go directly to that tool. You can also access tools from the top navigation under <strong>Tools</strong>.</p>
+<p>The available Remedy508 tools are displayed as cards in the center of your dashboard. Remedy Layout also appears with a <strong>Coming Soon</strong> label for presentation and flyer remediation. Click an available card to go directly to that tool.</p>
 <h3>Credit pack balance</h3>
 <p>If you've purchased a page-credit pack (an additional block of credits on top of your monthly plan), your remaining balance is shown here. Purchased credits are a separate top-up pool that's drawn down only after your monthly plan credits are used up, so they carry over — nothing is lost if you don't use your full monthly allotment first.</p>
 <h3>Recent activity</h3>
@@ -193,6 +194,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Image with alt text needed</strong> → Remedy Image</li>
   <li><strong>Canvas LMS page HTML</strong> → Remedy HTML</li>
   <li><strong>Video or audio file</strong> → Remedy Video</li>
+  <li><strong>Presentation, flyer, or visually designed document</strong> → Remedy Layout <strong>(Coming Soon; planned at 1 Credit per page)</strong></li>
 </ul>
 <h2>Uploading your file</h2>
 <ol>
@@ -206,7 +208,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h2>Downloading your result</h2>
 <p>Once processing is complete, a download button appears. Click it to save the remediated file to your computer. Your result is also saved in your recent activity on the dashboard for 30 days.</p>
 <h2>How credits are counted</h2>
-<p>Credits are shared across all four tools.</p>
+<p>Credits are shared across every available tool. Remedy Layout will join the same pool at a planned rate of 1 Credit per page when it launches.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 8px;">
   <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
     <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">

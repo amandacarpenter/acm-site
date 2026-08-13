@@ -3,7 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy, Users } from "lucide-react";
+import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy, Users, Presentation } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
 
@@ -12,6 +12,7 @@ const TOOLS = [
   { label: "Remedy Video", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
   { label: "Remedy HTML", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
   { label: "Remedy Image", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
+  { label: "Remedy Layout", desc: "Presentations & Flyers · Coming Soon", icon: Presentation, tab: "layout", color: "bg-amber-50 text-amber-800", comingSoon: true },
 ];
 
 interface JobRow {
@@ -177,7 +178,7 @@ export default function Dashboard() {
 
             <div className="pt-4 mt-1 border-t border-gray-100">
               <p className="text-sm font-semibold text-[#3a485b] mb-0.5">How are credits used?</p>
-              <p className="text-xs text-gray-500 mb-3">Shared across all four tools.</p>
+              <p className="text-xs text-gray-500 mb-3">Shared across every available tool. Remedy Layout will use the same pool when it launches.</p>
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
@@ -213,6 +214,18 @@ export default function Dashboard() {
                   <div className="min-w-0">
                     <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy HTML</p>
                     <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
+                  </div>
+                </div>
+                <div className="col-span-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
+                    <Presentation className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
+                    </div>
+                    <p className="text-xs text-gray-500 leading-tight">Planned: 1 credit / page</p>
                   </div>
                 </div>
               </div>
