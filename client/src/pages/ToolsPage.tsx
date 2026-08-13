@@ -1007,8 +1007,10 @@ export default function ToolsPage() {
                   {tab.icon ? (
                     <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
                   ) : tab.Icon ? (
-                    <span className="w-16 h-16 rounded-full bg-[#0f766e] flex items-center justify-center shrink-0" aria-hidden="true">
-                      <tab.Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
+                    <span className="w-16 h-16 flex items-center justify-center shrink-0" aria-hidden="true">
+                      <span className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center">
+                        <tab.Icon className="w-5 h-5 text-white" strokeWidth={1.8} />
+                      </span>
                     </span>
                   ) : null}
                   <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full text-black">{tab.label}</span>
@@ -1038,8 +1040,8 @@ export default function ToolsPage() {
                   {tab.id === "alttext" && <AltTextTab />}
                   {tab.id === "layout" && (
                     <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 text-center">
-                      <div className="w-12 h-12 rounded-full bg-[#0f766e] flex items-center justify-center mx-auto mb-3" aria-hidden="true">
-                        <Presentation className="w-6 h-6 text-white" strokeWidth={1.8} />
+                      <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center mx-auto mb-3" aria-hidden="true">
+                        <Presentation className="w-5 h-5 text-white" strokeWidth={1.8} />
                       </div>
                       <h2 className="text-lg font-bold text-[#3a485b] mb-2">Presentations and flyers are next</h2>
                       <p className="text-sm text-gray-600 max-w-lg mx-auto">
