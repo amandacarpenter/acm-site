@@ -12,7 +12,7 @@ const TOOLS = [
   { label: "Remedy Video", desc: "MP4, MOV, MP3", icon: Video, tab: "video", color: "bg-purple-50 text-purple-600" },
   { label: "Remedy HTML", desc: "Canvas LMS", icon: Code, tab: "canvas", color: "bg-orange-50 text-orange-600" },
   { label: "Remedy Image", desc: "Images & charts", icon: Image, tab: "alttext", color: "bg-pink-50 text-pink-600" },
-  { label: "Remedy Layout", desc: "Presentations & Flyers · Coming Soon", icon: Presentation, tab: "layout", color: "bg-amber-50 text-amber-800", comingSoon: true },
+  { label: "Remedy Layout", desc: "Presentations & Flyers · Coming Soon", icon: Presentation, tab: "layout", color: "bg-[#0f766e] text-white", comingSoon: true },
 ];
 
 interface JobRow {
@@ -225,7 +225,7 @@ export default function Dashboard() {
                       <p className="text-xs font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
                       <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
                     </div>
-                    <p className="text-xs text-gray-500 leading-tight">Planned: 1 credit / page</p>
+                    <p className="text-xs text-gray-500 leading-tight">1 credit / page</p>
                   </div>
                 </div>
               </div>

@@ -1007,7 +1007,9 @@ export default function ToolsPage() {
                   {tab.icon ? (
                     <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
                   ) : tab.Icon ? (
-                    <tab.Icon className="w-12 h-12 my-2 text-[#0f766e] shrink-0" strokeWidth={1.6} aria-hidden="true" />
+                    <span className="w-16 h-16 rounded-full bg-[#0f766e] flex items-center justify-center shrink-0" aria-hidden="true">
+                      <tab.Icon className="w-8 h-8 text-white" strokeWidth={1.8} />
+                    </span>
                   ) : null}
                   <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full text-black">{tab.label}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
@@ -1036,12 +1038,13 @@ export default function ToolsPage() {
                   {tab.id === "alttext" && <AltTextTab />}
                   {tab.id === "layout" && (
                     <div className="rounded-xl bg-gray-50 border border-gray-200 p-6 text-center">
-                      <Presentation className="w-10 h-10 text-[#0f766e] mx-auto mb-3" strokeWidth={1.6} aria-hidden="true" />
+                      <div className="w-12 h-12 rounded-full bg-[#0f766e] flex items-center justify-center mx-auto mb-3" aria-hidden="true">
+                        <Presentation className="w-6 h-6 text-white" strokeWidth={1.8} />
+                      </div>
                       <h2 className="text-lg font-bold text-[#3a485b] mb-2">Presentations and flyers are next</h2>
                       <p className="text-sm text-gray-600 max-w-lg mx-auto">
                         Remedy Layout is being built to improve accessibility in visually designed documents while preserving their layout and appearance.
                       </p>
-                      <p className="text-sm font-semibold text-[#0f766e] mt-3">Planned rate: 1 Credit per page</p>
                     </div>
                   )}
                 </div>

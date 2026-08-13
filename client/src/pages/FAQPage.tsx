@@ -64,7 +64,7 @@ function CreditBreakdown() {
               <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
             </div>
-            <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · Planned: 1 credit / page</p>
+            <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · 1 credit / page</p>
           </div>
         </div>
       </div>
@@ -127,7 +127,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What tools does Remedy508 include?",
-        a: "Remedy508 currently includes four tools: Remedy Docs (Word and PDF, including multi-column layouts, tables, and scanned pages), Remedy Video (transcription), Remedy HTML (Canvas LMS pages), and Remedy Image (alt text). Remedy Layout is coming soon for presentations, flyers, and other visually designed documents, with a planned rate of 1 Credit per page.",
+        a: "Remedy508 currently includes four tools: Remedy Docs (Word and PDF, including multi-column layouts, tables, and scanned pages), Remedy Video (transcription), Remedy HTML (Canvas LMS pages), and Remedy Image (alt text). Remedy Layout is coming soon for presentations, flyers, and other visually designed documents.",
       },
       {
         q: "Does Remedy508 make my content fully compliant?",
@@ -173,7 +173,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 130 Credits per month, shared across every available tool. Remedy Layout will use the same Credit pool at a planned rate of 1 Credit per page when it launches. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
+        a: "The Individual plan gives you 130 Credits per month, shared across every available tool. Remedy Layout will use the same Credit pool when it launches. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
       },
       {
         q: "What does the Team plan include?",

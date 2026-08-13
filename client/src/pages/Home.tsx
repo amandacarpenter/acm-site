@@ -274,7 +274,7 @@ export default function Home() {
               Four Tools Available, One Coming Soon
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Remedy Layout for presentations and flyers is coming soon and is planned at 1 Credit per page.
+              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Remedy Layout for presentations and flyers is coming soon.
             </p>
           </div>
 
@@ -285,8 +285,8 @@ export default function Home() {
                     {tool.icon ? (
                       <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
                     ) : tool.Icon ? (
-                      <div className="w-20 h-20 flex items-center justify-center shrink-0" aria-hidden="true">
-                        <tool.Icon className="w-14 h-14 text-[#0f766e]" strokeWidth={1.6} />
+                      <div className="w-20 h-20 rounded-full bg-[#0f766e] flex items-center justify-center shrink-0" aria-hidden="true">
+                        <tool.Icon className="w-10 h-10 text-white" strokeWidth={1.8} />
                       </div>
                     ) : null}
                     <div className="flex-1 min-w-0">
@@ -298,7 +298,6 @@ export default function Home() {
                         )}
                       </div>
                       <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
-                      {tool.comingSoon && <p className="text-sm font-semibold text-[#0f766e] mt-2">Planned rate: 1 Credit per page</p>}
                     </div>
                   </div>
                 </div>

@@ -274,7 +274,7 @@ export default function PricingPage() {
                             <p className="text-sm font-semibold text-[#3a485b] leading-tight">Remedy Layout</p>
                             <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-xs font-bold text-amber-900">Coming Soon</span>
                           </div>
-                          <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · Planned: 1 credit / page</p>
+                          <p className="text-xs text-gray-500 leading-tight">Presentations & Flyers · 1 credit / page</p>
                         </div>
                       </div>
                     </div>

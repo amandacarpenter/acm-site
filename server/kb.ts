@@ -108,7 +108,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Remedy Image</strong> — writes accurate, descriptive alt text for images and charts</li>
   <li><strong>Remedy HTML</strong> — cleans up Canvas LMS page HTML for accessibility</li>
   <li><strong>Remedy Video</strong> — generates captions and full transcripts from video or audio files</li>
-  <li><strong>Remedy Layout <span style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 7px;">Coming Soon</span></strong> — will remediate presentations, flyers, and other visually designed documents while preserving their layout and appearance; planned at 1 Credit per page</li>
+  <li><strong>Remedy Layout <span style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 7px;">Coming Soon</span></strong> — will remediate presentations, flyers, and other visually designed documents while preserving their layout and appearance</li>
 </ol>
 <h2>Next steps</h2>
 <p>Start by creating your account, then head to your dashboard to run your first file through Remedy Docs. Most users see results in under 60 seconds.</p>`,
@@ -133,7 +133,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h3>Usage meter</h3>
 <p>At the top of your dashboard you'll see your current usage — how many credits you've used this billing period versus your plan limit.</p>
 <h4>How are my credits used?</h4>
-<p>Credits are shared across every available tool. Remedy Layout will join the same pool at a planned rate of 1 Credit per page when it launches.</p>
+<p>Credits are shared across every available tool. Remedy Layout will join the same pool when it launches.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 16px;">
   <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
     <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
@@ -171,6 +171,15 @@ const ARTICLE_CONTENT: Record<string, string> = {
       <p style="margin:0;font-size:12px;color:#6b7280;">3 credits / fix</p>
     </div>
   </div>
+  <div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy Layout <span style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 7px;">Coming Soon</span></p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">Presentations &amp; Flyers · 1 credit / page</p>
+    </div>
+  </div>
 </div>
 <p>Individual plans include <strong>130 credits per month</strong>. Team plans allocate <strong>145 credits per seat per month</strong> (each teammate gets their own allotment — it isn't pooled). Your credit balance resets monthly on the anniversary of your signup date (not a shared calendar date for all customers).</p>
 <h3>Quick-access tools</h3>
@@ -194,7 +203,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
   <li><strong>Image with alt text needed</strong> → Remedy Image</li>
   <li><strong>Canvas LMS page HTML</strong> → Remedy HTML</li>
   <li><strong>Video or audio file</strong> → Remedy Video</li>
-  <li><strong>Presentation, flyer, or visually designed document</strong> → Remedy Layout <strong>(Coming Soon; planned at 1 Credit per page)</strong></li>
+  <li><strong>Presentation, flyer, or visually designed document</strong> → Remedy Layout <strong>(Coming Soon)</strong></li>
 </ul>
 <h2>Uploading your file</h2>
 <ol>
@@ -208,7 +217,7 @@ const ARTICLE_CONTENT: Record<string, string> = {
 <h2>Downloading your result</h2>
 <p>Once processing is complete, a download button appears. Click it to save the remediated file to your computer. Your result is also saved in your recent activity on the dashboard for 30 days.</p>
 <h2>How credits are counted</h2>
-<p>Credits are shared across every available tool. Remedy Layout will join the same pool at a planned rate of 1 Credit per page when it launches.</p>
+<p>Credits are shared across every available tool. Remedy Layout will join the same pool when it launches.</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0 8px;">
   <div style="display:flex;align-items:center;gap:10px;border:1px solid #f1f1f1;background:#f9fafb;border-radius:12px;padding:10px 12px;">
     <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
@@ -244,6 +253,15 @@ const ARTICLE_CONTENT: Record<string, string> = {
     <div style="min-width:0;">
       <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy HTML</p>
       <p style="margin:0;font-size:12px;color:#6b7280;">3 credits / fix</p>
+    </div>
+  </div>
+  <div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;border:1px solid #fde68a;background:#fffbeb;border-radius:12px;padding:10px 12px;">
+    <div style="flex-shrink:0;width:32px;height:32px;border-radius:9999px;background:#0d9488;display:flex;align-items:center;justify-content:center;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></svg>
+    </div>
+    <div style="min-width:0;">
+      <p style="margin:0;font-weight:600;font-size:14px;color:#3a485b;">Remedy Layout <span style="font-size:12px;color:#92400e;background:#fef3c7;border-radius:9999px;padding:2px 7px;">Coming Soon</span></p>
+      <p style="margin:0;font-size:12px;color:#6b7280;">Presentations &amp; Flyers · 1 credit / page</p>
     </div>
   </div>
 </div>
