@@ -907,7 +907,7 @@ const TAB_META = [
     title: "Remedy Video", blurb: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.",
   },
   {
-    id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, beta: true, badge: "Canvas LMS",
+    id: "canvas", label: "Remedy\nHTML", icon: iconCanvas, beta: false, badge: "Canvas LMS",
     title: "Remedy HTML", blurb: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.",
   },
   {
