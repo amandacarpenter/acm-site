@@ -265,7 +265,7 @@ export default function PricingPage() {
                           <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
                         </div>
                       </div>
-                      <div className="sm:col-span-2 flex items-center gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2.5">
+                      <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                           <Presentation className="h-4 w-4" />
                         </div>

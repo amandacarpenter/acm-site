@@ -153,7 +153,7 @@ export default function BuyCreditsModal({ open, onClose, userId }: Props) {
                   <p className="text-xs text-gray-500 leading-tight">3 credits / fix</p>
                 </div>
               </div>
-              <div className="col-span-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/60 px-2.5 py-2">
+              <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50/60 px-2.5 py-2">
                 <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
                   <Presentation className="h-3.5 w-3.5" />
                 </div>
