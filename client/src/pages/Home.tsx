@@ -278,9 +278,9 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-5xl mx-auto">
+          <div className="flex flex-col gap-4 max-w-5xl mx-auto">
               {TOOLS.map((tool) => (
-                <div key={tool.tab} className={`bg-white rounded-2xl border border-gray-200 p-5 shadow-sm ${tool.comingSoon ? "md:col-span-2" : ""}`} data-testid={`tool-card-${tool.tab}`}>
+                <div key={tool.tab} className="w-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm" data-testid={`tool-card-${tool.tab}`}>
                   <div className="flex items-start gap-4">
                     {tool.icon ? (
                       <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
