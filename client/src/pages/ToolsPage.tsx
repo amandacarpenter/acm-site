@@ -1043,7 +1043,7 @@ export default function ToolsPage() {
                       <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center mx-auto mb-3" aria-hidden="true">
                         <Presentation className="w-5 h-5 text-white" strokeWidth={1.8} />
                       </div>
-                      <h2 className="text-lg font-bold text-[#3a485b] mb-2">Presentations and flyers are next</h2>
+                      <h2 className="font-sans text-lg font-bold text-[#3a485b] mb-2">Presentations and flyers are next</h2>
                       <p className="text-sm text-gray-600 max-w-lg mx-auto">
                         Remedy Layout is being built to improve accessibility in visually designed documents while preserving their layout and appearance.
                       </p>
