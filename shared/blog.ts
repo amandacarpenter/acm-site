@@ -44,7 +44,7 @@ export interface BlogPostMeta {
   /** In-page editorial image, served from client/public */
   image: string;
   imageAlt: string;
-  /** 1200x630 social share image, served from client/public */
+  /** Social share image, served from client/public */
   ogImage: string;
   featured?: boolean;
 }
@@ -64,7 +64,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-checker-differences.webp",
     imageAlt:
-      "An abstract white document is interpreted by overlapping teal scanning planes and a navy structural grid, with a gold marker at their intersection.",
+      "A professional wearing glasses reviews a printed report beside an open laptop.",
     ogImage: "/blog-images/insights-checker-differences.webp",
     featured: true,
   },
@@ -82,7 +82,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 4,
     image: "/blog-images/insights-beyond-passing-check.webp",
     imageAlt:
-      "A white paper path continues through teal, navy, and gold checkpoint frames to represent review that continues beyond an automated check.",
+      "A laptop, coffee mug, phone, and notepad arranged on a wooden desk near a window.",
     ogImage: "/blog-images/insights-beyond-passing-check.webp",
   },
   {
@@ -99,7 +99,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-pdf-tables.webp",
     imageAlt:
-      "A sculptural white table grid with a navy header row and teal lines connecting header cells to data cells.",
+      "A laptop, tablet, open books, and printed pages arranged across a working desk.",
     ogImage: "/blog-images/insights-pdf-tables.webp",
   },
   {
@@ -116,7 +116,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-remediation-workflow.webp",
     imageAlt:
-      "A continuous white paper path moves through teal scanning, navy structure, transparent review, and a finished document marked in gold.",
+      "A laptop and desktop monitor set up on a bright, plant-filled workspace.",
     ogImage: "/blog-images/insights-remediation-workflow.webp",
   },
   {
@@ -133,7 +133,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-pdf-accessibility-checklist.webp",
     imageAlt:
-      "A white document under a teal magnifier ring, layered over translucent inspection planes and a navy grid, with a single gold marker at the top right.",
+      "A person writes notes while reviewing several printed documents on a table.",
     ogImage: "/blog-images/insights-pdf-accessibility-checklist.webp",
   },
   {
@@ -150,7 +150,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-what-is-pdf-remediation.webp",
     imageAlt:
-      "A disordered stack of white pages on the left resolves into a neat stack topped with a gold block on the right, separated by teal glass panels.",
+      "A professional reviews pages on a clipboard while working beside a laptop.",
     ogImage: "/blog-images/insights-what-is-pdf-remediation.webp",
   },
   {
@@ -167,7 +167,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-pdfua-wcag-section-508.webp",
     imageAlt:
-      "Three folded paper structures in white, teal, and navy stand side by side on a layered base, joined by a thin gold line.",
+      "A large brick university building viewed across a broad green lawn.",
     ogImage: "/blog-images/insights-pdfua-wcag-section-508.webp",
   },
   {
@@ -184,7 +184,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-scanned-pdf-ocr.webp",
     imageAlt:
-      "A blank white sheet lifts away from a page of navy text lines under a teal scanning plane, with a gold pin marking the transition.",
+      "A keyboard, graphics tablet, cables, and printed papers on an active workstation.",
     ogImage: "/blog-images/insights-scanned-pdf-ocr.webp",
   },
   {
@@ -201,7 +201,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-accessible-pdf-forms.webp",
     imageAlt:
-      "A white sheet of raised blank form fields is threaded by a navy connecting line with teal and gold nodes marking the tab sequence.",
+      "Blank sheets of paper and a pen beside a keyboard and small plant on a white desk.",
     ogImage: "/blog-images/insights-accessible-pdf-forms.webp",
   },
   {
@@ -218,7 +218,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-accessible-word-document.webp",
     imageAlt:
-      "Layered white pages showing a heading bar, body lines, a teal chart block, and a small table, with a gold paper plane leaving the top layer.",
+      "A laptop, printed worksheets, and a pen arranged on a wooden worktable.",
     ogImage: "/blog-images/insights-accessible-word-document.webp",
   },
   {
@@ -235,7 +235,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-title-ii-deadlines.webp",
     imageAlt:
-      "Two open rectangular frames in teal and navy stand like gateways over a stack of white pages, with a gold disc on a horizontal line at the left.",
+      "A modern university campus beneath a blue sky filled with clouds.",
     ogImage: "/blog-images/insights-title-ii-deadlines.webp",
   },
   {
@@ -252,7 +252,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-vpat-vs-acr.webp",
     imageAlt:
-      "An empty white wire frame outline on the left contrasts with a solid stack of printed white pages on the right, linked by navy rails and a gold marker.",
+      "Two colleagues review a document together beside an open laptop.",
     ogImage: "/blog-images/insights-vpat-vs-acr.webp",
   },
   {
@@ -269,7 +269,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 5,
     image: "/blog-images/insights-pdf-tags-explained.webp",
     imageAlt:
-      "A white page floats above translucent teal layers connected by a navy branching tree of small white blocks, topped by a gold node.",
+      "Students seated in a university lecture hall facing a projected presentation.",
     ogImage: "/blog-images/insights-pdf-tags-explained.webp",
   },
   {
@@ -286,7 +286,7 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     readingMinutes: 6,
     image: "/blog-images/insights-document-accessibility-program.webp",
     imageAlt:
-      "Four stacks of white pages converge on a central teal panel crossed by navy connecting rails, with a small gold sphere at the intersection.",
+      "Students walk across a lawn outside a modern university building.",
     ogImage: "/blog-images/insights-document-accessibility-program.webp",
   },
 ];

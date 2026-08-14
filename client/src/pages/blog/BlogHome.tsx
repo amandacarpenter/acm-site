@@ -83,7 +83,7 @@ export default function BlogHome() {
             <div className="lg:justify-self-end w-full">
               <img
                 src="/blog-images/insights-hero.webp"
-                alt="Layered white document forms intersect with translucent teal planes, navy structural lines, and a small gold focal point."
+                alt="A keyboard, lined notebook, pens, and glasses arranged on a bright white desk."
                 width={1600}
                 height={900}
                 className="w-full h-auto object-cover border border-[#0f766e]/20"
