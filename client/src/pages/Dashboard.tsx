@@ -374,7 +374,11 @@ export default function Dashboard() {
                         <p className="text-sm text-gray-600">
                           {TOOL_LABELS[job.type] || job.type}
                           {job.pageCount ? ` · ${job.pageCount} page${job.pageCount === 1 ? "" : "s"}` : ""}
-                          {job.creditsUsed ? ` · ${job.creditsUsed} credit${job.creditsUsed === 1 ? "" : "s"} used` : ""}
+                          {job.status === "completed"
+                            ? (job.creditsUsed ? ` · ${job.creditsUsed} credit${job.creditsUsed === 1 ? "" : "s"} used` : "")
+                            : (job.status === "refunded" || !job.creditsUsed
+                                ? " · No credits used"
+                                : ` · ${job.creditsUsed} credit${job.creditsUsed === 1 ? "" : "s"} charged · refund pending`)}
                         </p>
                       </div>
                     </div>

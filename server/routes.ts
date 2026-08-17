@@ -2324,6 +2324,8 @@ Canvas-specific rules:
 
     const tempFiles = new Set<string>();
     let tmpWorkDir = "";
+    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    let deductedCredits = 0;
     try {
       const { execFile } = await import("child_process");
       const { writeFile, unlink } = await import("fs/promises");
@@ -2332,7 +2334,6 @@ Canvas-specific rules:
 
       // Usage gate — pre-flight only, confirms user has ANY credits available.
       // Real per-page deduction + page-cap enforcement happens below once totalPages is known.
-      const clerkUserId: string | undefined = req.body?.clerkUserId;
       if (clerkUserId) {
         try {
           const usage = await checkHasCredits(clerkUserId);
@@ -2379,6 +2380,7 @@ Canvas-specific rules:
       if (clerkUserId) {
         try {
           await deductCredits(clerkUserId, totalPages);
+          deductedCredits = totalPages;
         } catch (creditErr: any) {
           console.error("[COMPLEXPDF CREDIT DEDUCT] Error:", creditErr.message);
         }
@@ -3352,6 +3354,15 @@ print('ok')
 
     } catch (err: any) {
       console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- vision pipeline failed:`, err.message);
+      if (clerkUserId && deductedCredits > 0) {
+        try {
+          await refundCredits(clerkUserId, deductedCredits);
+          console.log(`[REMEDY DOCS] Refunded ${deductedCredits} credits after vision pipeline failure`);
+          deductedCredits = 0;
+        } catch (refundErr: any) {
+          console.error("[REMEDY DOCS] Automatic failure refund failed:", refundErr.message);
+        }
+      }
       try {
         storage.createJob({
           type: "complexpdf",
@@ -3360,9 +3371,9 @@ print('ok')
           result: null,
           errorMessage: String(err.message || err).slice(0, 500),
           createdAt: Date.now(),
-          clerkUserId: (req.body?.clerkUserId as string) || null,
+          clerkUserId: clerkUserId || null,
           pageCount: null,
-          creditsUsed: null,
+          creditsUsed: deductedCredits || null,
           inputTokens: null,
           outputTokens: null,
         });
