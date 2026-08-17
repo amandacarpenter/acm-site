@@ -1429,12 +1429,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
   //   4. Real embedded images -- the fast text pipeline has no concept of images at
   //      all (it extracts text blocks only and the .docx builder has no <img> case),
   //      so any PDF with real content images MUST go to vision or those images (and
-  //      any alt text for them) are silently dropped. Uses the exact same filter as
-  //      the vision pipeline's own extraction step so routing matches what vision
-  //      would actually treat as a real image: skips tiny images (<5KB, usually
-  //      bullets/icons), skips extreme aspect ratios (thin divider lines), and skips
-  //      images repeated on 2+ pages (headers/watermarks/logos, detected via MD5
-  //      hash across the FULL document, not just the sampled pages).
+  //      any alt text for them) are silently dropped. Routing uses placement-aware
+  //      filtering: full-page monochrome scan backgrounds and tiny structural
+  //      slivers do not count as figures, but repeated images are retained because
+  //      a meaningful diagram can legitimately appear on more than one page.
   // Validated against 8 real uploaded documents before shipping (see session notes):
   // VPAT source PDFs (14p, table-ratio ~0.88) correctly route to Vision; a 660-page
   // dictionary, plain syllabi, and a chemistry doc with one small data table (ratio 0)
@@ -1459,28 +1457,11 @@ export function registerRoutes(httpServer: Server, app: Express) {
     await writeFile(tmpIn, fileBuffer);
 
     const pyDetect = [
-      "import fitz, sys, json, hashlib",
+      "import fitz, sys, json",
       "doc = fitz.open(sys.argv[1])",
       "total_pages = len(doc)",
       "SAMPLE = min(total_pages, 8)",
       "step = max(1, total_pages // SAMPLE)",
-      "",
-      "# Pre-scan every page (not just the sample) to find images repeated on 2+ pages --",
-      "# these are headers/watermarks/logos, not real content images, and are excluded",
-      "# the same way the Complex PDF vision pipeline already excludes them.",
-      "hash_page_count = {}",
-      "for page in doc:",
-      "    seen_on_page = set()",
-      "    for img_info in page.get_images(full=True):",
-      "        xref = img_info[0]",
-      "        try:",
-      "            base_image = doc.extract_image(xref)",
-      "            h = hashlib.md5(base_image['image']).hexdigest()",
-      "            if h not in seen_on_page:",
-      "                seen_on_page.add(h)",
-      "                hash_page_count[h] = hash_page_count.get(h, 0) + 1",
-      "        except Exception:",
-      "            pass",
       "",
       "sampled = 0",
       "ocr_pages = 0",
@@ -1491,39 +1472,44 @@ export function registerRoutes(httpServer: Server, app: Express) {
       "    sampled += 1",
       "    page = doc[i]",
       "    text = page.get_text().strip()",
-      "    if len(text) < 50:",
+      "    low_text = len(text) < 50",
+      "    if low_text:",
       "        ocr_pages += 1",
-      "        continue",
-      "    try:",
-      "        tabs = page.find_tables()",
-      "        real = [t for t in tabs.tables if t.row_count >= 3 and t.col_count >= 2]",
-      "        if real:",
-      "            page_area = page.rect.width * page.rect.height",
-      "            biggest = max(real, key=lambda t: (t.bbox[2]-t.bbox[0])*(t.bbox[3]-t.bbox[1]))",
-      "            table_area = (biggest.bbox[2]-biggest.bbox[0]) * (biggest.bbox[3]-biggest.bbox[1])",
-      "            coverage = table_area / page_area if page_area > 0 else 0",
-      "            if coverage >= 0.3:",
-      "                table_pages += 1",
-      "    except Exception:",
-      "        pass",
-      "    # Real embedded content images -- same filter as the vision extraction step:",
-      "    # skip tiny images (<5KB, usually bullets/icons) and skip extreme aspect",
-      "    # ratios (thin divider lines), so decorative/structural graphics don't",
-      "    # trigger vision routing on their own.",
+      "    else:",
+      "        try:",
+      "            tabs = page.find_tables()",
+      "            real = [t for t in tabs.tables if t.row_count >= 3 and t.col_count >= 2]",
+      "            if real:",
+      "                page_area = page.rect.width * page.rect.height",
+      "                biggest = max(real, key=lambda t: (t.bbox[2]-t.bbox[0])*(t.bbox[3]-t.bbox[1]))",
+      "                table_area = (biggest.bbox[2]-biggest.bbox[0]) * (biggest.bbox[3]-biggest.bbox[1])",
+      "                coverage = table_area / page_area if page_area > 0 else 0",
+      "                if coverage >= 0.3:",
+      "                    table_pages += 1",
+      "        except Exception:",
+      "            pass",
+      "# Inspect image placement on every page. OCR and table analysis stay",
+      "# sampled because they are substantially more expensive.",
+      "for page in doc:",
       "    try:",
       "        has_real_image = False",
-      "        for img_info in page.get_images(full=True):",
+      "        image_list = page.get_images(full=True)",
+      "        page_area = page.rect.get_area()",
+      "        for img_info in image_list:",
       "            xref = img_info[0]",
-      "            base_image = doc.extract_image(xref)",
-      "            img_bytes = base_image['image']",
-      "            if len(img_bytes) < 5120:",
+      "            bpc = int(img_info[4] or 0) if len(img_info) > 4 else 0",
+      "            rects = [r for r in page.get_image_rects(xref) if not r.is_empty]",
+      "            if not rects:",
       "                continue",
-      "            img_w = base_image.get('width', 0)",
-      "            img_h = base_image.get('height', 0)",
-      "            if img_w > 0 and (img_h / img_w) > 5.0:",
+      "            largest = max(rects, key=lambda r: r.get_area())",
+      "            coverage = largest.get_area() / page_area if page_area > 0 else 0",
+      "            if coverage >= 0.75 and (bpc <= 1 or len(image_list) > 1):",
       "                continue",
-      "            img_hash = hashlib.md5(img_bytes).hexdigest()",
-      "            if hash_page_count.get(img_hash, 0) >= 2:",
+      "            width, height = abs(largest.width), abs(largest.height)",
+      "            if width < 8 or height < 8:",
+      "                continue",
+      "            aspect = max(width / height, height / width) if min(width, height) > 0 else 999",
+      "            if aspect > 12 and min(width, height) < 12:",
       "                continue",
       "            has_real_image = True",
       "            break",
@@ -2336,6 +2322,8 @@ Canvas-specific rules:
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
 
+    const tempFiles = new Set<string>();
+    let tmpWorkDir = "";
     try {
       const { execFile } = await import("child_process");
       const { writeFile, unlink } = await import("fs/promises");
@@ -2361,118 +2349,24 @@ Canvas-specific rules:
 
       // Write uploaded PDF to temp file
       const tmpPdf = join(tmpdir(), `complexpdf-${ts}.pdf`);
+      tempFiles.add(tmpPdf);
       await writeFile(tmpPdf, req.file.buffer);
 
-      const tmpWorkDir = join(tmpdir(), `complexpdf-work-${ts}`);
+      tmpWorkDir = join(tmpdir(), `complexpdf-work-${ts}`);
 
       // ── Step 1: Render page screenshots + extract embedded images per page ──
-      const pyExtract = `
-import fitz, sys, os, json
-
-doc = fitz.open(sys.argv[1])
-work_dir = sys.argv[2]
-os.makedirs(work_dir, exist_ok=True)
-
-import hashlib
-
-# Pre-scan: count how many pages each image hash appears on
-# Images on 2+ pages are headers/watermarks — skip them
-hash_page_count = {}
-for page in doc:
-    seen_on_page = set()
-    for img_info in page.get_images(full=True):
-        xref = img_info[0]
-        try:
-            base_image = doc.extract_image(xref)
-            h = hashlib.md5(base_image['image']).hexdigest()
-            if h not in seen_on_page:
-                seen_on_page.add(h)
-                hash_page_count[h] = hash_page_count.get(h, 0) + 1
-        except Exception:
-            pass
-
-result = []
-for page_idx, page in enumerate(doc):
-    page_num = page_idx + 1
-
-    # Full-page screenshot at 2x zoom for Vision
-    mat = fitz.Matrix(2.0, 2.0)
-    pix = page.get_pixmap(matrix=mat)
-    screenshot_path = os.path.join(work_dir, 'page_%03d_screen.png' % page_num)
-    pix.save(screenshot_path)
-
-    # Extract embedded raster images from this page
-    img_list = page.get_images(full=True)
-    page_images = []
-    for img_idx, img_info in enumerate(img_list):
-        xref = img_info[0]
-        smask_xref = img_info[1]
-        try:
-            base_image = doc.extract_image(xref)
-            img_bytes = base_image['image']
-            img_ext = base_image['ext']
-            img_w = base_image.get('width', 0)
-            img_h = base_image.get('height', 0)
-            if len(img_bytes) < 5120:
-                continue
-            if img_w > 0 and (img_h / img_w) > 5.0:
-                continue
-            img_hash = hashlib.md5(img_bytes).hexdigest()
-            if hash_page_count.get(img_hash, 0) >= 2:
-                continue
-            # Composite soft-mask (SMask) transparency onto white before saving.
-            # Without this, images whose color layer is a flat/dark fill (with the
-            # real artwork carried entirely in the SMask alpha channel) get saved
-            # as their raw un-composited color layer -- e.g. a solid black block --
-            # instead of the correct black-text-on-white appearance a PDF viewer
-            # would render. Only affects images that actually declare an SMask.
-            if smask_xref:
-                try:
-                    from PIL import Image
-                    import io as _io
-                    smask_image = doc.extract_image(smask_xref)
-                    color_img = Image.open(_io.BytesIO(img_bytes)).convert('RGB')
-                    mask_img = Image.open(_io.BytesIO(smask_image['image'])).convert('L')
-                    if mask_img.size != color_img.size:
-                        mask_img = mask_img.resize(color_img.size)
-                    white_bg = Image.new('RGB', color_img.size, (255, 255, 255))
-                    composited = Image.composite(color_img, white_bg, mask_img)
-                    buf = _io.BytesIO()
-                    composited.save(buf, format='PNG')
-                    img_bytes = buf.getvalue()
-                    img_ext = 'png'
-                except Exception:
-                    pass
-            img_filename = 'page_%03d_img_%02d.%s' % (page_num, img_idx, img_ext)
-            img_path = os.path.join(work_dir, img_filename)
-            with open(img_path, 'wb') as f:
-                f.write(img_bytes)
-            img_id = 'img-p%d-%d' % (page_num, img_idx)
-            page_images.append({'id': img_id, 'path': img_path, 'width': img_w, 'height': img_h})
-        except Exception:
-            continue
-
-    result.append({
-        'page': page_num,
-        'screenshot': screenshot_path,
-        'images': page_images
-    })
-
-print(json.dumps({'pages': result, 'total': len(doc)}))
-`;
-
-      const tmpExtractScript = join(tmpdir(), `extract_${ts}.py`);
-      await writeFile(tmpExtractScript, pyExtract, "utf8");
+      const pipelineDir = join(__dirname, "pdf_pipelines");
+      const extractScript = join(pipelineDir, "complex_pdf_extract.py");
 
       const extractJson = await new Promise<string>((resolve, reject) => {
-        execFile(python3, [tmpExtractScript, tmpPdf, tmpWorkDir], { timeout: 90000, killSignal: "SIGKILL" }, (err, stdout, stderr) => {
+        execFile(python3, [extractScript, tmpPdf, tmpWorkDir], { timeout: 90000, killSignal: "SIGKILL" }, (err, stdout, stderr) => {
           if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
           else resolve(stdout.trim());
         });
       });
 
-      const { pages: pageData, total: totalPages } = JSON.parse(extractJson);
-      await unlink(tmpExtractScript).catch(() => {});
+      const { pages: pageData, total: totalPages, diagnostics: extractDiagnostics } = JSON.parse(extractJson);
+      console.log(`[COMPLEXPDF EXTRACT] ${req.file.originalname}: ${JSON.stringify(extractDiagnostics || {})}`);
       await unlink(tmpPdf).catch(() => {});
 
       // ── Page cap — enforced the instant real page count is known, BEFORE any Claude Vision spend ──
@@ -2500,7 +2394,7 @@ CRITICAL RULES:
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
-  If an extracted-image ID is provided for this page (listed below) and it corresponds to this figure, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using the exact ID given. If no ID matches (e.g. the figure is a hand-drawn diagram fitz could not extract as a raster image), omit the <img> and rely on the <figcaption> alone.
+  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img> and rely on the <figcaption> alone.
   Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
 - CRITICAL — a table's real columns are ONLY the columns inside its own ruled/shaded grid box (the bordered/shaded rectangle the header row sits in). A separate, physically distinct decoration OUTSIDE that box — e.g. a free-floating arrow, gradient bar, or color-graded strip drawn beside/below the table with its own labels like "Stronger acid"/"Weaker acid"/"Increasing X" — is NOT a table column; describe it in one short sentence in a <p> right before the <table> (or omit it if it just restates the table's own trend), and never create a <td>/<th> for it.
@@ -2519,9 +2413,44 @@ CRITICAL RULES:
 
       // Run all Claude Vision calls in parallel — turns N×25s into ~25s total
       const pdfUsage = newUsageCounter();
-      const pageResults = await Promise.all(pageData.map(async ({ page: pageNum, screenshot, images: extractedImages }) => {
+      const pageResults = await Promise.all(pageData.map(async ({
+        page: pageNum,
+        screenshot,
+        images: extractedImages,
+      }: {
+        page: number;
+        screenshot: string;
+        images: any[];
+      }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
-        const imageIdList = (extractedImages || []).map((img: any) => img.id).join(", ") || "none";
+        const candidateBlocks: any[] = [];
+        const boundedCandidates = [...(extractedImages || [])]
+          .sort((a, b) => Number(b.page_coverage || 0) - Number(a.page_coverage || 0))
+          .slice(0, 12);
+        if ((extractedImages || []).length > boundedCandidates.length) {
+          console.warn(`[COMPLEXPDF EXTRACT] Page ${pageNum}: limiting ${extractedImages.length} candidates to 12`);
+        }
+        for (const candidate of boundedCandidates) {
+          try {
+            const modelImagePath = candidate.vision_path || candidate.path;
+            const modelImageBytes = require("fs").readFileSync(modelImagePath);
+            if (modelImageBytes.length > 3 * 1024 * 1024) {
+              console.warn(`[COMPLEXPDF EXTRACT] Skipping oversized candidate ${candidate.id} (${modelImageBytes.length} bytes)`);
+              continue;
+            }
+            const candidateBase64 = modelImageBytes.toString("base64");
+            candidateBlocks.push({
+              type: "text",
+              text: `Candidate figure ID ${candidate.id}: ${candidate.width}x${candidate.height} ${String(candidate.format || "").toUpperCase()}, displayed at page bbox ${JSON.stringify(candidate.bbox)}, covering ${Math.round((candidate.page_coverage || 0) * 100)}% of the page${candidate.repeated_on_pages > 1 ? `, repeated on ${candidate.repeated_on_pages} pages` : ""}.`,
+            });
+            candidateBlocks.push({
+              type: "image",
+              source: { type: "base64", media_type: "image/jpeg", data: candidateBase64 },
+            });
+          } catch (candidateErr: any) {
+            console.warn(`[COMPLEXPDF EXTRACT] Could not attach candidate ${candidate.id}: ${candidateErr.message}`);
+          }
+        }
         const visionResp = await anthropic.messages.create({
           model: "claude-sonnet-4-6",
           max_tokens: 8192,
@@ -2530,7 +2459,9 @@ CRITICAL RULES:
             role: "user",
             content: [
               { type: "image", source: { type: "base64", media_type: "image/png", data: imgBase64 } },
-              { type: "text", text: `This is page ${pageNum} of ${totalPages} of "${req.file!.originalname}". Extracted raster image IDs available for this page: ${imageIdList}. Extract all content as accessible semantic HTML.` },
+              { type: "text", text: `This is the full-page screenshot for page ${pageNum} of ${totalPages} of "${req.file!.originalname}".` },
+              ...candidateBlocks,
+              { type: "text", text: `Extract all content from the full-page screenshot as accessible semantic HTML. Use a candidate figure ID only when the separately shown candidate visually matches the figure in the screenshot.` },
             ],
           }],
         });
@@ -2755,9 +2686,10 @@ def clean_html(raw_html, page_images):
         for th in table.find_all('th'):
             if not th.get('scope'):
                 th['scope'] = 'col'
+    images_by_id = {img.get('id'): img for img in page_images if img.get('id')}
+
     # Match Claude's <img src="cid:IMAGE_ID"> references (see vision prompt) against
     # the actual extracted image files by stable ID, and embed as base64 data URIs.
-    images_by_id = {img.get('id'): img for img in page_images if img.get('id')}
     matched_ids = set()
     for img_tag in soup.find_all('img'):
         src = img_tag.get('src', '')
@@ -3351,6 +3283,8 @@ print('ok')
 
       const tmpPdfOut = join(tmpdir(), `accessible-${ts}.pdf`);
       const tmpPdfScript = join(tmpdir(), `gen_pdf_${ts}.py`);
+      tempFiles.add(tmpPdfOut);
+      tempFiles.add(tmpPdfScript);
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
       await new Promise<void>((resolve, reject) => {
@@ -3371,6 +3305,9 @@ print('ok')
       for (const p of pageResults) {
         for (const imgFile of p.images) {
           await unlink(imgFile.path).catch(() => {});
+          if (imgFile.vision_path && imgFile.vision_path !== imgFile.path) {
+            await unlink(imgFile.vision_path).catch(() => {});
+          }
         }
       }
       try { require("fs").rmdirSync(tmpWorkDir); } catch {}
@@ -3433,6 +3370,14 @@ print('ok')
         console.error("[JOB LOG] Failed to log failure:", logErr.message);
       }
       res.status(500).json({ error: err.message });
+    } finally {
+      const fsCleanup = require("fs");
+      for (const tempFile of Array.from(tempFiles)) {
+        try { fsCleanup.rmSync(tempFile, { force: true }); } catch {}
+      }
+      if (tmpWorkDir) {
+        try { fsCleanup.rmSync(tmpWorkDir, { recursive: true, force: true }); } catch {}
+      }
     }
   }
 
@@ -3445,30 +3390,33 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-17-routing-images-v2");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
       return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
     }
 
-    // An explicit mode from the chooser UI ("pdf" = Keep as PDF, "docx" =
-    // Convert to Word) always maps to the fast (text-extraction) pipeline --
-    // the vision/rebuild path is reserved for documents auto-detected as
-    // needing a full visual rebuild (scanned pages, heavy image/table content).
-    // No explicit mode ("auto", or omitted) falls through to the existing
-    // auto-detect logic, unchanged for users who don't choose.
+    // Output format and processing route are separate decisions. "Keep as PDF"
+    // still runs document analysis so scanned, image-heavy, and complex PDFs use
+    // Vision just like Auto Select. Word output still requires the fast pipeline,
+    // so reject complex PDFs rather than silently removing their figures.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
 
     let route: { useVision: boolean; reason: string };
-    if (explicitMode === "pdf" || explicitMode === "docx") {
-      route = { useVision: false, reason: `explicit-mode-${explicitMode}` };
-    } else {
-      try {
-        route = await detectDocsRoute(req.file.buffer, ext);
-      } catch (err: any) {
-        console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
-        route = { useVision: false, reason: "detect-exception-fallback" };
-      }
+    try {
+      route = await detectDocsRoute(req.file.buffer, ext);
+    } catch (err: any) {
+      console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
+      route = { useVision: false, reason: "detect-exception-fallback" };
+    }
+
+    if (explicitMode === "docx" && route.useVision) {
+      res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
+      return res.status(422).json({
+        error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose Keep as PDF or Auto Select to preserve the document's figures.",
+        code: "COMPLEX_PDF_REQUIRES_PDF",
+      });
     }
 
     res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
