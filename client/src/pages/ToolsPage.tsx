@@ -552,40 +552,17 @@ function RemedyDocsTab() {
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" /><span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">What was fixed</span></div>
-            {fastResult.fixesMade?.length > 0 ? (
-              <ul className="space-y-1">
-                {fastResult.fixesMade.slice(0, 8).map((s: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-emerald-700 dark:text-emerald-400">
-                    <ChevronRight className="w-3.5 h-3.5 mt-0.5 shrink-0" />{s.trim()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-emerald-700 dark:text-emerald-400">Accessibility improvements applied.</p>
-            )}
-          </div>
           <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
             <div className="flex items-center gap-2 mb-1.5">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">This is a starting point, not a finished accessible document</span>
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially images, tables, and reading order.{" "}
-              <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
-                See exactly how to check it in 10 minutes →
-              </Link>
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
             </p>
           </div>
           {fastResult.blob && (
             <>
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
-                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
-                </p>
-              </div>
               <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(fastResult.blob);
@@ -602,30 +579,13 @@ function RemedyDocsTab() {
       {visionResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
-                {visionResult.pages > 0 ? `${visionResult.pages}-page` : ""} PDF ready
-              </span>
-            </div>
-          </div>
           <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
             <div className="flex items-center gap-2 mb-1.5">
               <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">This is a starting point, not a finished accessible document</span>
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              No automated tool — including this one — can guarantee full WCAG 2.1 AA compliance. Review this file yourself before publishing or distributing it, especially diagrams, equations, and tables.{" "}
-              <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="font-semibold underline underline-offset-2">
-                See exactly how to check it in 10 minutes →
-              </Link>
-            </p>
-          </div>
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300">
-            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-            <p className="text-xs text-amber-800 leading-relaxed">
-              <span className="font-semibold">Download this now.</span> We don't store finished documents, so once you leave this page it's gone for good — you'd need to re-upload and spend credits again to get it back.
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
             </p>
           </div>
           <Button
