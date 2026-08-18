@@ -550,18 +550,21 @@ function RemedyDocsTab() {
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
+          <div className="p-4 rounded-xl bg-[#fff3f2] dark:bg-[#3d2020] border-2 border-[#e58a86] dark:border-[#b95a56]">
             <div className="flex items-center gap-2 mb-1.5">
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
+              <AlertTriangle className="w-4 h-4 text-[#c2413f] dark:text-[#f29a95] shrink-0" />
+              <span className="font-semibold text-[#8f2d2b] dark:text-[#f7b5b1] text-sm">Download this file now</span>
             </div>
-            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
+            <p className="text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file.
+            </p>
+            <p className="mt-2 text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
+              Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
             </p>
           </div>
           {fastResult.blob && (
             <>
-              <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
+              <Button className="w-full bg-[#c2413f] text-white hover:bg-[#a93634] font-semibold" onClick={() => {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(fastResult.blob);
                 a.download = fastResult.filename;
@@ -577,17 +580,20 @@ function RemedyDocsTab() {
       {visionResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
+          <div className="p-4 rounded-xl bg-[#fff3f2] dark:bg-[#3d2020] border-2 border-[#e58a86] dark:border-[#b95a56]">
             <div className="flex items-center gap-2 mb-1.5">
-              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
+              <AlertTriangle className="w-4 h-4 text-[#c2413f] dark:text-[#f29a95] shrink-0" />
+              <span className="font-semibold text-[#8f2d2b] dark:text-[#f7b5b1] text-sm">Download this file now</span>
             </div>
-            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
+            <p className="text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file.
+            </p>
+            <p className="mt-2 text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
+              Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
             </p>
           </div>
           <Button
-            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
+            className="w-full bg-[#c2413f] text-white hover:bg-[#a93634] font-semibold"
             onClick={() => {
               const url = URL.createObjectURL(visionResult.blob);
               const a = document.createElement("a");
