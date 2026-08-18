@@ -510,7 +510,7 @@ function RemedyDocsTab() {
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
-            { value: "pdf", label: "PDF (Recommended)", Icon: FileText },
+            { value: "pdf", label: "PDF", Icon: FileText },
             { value: "docx", label: "Word", Icon: FileText },
           ] as { value: DocsOutputMode; label: string; Icon: typeof Zap }[]).map(({ value, label, Icon }) => (
             <label
