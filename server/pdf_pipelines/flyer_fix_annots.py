@@ -45,7 +45,7 @@ import sys
 import json
 import re
 import pikepdf
-import fitz
+import pymupdf as fitz
 
 fitz.TOOLS.mupdf_display_errors(False)
 

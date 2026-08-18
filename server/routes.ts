@@ -1441,7 +1441,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // Errs toward the fast pipeline when signals are weak/ambiguous, since it's
   // cheaper and faster -- only routes to vision when there's a real, specific
   // reason plain text extraction would produce a worse result.
-  async function detectDocsRoute(fileBuffer: Buffer, ext: string): Promise<{ useVision: boolean; reason: string }> {
+  type DocsRoute = { useVision: boolean; reason: string; preserveNative?: boolean };
+
+  async function detectDocsRoute(fileBuffer: Buffer, ext: string): Promise<DocsRoute> {
     if (ext === ".docx") {
       return { useVision: false, reason: "docx-always-fast-path" };
     }
@@ -1517,7 +1519,19 @@ export function registerRoutes(httpServer: Server, app: Express) {
       "            image_pages += 1",
       "    except Exception:",
       "        pass",
-      "print(json.dumps({'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages, 'image_pages': image_pages}))",
+      "# A tagged AcroForm must stay PDF-native. Rebuilding it from extracted HTML",
+      "# removes its form fields and changes its visual layout even when the source",
+      "# already has a usable structure tree.",
+      "is_tagged = False",
+      "has_acroform = False",
+      "try:",
+      "    import pikepdf",
+      "    with pikepdf.open(sys.argv[1]) as pdf:",
+      "        is_tagged = '/StructTreeRoot' in pdf.Root",
+      "        has_acroform = '/AcroForm' in pdf.Root",
+      "except Exception:",
+      "    pass",
+      "print(json.dumps({'total_pages': total_pages, 'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages, 'image_pages': image_pages, 'is_tagged': is_tagged, 'has_acroform': has_acroform}))",
     ].join("\n");
 
     const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
@@ -1529,13 +1543,27 @@ export function registerRoutes(httpServer: Server, app: Express) {
       });
       await unlink(tmpIn).catch(() => {});
       const outLines = rawOutput.trim().split("\n");
-      let stats: { sampled: number; ocr_pages: number; table_pages: number; image_pages: number } | null = null;
+      let stats: {
+        sampled: number;
+        total_pages?: number;
+        ocr_pages: number;
+        table_pages: number;
+        image_pages: number;
+        is_tagged?: boolean;
+        has_acroform?: boolean;
+      } | null = null;
       for (let i = outLines.length - 1; i >= 0; i--) {
         try { stats = JSON.parse(outLines[i]); break; } catch { /* keep scanning upward past advisory lines */ }
       }
       if (!stats) throw new Error("no parseable JSON in detector output");
-      const { sampled, ocr_pages, table_pages, image_pages } = stats;
+      const { sampled, total_pages, ocr_pages, table_pages, image_pages, is_tagged, has_acroform } = stats;
       if (sampled === 0) return { useVision: false, reason: "empty-doc" };
+      // The native helper currently classifies figure MCIDs on page 1. Restrict
+      // this automatic route to one-page forms until its figure manifest is
+      // page-aware, rather than silently under-processing later pages.
+      if (is_tagged && has_acroform && total_pages === 1) {
+        return { useVision: false, preserveNative: true, reason: "tagged-one-page-acroform-native" };
+      }
 
       const ocrRatio = ocr_pages / sampled;
       const tableRatio = table_pages / sampled;
@@ -2363,10 +2391,19 @@ Canvas-specific rules:
       const extractScript = join(pipelineDir, "complex_pdf_extract.py");
 
       const extractJson = await new Promise<string>((resolve, reject) => {
-        execFile(python3, [extractScript, tmpPdf, tmpWorkDir], { timeout: 90000, killSignal: "SIGKILL" }, (err, stdout, stderr) => {
+        execFile(
+          python3,
+          [extractScript, tmpPdf, tmpWorkDir],
+          {
+            timeout: 90000,
+            killSignal: "SIGKILL",
+            maxBuffer: 16 * 1024 * 1024,
+          },
+          (err, stdout, stderr) => {
           if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
           else resolve(stdout.trim());
-        });
+          },
+        );
       });
 
       const { pages: pageData, total: totalPages, diagnostics: extractDiagnostics } = JSON.parse(extractJson);
@@ -2399,8 +2436,9 @@ CRITICAL RULES:
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
-  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img> and rely on the <figcaption> alone.
-  Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
+  Put the image's alternative description in the figure's data-alt attribute: <figure data-extracted="true" data-alt="specific description">. Alternative text is metadata for assistive technology and MUST NOT be emitted as visible page text.
+  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="the same specific description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img>; the data-alt value will be attached to a non-visible tagged placeholder later.
+  Include <figcaption data-source-caption="true"> only when a caption is visibly printed in the source PDF, and reproduce only that printed caption text. Never create a figcaption merely to hold an image description. Never duplicate alt text as a caption or paragraph.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
 - CRITICAL — a table's real columns are ONLY the columns inside its own ruled/shaded grid box (the bordered/shaded rectangle the header row sits in). A separate, physically distinct decoration OUTSIDE that box — e.g. a free-floating arrow, gradient bar, or color-graded strip drawn beside/below the table with its own labels like "Stronger acid"/"Weaker acid"/"Increasing X" — is NOT a table column; describe it in one short sentence in a <p> right before the <table> (or omit it if it just restates the table's own trend), and never create a <td>/<th> for it.
 - However, a bracket, brace, or shaded band drawn ON TOP OF or immediately touching the table's own rows/right edge — grouping several rows under a label like "Deactivating groups" / "Activating groups" / "Group A" — IS a real column of that table (just visually merged). Reproduce it as a genuine column: repeat the same text value as an ordinary <td> in EVERY row it covers (do not use rowspan, do not leave the covered rows blank), and leave the cell truly empty (<td></td>) only for rows the bracket does not cover. Every row must end up with the exact same number of <td> cells as the header has <th> cells — never fewer.
@@ -2423,14 +2461,16 @@ CRITICAL RULES:
       const pageResults: any[] = [];
       const visionBatchSize = 4;
       for (let batchStart = 0; batchStart < pageData.length; batchStart += visionBatchSize) {
-        const batchResults = await Promise.all(pageData.slice(batchStart, batchStart + visionBatchSize).map(async ({
+      const batchResults = await Promise.all(pageData.slice(batchStart, batchStart + visionBatchSize).map(async ({
         page: pageNum,
         screenshot,
         images: extractedImages,
+        source_text: sourceText,
       }: {
         page: number;
         screenshot: string;
         images: any[];
+        source_text: string;
       }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
         const candidateBlocks: any[] = [];
@@ -2518,7 +2558,7 @@ CRITICAL RULES:
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
         await unlink(screenshot).catch(() => {});
-        return { html: pageHtml, images: extractedImages };
+        return { html: pageHtml, images: extractedImages, sourceText };
         }));
         pageResults.push(...batchResults);
       }
@@ -2528,6 +2568,7 @@ CRITICAL RULES:
         pages: pageResults.map((p, i) => ({
           html: p.html,
           images: p.images,
+          sourceText: p.sourceText || "",
           pageNum: i + 1,
         })),
         title: req.file!.originalname.replace(/\.pdf$/i, ""),
@@ -2536,6 +2577,8 @@ CRITICAL RULES:
       const pyPdf = `
 import sys, json, os, re, base64
 from bs4 import BeautifulSoup
+sys.path.insert(0, sys.argv[2])
+from figure_html_normalize import normalize_figures
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
@@ -2546,7 +2589,7 @@ doc_title = data['title']
 # still get a real <img> element (WeasyPrint only tags <img> as PDF /Figure).
 TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 
-def clean_html(raw_html, page_images):
+def clean_html(raw_html, page_images, source_text):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
     # Repair cell-in-cell nesting caused by an unclosed <td>/<th> tag in the
@@ -2760,28 +2803,17 @@ def clean_html(raw_html, page_images):
         # of leaving an unresolved src, which WeasyPrint's tagger flags as a
         # missing-alt-description error.
         img_tag['src'] = TRANSPARENT_PIXEL
-    # WeasyPrint only tags an actual <img> element as a PDF /Figure (a bare
-    # <figure>/<figcaption> with no <img> is tagged /NonStruct and never gets
-    # an Alt, which is exactly what caused every 'Alternate Text' failure).
-    # So any <figure> with a caption but no <img> gets a tiny transparent
-    # placeholder image whose alt text is the figcaption content -- this makes
-    # WeasyPrint emit a real /Figure tag with a proper /Alt description.
-    for fig in soup.find_all('figure'):
-        if not fig.find('img'):
-            cap = fig.find('figcaption')
-            cap_text = cap.get_text(strip=True) if cap else 'Figure'
-            placeholder = soup.new_tag('img', src=TRANSPARENT_PIXEL, alt=cap_text[:500])
-            if cap:
-                cap.insert_before(placeholder)
-            else:
-                fig.insert(0, placeholder)
+    # Vision HTML is untrusted. Rebuild figures so alternative descriptions
+    # remain metadata and only source-validated captions remain visible.
+    normalize_figures(soup, source_text, TRANSPARENT_PIXEL)
     return str(soup)
 
 html_parts = []
 for pg in pages:
     page_html = pg.get('html', '')
     page_images = pg.get('images', [])
-    html_parts.append('<div class="page">' + clean_html(page_html, page_images) + '</div>')
+    source_text = pg.get('sourceText', '')
+    html_parts.append('<div class="page">' + clean_html(page_html, page_images, source_text) + '</div>')
 
 # Document-level heading normalization. Each page is extracted by Claude
 # independently, so heading levels are only consistent WITHIN a page --
@@ -3341,7 +3373,7 @@ print('ok')
       await new Promise<void>((resolve, reject) => {
         const proc = child_process.spawn(
           python3,
-          [tmpPdfScript, tmpPdfOut],
+          [tmpPdfScript, tmpPdfOut, pipelineDir],
           { timeout: Math.min(180000, pdfBuildBudgetMs) },
         );
         proc.stdin.write(pdfInput);
@@ -3454,7 +3486,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-17-routing-images-v3");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-18-native-forms-alt-v4");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3467,7 +3499,7 @@ print('ok')
     // pipeline, so reject complex PDFs rather than silently removing figures.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
 
-    let route: { useVision: boolean; reason: string };
+    let route: DocsRoute;
     try {
       route = await detectDocsRoute(req.file.buffer, ext);
     } catch (err: any) {
@@ -3475,7 +3507,7 @@ print('ok')
       route = { useVision: false, reason: "detect-exception-fallback" };
     }
 
-    if (explicitMode === "docx" && route.useVision) {
+    if (explicitMode === "docx" && (route.useVision || route.preserveNative)) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
       return res.status(422).json({
         error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose PDF to preserve the document's figures.",
@@ -3483,14 +3515,34 @@ print('ok')
       });
     }
 
-    res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
-    console.log(`[REMEDY DOCS] ${req.file.originalname} -> ${route.useVision ? "Vision" : "Fast"} pipeline (${route.reason})`);
+    const routeLabel = route.preserveNative ? "native" : route.useVision ? "vision" : "fast";
+    res.setHeader("X-Remedy-Docs-Route", routeLabel);
+    console.log(`[REMEDY DOCS] ${req.file.originalname} -> ${routeLabel} pipeline (${route.reason})`);
 
+    if (route.preserveNative) {
+      return handleFlyerFix(req, res);
+    }
     if (route.useVision) {
       return handleComplexPdfFix(req, res);
     }
     return handleDocumentFix(req, res);
   });
+
+  function parseHelperJson<T>(stdout: string, label: string): T {
+    const lines = String(stdout || "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+    for (let index = lines.length - 1; index >= 0; index--) {
+      try {
+        return JSON.parse(lines[index]) as T;
+      } catch {
+        // Ignore advisory output from third-party runtimes and keep scanning
+        // upward for the helper's final JSON record.
+      }
+    }
+    throw new Error(`${label} returned no valid JSON result`);
+  }
 
   // ── FLYER / DESIGNED DOCUMENT: PDF-native tagging pipeline ──────────────────
   // For visually-designed, born-digital PDFs (flyers, posters, one-pagers) that
@@ -3565,7 +3617,7 @@ print('ok')
           }
         );
       });
-      const annotsResult = JSON.parse(annotsResultJson);
+      const annotsResult = parseHelperJson<any>(annotsResultJson, "Annotation scaffolding fix");
 
       // ── Step 1: extract every figure's bbox + crop + page text ──
       const extractJson: string = await new Promise((resolve, reject) => {
@@ -3580,10 +3632,10 @@ print('ok')
         );
       });
 
-      const { page_text: pageText, figures } = JSON.parse(extractJson) as {
+      const { page_text: pageText, figures } = parseHelperJson<{
         page_text: string;
         figures: Array<{ mcid: number; existing_alt: string; bbox: number[] | null; crop_b64: string | null; is_full_bleed: boolean }>;
-      };
+      }>(extractJson, "Figure extraction");
 
       // Every figure with a valid bbox gets a crop now (Pass 1 no longer
       // drops full-bleed figures), so this filter only excludes figures
@@ -3608,9 +3660,9 @@ print('ok')
           }
         );
       });
-      const { orphans } = JSON.parse(orphanExtractJson) as {
+      const { orphans } = parseHelperJson<{
         orphans: Array<{ orphan_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
-      };
+      }>(orphanExtractJson, "Orphan figure extraction");
 
       // ── Step 2: classify each figure with Claude Vision (parallel) ──
       const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert. You are shown one small cropped image -- a single figure/icon/graphic from a larger designed flyer -- plus the full text content of that flyer for context.
@@ -3693,7 +3745,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const orphanApplyResult = JSON.parse(orphanApplyResultJson);
+      const orphanApplyResult = parseHelperJson<any>(orphanApplyResultJson, "Orphan figure tag application");
 
       // ── Step 3b: apply the struct-tree figure decisions on top ──
       const applyResultJson: string = await new Promise((resolve, reject) => {
@@ -3707,7 +3759,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const applyResult = JSON.parse(applyResultJson);
+      const applyResult = parseHelperJson<any>(applyResultJson, "Tag application");
 
       // ── Step 3c: detect + classify full-bleed/background images tagged
       // /Artifact /Background that are actually meaningful photos, not
@@ -3729,10 +3781,10 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const { candidates: bgCandidates } = JSON.parse(bgExtractJson) as {
+      const { candidates: bgCandidates } = parseHelperJson<{
         page_text: string;
         candidates: Array<{ cand_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
-      };
+      }>(bgExtractJson, "Background image extraction");
 
       const bgDecisions = await Promise.all(
         bgCandidates.map(async (cand) => {
@@ -3753,7 +3805,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const bgApplyResult = JSON.parse(bgApplyResultJson);
+      const bgApplyResult = parseHelperJson<any>(bgApplyResultJson, "Background image tag application");
 
       // ── Step 3d: fix struct-tree reading order ──
       // Canva/InDesign/Illustrator exports commonly assign MCIDs in the
@@ -3778,7 +3830,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const reorderResult = JSON.parse(reorderResultJson);
+      const reorderResult = parseHelperJson<any>(reorderResultJson, "Reading order fix");
 
       // ── Step 4: fix placeholder/missing document title metadata ──
       // Purely metadata (docinfo /Title + XMP dc:title) -- no MCID/struct
@@ -3795,7 +3847,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
           }
         );
       });
-      const titleResult = JSON.parse(titleResultJson);
+      const titleResult = parseHelperJson<any>(titleResultJson, "Title fix");
       const finalOutPath = titleResult.changed ? tmpTitleOut : tmpReorderOut;
 
       const outBuffer = await readFile(finalOutPath);
