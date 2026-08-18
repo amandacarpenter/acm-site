@@ -252,7 +252,7 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditN
 // so this component branches on Content-Type to render the correct result UI --
 // each branch reuses the exact, unchanged result-handling logic from the two
 // original tabs (docx-building for fast, blob-download for vision).
-type DocsOutputMode = "auto" | "pdf" | "docx";
+type DocsOutputMode = "pdf" | "docx";
 
 function RemedyDocsTab() {
   const [loading, setLoading] = useState(false);
@@ -262,7 +262,7 @@ function RemedyDocsTab() {
   const [error, setError] = useState("");
   const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
-  const [outputMode, setOutputMode] = useState<DocsOutputMode>("auto");
+  const [outputMode, setOutputMode] = useState<DocsOutputMode>("pdf");
   const { toast } = useToast();
   const { user: docsUser } = useUser();
 
@@ -275,10 +275,9 @@ function RemedyDocsTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
-      // Only pass an explicit mode when the user picked "Keep as PDF" or
-      // "Convert to Word" -- "auto" is omitted so the server's existing
-      // fast-vs-vision auto-detection is unchanged for users who don't choose.
-      if (outputMode === "pdf" || outputMode === "docx") fd.append("mode", outputMode);
+      // The selected output format does not choose the processing pipeline.
+      // PDF still uses server-side content detection to select the safest route.
+      fd.append("mode", outputMode);
       const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
       const contentType = resp.headers.get("Content-Type") || "";
 
@@ -511,8 +510,7 @@ function RemedyDocsTab() {
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
-            { value: "auto", label: "Auto-Detect", Icon: Zap },
-            { value: "pdf", label: "PDF", Icon: FileText },
+            { value: "pdf", label: "PDF (Recommended)", Icon: FileText },
             { value: "docx", label: "Word", Icon: FileText },
           ] as { value: DocsOutputMode; label: string; Icon: typeof Zap }[]).map(({ value, label, Icon }) => (
             <label

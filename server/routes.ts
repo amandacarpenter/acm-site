@@ -2326,6 +2326,9 @@ Canvas-specific rules:
     let tmpWorkDir = "";
     const clerkUserId: string | undefined = req.body?.clerkUserId;
     let deductedCredits = 0;
+    // Stay comfortably inside the route's 10-minute HTTP timeout so a slow
+    // provider or PDF build fails predictably and reaches the refund path.
+    const processingDeadline = Date.now() + 8 * 60 * 1000;
     try {
       const { execFile } = await import("child_process");
       const { writeFile, unlink } = await import("fs/promises");
@@ -2413,9 +2416,14 @@ CRITICAL RULES:
 - Do NOT include CSS or style attributes except class="equation"
 - Return ONLY the HTML, nothing else`;
 
-      // Run all Claude Vision calls in parallel — turns N×25s into ~25s total
+      // Keep only a few heavy page requests in flight at once. Large documents
+      // can otherwise burst the provider's rate or payload limits and fail the
+      // whole job even though each page is valid.
       const pdfUsage = newUsageCounter();
-      const pageResults = await Promise.all(pageData.map(async ({
+      const pageResults: any[] = [];
+      const visionBatchSize = 4;
+      for (let batchStart = 0; batchStart < pageData.length; batchStart += visionBatchSize) {
+        const batchResults = await Promise.all(pageData.slice(batchStart, batchStart + visionBatchSize).map(async ({
         page: pageNum,
         screenshot,
         images: extractedImages,
@@ -2453,7 +2461,7 @@ CRITICAL RULES:
             console.warn(`[COMPLEXPDF EXTRACT] Could not attach candidate ${candidate.id}: ${candidateErr.message}`);
           }
         }
-        const visionResp = await anthropic.messages.create({
+        const visionRequest = {
           model: "claude-sonnet-4-6",
           max_tokens: 8192,
           system: visionSystemPrompt,
@@ -2466,7 +2474,42 @@ CRITICAL RULES:
               { type: "text", text: `Extract all content from the full-page screenshot as accessible semantic HTML. Use a candidate figure ID only when the separately shown candidate visually matches the figure in the screenshot.` },
             ],
           }],
-        });
+        };
+        let visionResp: any;
+        const maxVisionAttempts = 3; // initial request plus up to two retries
+        for (let attempt = 1; attempt <= maxVisionAttempts; attempt++) {
+          const remainingMs = processingDeadline - Date.now();
+          if (remainingMs <= 1000) {
+            throw new Error(`Page ${pageNum} analysis stopped because the document processing deadline was reached`);
+          }
+          const attemptController = new AbortController();
+          const attemptTimeoutMs = Math.min(90_000, remainingMs);
+          const attemptTimer = setTimeout(() => attemptController.abort(), attemptTimeoutMs);
+          try {
+            visionResp = await anthropic.messages.create(
+              visionRequest as any,
+              { signal: attemptController.signal } as any,
+            );
+            break;
+          } catch (visionErr: any) {
+            const status = Number(visionErr?.status || 0);
+            const message = String(visionErr?.message || visionErr);
+            const transient = status === 408 || status === 409 || status === 429 || status >= 500
+              || visionErr?.name === "AbortError"
+              || /abort|overload|rate.?limit|timeout|temporar/i.test(message);
+            if (!transient || attempt === maxVisionAttempts) {
+              throw new Error(`Page ${pageNum} analysis failed${attempt > 1 ? ` after ${attempt} attempts` : ""}: ${message}`);
+            }
+            const retryDelayMs = attempt * 2000;
+            console.warn(`[REMEDY DOCS] Page ${pageNum} transient Vision failure; retrying in ${retryDelayMs}ms (${message})`);
+            await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
+          } finally {
+            clearTimeout(attemptTimer);
+          }
+        }
+        if (!visionResp) {
+          throw new Error(`Page ${pageNum} analysis failed without a response`);
+        }
         // Accumulate real token usage across all parallel per-page Vision calls
         pdfUsage.input += visionResp.usage?.input_tokens || 0;
         pdfUsage.output += visionResp.usage?.output_tokens || 0;
@@ -2476,7 +2519,9 @@ CRITICAL RULES:
         }
         await unlink(screenshot).catch(() => {});
         return { html: pageHtml, images: extractedImages };
-      }));
+        }));
+        pageResults.push(...batchResults);
+      }
 
       // ── Step 3: Build accessible PDF with images embedded + alt text (fpdf2) ──
       const pdfInput = JSON.stringify({
@@ -3289,8 +3334,16 @@ print('ok')
       tempFiles.add(tmpPdfScript);
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
+      const pdfBuildBudgetMs = processingDeadline - Date.now();
+      if (pdfBuildBudgetMs <= 1000) {
+        throw new Error("PDF generation stopped because the document processing deadline was reached");
+      }
       await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(python3, [tmpPdfScript, tmpPdfOut], { timeout: 480000 });
+        const proc = child_process.spawn(
+          python3,
+          [tmpPdfScript, tmpPdfOut],
+          { timeout: Math.min(180000, pdfBuildBudgetMs) },
+        );
         proc.stdin.write(pdfInput);
         proc.stdin.end();
         let stderr = "";
@@ -3401,7 +3454,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-17-routing-images-v2");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-17-routing-images-v3");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3410,8 +3463,8 @@ print('ok')
 
     // Output format and processing route are separate decisions. "Keep as PDF"
     // still runs document analysis so scanned, image-heavy, and complex PDFs use
-    // Vision just like Auto Select. Word output still requires the fast pipeline,
-    // so reject complex PDFs rather than silently removing their figures.
+    // PDF output uses content-aware routing. Word output still requires the fast
+    // pipeline, so reject complex PDFs rather than silently removing figures.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
 
     let route: { useVision: boolean; reason: string };
@@ -3425,7 +3478,7 @@ print('ok')
     if (explicitMode === "docx" && route.useVision) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
       return res.status(422).json({
-        error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose Keep as PDF or Auto Select to preserve the document's figures.",
+        error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose PDF to preserve the document's figures.",
         code: "COMPLEX_PDF_REQUIRES_PDF",
       });
     }
