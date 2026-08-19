@@ -1441,12 +1441,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // Errs toward the fast pipeline when signals are weak/ambiguous, since it's
   // cheaper and faster -- only routes to vision when there's a real, specific
   // reason plain text extraction would produce a worse result.
-  type DocsRoute = {
-    useVision: boolean;
-    reason: string;
-    preserveNative?: boolean;
-    hasAcroform?: boolean;
-  };
+  type DocsRoute = { useVision: boolean; reason: string; preserveNative?: boolean };
 
   async function detectDocsRoute(fileBuffer: Buffer, ext: string): Promise<DocsRoute> {
     if (ext === ".docx") {
@@ -1463,24 +1458,131 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const tmpIn = join(tmpdir(), `detect-${Date.now()}.pdf`);
     await writeFile(tmpIn, fileBuffer);
 
+    const pyDetect = [
+      "import fitz, sys, json",
+      "doc = fitz.open(sys.argv[1])",
+      "total_pages = len(doc)",
+      "SAMPLE = min(total_pages, 8)",
+      "step = max(1, total_pages // SAMPLE)",
+      "",
+      "sampled = 0",
+      "ocr_pages = 0",
+      "table_pages = 0",
+      "image_pages = 0",
+      "for i in range(0, total_pages, step):",
+      "    if sampled >= SAMPLE: break",
+      "    sampled += 1",
+      "    page = doc[i]",
+      "    text = page.get_text().strip()",
+      "    low_text = len(text) < 50",
+      "    if low_text:",
+      "        ocr_pages += 1",
+      "    else:",
+      "        try:",
+      "            tabs = page.find_tables()",
+      "            real = [t for t in tabs.tables if t.row_count >= 3 and t.col_count >= 2]",
+      "            if real:",
+      "                page_area = page.rect.width * page.rect.height",
+      "                biggest = max(real, key=lambda t: (t.bbox[2]-t.bbox[0])*(t.bbox[3]-t.bbox[1]))",
+      "                table_area = (biggest.bbox[2]-biggest.bbox[0]) * (biggest.bbox[3]-biggest.bbox[1])",
+      "                coverage = table_area / page_area if page_area > 0 else 0",
+      "                if coverage >= 0.3:",
+      "                    table_pages += 1",
+      "        except Exception:",
+      "            pass",
+      "# Inspect image placement on every page. OCR and table analysis stay",
+      "# sampled because they are substantially more expensive.",
+      "for page in doc:",
+      "    try:",
+      "        has_real_image = False",
+      "        image_list = page.get_images(full=True)",
+      "        page_area = page.rect.get_area()",
+      "        for img_info in image_list:",
+      "            xref = img_info[0]",
+      "            bpc = int(img_info[4] or 0) if len(img_info) > 4 else 0",
+      "            rects = [r for r in page.get_image_rects(xref) if not r.is_empty]",
+      "            if not rects:",
+      "                continue",
+      "            largest = max(rects, key=lambda r: r.get_area())",
+      "            coverage = largest.get_area() / page_area if page_area > 0 else 0",
+      "            if coverage >= 0.75 and (bpc <= 1 or len(image_list) > 1):",
+      "                continue",
+      "            width, height = abs(largest.width), abs(largest.height)",
+      "            if width < 8 or height < 8:",
+      "                continue",
+      "            aspect = max(width / height, height / width) if min(width, height) > 0 else 999",
+      "            if aspect > 12 and min(width, height) < 12:",
+      "                continue",
+      "            has_real_image = True",
+      "            break",
+      "        if has_real_image:",
+      "            image_pages += 1",
+      "    except Exception:",
+      "        pass",
+      "# A tagged AcroForm must stay PDF-native. Rebuilding it from extracted HTML",
+      "# removes its form fields and changes its visual layout even when the source",
+      "# already has a usable structure tree.",
+      "is_tagged = False",
+      "has_acroform = False",
+      "try:",
+      "    import pikepdf",
+      "    with pikepdf.open(sys.argv[1]) as pdf:",
+      "        is_tagged = '/StructTreeRoot' in pdf.Root",
+      "        has_acroform = '/AcroForm' in pdf.Root",
+      "except Exception:",
+      "    pass",
+      "print(json.dumps({'total_pages': total_pages, 'sampled': sampled, 'ocr_pages': ocr_pages, 'table_pages': table_pages, 'image_pages': image_pages, 'is_tagged': is_tagged, 'has_acroform': has_acroform}))",
+    ].join("\n");
+
     const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
-    const detectorScript = join(__dirname, "pdf_pipelines", "pdf_route_detect.py");
     try {
       const rawOutput = await new Promise<string>((resolve, reject) => {
-        execFile(python3, [detectorScript, tmpIn], { maxBuffer: 5 * 1024 * 1024, timeout: 30000, killSignal: "SIGKILL" }, (err, stdout) => {
+        execFile(python3, ["-c", pyDetect, tmpIn], { maxBuffer: 5 * 1024 * 1024, timeout: 30000, killSignal: "SIGKILL" }, (err, stdout) => {
           if (err) reject(err); else resolve(stdout);
         });
       });
       await unlink(tmpIn).catch(() => {});
       const outLines = rawOutput.trim().split("\n");
-      let route: DocsRoute | null = null;
+      let stats: {
+        sampled: number;
+        total_pages?: number;
+        ocr_pages: number;
+        table_pages: number;
+        image_pages: number;
+        is_tagged?: boolean;
+        has_acroform?: boolean;
+      } | null = null;
       for (let i = outLines.length - 1; i >= 0; i--) {
-        try { route = JSON.parse(outLines[i]); break; } catch { /* keep scanning upward past advisory lines */ }
+        try { stats = JSON.parse(outLines[i]); break; } catch { /* keep scanning upward past advisory lines */ }
       }
-      if (!route || typeof route.useVision !== "boolean" || typeof route.reason !== "string") {
-        throw new Error("no valid route JSON in detector output");
+      if (!stats) throw new Error("no parseable JSON in detector output");
+      const { sampled, total_pages, ocr_pages, table_pages, image_pages, is_tagged, has_acroform } = stats;
+      if (sampled === 0) return { useVision: false, reason: "empty-doc" };
+      // The native helper currently classifies figure MCIDs on page 1. Restrict
+      // this automatic route to one-page forms until its figure manifest is
+      // page-aware, rather than silently under-processing later pages.
+      if (is_tagged && has_acroform && total_pages === 1) {
+        return { useVision: false, preserveNative: true, reason: "tagged-one-page-acroform-native" };
       }
-      return route;
+
+      const ocrRatio = ocr_pages / sampled;
+      const tableRatio = table_pages / sampled;
+
+      if (ocrRatio >= 0.5) {
+        return { useVision: true, reason: `ocr-ratio-${ocrRatio.toFixed(2)}` };
+      }
+      if (tableRatio >= 0.5) {
+        return { useVision: true, reason: `table-ratio-${tableRatio.toFixed(2)}` };
+      }
+      // Any real content image (not a repeated logo/watermark, not a tiny icon) means
+      // the fast pipeline would silently drop it -- unlike OCR/table ratio, this isn't
+      // a "which pipeline gives a better result" judgment call, it's correctness: the
+      // fast pipeline has zero image support, so even one real image on one sampled
+      // page routes the whole document to vision.
+      if (image_pages && image_pages > 0) {
+        return { useVision: true, reason: `has-content-images-${image_pages}-of-${sampled}` };
+      }
+      return { useVision: false, reason: "plain-text-fast-path" };
     } catch (err: any) {
       await unlink(tmpIn).catch(() => {});
       console.error("[REMEDY DOCS DETECT] Error, defaulting to fast path:", err.message);
@@ -1510,18 +1612,11 @@ export function registerRoutes(httpServer: Server, app: Express) {
     // the usage gate, to prevent bypassing consent or charging for the choice.
     if (isPdfWordRequest && !allowImageRemoval && !routeWasChecked) {
       const route = await detectDocsRoute(req.file.buffer, ext);
-      if (route.preserveNative && route.hasAcroform) {
+      if (route.preserveNative) {
         res.setHeader("X-Remedy-Docs-Route", "blocked-native-form-docx");
         return res.status(422).json({
           error: "This PDF contains interactive form fields that cannot be preserved in Word. Keep it as a PDF to retain the fields and their accessibility, or acknowledge the changes before continuing to Word. No credits were used.",
           code: "INTERACTIVE_PDF_REQUIRES_PDF",
-        });
-      }
-      if (route.preserveNative) {
-        res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
-        return res.status(422).json({
-          error: "This PDF needs to stay in PDF format to preserve its images and visual layout. You may continue to Word only after agreeing that all images will be removed and the layout may be simplified. No credits were used.",
-          code: "COMPLEX_PDF_REQUIRES_PDF",
         });
       }
     }
@@ -3423,7 +3518,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-canva-native-v8");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-word-form-consent-v7");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3449,12 +3544,7 @@ print('ok')
     // set res.locals.
     res.locals.remedyDocsRouteChecked = true;
 
-    if (
-      explicitMode === "docx" &&
-      route.preserveNative &&
-      route.hasAcroform &&
-      !allowImageRemoval
-    ) {
+    if (explicitMode === "docx" && route.preserveNative && !allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-native-form-docx");
       return res.status(422).json({
         error: "This PDF contains interactive form fields that cannot be preserved in Word. Keep it as a PDF to retain the fields and their accessibility, or acknowledge the changes before continuing to Word. No credits were used.",
@@ -3462,12 +3552,7 @@ print('ok')
       });
     }
 
-    if (
-      explicitMode === "docx" &&
-      route.preserveNative &&
-      route.hasAcroform &&
-      allowImageRemoval
-    ) {
+    if (explicitMode === "docx" && route.preserveNative && allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "fast-docx-form-fields-removed");
       res.setHeader("X-Remedy-Docs-Images-Removed", "true");
       res.setHeader("X-Remedy-Docs-Form-Fields-Removed", "true");
@@ -3475,10 +3560,7 @@ print('ok')
       return handleDocumentFix(req, res);
     }
 
-    const needsDesignedDocumentConsent =
-      route.useVision || (route.preserveNative && !route.hasAcroform);
-
-    if (explicitMode === "docx" && needsDesignedDocumentConsent && !allowImageRemoval) {
+    if (explicitMode === "docx" && route.useVision && !allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
       return res.status(422).json({
         error: "This PDF needs to stay in PDF format to preserve its images and visual layout. You may continue to Word only after agreeing that all images will be removed.",
@@ -3486,7 +3568,7 @@ print('ok')
       });
     }
 
-    if (explicitMode === "docx" && needsDesignedDocumentConsent && allowImageRemoval) {
+    if (explicitMode === "docx" && route.useVision && allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "fast-docx-images-removed");
       res.setHeader("X-Remedy-Docs-Images-Removed", "true");
       console.log(`[REMEDY DOCS] ${req.file.originalname} -> text-only Word pipeline with user-approved image removal (${route.reason})`);
