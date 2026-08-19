@@ -22,8 +22,9 @@ server_requirements = [
     '"fast-docx-images-removed"',
     "&& !allowImageRemoval",
     "return handleDocumentFix(req, res);",
-    "route.preserveNative && !allowImageRemoval",
-    "route.preserveNative && allowImageRemoval",
+    "route.preserveNative && route.hasAcroform",
+    "route.preserveNative && !route.hasAcroform",
+    "const needsDesignedDocumentConsent =",
     "const routeWasChecked = res.locals.remedyDocsRouteChecked === true",
     '(!routeWasChecked || req.body?.mode === "docx")',
     "if (isPdfWordRequest && !allowImageRemoval && !routeWasChecked)",
@@ -31,7 +32,7 @@ server_requirements = [
     "res.locals.remedyDocsRouteChecked = true",
     '"X-Remedy-Docs-Form-Fields-Removed", "true"',
     '"fast-docx-form-fields-removed"',
-    "2026-08-19-word-form-consent-v7",
+    "2026-08-19-canva-native-v8",
 ]
 
 client_requirements = [
