@@ -3486,7 +3486,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-18-native-forms-alt-v4");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-form-accessibility-v5");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3590,6 +3590,7 @@ print('ok')
     const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
     const tmpOrphanOut = join(tmpdir(), `flyer-${ts}-orphan-out.pdf`);
     const tmpBgOut = join(tmpdir(), `flyer-${ts}-bg-out.pdf`);
+    const tmpFormsOut = join(tmpdir(), `flyer-${ts}-forms-out.pdf`);
     const tmpReorderOut = join(tmpdir(), `flyer-${ts}-reorder-out.pdf`);
     const tmpTitleOut = join(tmpdir(), `flyer-${ts}-title-out.pdf`);
     const tmpDecisions = join(tmpdir(), `flyer-${ts}-decisions.json`);
@@ -3807,7 +3808,21 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       });
       const bgApplyResult = parseHelperJson<any>(bgApplyResultJson, "Background image tag application");
 
-      // ── Step 3d: fix struct-tree reading order ──
+      // ── Step 3d: label and tag interactive form fields ──
+      const formsResultJson: string = await new Promise((resolve, reject) => {
+        child_process.execFile(
+          python3,
+          [join(pipelineDir, "flyer_fix_forms.py"), tmpBgOut, tmpFormsOut],
+          { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
+          (err, stdout, stderr) => {
+            if (err) reject(new Error("Form accessibility fix failed: " + (stderr?.slice(-500) || err.message)));
+            else resolve(stdout);
+          }
+        );
+      });
+      const formsResult = parseHelperJson<any>(formsResultJson, "Form accessibility fix");
+
+      // ── Step 3e: fix struct-tree reading order ──
       // Canva/InDesign/Illustrator exports commonly assign MCIDs in the
       // order design layers were created rather than their final on-page
       // position, and never reorder the struct tree to match. Individual
@@ -3822,7 +3837,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const reorderResultJson: string = await new Promise((resolve, reject) => {
         child_process.execFile(
           python3,
-          [join(pipelineDir, "flyer_reading_order.py"), tmpBgOut, tmpReorderOut],
+          [join(pipelineDir, "flyer_reading_order.py"), tmpFormsOut, tmpReorderOut],
           { maxBuffer: 10 * 1024 * 1024, timeout: 60000, killSignal: "SIGKILL" },
           (err, stdout, stderr) => {
             if (err) reject(new Error("Reading order fix failed: " + (stderr?.slice(-500) || err.message)));
@@ -3874,8 +3889,33 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       res.setHeader("X-Flyer-Orphan-Figures-Found", String(orphanApplyResult.orphans_found));
       res.setHeader("X-Flyer-Background-Images-Converted", String(bgApplyResult.converted));
       res.setHeader("X-Flyer-Annots-Fixed", String(annotsResult.converted_to_artifact + annotsResult.removed_empty));
-      res.setHeader("X-Flyer-Title-Fixed", String(!!titleResult.changed));
+      res.setHeader("X-Flyer-Title-Fixed", String(!!titleResult.title_changed));
       res.setHeader("X-Flyer-Reading-Order-Fixed", String(!!reorderResult.reordered));
+      res.setHeader("X-Flyer-Form-Fields-Named", String(formsResult.widgets_named));
+      res.setHeader("X-Flyer-Form-Fields-Tagged", String(formsResult.widgets_tagged));
+      const nativeFixes = [
+        formsResult.widgets_named
+          ? `3.3.2 - Added meaningful labels to ${formsResult.widgets_named} form fields`
+          : null,
+        formsResult.widgets_tagged
+          ? `1.3.1 - Added ${formsResult.widgets_tagged} form fields to the document structure`
+          : null,
+        formsResult.links_described
+          ? `2.4.4 - Added accessible descriptions to ${formsResult.links_described} links`
+          : null,
+        titleResult.title_changed
+          ? "2.4.2 - Added a descriptive document title"
+          : null,
+        titleResult.heading_fixed
+          ? "1.3.1 - Tagged the visible document title as the main heading"
+          : null,
+        "2.4.3 - Set keyboard navigation to follow the document structure",
+      ].filter(Boolean);
+      res.setHeader("X-Total-Pages", "1");
+      res.setHeader(
+        "X-Fixes-Made",
+        Buffer.from(JSON.stringify(nativeFixes)).toString("base64")
+      );
 
       if (clerkUserId) {
         try {
@@ -3924,6 +3964,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       await unlink(tmpOut).catch(() => {});
       await unlink(tmpOrphanOut).catch(() => {});
       await unlink(tmpBgOut).catch(() => {});
+      await unlink(tmpFormsOut).catch(() => {});
       await unlink(tmpReorderOut).catch(() => {});
       await unlink(tmpTitleOut).catch(() => {});
       await unlink(tmpDecisions).catch(() => {});

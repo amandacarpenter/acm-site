@@ -18,6 +18,7 @@ HELPERS = [
     "flyer_extract_figures.py",
     "flyer_fix_annots.py",
     "flyer_fix_title.py",
+    "flyer_fix_forms.py",
     "flyer_orphan_figures.py",
 ]
 
