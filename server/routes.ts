@@ -1594,6 +1594,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
   async function handleDocumentFix(req: Request, res: any) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
+    const allowImageRemoval =
+      ext === ".pdf" &&
+      req.body?.mode === "docx" &&
+      req.body?.allowImageRemoval === "true";
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits ─────────
     const clerkUserId: string | undefined = req.body?.clerkUserId;
@@ -1692,10 +1696,16 @@ export function registerRoutes(httpServer: Server, app: Express) {
         // this here is fast (right after extraction) and avoids a slow, failure-prone run
         // through the full text pipeline below.
         const ocrRatio = docPageCount > 0 ? ocrPages / docPageCount : 0;
-        if (ocrRatio >= 0.5 && rawText.trim().length < 200 * docPageCount) {
+        if (!allowImageRemoval && ocrRatio >= 0.5 && rawText.trim().length < 200 * docPageCount) {
           return res.status(422).json({
             error: "This looks like a scanned or image-heavy PDF. Try uploading it to Remedy Docs again — it will automatically use a vision-based approach that reads each page visually and handles images, tables, and scanned content.",
             code: "WRONG_TOOL_COMPLEX_PDF",
+          });
+        }
+        if (allowImageRemoval && rawText.trim().length < Math.max(80, 80 * docPageCount)) {
+          return res.status(422).json({
+            error: "This PDF does not contain enough recoverable text to create a useful Word document without its images. Keep it as a PDF so the page content and visual information are preserved. No credits were used.",
+            code: "WORD_TEXT_UNAVAILABLE",
           });
         }
 
@@ -3486,7 +3496,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-form-accessibility-v5");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-word-image-consent-v6");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3495,9 +3505,10 @@ print('ok')
 
     // Output format and processing route are separate decisions. "Keep as PDF"
     // still runs document analysis so scanned, image-heavy, and complex PDFs use
-    // PDF output uses content-aware routing. Word output still requires the fast
-    // pipeline, so reject complex PDFs rather than silently removing figures.
+    // content-aware routing. Complex Word output requires an explicit, informed
+    // acknowledgement because the text-only Word pipeline removes all images.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
+    const allowImageRemoval = req.body?.allowImageRemoval === "true";
 
     let route: DocsRoute;
     try {
@@ -3507,12 +3518,27 @@ print('ok')
       route = { useVision: false, reason: "detect-exception-fallback" };
     }
 
-    if (explicitMode === "docx" && (route.useVision || route.preserveNative)) {
+    if (explicitMode === "docx" && route.preserveNative) {
+      res.setHeader("X-Remedy-Docs-Route", "blocked-native-form-docx");
+      return res.status(422).json({
+        error: "This PDF contains interactive form fields that cannot be preserved in a Word conversion. Keep it as a PDF to retain the form fields and their accessibility. No credits were used.",
+        code: "INTERACTIVE_PDF_REQUIRES_PDF",
+      });
+    }
+
+    if (explicitMode === "docx" && route.useVision && !allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
       return res.status(422).json({
-        error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose PDF to preserve the document's figures.",
+        error: "This PDF needs to stay in PDF format to preserve its images and visual layout. You may continue to Word only after agreeing that all images will be removed.",
         code: "COMPLEX_PDF_REQUIRES_PDF",
       });
+    }
+
+    if (explicitMode === "docx" && route.useVision && allowImageRemoval) {
+      res.setHeader("X-Remedy-Docs-Route", "fast-docx-images-removed");
+      res.setHeader("X-Remedy-Docs-Images-Removed", "true");
+      console.log(`[REMEDY DOCS] ${req.file.originalname} -> text-only Word pipeline with user-approved image removal (${route.reason})`);
+      return handleDocumentFix(req, res);
     }
 
     const routeLabel = route.preserveNative ? "native" : route.useVision ? "vision" : "fast";
