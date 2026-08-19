@@ -22,7 +22,16 @@ server_requirements = [
     '"fast-docx-images-removed"',
     "&& !allowImageRemoval",
     "return handleDocumentFix(req, res);",
-    "2026-08-19-word-image-consent-v6",
+    "route.preserveNative && !allowImageRemoval",
+    "route.preserveNative && allowImageRemoval",
+    "const routeWasChecked = res.locals.remedyDocsRouteChecked === true",
+    '(!routeWasChecked || req.body?.mode === "docx")',
+    "if (isPdfWordRequest && !allowImageRemoval && !routeWasChecked)",
+    "const route = await detectDocsRoute(req.file.buffer, ext)",
+    "res.locals.remedyDocsRouteChecked = true",
+    '"X-Remedy-Docs-Form-Fields-Removed", "true"',
+    '"fast-docx-form-fields-removed"',
+    "2026-08-19-word-form-consent-v7",
 ]
 
 client_requirements = [
@@ -35,6 +44,12 @@ client_requirements = [
     'resp.headers.get("X-Remedy-Docs-Images-Removed") === "true"',
     "Word conversion completed in text-only mode",
     'data-testid="checkbox-word-image-removal"',
+    'data.code === "INTERACTIVE_PDF_REQUIRES_PDF"',
+    'setWordConversionConsentKind("interactive-form")',
+    "PDF is needed to preserve the form fields",
+    "Continue to Word",
+    "Interactive form fields and any images were removed with your approval",
+    'resp.headers.get("X-Remedy-Docs-Form-Fields-Removed") === "true"',
 ]
 
 missing_server = [item for item in server_requirements if item not in ROUTES]

@@ -1594,10 +1594,32 @@ export function registerRoutes(httpServer: Server, app: Express) {
   async function handleDocumentFix(req: Request, res: any) {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
-    const allowImageRemoval =
+    const routeWasChecked = res.locals.remedyDocsRouteChecked === true;
+    // The legacy /api/document/fix endpoint always returns text/Word source data,
+    // even if a caller sends mode=pdf. Only the unified Remedy Docs dispatcher
+    // gives mode=pdf its real PDF-output meaning after trusted route detection.
+    const isPdfWordRequest =
       ext === ".pdf" &&
+      (!routeWasChecked || req.body?.mode === "docx");
+    const allowImageRemoval =
+      isPdfWordRequest &&
       req.body?.mode === "docx" &&
       req.body?.allowImageRemoval === "true";
+
+    // Enforce the interactive-form disclosure in the shared handler as well as
+    // the unified Remedy Docs dispatcher. The legacy /api/document/fix endpoint
+    // also calls this handler directly, so this check must happen here, before
+    // the usage gate, to prevent bypassing consent or charging for the choice.
+    if (isPdfWordRequest && !allowImageRemoval && !routeWasChecked) {
+      const route = await detectDocsRoute(req.file.buffer, ext);
+      if (route.preserveNative) {
+        res.setHeader("X-Remedy-Docs-Route", "blocked-native-form-docx");
+        return res.status(422).json({
+          error: "This PDF contains interactive form fields that cannot be preserved in Word. Keep it as a PDF to retain the fields and their accessibility, or acknowledge the changes before continuing to Word. No credits were used.",
+          code: "INTERACTIVE_PDF_REQUIRES_PDF",
+        });
+      }
+    }
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits ─────────
     const clerkUserId: string | undefined = req.body?.clerkUserId;
@@ -3496,7 +3518,7 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-word-image-consent-v6");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-19-word-form-consent-v7");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
@@ -3517,13 +3539,25 @@ print('ok')
       console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
       route = { useVision: false, reason: "detect-exception-fallback" };
     }
+    // Trusted server-only marker: handleDocumentFix can skip duplicate detection
+    // for requests already classified by this dispatcher. Client input cannot
+    // set res.locals.
+    res.locals.remedyDocsRouteChecked = true;
 
-    if (explicitMode === "docx" && route.preserveNative) {
+    if (explicitMode === "docx" && route.preserveNative && !allowImageRemoval) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-native-form-docx");
       return res.status(422).json({
-        error: "This PDF contains interactive form fields that cannot be preserved in a Word conversion. Keep it as a PDF to retain the form fields and their accessibility. No credits were used.",
+        error: "This PDF contains interactive form fields that cannot be preserved in Word. Keep it as a PDF to retain the fields and their accessibility, or acknowledge the changes before continuing to Word. No credits were used.",
         code: "INTERACTIVE_PDF_REQUIRES_PDF",
       });
+    }
+
+    if (explicitMode === "docx" && route.preserveNative && allowImageRemoval) {
+      res.setHeader("X-Remedy-Docs-Route", "fast-docx-form-fields-removed");
+      res.setHeader("X-Remedy-Docs-Images-Removed", "true");
+      res.setHeader("X-Remedy-Docs-Form-Fields-Removed", "true");
+      console.log(`[REMEDY DOCS] ${req.file.originalname} -> text-only Word pipeline with user-approved form-field and image removal (${route.reason})`);
+      return handleDocumentFix(req, res);
     }
 
     if (explicitMode === "docx" && route.useVision && !allowImageRemoval) {

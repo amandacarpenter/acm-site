@@ -253,6 +253,7 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditN
 // each branch reuses the exact, unchanged result-handling logic from the two
 // original tabs (docx-building for fast, blob-download for vision).
 type DocsOutputMode = "pdf" | "docx";
+type WordConversionConsentKind = "images" | "interactive-form";
 
 function RemedyDocsTab() {
   const [loading, setLoading] = useState(false);
@@ -265,12 +266,14 @@ function RemedyDocsTab() {
   const [outputMode, setOutputMode] = useState<DocsOutputMode>("pdf");
   const [wordImageConsentRequired, setWordImageConsentRequired] = useState(false);
   const [wordImageRemovalAccepted, setWordImageRemovalAccepted] = useState(false);
+  const [wordConversionConsentKind, setWordConversionConsentKind] = useState<WordConversionConsentKind>("images");
   const { toast } = useToast();
   const { user: docsUser } = useUser();
 
   const clearWordImageConsent = () => {
     setWordImageConsentRequired(false);
     setWordImageRemovalAccepted(false);
+    setWordConversionConsentKind("images");
   };
 
   const startOver = () => {
@@ -342,6 +345,14 @@ function RemedyDocsTab() {
       }
       if (!resp.ok && data.code === "COMPLEX_PDF_REQUIRES_PDF") {
         setOutputMode("docx");
+        setWordConversionConsentKind("images");
+        setWordImageConsentRequired(true);
+        setWordImageRemovalAccepted(false);
+        return;
+      }
+      if (!resp.ok && data.code === "INTERACTIVE_PDF_REQUIRES_PDF") {
+        setOutputMode("docx");
+        setWordConversionConsentKind("interactive-form");
         setWordImageConsentRequired(true);
         setWordImageRemovalAccepted(false);
         return;
@@ -503,7 +514,8 @@ function RemedyDocsTab() {
 
       const blob = await Packer.toBlob(doc);
       const imagesRemoved = resp.headers.get("X-Remedy-Docs-Images-Removed") === "true";
-      setFastResult({ fixesMade, issues, blob, filename, imagesRemoved });
+      const formFieldsRemoved = resp.headers.get("X-Remedy-Docs-Form-Fields-Removed") === "true";
+      setFastResult({ fixesMade, issues, blob, filename, imagesRemoved, formFieldsRemoved });
     } catch (e: any) {
       setError(e.message);
       if (chargedJobId && docsUser?.id) {
@@ -603,10 +615,14 @@ function RemedyDocsTab() {
             <AlertTriangle className="w-5 h-5 mt-0.5 text-amber-700 dark:text-amber-400 shrink-0" aria-hidden="true" />
             <div className="min-w-0 flex-1">
               <h2 id="word-image-choice-title" className="font-sans text-base font-bold text-foreground">
-                PDF is needed to preserve this document
+                {wordConversionConsentKind === "interactive-form"
+                  ? "PDF is needed to preserve the form fields"
+                  : "PDF is needed to preserve this document"}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                This file contains images or visual layout that cannot be preserved in a Word conversion. Keeping it as a PDF will retain those elements.
+                {wordConversionConsentKind === "interactive-form"
+                  ? "This PDF contains interactive form fields that cannot be preserved in Word. If you continue, the Word file will be text-only: the form fields and any images will be removed, and the layout may be simplified."
+                  : "This file contains images or visual layout that cannot be preserved in a Word conversion. Keeping it as a PDF will retain those elements."}
               </p>
 
               <label className="mt-4 flex items-start gap-3 cursor-pointer">
@@ -618,7 +634,9 @@ function RemedyDocsTab() {
                   data-testid="checkbox-word-image-removal"
                 />
                 <span className="text-sm text-foreground leading-relaxed">
-                  I understand that the Word version will be text-only. Any images will be removed, and the original layout may be simplified.
+                  {wordConversionConsentKind === "interactive-form"
+                    ? "I understand that the Word version will not contain interactive form fields or images and may not retain the original layout."
+                    : "I understand that the Word version will be text-only. Any images will be removed, and the original layout may be simplified."}
                 </span>
               </label>
 
@@ -643,7 +661,7 @@ function RemedyDocsTab() {
                   onClick={() => void run({ forceMode: "docx", allowImageRemoval: true })}
                   data-testid="button-create-word-without-images"
                 >
-                  Create Word without images
+                  {wordConversionConsentKind === "interactive-form" ? "Continue to Word" : "Create Word without images"}
                 </Button>
               </div>
               <p className="mt-3 text-xs text-muted-foreground">
@@ -658,14 +676,16 @@ function RemedyDocsTab() {
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          {fastResult.imagesRemoved && (
+          {(fastResult.imagesRemoved || fastResult.formFieldsRemoved) && (
             <div
               className="p-4 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30"
               data-testid="word-images-removed-notice"
             >
               <p className="text-sm font-semibold text-foreground">Word conversion completed in text-only mode</p>
               <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                Any images in the original were removed with your approval, and the layout may have been simplified. Review the Word file before publishing or distributing it.
+                {fastResult.formFieldsRemoved
+                  ? "Interactive form fields and any images were removed with your approval, and the layout may have been simplified. Review the Word file before publishing or distributing it."
+                  : "Any images in the original were removed with your approval, and the layout may have been simplified. Review the Word file before publishing or distributing it."}
               </p>
             </div>
           )}
