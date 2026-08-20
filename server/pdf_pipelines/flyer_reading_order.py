@@ -309,7 +309,7 @@ def _all_mcids(elem) -> list[int]:
 
 
 def _element_bbox(elem, mcid_bboxes: dict) -> list[float] | None:
-    """Union bbox of MCIDs, or the annotation rectangle for an OBJR form."""
+    """Union bounding box (page space) of every MCID under this element."""
     box = None
     for mcid in _all_mcids(elem):
         b = mcid_bboxes.get(mcid)
@@ -322,26 +322,6 @@ def _element_bbox(elem, mcid_bboxes: dict) -> list[float] | None:
             box[1] = min(box[1], b[1])
             box[2] = max(box[2], b[2])
             box[3] = max(box[3], b[3])
-    if box is None and isinstance(elem, pikepdf.Dictionary):
-        k = elem.get("/K")
-        objr = None
-        if isinstance(k, pikepdf.Dictionary) and str(k.get("/Type", "")) == "/OBJR":
-            objr = k
-        elif isinstance(k, pikepdf.Array):
-            objr = next(
-                (
-                    item
-                    for item in k
-                    if isinstance(item, pikepdf.Dictionary)
-                    and str(item.get("/Type", "")) == "/OBJR"
-                ),
-                None,
-            )
-        if objr is not None:
-            annot = objr.get("/Obj")
-            rect = annot.get("/Rect") if isinstance(annot, pikepdf.Dictionary) else None
-            if isinstance(rect, pikepdf.Array) and len(rect) == 4:
-                box = [float(value) for value in rect]
     return box
 
 

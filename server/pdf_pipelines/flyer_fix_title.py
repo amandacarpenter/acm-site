@@ -28,7 +28,7 @@ import sys
 import json
 import re
 import pikepdf
-import pymupdf as fitz
+import fitz
 
 fitz.TOOLS.mupdf_display_errors(False)
 
@@ -38,8 +38,7 @@ from flyer_fix_annots import _mcid_text_bboxes, _text_near_point
 # plus the generic "missing" cases (empty, or literally the filename).
 PLACEHOLDER_RE = re.compile(
     r"^(title of your event|your title here|untitled|title here|"
-    r"add a title|enter title|document\d*|flyer\d*|new document|"
-    r"name of financial aid a(?:pplicant)?(?:\s*\(please print\))?)$",
+    r"add a title|enter title|document\d*|flyer\d*|new document)$",
     re.IGNORECASE,
 )
 
@@ -142,112 +141,21 @@ _SKIP_LINE_RE = re.compile(
 
 
 def _fallback_first_line(input_path, page_index=0) -> str:
-    """Choose the most title-like visible line, preferring larger type."""
+    """First substantial line of page text, skipping short numeric/URL/
+    page-header fragments (e.g. LibreTexts-style "20.4.1" section-number
+    headers or bare permalink lines) that precede the real title line."""
     doc = fitz.open(input_path)
     page = doc[page_index]
-    candidates = []
-    for block in page.get_text("dict").get("blocks", []):
-        for line in block.get("lines", []):
-            spans = line.get("spans", [])
-            text = "".join(span.get("text", "") for span in spans).strip()
-            if len(text) < 6 or len(text) > 120 or _SKIP_LINE_RE.match(text):
-                continue
-            if re.search(r"@|https?://|phone:|fax:|return to:", text, re.I):
-                continue
-            size = max((float(span.get("size", 0)) for span in spans), default=0)
-            y0 = float(line.get("bbox", [0, 0, 0, 0])[1])
-            score = size * 10
-            if 8 <= len(text.split()) <= 14:
-                score += 8
-            if text.endswith(":"):
-                score -= 12
-            if re.search(r"\b(name|student id|academic year).*(print|_+|:)", text, re.I):
-                score -= 30
-            score -= y0 / 1000
-            candidates.append((score, text))
+    text = page.get_text()
     doc.close()
-    if candidates:
-        candidates.sort(reverse=True)
-        return candidates[0][1]
+    for line in text.splitlines():
+        line = line.strip()
+        if len(line) < 6:
+            continue
+        if _SKIP_LINE_RE.match(line):
+            continue
+        return line
     return "Untitled document"
-
-
-def _normalize_text(value: str) -> str:
-    return re.sub(r"\s+", " ", value).strip().casefold()
-
-
-def _promote_visible_title_to_h1(
-    pdf, page, input_path: str, title: str, page_index: int = 0
-) -> bool:
-    """Promote the struct element containing the visible title to /H1."""
-    wanted = _normalize_text(title)
-    if not wanted:
-        return False
-    fitz_doc = fitz.open(input_path)
-    fitz_page = fitz_doc[page_index]
-    title_anchor = None
-    for block in fitz_page.get_text("dict").get("blocks", []):
-        for line in block.get("lines", []):
-            text = "".join(
-                span.get("text", "") for span in line.get("spans", [])
-            )
-            if _normalize_text(text) == wanted:
-                x0, _, _, y1 = line["bbox"]
-                title_anchor = (float(x0), float(fitz_page.rect.height - y1))
-                break
-        if title_anchor is not None:
-            break
-    fitz_doc.close()
-    points = _mcid_text_bboxes(page, page.get("/Resources"))
-    matches = []
-    for mcid, box in points.items():
-        nearby = _normalize_text(
-            _text_near_point(input_path, page_index, (box[0], box[3]), radius=12)
-        )
-        if wanted in nearby:
-            distance = (
-                abs(box[0] - title_anchor[0]) + abs(box[3] - title_anchor[1])
-                if title_anchor is not None
-                else 0
-            )
-            matches.append((distance, int(mcid)))
-    if not matches:
-        return False
-    target_mcid = min(matches)[1]
-
-    target = None
-    existing_h1 = []
-
-    def walk(node):
-        nonlocal target
-        if isinstance(node, pikepdf.Array):
-            for child in node:
-                walk(child)
-            return
-        if not isinstance(node, pikepdf.Dictionary):
-            return
-        if str(node.get("/S", "")) == "/H1":
-            existing_h1.append(node)
-        k = node.get("/K")
-        if isinstance(k, int) and int(k) == target_mcid:
-            target = node
-        elif isinstance(k, (pikepdf.Array, pikepdf.Dictionary)):
-            walk(k)
-
-    st = pdf.Root.get("/StructTreeRoot")
-    if st is None:
-        return False
-    walk(st.get("/K"))
-    if target is None:
-        return False
-
-    changed = str(target.get("/S", "")) != "/H1"
-    target.S = pikepdf.Name("/H1")
-    for heading in existing_h1:
-        if heading is not target:
-            heading.S = pikepdf.Name("/P")
-            changed = True
-    return changed
 
 
 def fix_title(input_path: str, output_path: str, page_index: int = 0) -> dict:
@@ -262,27 +170,28 @@ def fix_title(input_path: str, output_path: str, page_index: int = 0) -> dict:
         "old_title": old_title,
         "new_title": old_title,
         "changed": False,
-        "title_changed": False,
-        "heading_fixed": False,
     }
 
-    new_title = old_title.strip()
-    if is_placeholder:
-        new_title = _fallback_first_line(input_path, page_index).strip()[:120]
-        pdf.docinfo["/Title"] = new_title
-        with pdf.open_metadata() as meta:
-            meta["dc:title"] = new_title
-        result["title_changed"] = True
+    if not is_placeholder:
+        pdf.close()
+        return result
 
-    heading_fixed = _promote_visible_title_to_h1(
-        pdf, page, input_path, new_title, page_index
-    )
-    result["new_title"] = new_title
-    result["heading_fixed"] = heading_fixed
-    result["changed"] = bool(result["title_changed"] or heading_fixed)
-    if result["changed"]:
-        pdf.save(output_path)
+    new_title = _heading_text(pdf, page, input_path, page_index)
+    if not new_title:
+        new_title = _fallback_first_line(input_path, page_index)
+
+    # Keep it reasonable length for a document title.
+    new_title = new_title.strip()[:120]
+
+    pdf.docinfo["/Title"] = new_title
+    with pdf.open_metadata() as meta:
+        meta["dc:title"] = new_title
+
+    pdf.save(output_path)
     pdf.close()
+
+    result["new_title"] = new_title
+    result["changed"] = True
     return result
 
 

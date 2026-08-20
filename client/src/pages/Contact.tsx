@@ -1,6 +1,7 @@
+import { Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
-import { Mail, Clock, MessageSquare, Building2, CheckCircle2, Accessibility } from "lucide-react";
+import { Mail, Clock, MessageSquare, Building2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -11,8 +12,6 @@ export default function Contact() {
   const topic = params.get("topic");
   const prefill = topic === "more-seats"
     ? { subject: "Team / Larger Team Inquiry", message: "Hi, I'm interested in a Team plan with more than 20 seats. Can we talk about setting up a larger team?" }
-    : topic === "accessibility-services"
-      ? { subject: "Accessibility Services / Larger Project", message: "Hi, I'd like to speak with an accessibility expert about a larger project." }
     : { subject: "General Question", message: "" };
 
   const [submitted, setSubmitted] = useState(false);
@@ -23,7 +22,6 @@ export default function Contact() {
     "General Question",
     "Technical Support",
     "Accessibility Issue",
-    "Accessibility Services / Larger Project",
     "Team / Pricing Inquiry",
     "Team / Larger Team Inquiry",
     "Partnership",
@@ -84,35 +82,6 @@ export default function Contact() {
               icon={<Building2 className="w-5 h-5 text-[#0f766e]" />}
               title="Team Inquiries"
               body={<p className="text-sm text-gray-600">Looking for a team plan? Use the form and select "Team / Pricing Inquiry."</p>}
-            />
-            <InfoCard
-              icon={<Accessibility className="w-5 h-5 text-[#0f766e]" />}
-              title="Have a larger accessibility project?"
-              body={(
-                <div>
-                  <p className="text-sm text-gray-600">
-                    Need high-volume remediation, help with complex documents, or accessibility services beyond the automated tools?
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setForm((current) => ({
-                        ...current,
-                        subject: "Accessibility Services / Larger Project",
-                        message: current.message || "Hi, I'd like to speak with an accessibility expert about a larger project.",
-                      }));
-                      window.setTimeout(() => {
-                        document.getElementById("subject")?.focus();
-                        document.getElementById("subject")?.scrollIntoView({ behavior: "smooth", block: "center" });
-                      }, 0);
-                    }}
-                    className="mt-3 inline-flex min-h-11 items-center text-left text-sm font-semibold text-[#0f766e] underline underline-offset-2 hover:no-underline"
-                    data-testid="button-accessibility-services"
-                  >
-                    Speak with an accessibility expert
-                  </button>
-                </div>
-              )}
             />
             <InfoCard
               icon={<MessageSquare className="w-5 h-5 text-[#0f766e]" />}

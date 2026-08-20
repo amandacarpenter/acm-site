@@ -253,7 +253,6 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditN
 // each branch reuses the exact, unchanged result-handling logic from the two
 // original tabs (docx-building for fast, blob-download for vision).
 type DocsOutputMode = "pdf" | "docx";
-type WordConversionConsentKind = "images" | "interactive-form";
 
 function RemedyDocsTab() {
   const [loading, setLoading] = useState(false);
@@ -264,47 +263,21 @@ function RemedyDocsTab() {
   const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const [outputMode, setOutputMode] = useState<DocsOutputMode>("pdf");
-  const [wordImageConsentRequired, setWordImageConsentRequired] = useState(false);
-  const [wordImageRemovalAccepted, setWordImageRemovalAccepted] = useState(false);
-  const [wordConversionConsentKind, setWordConversionConsentKind] = useState<WordConversionConsentKind>("images");
   const { toast } = useToast();
   const { user: docsUser } = useUser();
 
-  const clearWordImageConsent = () => {
-    setWordImageConsentRequired(false);
-    setWordImageRemovalAccepted(false);
-    setWordConversionConsentKind("images");
-  };
+  const startOver = () => { setFile(null); setFastResult(null); setVisionResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
 
-  const startOver = () => {
-    setFile(null);
-    setFastResult(null);
-    setVisionResult(null);
-    setError("");
-    setErrorCode("");
-    clearWordImageConsent();
-    setResetKey((k) => k + 1);
-  };
-
-  const run = async ({
-    forceMode,
-    allowImageRemoval = false,
-  }: {
-    forceMode?: DocsOutputMode;
-    allowImageRemoval?: boolean;
-  } = {}) => {
+  const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
-    const selectedMode = forceMode || outputMode;
     setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
-    setWordImageConsentRequired(false);
     let chargedJobId: number | null = null;
     try {
       const fd = new FormData(); fd.append("file", file);
       if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
       // The selected output format does not choose the processing pipeline.
       // PDF still uses server-side content detection to select the safest route.
-      fd.append("mode", selectedMode);
-      if (allowImageRemoval) fd.append("allowImageRemoval", "true");
+      fd.append("mode", outputMode);
       const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
       const contentType = resp.headers.get("Content-Type") || "";
 
@@ -343,24 +316,10 @@ function RemedyDocsTab() {
         }
         throw parseErr;
       }
-      if (!resp.ok && data.code === "COMPLEX_PDF_REQUIRES_PDF") {
-        setOutputMode("docx");
-        setWordConversionConsentKind("images");
-        setWordImageConsentRequired(true);
-        setWordImageRemovalAccepted(false);
-        return;
-      }
-      if (!resp.ok && data.code === "INTERACTIVE_PDF_REQUIRES_PDF") {
-        setOutputMode("docx");
-        setWordConversionConsentKind("interactive-form");
-        setWordImageConsentRequired(true);
-        setWordImageRemovalAccepted(false);
-        return;
-      }
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       chargedJobId = data.jobId ?? null;
 
-      if (selectedMode === "pdf") {
+      if (outputMode === "pdf") {
         // ── "Keep as PDF" on the fast (text-extraction) path: the server already
         // built fully structured, WCAG-tagged HTML for this document -- send it
         // to the standalone tagging endpoint instead of building a .docx.
@@ -513,9 +472,7 @@ function RemedyDocsTab() {
       });
 
       const blob = await Packer.toBlob(doc);
-      const imagesRemoved = resp.headers.get("X-Remedy-Docs-Images-Removed") === "true";
-      const formFieldsRemoved = resp.headers.get("X-Remedy-Docs-Form-Fields-Removed") === "true";
-      setFastResult({ fixesMade, issues, blob, filename, imagesRemoved, formFieldsRemoved });
+      setFastResult({ fixesMade, issues, blob, filename });
     } catch (e: any) {
       setError(e.message);
       if (chargedJobId && docsUser?.id) {
@@ -536,21 +493,7 @@ function RemedyDocsTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone
-        accept=".docx,.pdf"
-        onFile={(nextFile) => {
-          setFile(nextFile);
-          setError("");
-          setErrorCode("");
-          clearWordImageConsent();
-        }}
-        label="Upload Document"
-        sublabel=".docx and .pdf files"
-        icon={FileText}
-        iconImg={iconDocument}
-        testId="doc-upload"
-        resetKey={resetKey}
-      />
+      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} iconImg={iconDocument} testId="doc-upload" resetKey={resetKey} />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Documents up to 50 pages</p>
@@ -567,7 +510,7 @@ function RemedyDocsTab() {
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
-            { value: "pdf", label: "PDF", Icon: FileText },
+            { value: "pdf", label: "PDF (Recommended)", Icon: FileText },
             { value: "docx", label: "Word", Icon: FileText },
           ] as { value: DocsOutputMode; label: string; Icon: typeof Zap }[]).map(({ value, label, Icon }) => (
             <label
@@ -586,10 +529,7 @@ function RemedyDocsTab() {
                 name="doc-output-mode"
                 value={value}
                 checked={outputMode === value}
-                onChange={() => {
-                  setOutputMode(value);
-                  clearWordImageConsent();
-                }}
+                onChange={() => setOutputMode(value)}
                 className="w-4 h-4 shrink-0 accent-[#0f766e]"
               />
               <div className="flex items-center gap-1.5">
@@ -601,109 +541,27 @@ function RemedyDocsTab() {
         </div>
       </fieldset>
 
-      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={() => void run()} disabled={loading || !file} data-testid="btn-fix-doc">
+      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {wordImageConsentRequired && !loading && (
-        <section
-          className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-left dark:border-amber-700 dark:bg-amber-950/30"
-          aria-labelledby="word-image-choice-title"
-          data-testid="word-image-consent"
-        >
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 mt-0.5 text-amber-700 dark:text-amber-400 shrink-0" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <h2 id="word-image-choice-title" className="font-sans text-base font-bold text-foreground">
-                {wordConversionConsentKind === "interactive-form"
-                  ? "PDF is needed to preserve the form fields"
-                  : "PDF is needed to preserve this document"}
-              </h2>
-              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-                {wordConversionConsentKind === "interactive-form"
-                  ? "This PDF contains interactive form fields that cannot be preserved in Word. If you continue, the Word file will be text-only: the form fields and any images will be removed, and the layout may be simplified."
-                  : "This file contains images or visual layout that cannot be preserved in a Word conversion. Keeping it as a PDF will retain those elements."}
-              </p>
-
-              <label className="mt-4 flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={wordImageRemovalAccepted}
-                  onChange={(event) => setWordImageRemovalAccepted(event.target.checked)}
-                  className="mt-0.5 w-4 h-4 shrink-0 accent-[#0f766e]"
-                  data-testid="checkbox-word-image-removal"
-                />
-                <span className="text-sm text-foreground leading-relaxed">
-                  {wordConversionConsentKind === "interactive-form"
-                    ? "I understand that the Word version will not contain interactive form fields or images and may not retain the original layout."
-                    : "I understand that the Word version will be text-only. Any images will be removed, and the original layout may be simplified."}
-                </span>
-              </label>
-
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                <Button
-                  type="button"
-                  className="min-h-11 bg-[#0f766e] text-white hover:bg-[#115e59] font-semibold"
-                  onClick={() => {
-                    setOutputMode("pdf");
-                    clearWordImageConsent();
-                    void run({ forceMode: "pdf" });
-                  }}
-                  data-testid="button-keep-pdf"
-                >
-                  Keep as PDF
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="min-h-11 border-[#0f766e] text-[#0f766e] hover:bg-[#0f766e]/10 font-semibold"
-                  disabled={!wordImageRemovalAccepted}
-                  onClick={() => void run({ forceMode: "docx", allowImageRemoval: true })}
-                  data-testid="button-create-word-without-images"
-                >
-                  {wordConversionConsentKind === "interactive-form" ? "Continue to Word" : "Create Word without images"}
-                </Button>
-              </div>
-              <p className="mt-3 text-xs text-muted-foreground">
-                No credits were used to show this choice. Credits are used only after you continue with an output.
-              </p>
-            </div>
-          </div>
-        </section>
-      )}
       {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Docs", errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          {(fastResult.imagesRemoved || fastResult.formFieldsRemoved) && (
-            <div
-              className="p-4 rounded-xl border border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/30"
-              data-testid="word-images-removed-notice"
-            >
-              <p className="text-sm font-semibold text-foreground">Word conversion completed in text-only mode</p>
-              <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
-                {fastResult.formFieldsRemoved
-                  ? "Interactive form fields and any images were removed with your approval, and the layout may have been simplified. Review the Word file before publishing or distributing it."
-                  : "Any images in the original were removed with your approval, and the layout may have been simplified. Review the Word file before publishing or distributing it."}
-              </p>
-            </div>
-          )}
-          <div className="p-4 rounded-xl bg-[#fff3f2] dark:bg-[#3d2020] border-2 border-[#e58a86] dark:border-[#b95a56]">
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
             <div className="flex items-center gap-2 mb-1.5">
-              <AlertTriangle className="w-4 h-4 text-[#c2413f] dark:text-[#f29a95] shrink-0" />
-              <span className="font-semibold text-[#8f2d2b] dark:text-[#f7b5b1] text-sm">Download this file now</span>
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
-            <p className="text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file.
-            </p>
-            <p className="mt-2 text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
-              Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
+            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
             </p>
           </div>
           {fastResult.blob && (
             <>
-              <Button className="w-full bg-[#0f766e] text-white hover:bg-[#115e59] font-semibold" onClick={() => {
+              <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(fastResult.blob);
                 a.download = fastResult.filename;
@@ -719,20 +577,17 @@ function RemedyDocsTab() {
       {visionResult && (
         <div className="space-y-4" data-testid="doc-result">
           <div className="flex items-center justify-end"><StartOverButton onClick={startOver} /></div>
-          <div className="p-4 rounded-xl bg-[#fff3f2] dark:bg-[#3d2020] border-2 border-[#e58a86] dark:border-[#b95a56]">
+          <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/30 border-2 border-red-300 dark:border-red-800">
             <div className="flex items-center gap-2 mb-1.5">
-              <AlertTriangle className="w-4 h-4 text-[#c2413f] dark:text-[#f29a95] shrink-0" />
-              <span className="font-semibold text-[#8f2d2b] dark:text-[#f7b5b1] text-sm">Download this file now</span>
+              <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+              <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
-            <p className="text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file.
-            </p>
-            <p className="mt-2 text-xs text-[#963b38] dark:text-[#efaaa6] leading-relaxed">
-              Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
+            <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
+              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
             </p>
           </div>
           <Button
-            className="w-full bg-[#0f766e] text-white hover:bg-[#115e59] font-semibold"
+            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
             onClick={() => {
               const url = URL.createObjectURL(visionResult.blob);
               const a = document.createElement("a");
