@@ -263,10 +263,21 @@ function RemedyDocsTab() {
   const [errorCode, setErrorCode] = useState("");
   const [resetKey, setResetKey] = useState(0);
   const [outputMode, setOutputMode] = useState<DocsOutputMode>("pdf");
+  const [wordConversionAcknowledged, setWordConversionAcknowledged] = useState(false);
   const { toast } = useToast();
   const { user: docsUser } = useUser();
 
-  const startOver = () => { setFile(null); setFastResult(null); setVisionResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
+  const showWordConversionNotice = file?.name.toLowerCase().endsWith(".pdf") && outputMode === "docx";
+
+  const startOver = () => {
+    setFile(null);
+    setFastResult(null);
+    setVisionResult(null);
+    setError("");
+    setErrorCode("");
+    setWordConversionAcknowledged(false);
+    setResetKey((k) => k + 1);
+  };
 
   const run = async () => {
     if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
@@ -493,7 +504,19 @@ function RemedyDocsTab() {
 
   return (
     <div className="space-y-5">
-      <FileDropZone accept=".docx,.pdf" onFile={setFile} label="Upload Document" sublabel=".docx and .pdf files" icon={FileText} iconImg={iconDocument} testId="doc-upload" resetKey={resetKey} />
+      <FileDropZone
+        accept=".docx,.pdf"
+        onFile={(selectedFile) => {
+          setFile(selectedFile);
+          setWordConversionAcknowledged(false);
+        }}
+        label="Upload Document"
+        sublabel=".docx and .pdf files"
+        icon={FileText}
+        iconImg={iconDocument}
+        testId="doc-upload"
+        resetKey={resetKey}
+      />
       <div className="text-xs text-muted-foreground space-y-0.5 px-1">
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Documents up to 50 pages</p>
@@ -529,7 +552,10 @@ function RemedyDocsTab() {
                 name="doc-output-mode"
                 value={value}
                 checked={outputMode === value}
-                onChange={() => setOutputMode(value)}
+                onChange={() => {
+                  setOutputMode(value);
+                  setWordConversionAcknowledged(false);
+                }}
                 className="w-4 h-4 shrink-0 accent-[#0f766e]"
               />
               <div className="flex items-center gap-1.5">
@@ -541,7 +567,48 @@ function RemedyDocsTab() {
         </div>
       </fieldset>
 
-      <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || !file} data-testid="btn-fix-doc">
+      {showWordConversionNotice && (
+        <section
+          className="p-4 rounded-xl border border-amber-300 bg-amber-50 text-left dark:border-amber-700 dark:bg-amber-950/30"
+          aria-labelledby="word-conversion-notice-title"
+          data-testid="word-conversion-consent"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 mt-0.5 text-amber-700 dark:text-amber-400 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <h2 id="word-conversion-notice-title" className="font-sans text-base font-bold text-foreground">
+                Before you continue to Word
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+                PDF is recommended when the original contains images, interactive form fields, or a complex visual layout. A Word version may omit those elements or simplify the original layout.
+              </p>
+              <label className="mt-4 flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={wordConversionAcknowledged}
+                  onChange={(event) => setWordConversionAcknowledged(event.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 accent-[#0f766e]"
+                  data-testid="checkbox-word-conversion-consent"
+                />
+                <span className="text-sm text-foreground leading-relaxed">
+                  I understand and want to continue with a Word document.
+                </span>
+              </label>
+              <p className="mt-3 text-xs text-muted-foreground">
+                This acknowledgment does not change how your document is processed.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <Button
+        className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold"
+        onClick={run}
+        disabled={loading || !file || (showWordConversionNotice && !wordConversionAcknowledged)}
+        aria-describedby={showWordConversionNotice ? "word-conversion-notice-title" : undefined}
+        data-testid="btn-fix-doc"
+      >
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
