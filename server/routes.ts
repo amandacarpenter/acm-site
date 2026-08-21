@@ -3454,29 +3454,33 @@ print('ok')
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
   app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
-    res.setHeader("X-Remedy-Docs-Version", "2026-08-21-explicit-output-route-v3r1");
+    res.setHeader("X-Remedy-Docs-Version", "2026-08-17-routing-images-v3");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".docx" && ext !== ".pdf") {
       return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
     }
 
-    // Restore the last user-confirmed routing behavior: an explicit output choice
-    // uses the proven text/structure pipeline. Auto-detection is reserved for
-    // callers that do not send a mode. This prevents ordinary born-digital PDFs
-    // with a few images from being unnecessarily rebuilt page-by-page by Vision.
+    // Output format and processing route are separate decisions. "Keep as PDF"
+    // still runs document analysis so scanned, image-heavy, and complex PDFs use
+    // PDF output uses content-aware routing. Word output still requires the fast
+    // pipeline, so reject complex PDFs rather than silently removing figures.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
 
     let route: { useVision: boolean; reason: string };
-    if (explicitMode === "pdf" || explicitMode === "docx") {
-      route = { useVision: false, reason: `explicit-mode-${explicitMode}` };
-    } else {
-      try {
-        route = await detectDocsRoute(req.file.buffer, ext);
-      } catch (err: any) {
-        console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
-        route = { useVision: false, reason: "detect-exception-fallback" };
-      }
+    try {
+      route = await detectDocsRoute(req.file.buffer, ext);
+    } catch (err: any) {
+      console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
+      route = { useVision: false, reason: "detect-exception-fallback" };
+    }
+
+    if (explicitMode === "docx" && route.useVision) {
+      res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
+      return res.status(422).json({
+        error: "This PDF contains scanned, visual, or complex content that cannot be safely converted to Word without losing images. Choose PDF to preserve the document's figures.",
+        code: "COMPLEX_PDF_REQUIRES_PDF",
+      });
     }
 
     res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
