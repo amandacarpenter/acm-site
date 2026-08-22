@@ -286,8 +286,9 @@ function RemedyDocsTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
-      // The selected output format does not choose the processing pipeline.
-      // PDF still uses server-side content detection to select the safest route.
+      // The selected output format determines the processing pipeline: an
+      // explicit choice ("pdf" or "docx") always uses the fast pipeline.
+      // Auto-detection is reserved for callers that omit mode entirely.
       fd.append("mode", outputMode);
       const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
       const contentType = resp.headers.get("Content-Type") || "";
