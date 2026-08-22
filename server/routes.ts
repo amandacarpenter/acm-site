@@ -1441,7 +1441,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // Errs toward the fast pipeline when signals are weak/ambiguous, since it's
   // cheaper and faster -- only routes to vision when there's a real, specific
   // reason plain text extraction would produce a worse result.
-  async function detectDocsRoute(fileBuffer: Buffer, ext: string): Promise<{ useVision: boolean; reason: string }> {
+  async function detectDocsRoute(fileBuffer: Buffer, ext: string, imageOnly: boolean = false): Promise<{ useVision: boolean; reason: string }> {
     if (ext === ".docx") {
       return { useVision: false, reason: "docx-always-fast-path" };
     }
@@ -1537,6 +1537,21 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const { sampled, ocr_pages, table_pages, image_pages } = stats;
       if (sampled === 0) return { useVision: false, reason: "empty-doc" };
 
+      // Any real content image (not a repeated logo/watermark, not a tiny icon) means
+      // the fast pipeline would silently drop it -- unlike OCR/table ratio, this isn't
+      // a "which pipeline gives a better result" judgment call, it's correctness: the
+      // fast pipeline has zero image support, so even one real image on one sampled
+      // page routes the whole document to vision. This check runs even when the caller
+      // only wants image-based routing (imageOnly=true, used for explicit-mode
+      // requests -- see below), because silently dropping images is never the right
+      // tradeoff, regardless of what output format the user explicitly chose.
+      if (image_pages && image_pages > 0) {
+        return { useVision: true, reason: `has-content-images-${image_pages}-of-${sampled}` };
+      }
+      if (imageOnly) {
+        return { useVision: false, reason: "explicit-mode-no-content-images" };
+      }
+
       const ocrRatio = ocr_pages / sampled;
       const tableRatio = table_pages / sampled;
 
@@ -1545,14 +1560,6 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }
       if (tableRatio >= 0.5) {
         return { useVision: true, reason: `table-ratio-${tableRatio.toFixed(2)}` };
-      }
-      // Any real content image (not a repeated logo/watermark, not a tiny icon) means
-      // the fast pipeline would silently drop it -- unlike OCR/table ratio, this isn't
-      // a "which pipeline gives a better result" judgment call, it's correctness: the
-      // fast pipeline has zero image support, so even one real image on one sampled
-      // page routes the whole document to vision.
-      if (image_pages && image_pages > 0) {
-        return { useVision: true, reason: `has-content-images-${image_pages}-of-${sampled}` };
       }
       return { useVision: false, reason: "plain-text-fast-path" };
     } catch (err: any) {
@@ -3462,30 +3469,49 @@ print('ok')
     }
 
     // An explicit mode from the chooser UI ("pdf" = Keep as PDF, "docx" =
-    // Convert to Word) always maps to the fast (text-extraction) pipeline --
-    // the vision/rebuild path is reserved for documents auto-detected as
-    // needing a full visual rebuild (scanned pages, heavy image/table content).
-    // No explicit mode ("auto", or omitted) falls through to the existing
-    // auto-detect logic, unchanged for users who don't choose.
+    // Convert to Word) skips the OCR-ratio and table-ratio auto-routing signals
+    // -- those are "which pipeline gives a better result" judgment calls, and an
+    // explicit choice should not be second-guessed by them. This is what keeps
+    // table-heavy VPATs on the fast pipeline (which carries all the verified
+    // table-tagging fixes -- empty tables, missing Headers, nested /TD from
+    // mixed inline/block cell content -- see accounts-reference.md) instead of
+    // being non-deterministically content-detected into vision.
     //
-    // This is deliberate: the fast pipeline carries all of the verified table-
-    // tagging fixes (empty tables, missing Headers, nested /TD from mixed
-    // inline/block cell content -- see accounts-reference.md). Letting an
-    // explicit "Keep as PDF" request get silently content-detected into the
-    // vision pipeline bypasses those fixes non-deterministically. Restoring
-    // this after it was reverted on 2026-08-21.
+    // Image detection is NOT skipped for explicit modes, and this is a hard
+    // correctness requirement, not a judgment call: the fast pipeline has zero
+    // image support (see detectDocsRoute's own comments -- it extracts text
+    // blocks only, with no <img> handling at all), so any PDF with real content
+    // images MUST go to vision or those images and their alt text are silently
+    // dropped, regardless of which output format the user clicked. This was
+    // already the reason image detection was added to detectDocsRoute in the
+    // first place, and forcing explicit modes to skip detection entirely
+    // (2026-08-21's routing fix) reintroduced that exact bug for explicit
+    // "Keep as PDF" clicks on image-bearing documents -- fixed here by passing
+    // imageOnly=true so explicit modes still get vision-routed for real images,
+    // just not for OCR/table ratio alone.
+    //
+    // No explicit mode ("auto", or omitted) falls through to full unrestricted
+    // auto-detect, unchanged for callers that don't choose.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
 
     let route: { useVision: boolean; reason: string };
-    if (explicitMode === "pdf" || explicitMode === "docx") {
-      route = { useVision: false, reason: `explicit-mode-${explicitMode}` };
-    } else {
-      try {
+    try {
+      if (explicitMode === "pdf" || explicitMode === "docx") {
+        route = await detectDocsRoute(req.file.buffer, ext, true);
+      } else {
         route = await detectDocsRoute(req.file.buffer, ext);
-      } catch (err: any) {
-        console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
-        route = { useVision: false, reason: "detect-exception-fallback" };
       }
+    } catch (err: any) {
+      console.error("[REMEDY DOCS] Detection failed, defaulting to fast path:", err.message);
+      route = { useVision: false, reason: "detect-exception-fallback" };
+    }
+
+    if (explicitMode === "docx" && route.useVision) {
+      res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
+      return res.status(422).json({
+        error: "This PDF contains images or complex content that cannot be safely converted to Word without losing them. Choose PDF to preserve the document's figures.",
+        code: "COMPLEX_PDF_REQUIRES_PDF",
+      });
     }
 
     res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
