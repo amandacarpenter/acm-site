@@ -290,6 +290,13 @@ function RemedyDocsTab() {
       // explicit choice ("pdf" or "docx") always uses the fast pipeline.
       // Auto-detection is reserved for callers that omit mode entirely.
       fd.append("mode", outputMode);
+      // If the user explicitly acknowledged the Word-conversion warning card
+      // (which is only shown when converting a PDF to Word), forward that
+      // consent to the server so it will not block image-bearing PDFs. The
+      // user has read "a Word version may omit those elements" and opted in.
+      if (showWordConversionNotice && wordConversionAcknowledged) {
+        fd.append("wordConversionAcknowledged", "true");
+      }
       const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
       const contentType = resp.headers.get("Content-Type") || "";
 
@@ -596,7 +603,7 @@ function RemedyDocsTab() {
                 </span>
               </label>
               <p className="mt-3 text-xs text-muted-foreground">
-                This acknowledgment does not change how your document is processed.
+                By checking this box, you accept that images and complex layout may be omitted from the Word version.
               </p>
             </div>
           </div>

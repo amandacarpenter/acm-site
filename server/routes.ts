@@ -3488,6 +3488,14 @@ print('ok')
     // No explicit mode ("auto", or omitted) falls through to full unrestricted
     // auto-detect, unchanged for callers that don't choose.
     const explicitMode = typeof req.body?.mode === "string" ? req.body.mode : "";
+    // The client shows an "I understand images may be omitted" checkbox before
+    // enabling the Convert-to-Word button on PDF uploads. If it's checked, the
+    // user has explicitly opted in to a lossy conversion and we must not block
+    // them on the server. Absent that consent (e.g. legacy API callers), the
+    // block below still protects users from surprise image loss.
+    const wordConversionAcknowledged =
+      req.body?.wordConversionAcknowledged === "true" ||
+      req.body?.wordConversionAcknowledged === true;
 
     let route: { useVision: boolean; reason: string };
     try {
@@ -3501,12 +3509,22 @@ print('ok')
       route = { useVision: false, reason: "detect-exception-fallback" };
     }
 
-    if (explicitMode === "docx" && route.useVision) {
+    if (explicitMode === "docx" && route.useVision && !wordConversionAcknowledged) {
       res.setHeader("X-Remedy-Docs-Route", "blocked-complex-docx");
       return res.status(422).json({
         error: "This PDF contains images or complex content that cannot be safely converted to Word without losing them. Choose PDF to preserve the document's figures.",
         code: "COMPLEX_PDF_REQUIRES_PDF",
       });
+    }
+
+    // Acknowledged Word conversion of an image-bearing PDF: honor the user's
+    // explicit choice by forcing the fast (text-extraction) pipeline instead
+    // of routing to vision. Vision only produces PDFs, so it can't satisfy a
+    // Word request anyway.
+    if (explicitMode === "docx" && route.useVision && wordConversionAcknowledged) {
+      res.setHeader("X-Remedy-Docs-Route", "fast-acknowledged-lossy");
+      console.log(`[REMEDY DOCS] ${req.file.originalname} -> Fast pipeline (user acknowledged lossy Word conversion)`);
+      return handleDocumentFix(req, res);
     }
 
     res.setHeader("X-Remedy-Docs-Route", route.useVision ? "vision" : "fast");
