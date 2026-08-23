@@ -137,7 +137,7 @@ export default function PricingPage() {
                 </div>
 
                 <p className="text-base leading-relaxed mb-6 text-gray-900">
-                  One seat. Every available tool uses one shared Credit pool, and Remedy Layout will join it when it launches. Built for anyone who needs to make course materials accessible on their own.
+                  One seat with 130 Credits per month for use across every available tool. Remedy Layout will use those same monthly Credits when it launches. Built for anyone who needs to make course materials accessible on their own.
                 </p>
 
                 <div className="inline-flex items-center gap-2 text-sm font-semibold rounded-full px-4 py-1.5 mb-1 w-fit bg-[#0f766e]/10 text-[#0f766e]">

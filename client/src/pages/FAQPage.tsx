@@ -17,7 +17,7 @@ interface FAQItem {
 function CreditBreakdown() {
   return (
     <>
-      <p className="mb-3">Credits are shared across every available tool. Remedy Layout will join the same pool when it launches.</p>
+      <p className="mb-3">Credits can be used across every available tool. Remedy Layout will use those same Credits when it launches.</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
         <div className="flex items-center gap-2.5 rounded-xl border border-gray-100 bg-gray-50/60 px-3 py-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-white">
@@ -173,7 +173,7 @@ const FAQ_SECTIONS: FAQSection[] = [
       },
       {
         q: "What does the Individual plan include?",
-        a: "The Individual plan gives you 130 Credits per month, shared across every available tool. Remedy Layout will use the same Credit pool when it launches. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
+        a: "The Individual plan gives you 130 Credits per month for use across every available tool. Remedy Layout will use those same monthly Credits when it launches. Licensed for single-user personal use only. See \"What is a Credit?\" below for the full breakdown.",
       },
       {
         q: "What does the Team plan include?",
