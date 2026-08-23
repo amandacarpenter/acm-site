@@ -636,7 +636,7 @@ function RemedyDocsTab() {
           </div>
           {fastResult.blob && (
             <>
-              <Button className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold" onClick={() => {
+              <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold" onClick={() => {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(fastResult.blob);
                 a.download = fastResult.filename;
@@ -662,7 +662,7 @@ function RemedyDocsTab() {
             </p>
           </div>
           <Button
-            className="w-full bg-amber-500 text-white hover:bg-amber-600 font-semibold"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
             onClick={() => {
               const url = URL.createObjectURL(visionResult.blob);
               const a = document.createElement("a");
