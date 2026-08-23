@@ -102,6 +102,13 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
         screenshot_path = os.path.join(work_dir, f"page_{page_num:03d}_screen.png")
         screenshot.save(screenshot_path)
 
+        # Capture the page's native text so downstream figure normalization
+        # can distinguish a genuine printed caption from a Vision-hallucinated
+        # description of an image. Alt text belongs only in the /Figure /Alt
+        # metadata; a figcaption is kept only when the same words are visibly
+        # printed on the page.
+        source_text = page.get_text().strip()
+
         image_list = page.get_images(full=True)
         page_images: list[dict[str, Any]] = []
         for image_idx, image_info in enumerate(image_list):
@@ -206,6 +213,7 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
                 "page": page_num,
                 "screenshot": screenshot_path,
                 "images": page_images,
+                "source_text": source_text,
             }
         )
 

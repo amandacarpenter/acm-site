@@ -2406,8 +2406,9 @@ CRITICAL RULES:
 - For mathematical equations and formulas: render as readable Unicode text (e.g. K_eq = [C]^c[D]^d / [A]^a[B]^b)
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
-  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="concise one-sentence description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img> and rely on the <figcaption> alone.
-  Always include a <figcaption> with a thorough description of exactly what the image shows (colors, labels, arrows, values, what concept it illustrates), regardless of whether an <img> is present. This description MUST be detailed enough to fully replace the image for someone who cannot see it.
+  Put the image's alternative description in the figure's data-alt attribute: <figure data-extracted="true" data-alt="specific description">. Alternative text is metadata for assistive technology and MUST NOT be emitted as visible page text.
+  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="the same specific description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img>; the data-alt value will be attached to a non-visible tagged placeholder later.
+  Include <figcaption data-source-caption="true"> only when a caption is visibly printed in the source PDF, and reproduce only that printed caption text. Never create a figcaption merely to hold an image description. Never duplicate alt text as a caption or paragraph.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
 - CRITICAL — a table's real columns are ONLY the columns inside its own ruled/shaded grid box (the bordered/shaded rectangle the header row sits in). A separate, physically distinct decoration OUTSIDE that box — e.g. a free-floating arrow, gradient bar, or color-graded strip drawn beside/below the table with its own labels like "Stronger acid"/"Weaker acid"/"Increasing X" — is NOT a table column; describe it in one short sentence in a <p> right before the <table> (or omit it if it just restates the table's own trend), and never create a <td>/<th> for it.
 - However, a bracket, brace, or shaded band drawn ON TOP OF or immediately touching the table's own rows/right edge — grouping several rows under a label like "Deactivating groups" / "Activating groups" / "Group A" — IS a real column of that table (just visually merged). Reproduce it as a genuine column: repeat the same text value as an ordinary <td> in EVERY row it covers (do not use rowspan, do not leave the covered rows blank), and leave the cell truly empty (<td></td>) only for rows the bracket does not cover. Every row must end up with the exact same number of <td> cells as the header has <th> cells — never fewer.
@@ -2434,10 +2435,12 @@ CRITICAL RULES:
         page: pageNum,
         screenshot,
         images: extractedImages,
+        source_text: sourceText,
       }: {
         page: number;
         screenshot: string;
         images: any[];
+        source_text: string;
       }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
         const candidateBlocks: any[] = [];
@@ -2525,7 +2528,7 @@ CRITICAL RULES:
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
         await unlink(screenshot).catch(() => {});
-        return { html: pageHtml, images: extractedImages };
+        return { html: pageHtml, images: extractedImages, sourceText };
         }));
         pageResults.push(...batchResults);
       }
@@ -2535,6 +2538,7 @@ CRITICAL RULES:
         pages: pageResults.map((p, i) => ({
           html: p.html,
           images: p.images,
+          sourceText: p.sourceText || "",
           pageNum: i + 1,
         })),
         title: req.file!.originalname.replace(/\.pdf$/i, ""),
@@ -2543,6 +2547,8 @@ CRITICAL RULES:
       const pyPdf = `
 import sys, json, os, re, base64
 from bs4 import BeautifulSoup
+sys.path.insert(0, sys.argv[2])
+from figure_html_normalize import normalize_figures
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
@@ -2553,7 +2559,7 @@ doc_title = data['title']
 # still get a real <img> element (WeasyPrint only tags <img> as PDF /Figure).
 TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
 
-def clean_html(raw_html, page_images):
+def clean_html(raw_html, page_images, source_text):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
     # Repair cell-in-cell nesting caused by an unclosed <td>/<th> tag in the
@@ -2767,28 +2773,17 @@ def clean_html(raw_html, page_images):
         # of leaving an unresolved src, which WeasyPrint's tagger flags as a
         # missing-alt-description error.
         img_tag['src'] = TRANSPARENT_PIXEL
-    # WeasyPrint only tags an actual <img> element as a PDF /Figure (a bare
-    # <figure>/<figcaption> with no <img> is tagged /NonStruct and never gets
-    # an Alt, which is exactly what caused every 'Alternate Text' failure).
-    # So any <figure> with a caption but no <img> gets a tiny transparent
-    # placeholder image whose alt text is the figcaption content -- this makes
-    # WeasyPrint emit a real /Figure tag with a proper /Alt description.
-    for fig in soup.find_all('figure'):
-        if not fig.find('img'):
-            cap = fig.find('figcaption')
-            cap_text = cap.get_text(strip=True) if cap else 'Figure'
-            placeholder = soup.new_tag('img', src=TRANSPARENT_PIXEL, alt=cap_text[:500])
-            if cap:
-                cap.insert_before(placeholder)
-            else:
-                fig.insert(0, placeholder)
+    # Vision HTML is untrusted. Rebuild figures so alternative descriptions
+    # remain metadata and only source-validated captions remain visible.
+    normalize_figures(soup, source_text, TRANSPARENT_PIXEL)
     return str(soup)
 
 html_parts = []
 for pg in pages:
     page_html = pg.get('html', '')
     page_images = pg.get('images', [])
-    html_parts.append('<div class="page">' + clean_html(page_html, page_images) + '</div>')
+    source_text = pg.get('sourceText', '')
+    html_parts.append('<div class="page">' + clean_html(page_html, page_images, source_text) + '</div>')
 
 # Document-level heading normalization. Each page is extracted by Claude
 # independently, so heading levels are only consistent WITHIN a page --
@@ -3348,7 +3343,7 @@ print('ok')
       await new Promise<void>((resolve, reject) => {
         const proc = child_process.spawn(
           python3,
-          [tmpPdfScript, tmpPdfOut],
+          [tmpPdfScript, tmpPdfOut, pipelineDir],
           { timeout: Math.min(180000, pdfBuildBudgetMs) },
         );
         proc.stdin.write(pdfInput);
