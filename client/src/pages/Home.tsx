@@ -80,7 +80,7 @@ export default function Home() {
               Not Accessible,<br />Not Acceptable™
             </h1>
             <p className="text-white/90 text-base leading-relaxed mb-8">
-              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions, with presentation and flyer remediation coming soon. Built for higher education, government, healthcare, and accessibility teams.
+              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video transcription, with presentation and flyer remediation coming soon. Built for higher education, government, healthcare, and accessibility teams.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link href="/signup">
@@ -215,7 +215,7 @@ export default function Home() {
             Not Accessible,<br />Not Acceptable™
           </h1>
           <p className="text-white/70 text-sm leading-relaxed mb-7">
-            Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video captions. Built for higher education, government, healthcare, and accessibility teams.
+            Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video transcription. Built for higher education, government, healthcare, and accessibility teams.
           </p>
           <div className="flex flex-wrap gap-3">
             <Link href="/signup">
