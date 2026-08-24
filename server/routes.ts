@@ -1809,15 +1809,39 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       // Split the raw HTML into chunks on paragraph/line-break boundaries so each
       // Claude call has a bounded amount of source content to restructure. This is
       // what keeps generation time predictable regardless of overall document size.
+      //
+      // IMPORTANT: never snap a boundary to a bare <br> -- many source documents
+      // (e.g. a repetitive-entry directory/flyer extracted via the raw-text
+      // fallback path) turn EVERY line into its own <br>-separated fragment, so a
+      // bare-<br> boundary can land in the middle of a single logical entry (e.g.
+      // between an entry's heading line and its Email/Phone/Location line, or
+      // between that line and the next entry's heading). That mid-entry split was
+      // observed to visibly break a real document: "Transfer Center" got cut
+      // between "transferring to a 4 year university?" and its Email/Phone line,
+      // right at a 6000-char <br> boundary. Only split on a real paragraph
+      // boundary (</p>), or on a double line-break (a blank line -- the strongest
+      // signal of a genuine entry/section break in the raw-text fallback's
+      // <br>-per-line encoding), never a single bare <br>.
       const HTML_CHUNK_SIZE = 6000;
       const splitHtmlIntoChunks = (html: string, maxLen: number): string[] => {
         if (html.length <= maxLen) return [html];
-        const boundaries: number[] = [];
-        const boundaryRe = /<\/p>|<br\s*\/?>/gi;
-        let bm: RegExpExecArray | null;
-        while ((bm = boundaryRe.exec(html)) !== null) {
-          boundaries.push(bm.index + bm[0].length);
-        }
+        // Two boundary tiers, strongest preference first: real paragraph breaks or
+        // blank lines (</p>, or 2+ consecutive <br>), then bare single <br> as a
+        // fallback for documents that have NO blank lines anywhere (e.g. this
+        // raw-text-fallback encoding, which emits exactly one <br> per source line
+        // with no blank-line separators at all). Using bare <br> only as a last
+        // resort still avoids cutting inside a run of literal text with no tag
+        // boundary at all, while preferring the stronger signal whenever it exists.
+        const collectBoundaries = (re: RegExp): number[] => {
+          const found: number[] = [];
+          let bm: RegExpExecArray | null;
+          while ((bm = re.exec(html)) !== null) {
+            found.push(bm.index + bm[0].length);
+          }
+          return found;
+        };
+        const strongBoundaries = collectBoundaries(/<\/p>|(?:<br\s*\/?>){2,}/gi);
+        const weakBoundaries = collectBoundaries(/<br\s*\/?>/gi);
         const chunks: string[] = [];
         let start = 0;
         while (start < html.length) {
@@ -1826,12 +1850,22 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
             chunks.push(html.slice(start));
             break;
           }
-          // Snap to the nearest paragraph/line boundary at or before the target length
-          let candidate = 0;
-          for (const b of boundaries) {
-            if (b > start && b <= end) candidate = b;
-          }
-          end = candidate || end;
+          // Prefer the nearest strong boundary at or before the target length. If
+          // none exists in-range, try the nearest strong boundary after the target.
+          // If there are no strong boundaries at all in the whole remaining
+          // document, fall back to the same before/after search on weak (bare
+          // <br>) boundaries. Only if truly nothing is found does this cut at the
+          // raw character offset.
+          const findSnap = (bounds: number[]): number | null => {
+            let before: number | null = null;
+            let after: number | null = null;
+            for (const b of bounds) {
+              if (b > start && b <= end) before = b;
+              if (b > end && after === null) after = b;
+            }
+            return before !== null ? before : after;
+          };
+          end = findSnap(strongBoundaries) ?? findSnap(weakBoundaries) ?? end;
           chunks.push(html.slice(start, end));
           start = end;
         }
@@ -1839,23 +1873,38 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       };
       const htmlChunks: string[] = splitHtmlIntoChunks(htmlContent, HTML_CHUNK_SIZE);
 
-      // Run the audit call and all HTML chunk calls in parallel, tracking real
-      // Claude token usage for this job across every call.
+      // Run the audit call, then all HTML chunk calls, tracking real Claude token
+      // usage for this job across every call.
+      //
+      // Chunks are processed SEQUENTIALLY (not in parallel) when there is more
+      // than one, because each chunk after the first is given a short excerpt of
+      // the PREVIOUS chunk's actual output HTML as a "match this structural
+      // pattern" example. Without this, each chunk is restructured by Claude in
+      // total isolation and independently invents its own (individually valid,
+      // but mutually inconsistent) convention for repetitive content -- e.g. one
+      // chunk emitting "heading + own small 3-row table per entry" while the next
+      // chunk emits "one big merged multi-column table for all its entries". That
+      // was observed as a real, visible seam partway through a converted
+      // document. Sequential processing costs some latency on multi-chunk
+      // documents but guarantees a consistent structural style throughout.
       const docUsage = newUsageCounter();
-      const [auditResponse, htmlChunkResults] = await Promise.all([
-        callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage),
-        Promise.all(htmlChunks.map(async (chunk: string, i: number) => {
-          const t0 = Date.now();
-          const r = await callClaude(
-            htmlSystemPrompt,
-            `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`,
-            16384,
-            docUsage,
-          );
-          console.log(`[REMEDY DOCS] chunk ${i + 1}/${htmlChunks.length} took ${Date.now() - t0}ms`);
-          return r;
-        })),
-      ]);
+      const auditPromise = callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage);
+
+      const PREV_CHUNK_STYLE_EXCERPT_LEN = 1200;
+      const htmlChunkResultsArr: string[] = [];
+      for (let i = 0; i < htmlChunks.length; i++) {
+        const chunk = htmlChunks[i];
+        const t0 = Date.now();
+        let userContent = `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`;
+        if (i > 0 && htmlChunkResultsArr[i - 1]) {
+          const prevExcerpt = htmlChunkResultsArr[i - 1].trim().slice(-PREV_CHUNK_STYLE_EXCERPT_LEN);
+          userContent = `The previous chunk of this SAME document was already converted to this structure (end excerpt shown below). Match this EXACT structural pattern/convention for any repetitive entries in your chunk -- e.g. if the previous chunk used one heading + one small table per entry, continue that same pattern; do NOT switch to a different convention (such as merging multiple entries into one large multi-column table) partway through the document, even if it seems like a reasonable alternative:\n\n--- END OF PREVIOUS CHUNK'S OUTPUT (for style reference only, do not repeat this content) ---\n${prevExcerpt}\n--- END EXCERPT ---\n\n${userContent}`;
+        }
+        const r = await callClaude(htmlSystemPrompt, userContent, 16384, docUsage);
+        console.log(`[REMEDY DOCS] chunk ${i + 1}/${htmlChunks.length} took ${Date.now() - t0}ms`);
+        htmlChunkResultsArr.push(r);
+      }
+      const [auditResponse, htmlChunkResults] = await Promise.all([auditPromise, Promise.resolve(htmlChunkResultsArr)]);
       // Strip any accidental code fences per-chunk before joining, then wrap the
       // assembled result in the single lang="en" div (each chunk was told not to
       // add its own wrapper, since a chunk boundary would otherwise produce
