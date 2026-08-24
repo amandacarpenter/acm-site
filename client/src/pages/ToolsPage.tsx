@@ -530,11 +530,7 @@ function RemedyDocsTab() {
         <p>✓ Documents up to 50 pages</p>
       </div>
       <p className="text-xs text-muted-foreground px-1">
-        <Shield className="w-3.5 h-3.5 inline mr-1 -mt-0.5 text-[#0f766e]" />
-        Remedy Docs gets you most of the way to compliant — always give the result a quick manual check before publishing.{" "}
-        <Link href="/accessibility-guides/articles/how-to-check-your-output-is-accessible" className="text-[#0f766e] font-medium underline underline-offset-2">
-          Learn how →
-        </Link>
+        Not sure which to choose? If your document's images are purely decorative (backgrounds, borders, logos with no real content), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs — Word can lose or simplify those.
       </p>
 
       <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
