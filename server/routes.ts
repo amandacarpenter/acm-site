@@ -28,11 +28,21 @@ const uploadMedia = multer({ storage: multer.memoryStorage(), limits: { fileSize
 // Default Anthropic SDK timeout is 10 minutes with no backend logging on the way there --
 // a slow/degraded Claude response hangs silently until the SDK (or Railway's proxy) finally
 // gives up, producing the generic "Something went wrong" fallback with zero trace in the logs.
-// Set an explicit 90s client-level timeout so every call site fails fast and predictably.
+// Set an explicit client-level timeout so every call site fails fast and predictably.
+// Raised from 95s to 240s (2026-08-24): a real production document (Fall 2026 Student
+// Services Resource Guide, ~35 repetitive directory entries) reproducibly timed out at
+// exactly ~95s on the fast-pipeline HTML-restructure call -- generating a full accessible
+// HTML table (caption + scoped headers) for ~18 entries per 6000-char chunk, at up to
+// 16384 max_tokens, can legitimately take well over 95s of real generation time even with
+// Claude fully healthy (confirmed via status.claude.com showing all-systems-operational
+// during the failures, and via a passing "Keep as PDF" run on the identical file through a
+// different pipeline in 35s). 240s gives realistic headroom for that generation length
+// while staying well inside this route's own 600s req/res timeout (see /api/remedy-docs/fix
+// below), even for a 2-chunk document processed sequentially (~240s x 2 + audit call).
 // Also disable the SDK's default maxRetries: 2 -- retrying a request that already timed out
-// at 90s just re-runs the same slow call up to 2 more times (silently tripling the user's
-// wait to ~4.5 min) before the error ever surfaces. Fail once, fast, with a clear message.
-const anthropic = new Anthropic({ timeout: 95_000, maxRetries: 0 });
+// just re-runs the same slow call up to 2 more times (silently multiplying the user's wait)
+// before the error ever surfaces. Fail once, with a clear message.
+const anthropic = new Anthropic({ timeout: 240_000, maxRetries: 0 });
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 // Used by the "Report this issue" button (see /api/report-error below) to email a failed
 // job's details + the original file straight to support instead of relying on a user
@@ -319,7 +329,11 @@ async function callClaude(systemPrompt: string, userContent: string, maxTokens =
       system: systemPrompt,
     });
   } catch (err: any) {
-    const isTimeout = err?.name === "APIConnectionTimeoutError" || /timeout/i.test(err?.message || "");
+    // Match both "timeout" and the SDK's actual wording "timed out" -- the plain
+    // /timeout/i regex silently missed real timeout errors (message text
+    // "Request timed out.") and fell through to the generic "AI processing
+    // failed: ..." branch, hiding the true cause from users and support logs.
+    const isTimeout = err?.name === "APIConnectionTimeoutError" || /timeout|timed out/i.test(err?.message || "");
     throw new Error(isTimeout
       ? "The AI service took too long to respond. This can happen during high demand -- please try again in a moment."
       : `AI processing failed: ${err?.message || "unknown error"}`);
