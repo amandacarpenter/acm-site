@@ -200,12 +200,47 @@ def clean_html(raw_html: str) -> str:
     # fragmentation cases in this same document went from 5 -> 0 with the
     # div-wrapper approach, vs. table-level style alone which still hit 5.
     _SMALL_TABLE_MAX_ROWS = 8
+    _small_table_wrappers = {}
     for table in soup.find_all("table"):
         row_count = len(table.find_all("tr"))
         if 0 < row_count <= _SMALL_TABLE_MAX_ROWS:
             wrapper = soup.new_tag("div")
             wrapper["style"] = "break-inside: avoid; page-break-inside: avoid;"
             table.wrap(wrapper)
+            _small_table_wrappers[id(table)] = wrapper
+
+    # Wide-table handling -- same fix as the vision pipeline (routes.ts
+    # handleComplexPdfFix): a table with 8+ header columns cannot fit in
+    # 6.5in of portrait usable width at a readable font size. WeasyPrint
+    # does not raise an exception or warning when a table's rendered width
+    # exceeds the page box -- it silently lets the overflow columns render
+    # past the printable margin, which reads as a normal HTTP 200 success
+    # while actually dropping columns of data from the visible/printable
+    # page. Route any such table onto a named landscape page instead (see
+    # the 'wide-table' @page rule below), which gives ~9in of usable width.
+    _WIDE_TABLE_MIN_COLUMNS = 8
+    for table in soup.find_all("table"):
+        header_row = table.find("tr")
+        if header_row is None:
+            continue
+        col_count = 0
+        for cell in header_row.find_all(["td", "th"], recursive=False):
+            try:
+                col_count += int(cell.get("colspan", 1))
+            except (TypeError, ValueError):
+                col_count += 1
+        if col_count < _WIDE_TABLE_MIN_COLUMNS:
+            continue
+        existing_wrapper = _small_table_wrappers.get(id(table))
+        if existing_wrapper is not None:
+            existing_wrapper["style"] = (existing_wrapper.get("style", "") + " page: wide-table;").strip()
+        else:
+            wrapper = soup.new_tag("div")
+            wrapper["style"] = "page: wide-table;"
+            table.wrap(wrapper)
+        if col_count >= 12:
+            existing_style = table.get("style", "")
+            table["style"] = (existing_style + " font-size: 7.5pt;").strip()
 
     return str(soup)
 
@@ -214,6 +249,10 @@ cleaned = clean_html(source_html)
 
 css_rules = [
     "@page { size: letter; margin: 1in; }",
+    # Named landscape page for wide tables (8+ columns) -- see clean_html's
+    # wide-table wrapping above. Matches the same pattern used in the vision
+    # pipeline's WeasyPrint builder (routes.ts handleComplexPdfFix).
+    "@page wide-table { size: letter landscape; margin: 0.5in; }",
     "body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; }",
     "h1 { font-size: 18pt; font-weight: bold; margin: 12pt 0 6pt 0; }",
     "h2 { font-size: 15pt; font-weight: bold; margin: 10pt 0 5pt 0; }",
@@ -225,6 +264,9 @@ css_rules = [
     "table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }",
     "th { background: #f0f0f0; border: 1px solid #999; padding: 4pt 6pt; text-align: left; font-weight: bold; }",
     "td { border: 1px solid #ccc; padding: 4pt 6pt; vertical-align: top; }",
+    'div[style*="page: wide-table"] table { table-layout: fixed; font-size: 9pt; word-wrap: break-word; overflow-wrap: break-word; }',
+    'div[style*="page: wide-table"] th { padding: 3pt 4pt; }',
+    'div[style*="page: wide-table"] td { padding: 3pt 4pt; }',
     "blockquote { margin: 6pt 0 6pt 24pt; border-left: 2pt solid #999; padding-left: 8pt; }",
 ]
 css = "\n".join(css_rules)
@@ -333,6 +375,48 @@ except Exception as wp_err:
     except Exception:
         pass
     raise RuntimeError("WeasyPrint failed: " + str(wp_err) + " | " + _tb.format_exc()[-500:])
+
+# Universal overflow backstop: verify no rendered content (table borders,
+# text, images) actually extends past the printable page bounds, on EVERY
+# page, regardless of what caused it. Deliberately independent of the
+# wide-table fix above -- that fix targets one known cause (8+ column
+# tables); this check catches ANY cause (a long unbroken URL, an oversized
+# image, a future regression, a table-width bug this code doesn't know
+# about yet). Same check as the vision pipeline's builder in routes.ts
+# (handleComplexPdfFix) -- see that file for the full incident writeup
+# this was modeled on (a real 15-column table silently overflowing the
+# page with WeasyPrint raising no exception or warning).
+_OVERFLOW_TOLERANCE_PT = 3.0  # small allowance for antialiasing/rounding, not a loophole for real overflow
+import fitz as _fitz_overflow_check
+_overflow_doc = _fitz_overflow_check.open(output_path)
+_overflow_findings = []
+for _pg_idx, _pg in enumerate(_overflow_doc):
+    _mb = _pg.mediabox
+    _page_w, _page_h = _mb.width, _mb.height
+    _max_x1, _worst_kind = 0.0, None
+    for _d in _pg.get_drawings():
+        _r = _d["rect"]
+        if _r.x1 > _max_x1:
+            _max_x1, _worst_kind = _r.x1, "drawing"
+    for _w in _pg.get_text("words"):
+        if _w[2] > _max_x1:
+            _max_x1, _worst_kind = _w[2], "text"
+    for _img in _pg.get_images():
+        for _r in _pg.get_image_rects(_img[0]):
+            if _r.x1 > _max_x1:
+                _max_x1, _worst_kind = _r.x1, "image"
+    if _max_x1 > _page_w + _OVERFLOW_TOLERANCE_PT:
+        _overflow_findings.append(
+            f"page {_pg_idx + 1}: {_worst_kind} extends to x={_max_x1:.1f}pt on a {_page_w:.0f}pt-wide page "
+            f"(overflow of {_max_x1 - _page_w:.1f}pt)"
+        )
+_overflow_doc.close()
+if _overflow_findings:
+    raise RuntimeError(
+        "Overflow backstop: rendered content extends past the printable page on "
+        + str(len(_overflow_findings)) + " page(s) -- " + "; ".join(_overflow_findings)
+        + ". Aborting instead of returning a PDF that silently clips or drops content."
+    )
 
 pp = pikepdf.open(output_path, allow_overwriting_input=True)
 if "/StructTreeRoot" not in pp.Root:

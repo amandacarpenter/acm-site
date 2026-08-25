@@ -3035,11 +3035,34 @@ for _t in _pre_merge_soup.find_all('table'):
         _t.wrap(_wide_wrapper)
     _prior_style = _wide_wrapper.get('style', '')
     _wide_wrapper['style'] = (_prior_style + '; ' if _prior_style else '') + 'page: wide-table;'
-    # Very dense tables (12+ columns) get an extra size reduction beyond the
-    # shared wide-table CSS rule below -- even landscape's ~9in usable width
-    # is tight for that many columns at the default 9pt wide-table font.
+    # Graceful degradation for extreme column counts: the shared wide-table
+    # CSS rule below sets 9pt as the baseline for any 8+ column table, but a
+    # single fixed size doesn't scale -- a 30-column table at 9pt would be
+    # just as likely to overflow landscape's ~9in usable width as an 8-column
+    # table was to overflow portrait's 6.5in, silently recreating the exact
+    # bug this whole fix exists to prevent. Instead, shrink font size on a
+    # sliding scale keyed to column count, down to a 6pt hard floor -- below
+    # 6pt, text stops being legible at all (accessibility purpose defeated),
+    # so extremely dense tables (40+ columns) rely on the universal overflow
+    # backstop (below) to hard-fail rather than ship an illegible result.
     if _col_count >= 12:
-        _t['style'] = (_t.get('style', '') + '; ' if _t.get('style') else '') + 'font-size: 7.5pt;'
+        if _col_count >= 32:
+            _wide_font_pt = 6.0
+        elif _col_count >= 24:
+            _wide_font_pt = 6.5
+        elif _col_count >= 20:
+            _wide_font_pt = 7.0
+        elif _col_count >= 16:
+            _wide_font_pt = 7.5
+        else:  # 12-15 columns
+            _wide_font_pt = 8.0
+        _t['style'] = (_t.get('style', '') + '; ' if _t.get('style') else '') + f'font-size: {_wide_font_pt}pt;'
+        # Extreme counts also need tighter cell padding to reclaim a bit more
+        # horizontal room per column -- the shared 3pt/4pt wide-table padding
+        # is still comparatively roomy once font size has dropped this far.
+        if _col_count >= 20:
+            for _cell in _t.find_all(['th', 'td']):
+                _cell['style'] = (_cell.get('style', '') + '; ' if _cell.get('style') else '') + 'padding: 1.5pt 2pt;'
 
 html_parts = [str(_pre_merge_soup)]
 
@@ -3095,7 +3118,7 @@ css_rules = [
     'img { max-width: 100%; height: auto; }',
     '.equation { font-style: italic; }',
 ]
-css = '\\n'.join(css_rules)
+css = '\n'.join(css_rules)
 
 full_html = (
     '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>'
@@ -3250,6 +3273,57 @@ if '/StructTreeRoot' not in pp.Root:
 if '/ViewerPreferences' not in pp.Root:
     pp.Root['/ViewerPreferences'] = pikepdf.Dictionary()
 pp.Root['/ViewerPreferences']['/DisplayDocTitle'] = pikepdf.Boolean(True)
+
+# Universal overflow backstop: verify no rendered content (table borders,
+# text, images) actually extends past the printable page bounds, on EVERY
+# page, regardless of what caused it. This is deliberately independent of
+# the wide-table fix above -- that fix targets one known cause (8+ column
+# tables); this check catches ANY cause (a long unbroken URL, an oversized
+# image, a future regression, a table width bug this code doesn't know
+# about yet). Found via a real user-reported bug: a 15-column nutrition
+# table rendered with columns pushed off the right edge of a portrait
+# page with WeasyPrint raising no exception and no warning -- the PDF
+# looked like a normal HTTP 200 success while silently dropping columns
+# of data. Confirmed on that exact buggy output that table border/line
+# drawings are the most reliable signal (they extend to the cell's true,
+# unclipped geometry -- x1=918pt on a 612pt-wide page in the real case),
+# more reliable than text word bboxes alone (renderers can clip glyphs
+# at the page edge, masking the true overflow extent).
+_OVERFLOW_TOLERANCE_PT = 3.0  # small allowance for antialiasing/rounding, not a loophole for real overflow
+import fitz as _fitz_overflow_check
+_overflow_doc = _fitz_overflow_check.open(output_path)
+_overflow_findings = []
+for _pg_idx, _pg in enumerate(_overflow_doc):
+    _mb = _pg.mediabox
+    _page_w, _page_h = _mb.width, _mb.height
+    _max_x1, _worst_kind = 0.0, None
+    # Table borders / lines / rects -- the most reliable overflow signal.
+    for _d in _pg.get_drawings():
+        _r = _d['rect']
+        if _r.x1 > _max_x1:
+            _max_x1, _worst_kind = _r.x1, 'drawing'
+    # Text word boxes.
+    for _w in _pg.get_text('words'):
+        if _w[2] > _max_x1:
+            _max_x1, _worst_kind = _w[2], 'text'
+    # Placed images.
+    for _img in _pg.get_images():
+        for _r in _pg.get_image_rects(_img[0]):
+            if _r.x1 > _max_x1:
+                _max_x1, _worst_kind = _r.x1, 'image'
+    if _max_x1 > _page_w + _OVERFLOW_TOLERANCE_PT:
+        _overflow_findings.append(
+            f'page {_pg_idx + 1}: {_worst_kind} extends to x={_max_x1:.1f}pt on a {_page_w:.0f}pt-wide page '
+            f'(overflow of {_max_x1 - _page_w:.1f}pt)'
+        )
+_overflow_doc.close()
+if _overflow_findings:
+    pp.close()
+    raise RuntimeError(
+        'Overflow backstop: rendered content extends past the printable page on '
+        + str(len(_overflow_findings)) + ' page(s) -- ' + '; '.join(_overflow_findings)
+        + '. Aborting instead of returning a PDF that silently clips or drops content.'
+    )
 
 # PDF/UA-1 requires the document Catalog to contain a /Metadata key pointing
 # to an XMP metadata stream (ISO 14289-1:2014 clause 7.1, test 8; also ISO

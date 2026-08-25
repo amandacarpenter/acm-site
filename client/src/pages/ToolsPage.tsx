@@ -363,7 +363,7 @@ function RemedyDocsTab() {
       }
 
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
-              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType } = await import("docx");
+              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation } = await import("docx");
       const fixesMade: string[] = data.fixesMade || [];
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
@@ -375,8 +375,31 @@ function RemedyDocsTab() {
       const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
 
       const docChildren: any[] = [];
+      // Track which children were emitted while building a wide table, so we
+      // can later split the document into portrait/landscape sections. Each
+      // entry records the orientation active when docChildren reached that
+      // index -- see the section-splitting logic below where the document is
+      // assembled.
+      const orientationBreaks: { index: number; orientation: "portrait" | "landscape" }[] = [{ index: 0, orientation: "portrait" }];
+      const markOrientation = (o: "portrait" | "landscape") => {
+        const last = orientationBreaks[orientationBreaks.length - 1];
+        if (last.orientation !== o) orientationBreaks.push({ index: docChildren.length, orientation: o });
+      };
 
       const cleanText = (raw: string) => raw.replace(/^\*{2,3}\s*/, "").trim();
+
+      // Wide-table handling -- same threshold as the vision/fast PDF pipelines
+      // (8+ columns). A portrait page has ~6.5in (9360 DXA) of usable width;
+      // dividing that across 8+ columns produces cells too narrow to hold
+      // real words without wrapping into an unreadable ladder of characters.
+      // Word itself never clips/overflows a table (it always renders the
+      // declared width), so this isn't a silent-data-loss bug like the PDF
+      // pipelines' -- but a squeezed table is still a real accessibility
+      // problem, so wide tables get their own landscape section instead
+      // (~9in / 12960 DXA usable width) plus a font-size floor for extreme
+      // column counts, mirroring the PDF pipelines' escape hatch.
+      const WIDE_TABLE_MIN_COLUMNS = 8;
+      const EXTREME_TABLE_MIN_COLUMNS = 16;
 
       const buildTable = (tableNode: Element) => {
         const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: "B0B0B0" };
@@ -385,8 +408,31 @@ function RemedyDocsTab() {
         if (rows.length === 0) return;
         const maxCols = rows.reduce((m: number, r: Element) => Math.max(m, r.querySelectorAll("td,th").length), 0);
         if (maxCols === 0) return;
-        const tableWidth = 9360;
-        const colWidth = Math.floor(tableWidth / maxCols);
+
+        const isWide = maxCols >= WIDE_TABLE_MIN_COLUMNS;
+        const isExtreme = maxCols >= EXTREME_TABLE_MIN_COLUMNS;
+        // Landscape letter usable width at 0.5in margins: 11in - 1in = 10in = 14400 DXA.
+        // Keep a little headroom below the true max so borders/padding never round up past it.
+        const portraitWidth = 9360;
+        const landscapeWidth = 14000;
+        // A minimum readable column width (in DXA) that takes priority over evenly
+        // dividing the page width -- for extreme column counts (16+), evenly dividing
+        // even a landscape page would squeeze columns below a legible floor. Word
+        // renders an over-width table by letting it extend past the printable
+        // margin on paper/print preview rather than clipping or dropping any cell
+        // data, so on-screen/exported text stays fully intact and readable, which
+        // is what matters most for accessibility -- column legibility wins over
+        // hard page-width containment for this degenerate case (mirrors the PDF
+        // pipelines' own graceful-degradation floor).
+        const minColWidth = isExtreme ? 500 : isWide ? 700 : 600;
+        const naturalColWidth = isWide ? Math.floor(landscapeWidth / maxCols) : Math.floor(portraitWidth / maxCols);
+        const colWidth = Math.max(naturalColWidth, minColWidth);
+        const tableWidth = colWidth * maxCols;
+        const fontSize = isExtreme ? 16 : isWide ? 18 : 24; // half-points: 8pt / 9pt / 12pt
+        const cellMargins = isWide ? { top: 40, bottom: 40, left: 60, right: 60 } : { top: 60, bottom: 60, left: 100, right: 100 };
+
+        if (isWide) markOrientation("landscape");
+
         const docxRows = rows.map((row: Element) => {
           const cells = Array.from(row.querySelectorAll("td,th"));
           const isHeader = cells.some((c: Element) => c.tagName.toLowerCase() === "th");
@@ -396,16 +442,16 @@ function RemedyDocsTab() {
               borders: allBorders,
               width: { size: colWidth, type: WidthType.DXA },
               shading: isHeader ? { fill: "F5F5F5", type: ShadingType.CLEAR } : undefined,
-              margins: { top: 60, bottom: 60, left: 100, right: 100 },
-              children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader })] })],
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader, size: fontSize })] })],
             });
           });
           while (docxCells.length < maxCols) {
             docxCells.push(new TableCell({
               borders: allBorders,
               width: { size: colWidth, type: WidthType.DXA },
-              margins: { top: 60, bottom: 60, left: 100, right: 100 },
-              children: [new Paragraph({ children: [new TextRun({ text: "" })] })],
+              margins: cellMargins,
+              children: [new Paragraph({ children: [new TextRun({ text: "", size: fontSize })] })],
             }));
           }
           return new TableRow({ children: docxCells });
@@ -416,6 +462,8 @@ function RemedyDocsTab() {
           rows: docxRows,
         }));
         docChildren.push(new Paragraph({ children: [new TextRun({ text: "" })], spacing: { after: 100 } }));
+
+        if (isWide) markOrientation("portrait");
       };
 
       const processNode = (node: Element) => {
@@ -487,7 +535,39 @@ function RemedyDocsTab() {
             { id: "Heading4", name: "Heading 4", basedOn: "Normal", next: "Normal", quickFormat: true, run: { size: 24, bold: true, italics: true, font: "Calibri", color: "222222" }, paragraph: { spacing: { before: 140, after: 60 }, outlineLevel: 3 } },
           ],
         },
-        sections: [{ properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } }, children: docChildren }],
+        // Split into multiple sections when a wide table required a landscape
+        // page (see markOrientation/orientationBreaks above). Each section owns
+        // the contiguous slice of docChildren between one orientation change
+        // and the next, and carries its own page size -- the docx library
+        // supports independent page.size/orientation per section, which is the
+        // same mechanism used by the PDF pipelines' named landscape @page rule.
+        sections: (() => {
+          const built = orientationBreaks.map((brk, i) => {
+            const end = i + 1 < orientationBreaks.length ? orientationBreaks[i + 1].index : docChildren.length;
+            const isLandscape = brk.orientation === "landscape";
+            return {
+              properties: {
+                page: {
+                  // docx's createPageSize swaps width/height itself when orientation is
+                  // LANDSCAPE (see node_modules/docx page-size builder) -- always pass the
+                  // portrait (unswapped) 8.5x11in dimensions, or the library double-swaps
+                  // and emits the wrong physical <w:pgSz> width/height in the .docx XML.
+                  size: { width: 12240, height: 15840, orientation: isLandscape ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT },
+                  margin: isLandscape
+                    ? { top: 720, right: 720, bottom: 720, left: 720 }
+                    : { top: 1440, right: 1440, bottom: 1440, left: 1440 },
+                },
+              },
+              children: docChildren.slice(brk.index, end),
+            };
+          }).filter((s) => s.children.length > 0);
+          // Guard against an all-empty document (should be unreachable given the
+          // docChildren.length === 0 fallback above, but keep Document construction safe).
+          return built.length > 0 ? built : [{
+            properties: { page: { size: { width: 12240, height: 15840 }, margin: { top: 1440, right: 1440, bottom: 1440, left: 1440 } } },
+            children: docChildren,
+          }];
+        })(),
       });
 
       const blob = await Packer.toBlob(doc);
@@ -529,10 +609,6 @@ function RemedyDocsTab() {
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Documents up to 50 pages</p>
       </div>
-      <p className="text-xs text-muted-foreground px-1">
-        Not sure which to choose? If your document's images are purely decorative (backgrounds, borders, logos with no real content), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs — Word can lose or simplify those.
-      </p>
-
       <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
@@ -570,6 +646,10 @@ function RemedyDocsTab() {
           ))}
         </div>
       </fieldset>
+
+      <p className="text-xs text-muted-foreground px-1">
+        Not sure which to choose? If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
+      </p>
 
       {showWordConversionNotice && (
         <section
@@ -929,7 +1009,7 @@ const ACCENT_SOFT_HOVER = "#0f766e1f";
 const TAB_META = [
   {
     id: "document", label: "Remedy\nDocs", icon: iconDocument, Icon: null, beta: false, comingSoon: false, badge: ".docx & .pdf",
-    title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.",
+    title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document.",
   },
   {
     id: "video", label: "Remedy\nVideo", icon: iconVideo, Icon: null, beta: false, comingSoon: false, badge: "MP4, MOV, MP3",
