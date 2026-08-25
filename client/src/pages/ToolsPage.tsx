@@ -648,7 +648,7 @@ function RemedyDocsTab() {
       </fieldset>
 
       <p className="text-xs text-muted-foreground px-1">
-        Not sure which to choose? If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
+        <strong className="font-semibold text-foreground">Not sure which output to choose?</strong> If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
       </p>
 
       {showWordConversionNotice && (
