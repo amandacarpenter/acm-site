@@ -3118,7 +3118,7 @@ css_rules = [
     'img { max-width: 100%; height: auto; }',
     '.equation { font-style: italic; }',
 ]
-css = '\n'.join(css_rules)
+css = ' '.join(css_rules)
 
 full_html = (
     '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>'
