@@ -2990,6 +2990,57 @@ for _t in _pre_merge_soup.find_all('table'):
         _wrapper['style'] = 'break-inside: avoid; page-break-inside: avoid;'
         _t.wrap(_wrapper)
 
+# Wide tables (many columns -- nutrition-facts posters, comparison grids,
+# multi-attribute spec sheets) were silently overflowing past the page's
+# right margin with zero warning: a fixed 'width: 100%' table on a portrait
+# letter page (6.5in usable width after 1in margins) simply cannot fit more
+# than about 6-8 readable columns before WeasyPrint's default overflow
+# behavior clips every column past that point off the visible/printable
+# page -- no error is raised, no page break happens, the extra columns just
+# render outside the page box and vanish. Confirmed on a real 15-column
+# nutrition-facts table (Fruits/Calories/Calories from Fat/Total Fat/
+# Sodium/Potassium/Total Carbohydrate/Dietary Fiber/Sugars/Protein/
+# Vitamin A/Vitamin C/Calcium/Iron): only the first ~8 columns were visible
+# in the output PDF, the remaining 6-7 columns were completely missing on
+# every page of the table, with no visual indication anything was cut.
+#
+# Fix: any table with more columns than comfortably fit in portrait width
+# gets flagged and rendered on a landscape page instead (11in wide usable
+# vs 6.5in), with a smaller font/padding as an extra safety margin for
+# genuinely dense tables. WeasyPrint supports switching an individual
+# block's page orientation via a named @page selector (the 'page' CSS
+# property) -- confirmed via isolated test that a div with 'page: <name>'
+# renders on its own named page with that page's size/margins, and that
+# WeasyPrint's own struct-tree tagger (pdf_tags=True) tags content on named
+# pages identically to ordinary pages, since it walks the same box tree
+# regardless of which @page rule produced it.
+_WIDE_TABLE_MIN_COLUMNS = 8
+for _t in _pre_merge_soup.find_all('table'):
+    _header_row = _t.find('tr')
+    if not _header_row:
+        continue
+    _col_count = 0
+    for _cell in _header_row.find_all(['th', 'td'], recursive=False):
+        _col_count += int(_cell.get('colspan', 1) or 1)
+    if _col_count < _WIDE_TABLE_MIN_COLUMNS:
+        continue
+    # Reuse the small-table wrapper div if one was just added above (avoid
+    # nested divs); otherwise wrap fresh. Either way, the wide-table classes
+    # go on the OUTER div so the landscape page assignment covers the whole
+    # unbreakable unit (caption + table together), matching how the small-
+    # table break-inside wrapper already treats caption+table as one block.
+    _existing_wrapper = _t.parent if _t.parent and _t.parent.name == 'div' else None
+    _wide_wrapper = _existing_wrapper if _existing_wrapper is not None else _pre_merge_soup.new_tag('div')
+    if _existing_wrapper is None:
+        _t.wrap(_wide_wrapper)
+    _prior_style = _wide_wrapper.get('style', '')
+    _wide_wrapper['style'] = (_prior_style + '; ' if _prior_style else '') + 'page: wide-table;'
+    # Very dense tables (12+ columns) get an extra size reduction beyond the
+    # shared wide-table CSS rule below -- even landscape's ~9in usable width
+    # is tight for that many columns at the default 9pt wide-table font.
+    if _col_count >= 12:
+        _t['style'] = (_t.get('style', '') + '; ' if _t.get('style') else '') + 'font-size: 7.5pt;'
+
 html_parts = [str(_pre_merge_soup)]
 
 combined_for_headings = BeautifulSoup(''.join(html_parts), 'html.parser')
@@ -3011,6 +3062,14 @@ html_parts = [str(combined_for_headings)]
 
 css_rules = [
     '@page { size: letter; margin: 1in; }',
+    # Named landscape page for wide tables (see wide-table detection loop
+    # above): 11in wide vs. portrait's 8.5in gives ~9in usable width
+    # instead of 6.5in, enough headroom for tables with 8+ columns that
+    # were previously overflowing off the right edge of a portrait page
+    # with no warning. Smaller 0.5in margins reclaim a bit more width for
+    # genuinely dense tables (12+ columns also get a font-size reduction
+    # on the table element itself, applied in the detection loop).
+    '@page wide-table { size: letter landscape; margin: 0.5in; }',
     'body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 11pt; line-height: 1.4; color: #000; }',
     'h1 { font-size: 18pt; font-weight: bold; margin: 12pt 0 6pt 0; }',
     'h2 { font-size: 15pt; font-weight: bold; margin: 10pt 0 5pt 0; }',
@@ -3022,6 +3081,14 @@ css_rules = [
     'table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }',
     'th { background: #f0f0f0; border: 1px solid #999; padding: 4pt 6pt; text-align: left; font-weight: bold; }',
     'td { border: 1px solid #ccc; padding: 4pt 6pt; vertical-align: top; }',
+    # Wide tables get smaller font/padding and fixed table-layout so
+    # WeasyPrint distributes the available landscape width evenly across
+    # all columns instead of letting any single column's content push the
+    # table wider than the page (table-layout: auto sizes columns by
+    # content, which is exactly the behavior that let columns push past
+    # the page edge in the first place).
+    'div[style*="page: wide-table"] table { table-layout: fixed; font-size: 9pt; word-wrap: break-word; overflow-wrap: break-word; }',
+    'div[style*="page: wide-table"] th, div[style*="page: wide-table"] td { padding: 3pt 4pt; }',
     'blockquote { margin: 6pt 0 6pt 24pt; border-left: 2pt solid #999; padding-left: 8pt; }',
     'figure { margin: 8pt 0; }',
     'figcaption { font-size: 9pt; color: #555; margin-top: 3pt; }',
