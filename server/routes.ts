@@ -690,11 +690,29 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // A real plan: "team" always takes priority and this is ignored once set.
       const pendingTeamInvoice = meta.plan !== "team" ? meta.pendingTeamInvoice : null;
 
+      // The pending-invoice display override must also recompute monthlyLimit --
+      // otherwise the Dashboard shows the label "Team" next to the stale Individual
+      // limit (130). IMPORTANT: team credits are per-seat, NOT pooled (see the
+      // TEAM_CREDITS_PER_SEAT comment above) -- this one signed-in person will get
+      // their own 145/mo once provisioned, same as every other teammate, regardless
+      // of how many total seats the institution requested. So the displayed number
+      // here is always the flat per-seat amount (145), never multiplied by
+      // pendingInvoiceSeats -- multiplying would incorrectly show this individual
+      // the WHOLE team's combined pool as if it were their own personal allotment.
+      // The requested seat count is still shown separately in the plan label text
+      // only ("N seats requested"). Still display-only: the real enforcement gate
+      // (checkHasCredits/getMonthlyCreditLimit) never reads this value -- it always
+      // reads the real meta.plan/meta.teamSeats directly, so actual tool access
+      // stays correctly blocked either way.
+      const displayLimit = pendingTeamInvoice
+        ? TEAM_CREDITS_PER_SEAT
+        : monthlyLimit;
+
       res.json({
         monthlyUsed,
-        monthlyLimit,
+        monthlyLimit: displayLimit,
         purchasedCredits,
-        creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits,
+        creditsRemaining: Math.max(0, displayLimit - monthlyUsed) + purchasedCredits,
         resetDate: meta.usageResetDate || getResetDate(),
         plan: pendingTeamInvoice ? "team" : (meta.plan || "individual"),
         pendingInvoice: Boolean(pendingTeamInvoice),
