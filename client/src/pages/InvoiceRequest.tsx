@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
+import { useAuth } from "@clerk/clerk-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Loader2, CheckCircle2 } from "lucide-react";
@@ -9,6 +10,7 @@ const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B A
 
 export default function InvoiceRequest() {
   const [, navigate] = useLocation();
+  const { userId } = useAuth();
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const defaultSeats = Math.min(MAX_TEAM_SEATS, parseInt(params.get("seats") || "2"));
 
@@ -38,7 +40,11 @@ export default function InvoiceRequest() {
       const res = await fetch("/api/invoice-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        // clerkUserId is included only when the requester is signed in -- lets
+        // the backend mark their Dashboard as "Team (invoice pending)" instead
+        // of the default Individual label while the invoice is outstanding.
+        // Anonymous submissions (most common) are unaffected.
+        body: JSON.stringify({ ...form, clerkUserId: userId || undefined }),
       });
       if (res.ok) {
         setSubmitted(true);

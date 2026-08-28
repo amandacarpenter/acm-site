@@ -680,13 +680,25 @@ export function registerRoutes(httpServer: Server, app: Express) {
         }
       }
 
+      // Display-only: a user who submitted the invoice-request form while
+      // signed in gets pendingTeamInvoice stamped on their metadata (see
+      // /api/invoice-request). This is NOT a real plan -- checkHasCredits
+      // never reads it, so tool access stays correctly blocked with no
+      // credits until a real team is provisioned. It only affects what the
+      // Dashboard displays, so the account doesn't confusingly show
+      // "Individual" while an institutional invoice is awaiting payment.
+      // A real plan: "team" always takes priority and this is ignored once set.
+      const pendingTeamInvoice = meta.plan !== "team" ? meta.pendingTeamInvoice : null;
+
       res.json({
         monthlyUsed,
         monthlyLimit,
         purchasedCredits,
         creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits,
         resetDate: meta.usageResetDate || getResetDate(),
-        plan: meta.plan || "individual",
+        plan: pendingTeamInvoice ? "team" : (meta.plan || "individual"),
+        pendingInvoice: Boolean(pendingTeamInvoice),
+        pendingInvoiceSeats: pendingTeamInvoice?.seats ?? null,
         // teamSeats: kept for backward compatibility -- this is the per-member
         // allotment multiplier (always 1), NOT the team's real seat count.
         teamSeats: meta.teamSeats || 1,
@@ -4740,7 +4752,7 @@ Rules:
     try {
       const {
         institutionName, contactName, contactEmail, contactPhone,
-        institutionType, seats, poNumber, timeline, notes,
+        institutionType, seats, poNumber, timeline, notes, clerkUserId,
       } = req.body;
 
       if (!institutionName || !contactName || !contactEmail || !institutionType || !seats || !timeline) {
@@ -4768,6 +4780,37 @@ Rules:
           message: body,
         }),
       });
+
+      // If the requester was signed in when they submitted this, mark their
+      // account as "pending team invoice" so the Dashboard shows Team (Pending)
+      // instead of the default Individual label while we manually issue and
+      // collect the invoice. This is purely cosmetic/informational -- it does
+      // NOT grant team credits or tool access (checkHasCredits still gates on
+      // meta.plan === "team" + a real orgId, which this does not set). The
+      // moment a real team plan is provisioned (checkout webhook or manual
+      // Clerk grant), meta.plan becomes "team" for real and this flag is
+      // simply ignored/overwritten -- no manual cleanup needed.
+      if (clerkUserId) {
+        try {
+          const existing = await clerkClient.users.getUser(clerkUserId);
+          const existingMeta = (existing.publicMetadata || {}) as any;
+          if (existingMeta.plan !== "team") {
+            await clerkClient.users.updateUserMetadata(clerkUserId, {
+              publicMetadata: {
+                ...existingMeta,
+                pendingTeamInvoice: {
+                  institutionName,
+                  seats: parseInt(seats) || 2,
+                  requestedAt: new Date().toISOString(),
+                },
+              },
+            });
+          }
+        } catch (metaErr: any) {
+          // Non-fatal -- the invoice email already sent, which is the part that matters.
+          console.error("[INVOICE REQUEST] Failed to set pendingTeamInvoice metadata:", metaErr.message);
+        }
+      }
 
       console.log(`[INVOICE REQUEST] ${institutionName} — ${seats} seats — ${contactEmail}`);
       res.json({ ok: true });

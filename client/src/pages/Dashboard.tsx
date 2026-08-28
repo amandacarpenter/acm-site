@@ -38,6 +38,11 @@ interface UsageStatus {
   // multiplier, not the team's actual size) -- use this for display.
   orgSeats?: number | null;
   billingRestricted?: boolean;
+  // Set when the user submitted an invoice request while signed in but a real
+  // team plan hasn't been provisioned yet -- display-only, does not grant
+  // team credits or tool access. See /api/usage/status and /api/invoice-request.
+  pendingInvoice?: boolean;
+  pendingInvoiceSeats?: number | null;
 }
 
 // Both "document" and "complexpdf" are internal job-type values written by the
@@ -75,6 +80,12 @@ export default function Dashboard() {
 
   const meta = (user?.publicMetadata || {}) as any;
   const plan: string = usage?.plan || meta.plan || "individual";
+  // A pending invoice makes the API report plan: "team" for display purposes
+  // (see /api/usage/status), but no real org/subscription exists yet -- keep
+  // this distinct so we don't show org-only UI (like the Team Dashboard link)
+  // for an account that hasn't actually been provisioned.
+  const isPendingInvoice = Boolean(usage?.pendingInvoice);
+  const hasRealTeamOrg = plan === "team" && !isPendingInvoice;
   // `teamSeats` is always 1 for an individual member (their own credit-
   // allotment multiplier) -- it is NOT the team's real seat count, so it must
   // never be shown to the user labeled as "seats". Use `orgSeats` (the team's
@@ -97,8 +108,9 @@ export default function Dashboard() {
         return next.toLocaleDateString("en-US", { month: "long", day: "numeric" });
       })();
 
-  const planLabel =
-    plan === "team"
+  const planLabel = isPendingInvoice
+    ? `Team (${usage?.pendingInvoiceSeats ?? "—"} seat${usage?.pendingInvoiceSeats === 1 ? "" : "s"} requested) — invoice pending`
+    : plan === "team"
       ? orgSeats
         ? `Team (${orgSeats} seat${orgSeats !== 1 ? "s" : ""} total)`
         : "Team plan"
@@ -248,21 +260,32 @@ export default function Dashboard() {
               <CreditCard className="w-4 h-4 text-[#0f766e]" />
               <span className="font-semibold text-[#3a485b] text-sm">Your Plan</span>
             </div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0f766e] text-white">
                 {plan === "team" ? "Team" : "Individual"}
               </span>
-              {meta.stripeCustomerId && (
-                <span className="text-sm text-gray-700">Active</span>
+              {isPendingInvoice ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                  Invoice pending
+                </span>
+              ) : (
+                meta.stripeCustomerId && (
+                  <span className="text-sm text-gray-700">Active</span>
+                )
               )}
             </div>
+            {isPendingInvoice && (
+              <p className="text-xs text-gray-500 mb-2">
+                We received your invoice request — your team will be activated once payment is processed.
+              </p>
+            )}
             {billingCycle && (
               <p className="text-sm text-gray-700 mb-2">Member since {billingCycle}</p>
             )}
             <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} Credits/mo</p>
 
             <div className="mt-auto flex flex-col gap-2">
-              {plan === "team" && (
+              {hasRealTeamOrg && (
                 <Link href="/team/setup">
                   <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#3a485b] text-white hover:bg-[#2d3847] transition cursor-pointer">
                     <Users className="w-3 h-3" />
