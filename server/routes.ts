@@ -16,6 +16,7 @@ import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
 import { createHash } from "crypto";
+import { createAdminAuthMiddleware } from "./adminAuth";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -630,6 +631,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   const stripeKey = process.env.STRIPE_SECRET_KEY || "";
   console.log("[STARTUP] STRIPE_SECRET_KEY prefix:", stripeKey.slice(0, 15) || "(not set)");
   const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
+  const requireAdmin = createAdminAuthMiddleware();
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
@@ -1081,14 +1083,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
-  // Real per-page cost summary (owner-only, gated by ADMIN_STATS_KEY env var).
+  // Real per-page cost summary (owner-only, verified by Clerk on the server).
   // Reports EXACT Anthropic-billed token usage logged at job-completion time,
-  // not an estimate. Query with ?key=<ADMIN_STATS_KEY>&sinceDays=30
-  app.get("/api/admin/cost-summary", (req, res) => {
-    const key = req.query.key as string | undefined;
-    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
-      return res.status(404).json({ error: "Not found" });
-    }
+  // not an estimate.
+  app.get("/api/admin/cost-summary", requireAdmin, (req, res) => {
     try {
       const sinceDays = req.query.sinceDays ? parseInt(req.query.sinceDays as string, 10) : undefined;
       const sinceMs = sinceDays ? Date.now() - sinceDays * 24 * 60 * 60 * 1000 : undefined;
@@ -1113,18 +1111,14 @@ export function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
-  // ── Database backup (owner-only, gated by ADMIN_STATS_KEY env var) ─────────
+  // ── Database backup (owner-only, verified by Clerk on the server) ──────────
   // Streams a consistent point-in-time snapshot of the SQLite database (jobs
   // table: job history, credits used, usage logs) as a downloadable file.
   // Uses SQLite's own backup API rather than reading the raw file directly,
   // since the live db runs in WAL mode and a raw copy could catch a
   // mid-write state. Intended to be called by a scheduled task on a regular
-  // cadence so this data has an off-server copy. Query with ?key=<ADMIN_STATS_KEY>
-  app.get("/api/admin/backup-db", async (req, res) => {
-    const key = req.query.key as string | undefined;
-    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
-      return res.status(404).json({ error: "Not found" });
-    }
+  // cadence so this data has an off-server copy.
+  app.get("/api/admin/backup-db", requireAdmin, async (req, res) => {
     try {
       const tmpPath = path.join(os.tmpdir(), `acm-backup-${Date.now()}.db`);
       await storage.backupTo(tmpPath);
@@ -1144,11 +1138,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // the vision pipeline (handleComplexPdfFix writes <output>.pdf.html and
   // never deletes it on the success path). Read-only, admin-key gated,
   // temporary diagnostic aid -- not part of normal product surface.
-  app.get("/api/admin/debug-last-html", async (req, res) => {
-    const key = req.query.key as string | undefined;
-    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
-      return res.status(404).json({ error: "Not found" });
-    }
+  app.get("/api/admin/debug-last-html", requireAdmin, async (req, res) => {
     try {
       const { tmpdir } = await import("os");
       const fsMod = require("fs");
@@ -1239,17 +1229,13 @@ export function registerRoutes(httpServer: Server, app: Express) {
     res.status(created ? 201 : 200).json({ recorded: created });
   });
 
-  // ── Admin Dashboard (owner-only, gated by ADMIN_STATS_KEY env var) ──────────
+  // ── Admin Dashboard (owner-only, verified by Clerk on the server) ──────────
   // Single-call summary powering the mobile admin dashboard: revenue/subscribers
   // (from Clerk user metadata, since that's the source of truth for plan state
   // set by the Stripe webhook), usage/cost (real logged token usage), error
   // health (from the jobs table, now that failures are logged there too), and
-  // recent activity. Query with ?key=<ADMIN_STATS_KEY>
-  app.get("/api/admin/dashboard", async (req, res) => {
-    const key = req.query.key as string | undefined;
-    if (!process.env.ADMIN_STATS_KEY || key !== process.env.ADMIN_STATS_KEY) {
-      return res.status(404).json({ error: "Not found" });
-    }
+  // recent activity.
+  app.get("/api/admin/dashboard", requireAdmin, async (_req, res) => {
     try {
       // ── Revenue & subscribers ────────────────────────────────────────────
       const INDIVIDUAL_MONTHLY_PRICE = 19; // $19/mo list price (billing cadence varies, monthly-equivalent used for MRR)

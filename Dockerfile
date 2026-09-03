@@ -7,9 +7,7 @@ COPY . .
 # Pass Railway service variables through as Vite build-time env vars.
 # Railway auto-populates any declared ARG with a matching-name service variable.
 ARG VITE_CLERK_PUBLISHABLE_KEY
-ARG VITE_ADMIN_STATS_KEY
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
-ENV VITE_ADMIN_STATS_KEY=$VITE_ADMIN_STATS_KEY
 RUN npm run build
 
 # ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────

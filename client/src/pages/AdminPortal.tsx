@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { Redirect } from "wouter";
 import logoFull from "@/assets/logo-hero.jpg";
 
 const ADMIN_EMAIL = "amandathecarpenter@gmail.com";
-const ADMIN_STATS_KEY = import.meta.env.VITE_ADMIN_STATS_KEY as string | undefined;
 const REFRESH_MS = 45000;
 
 // ── Types (mirrors /api/admin/dashboard response) ────────────────
@@ -194,7 +193,7 @@ function MiniBarChart({ data }: { data: { date: string; jobs: number; failed: nu
 }
 
 // ── Dashboard section ────────────────────────────────────────────
-function LiveDashboard() {
+function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> }) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -202,14 +201,13 @@ function LiveDashboard() {
   const intervalRef = useRef<number | null>(null);
 
   const fetchData = useCallback(async (silent = false) => {
-    if (!ADMIN_STATS_KEY) {
-      setError("VITE_ADMIN_STATS_KEY is not configured for this build — dashboard data can't load.");
-      setLoading(false);
-      return;
-    }
     if (!silent) setLoading(true);
     try {
-      const res = await fetch(`/api/admin/dashboard?key=${encodeURIComponent(ADMIN_STATS_KEY)}`);
+      const token = await getToken();
+      if (!token) throw new Error("Your admin session has expired. Please log in again.");
+      const res = await fetch("/api/admin/dashboard", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const json = await res.json();
       setData(json);
@@ -220,7 +218,7 @@ function LiveDashboard() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getToken]);
 
   useEffect(() => {
     fetchData();
@@ -558,6 +556,7 @@ function LiveDashboard() {
 
 // ── Main page ──────────────────────────────────────────────────────
 export default function AdminPortal() {
+  const { getToken } = useAuth();
   const { user, isLoaded } = useUser();
 
   if (!isLoaded) return null;
@@ -588,7 +587,7 @@ export default function AdminPortal() {
 
         {/* Live Dashboard — the main event */}
         <div style={{ marginBottom: 36 }}>
-          <LiveDashboard />
+          <LiveDashboard getToken={getToken} />
         </div>
 
         {/* Live Sites */}
