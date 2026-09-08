@@ -65,6 +65,24 @@ function bearerToken(authorization: string | undefined): string | null {
   return token || null;
 }
 
+export function createAdminOrBackupKeyMiddleware(
+  adminMiddleware: RequestHandler,
+  dependencies: { backupKey?: string } = {},
+): RequestHandler {
+  const backupKey = dependencies.backupKey ?? process.env.ADMIN_STATS_KEY;
+
+  // Scheduled/machine callers (e.g. the weekly backup cron) can't complete a
+  // Clerk login, so this route accepts the legacy ADMIN_STATS_KEY as a narrow
+  // exception -- but ONLY on this one read-only export route, not site-wide.
+  return (req, res, next) => {
+    const key = req.query.key as string | undefined;
+    if (backupKey && key === backupKey) {
+      return next();
+    }
+    return adminMiddleware(req, res, next);
+  };
+}
+
 export function createAdminAuthMiddleware(
   dependencies: AdminAuthDependencies = {},
 ): RequestHandler {

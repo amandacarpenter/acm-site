@@ -16,7 +16,7 @@ import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
 import { createHash } from "crypto";
-import { createAdminAuthMiddleware } from "./adminAuth";
+import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware } from "./adminAuth";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -632,6 +632,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
   console.log("[STARTUP] STRIPE_SECRET_KEY prefix:", stripeKey.slice(0, 15) || "(not set)");
   const stripe = stripeKey ? new Stripe(stripeKey, { apiVersion: "2026-04-22.dahlia" }) : null;
   const requireAdmin = createAdminAuthMiddleware();
+  // Backup route only: allows the scheduled backup cron (which can't complete
+  // a Clerk login) to authenticate with ADMIN_STATS_KEY, in addition to normal
+  // Clerk admin sessions for browser use. See adminAuth.ts for details.
+  const requireAdminOrBackupKey = createAdminOrBackupKeyMiddleware(requireAdmin);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
   app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
@@ -1118,7 +1122,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // since the live db runs in WAL mode and a raw copy could catch a
   // mid-write state. Intended to be called by a scheduled task on a regular
   // cadence so this data has an off-server copy.
-  app.get("/api/admin/backup-db", requireAdmin, async (req, res) => {
+  app.get("/api/admin/backup-db", requireAdminOrBackupKey, async (req, res) => {
     try {
       const tmpPath = path.join(os.tmpdir(), `acm-backup-${Date.now()}.db`);
       await storage.backupTo(tmpPath);
