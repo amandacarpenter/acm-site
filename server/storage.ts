@@ -13,6 +13,7 @@ import {
 import { eq, desc, lt } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
+import { TrialLedger, linkTrialJob } from "./trialCredits";
 
 // On Railway, /data is a mounted persistent volume — files written there survive
 // deploys and restarts. Locally (and anywhere /data doesn't exist), fall back to
@@ -29,6 +30,7 @@ const sqlite = new Database(DB_PATH);
 // against the same underlying acm.db file.
 sqlite.pragma("journal_mode = WAL");
 const db = drizzle(sqlite);
+export const trialLedger = new TrialLedger(sqlite);
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
@@ -136,7 +138,9 @@ export class Storage implements IStorage {
     return sqlite.backup(destPath).then(() => {});
   }
   createJob(job: InsertJob): Job {
-    return db.insert(jobs).values(job).returning().get();
+    const created = db.insert(jobs).values(job).returning().get();
+    if (job.status === "completed") linkTrialJob(created.id);
+    return created;
   }
   getJob(id: number): Job | undefined {
     return db.select().from(jobs).where(eq(jobs.id, id)).get();

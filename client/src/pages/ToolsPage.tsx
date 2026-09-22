@@ -23,6 +23,17 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 
+function useCreditFetch() {
+  const { getToken } = useAuth();
+  return async (url: string, options: RequestInit) => {
+    const token = await getToken();
+    if (!token) throw new Error("Please sign in again to continue.");
+    const headers = new Headers(options.headers);
+    headers.set("Authorization", `Bearer ${token}`);
+    return fetch(url, { ...options, headers });
+  };
+}
+
 // Safely parses a fetch Response as JSON. If the server (or a proxy in front of it,
 // e.g. on a timeout) returns HTML/plain text instead of JSON, this throws a clear,
 // human-readable error instead of letting `resp.json()` throw a cryptic
@@ -266,6 +277,7 @@ function RemedyDocsTab() {
   const [wordConversionAcknowledged, setWordConversionAcknowledged] = useState(false);
   const { toast } = useToast();
   const { user: docsUser } = useUser();
+  const creditFetch = useCreditFetch();
 
   const showWordConversionNotice = file?.name.toLowerCase().endsWith(".pdf") && outputMode === "docx";
 
@@ -297,7 +309,7 @@ function RemedyDocsTab() {
       if (showWordConversionNotice && wordConversionAcknowledged) {
         fd.append("wordConversionAcknowledged", "true");
       }
-      const resp = await fetch("/api/remedy-docs/fix", { method: "POST", body: fd });
+      const resp = await creditFetch("/api/remedy-docs/fix", { method: "POST", body: fd });
       const contentType = resp.headers.get("Content-Type") || "";
 
       if (contentType.includes("application/pdf")) {
@@ -323,7 +335,7 @@ function RemedyDocsTab() {
       } catch (parseErr: any) {
         if (resp.ok && docsUser?.id) {
           try {
-            await fetch("/api/document/refund", {
+            await creditFetch("/api/document/refund", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ inputName: file.name, clerkUserId: docsUser.id }),
@@ -343,7 +355,7 @@ function RemedyDocsTab() {
         // built fully structured, WCAG-tagged HTML for this document -- send it
         // to the standalone tagging endpoint instead of building a .docx.
         const baseNamePdf = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
-        const pdfResp = await fetch("/api/remedy-docs/fix-as-pdf", {
+        const pdfResp = await creditFetch("/api/remedy-docs/fix-as-pdf", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -576,7 +588,7 @@ function RemedyDocsTab() {
       setError(e.message);
       if (chargedJobId && docsUser?.id) {
         try {
-          await fetch("/api/document/refund", {
+          await creditFetch("/api/document/refund", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ jobId: chargedJobId, clerkUserId: docsUser.id }),
@@ -769,6 +781,7 @@ function VideoTab() {
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: videoUser } = useUser();
+  const creditFetch = useCreditFetch();
 
   const [errorCode, setErrorCode] = useState("");
   const startOver = () => { setFile(null); setResult(null); setError(""); setErrorCode(""); setResetKey((k) => k + 1); };
@@ -779,7 +792,7 @@ function VideoTab() {
     try {
       const fd = new FormData(); fd.append("file", file);
       if (videoUser?.id) fd.append("clerkUserId", videoUser.id);
-      const resp = await fetch("/api/video/transcribe", { method: "POST", body: fd });
+      const resp = await creditFetch("/api/video/transcribe", { method: "POST", body: fd });
       const data = await parseApiResponse(resp);
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       setResult(data);
@@ -851,13 +864,14 @@ function CanvasTab() {
   const [error, setError] = useState("");
   const { toast } = useToast();
   const { user: canvasUser } = useUser();
+  const creditFetch = useCreditFetch();
   const [errorCode, setErrorCode] = useState("");
 
   const run = async () => {
     if (!html.trim()) { toast({ title: "No HTML", variant: "destructive" }); return; }
     setLoading(true); setError(""); setErrorCode(""); setResult(null);
     try {
-      const resp = await fetch("/api/canvas/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ html, clerkUserId: canvasUser?.id }) });
+      const resp = await creditFetch("/api/canvas/fix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ html, clerkUserId: canvasUser?.id }) });
       const data = await parseApiResponse(resp);
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       setResult(data);
@@ -930,6 +944,7 @@ function AltTextTab() {
   const [resetKey, setResetKey] = useState(0);
   const { toast } = useToast();
   const { user: altTextUser } = useUser();
+  const creditFetch = useCreditFetch();
   const [errorCode, setErrorCode] = useState("");
 
   const handleFile = (f: File) => { setFile(f); setImageUrl(""); setPreviewUrl(URL.createObjectURL(f)); };
@@ -945,7 +960,7 @@ function AltTextTab() {
       if (imageUrl) fd.append("imageUrl", imageUrl);
       fd.append("context", context);
       if (altTextUser?.id) fd.append("clerkUserId", altTextUser.id);
-      const resp = await fetch("/api/alttext/generate", { method: "POST", body: fd });
+      const resp = await creditFetch("/api/alttext/generate", { method: "POST", body: fd });
       const data = await parseApiResponse(resp);
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       setResult(data);

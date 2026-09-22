@@ -6,9 +6,10 @@ import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
 import { Resend } from "resend";
 import Stripe from "stripe";
-import { createClerkClient } from "@clerk/backend";
+import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
-import { storage } from "./storage";
+import { storage, trialLedger } from "./storage";
+import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
 import * as child_process from "child_process";
@@ -16,7 +17,7 @@ import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
 import { createHash } from "crypto";
-import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware } from "./adminAuth";
+import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware, getAdminAuthorizedParties } from "./adminAuth";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -133,6 +134,13 @@ async function getCreditBalance(clerkUserId: string): Promise<{
   const user = await clerkClient.users.getUser(clerkUserId);
   let meta = (user.publicMetadata || {}) as any;
 
+  // Trials have a lifetime pool, never a monthly pool. The persistent ledger
+  // is authoritative; no metadata reset date can refill this balance.
+  if (meta.plan === "trial") {
+    const balance = trialLedger.balance(clerkUserId, meta.trialCreditLimit);
+    return { monthlyUsed: balance.used, monthlyLimit: balance.allocated, purchasedCredits: 0, meta };
+  }
+
   // Auto-provision team credits: if this user has never had a plan set (brand new
   // account, e.g. just accepted a team invite via Clerk Organizations) but belongs to
   // an organization whose OWNER metadata marks it as a team org, grant them their own
@@ -234,6 +242,8 @@ async function checkHasCredits(clerkUserId: string): Promise<{ allowed: boolean;
     const remaining = (monthlyLimit - monthlyUsed) + purchasedCredits;
     if (remaining > 0) return { allowed: true };
 
+    if (meta.plan === "trial") return { allowed: false, reason: TRIAL_EXHAUSTED };
+
     const resetDate: string = meta.usageResetDate || getResetDate();
     const resetStr = new Date(resetDate).toLocaleDateString("en-US", { month: "long", day: "numeric" });
     return {
@@ -265,7 +275,10 @@ function checkPageCap(totalPages: number): { allowed: boolean; reason?: string }
 // This is the step that makes the credit system tamper-proof: cost is always tied to the
 // actual number of pages Claude processed, never to a flat "1 document" assumption.
 async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ creditsRemaining: number }> {
+  const reserved = trialDeduction(clerkUserId, pagesUsed);
+  if (reserved) return reserved;
   const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+  if (meta.plan === "trial") throw new TrialCreditError("A verified trial credit reservation is required.");
   const resetDate: string = meta.usageResetDate || getResetDate();
 
   const monthlyRemaining = Math.max(0, monthlyLimit - monthlyUsed);
@@ -293,8 +306,14 @@ async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ 
 // failed after a successful API response). Restores monthly credits first (since
 // deductCredits spends monthly credits before purchased ones), mirroring the deduction
 // order so a refund exactly undoes the matching charge.
-async function refundCredits(clerkUserId: string, pagesToRefund: number): Promise<{ creditsRemaining: number }> {
+async function refundCredits(clerkUserId: string, pagesToRefund: number, jobId?: number): Promise<{ creditsRemaining: number }> {
+  const isTrialRefund = jobId !== undefined
+    ? trialLedger.refundJob(clerkUserId, jobId)
+    : refundTrialRequest(clerkUserId);
   const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+  if (isTrialRefund || meta.plan === "trial") {
+    return { creditsRemaining: Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits };
+  }
   const newMonthlyUsed = Math.max(0, monthlyUsed - pagesToRefund);
   const actuallyRefundedFromMonthly = monthlyUsed - newMonthlyUsed;
   const remainderToPurchased = pagesToRefund - actuallyRefundedFromMonthly;
@@ -637,8 +656,25 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // Clerk admin sessions for browser use. See adminAuth.ts for details.
   const requireAdminOrBackupKey = createAdminOrBackupKeyMiddleware(requireAdmin);
 
+  // All paid processing uses the verified session subject, never a posted ID.
+  // This also prevents bypassing a trial by omitting/changing clerkUserId.
+  const creditAccess = createCreditAccessMiddleware({
+    ledger: trialLedger,
+    verify: token => verifyToken(token, {
+      secretKey: process.env.CLERK_SECRET_KEY,
+      authorizedParties: getAdminAuthorizedParties(),
+    }),
+    getUser: id => clerkClient.users.getUser(id),
+  });
+  app.use([
+    "/api/document/fix", "/api/document/refund",
+    "/api/remedy-docs/fix", "/api/remedy-docs/fix-as-pdf",
+    "/api/complexpdf/fix", "/api/flyer/fix",
+    "/api/video/transcribe", "/api/canvas/fix", "/api/alttext/generate",
+  ], creditAccess);
+
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "yt-proxy-2" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "one-time-trials-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -694,7 +730,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       // Dashboard displays, so the account doesn't confusingly show
       // "Individual" while an institutional invoice is awaiting payment.
       // A real plan: "team" always takes priority and this is ignored once set.
-      const pendingTeamInvoice = meta.plan !== "team" ? meta.pendingTeamInvoice : null;
+      const pendingTeamInvoice = meta.plan !== "team" && meta.plan !== "trial" ? meta.pendingTeamInvoice : null;
 
       // The pending-invoice display override must also recompute monthlyLimit --
       // otherwise the Dashboard shows the label "Team" next to the stale Individual
@@ -719,7 +755,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
         monthlyLimit: displayLimit,
         purchasedCredits,
         creditsRemaining: Math.max(0, displayLimit - monthlyUsed) + purchasedCredits,
-        resetDate: meta.usageResetDate || getResetDate(),
+        resetDate: meta.plan === "trial" ? null : (meta.usageResetDate || getResetDate()),
+        creditPeriod: meta.plan === "trial" ? "one_time" : "monthly",
         plan: pendingTeamInvoice ? "team" : (meta.plan || "individual"),
         pendingInvoice: Boolean(pendingTeamInvoice),
         pendingInvoiceSeats: pendingTeamInvoice?.seats ?? null,
@@ -1609,7 +1646,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const ext = path.extname(req.file.originalname).toLowerCase();
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits ─────────
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    const clerkUserId: string = res.locals.creditUserId;
     if (clerkUserId) {
       try {
         const usage = await checkHasCredits(clerkUserId);
@@ -1716,6 +1753,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
       } else {
         return res.status(400).json({ error: "Please upload a .docx or .pdf file" });
       }
+
+      reserveTrialCredits(Math.max(1, docPageCount));
 
       // Send full document to Claude — 16384 max_tokens handles full syllabi
       // Trim only if extremely large (>40k chars raw HTML)
@@ -2044,6 +2083,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       });
     } catch (err: any) {
       console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- fast pipeline failed:`, err.message);
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       try {
         storage.createJob({
           type: "document",
@@ -2065,11 +2105,12 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
     }
   }
 
-  app.post("/api/document/fix", upload.single("file"), (req, res, next) => { req.setTimeout(300000); res.setTimeout(300000); next(); }, handleDocumentFix);
+  app.post("/api/document/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(300000); res.setTimeout(300000); next(); }, handleDocumentFix);
 
   app.post("/api/document/refund", async (req, res) => {
     try {
-      const { jobId, clerkUserId, inputName } = req.body || {};
+      const { jobId, inputName } = req.body || {};
+      const clerkUserId: string = res.locals.creditUserId;
       if (!clerkUserId || (!jobId && !inputName)) {
         return res.status(400).json({ error: "clerkUserId and either jobId or inputName are required" });
       }
@@ -2091,7 +2132,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       if (job.status !== "completed" || !job.creditsUsed) {
         return res.status(400).json({ error: "Job is not eligible for refund" });
       }
-      await refundCredits(clerkUserId, job.creditsUsed);
+      await refundCredits(clerkUserId, job.creditsUsed, job.id);
       storage.updateJob(job.id, { status: "refunded" });
       console.log("[REFUND] Job " + job.id + " (" + job.inputName + ") refunded " + job.creditsUsed + " credits to " + clerkUserId);
       return res.json({ success: true });
@@ -2148,9 +2189,9 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
   });
 
   // ── VIDEO TRANSCRIPTION ─────────────────────────────────────────────────────
-  app.post("/api/video/transcribe", uploadMedia.single("file"), async (req, res) => {
+  app.post("/api/video/transcribe", uploadMedia.single("file"), restoreCreditContext, async (req, res) => {
     const bodyUrl = req.body?.url;
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    const clerkUserId: string = res.locals.creditUserId;
     if (!req.file && !bodyUrl) return res.status(400).json({ error: "No file or URL provided" });
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits available.
@@ -2170,6 +2211,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
     }
 
     try {
+      reserveTrialCredits(VIDEO_CREDITS_PER_JOB);
       let audioBuffer: Buffer;
       let filename = "video";
 
@@ -2313,13 +2355,15 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         creditsRemaining: videoCreditsRemaining,
       });
     } catch (err: any) {
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       res.status(500).json({ error: err.message });
     }
   });
 
   // ── CANVAS HTML ACCESSIBILITY ───────────────────────────────────────────────
   app.post("/api/canvas/fix", async (req, res) => {
-    const { html, clerkUserId } = req.body;
+    const { html } = req.body;
+    const clerkUserId: string = res.locals.creditUserId;
     if (!html) return res.status(400).json({ error: "No HTML provided" });
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits available ──
@@ -2336,6 +2380,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
     }
 
     try {
+      reserveTrialCredits(CANVAS_CREDITS_PER_FIX);
       const systemPrompt = `You are an expert in Canvas LMS accessibility and WCAG 2.1 AA compliance.
 The user will paste HTML from a Canvas page. Your job is to:
 1. Fix all accessibility issues
@@ -2402,6 +2447,7 @@ Canvas-specific rules:
 
       res.json({ success: true, ...parsed, jobId: canvasJobId, creditsUsed: CANVAS_CREDITS_PER_FIX, creditsRemaining: canvasCreditsRemaining });
     } catch (err: any) {
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       res.status(500).json({ error: err.message });
     }
   });
@@ -2414,7 +2460,7 @@ Canvas-specific rules:
 
     const tempFiles = new Set<string>();
     let tmpWorkDir = "";
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    const clerkUserId: string = res.locals.creditUserId;
     let deductedCredits = 0;
     // Stay comfortably inside the route's 10-minute HTTP timeout so a slow
     // provider or PDF build fails predictably and reaches the refund path.
@@ -2468,6 +2514,8 @@ Canvas-specific rules:
       if (!capCheck.allowed) {
         return res.status(413).json({ error: capCheck.reason, code: "PAGE_CAP_EXCEEDED" });
       }
+
+      reserveTrialCredits(totalPages);
 
       // ── Real credit deduction — exactly totalPages credits, tied to actual Vision-call cost ──
       if (clerkUserId) {
@@ -3633,6 +3681,7 @@ print('ok')
 
     } catch (err: any) {
       console.error(`[REMEDY DOCS] ${req.file?.originalname || "unknown file"} -- vision pipeline failed:`, err.message);
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       if (clerkUserId && deductedCredits > 0) {
         try {
           await refundCredits(clerkUserId, deductedCredits);
@@ -3671,7 +3720,7 @@ print('ok')
     }
   }
 
-  app.post("/api/complexpdf/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, handleComplexPdfFix);
+  app.post("/api/complexpdf/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, handleComplexPdfFix);
 
   // ── REMEDY DOCS: unified upload endpoint ─────────────────────────────────────
   // Single entry point replacing the old "Document Fixer" vs "Complex PDF" tool
@@ -3679,7 +3728,7 @@ print('ok')
   // the exact same, unchanged handlers used by the legacy routes above (kept
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
-  app.post("/api/remedy-docs/fix", upload.single("file"), (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
+  app.post("/api/remedy-docs/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
     res.setHeader("X-Remedy-Docs-Version", "2026-08-21-explicit-output-route-v3r2");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -3783,7 +3832,7 @@ print('ok')
     const ext = path.extname(req.file.originalname).toLowerCase();
     if (ext !== ".pdf") return res.status(400).json({ error: "Please upload a PDF file" });
 
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    const clerkUserId: string = res.locals.creditUserId;
     if (clerkUserId) {
       try {
         const usage = await checkHasCredits(clerkUserId);
@@ -3879,6 +3928,7 @@ print('ok')
       const { orphans } = JSON.parse(orphanExtractJson) as {
         orphans: Array<{ orphan_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
       };
+      reserveTrialCredits(Math.max(1, figuresWithCrops.length + orphans.length));
 
       // ── Step 2: classify each figure with Claude Vision (parallel) ──
       const visionSystemPrompt = `You are a WCAG 2.1 AA accessibility expert. You are shown one small cropped image -- a single figure/icon/graphic from a larger designed flyer -- plus the full text content of that flyer for context.
@@ -4001,6 +4051,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
         page_text: string;
         candidates: Array<{ cand_id: number; bbox: number[]; crop_b64: string; is_full_bleed: boolean }>;
       };
+      reserveTrialCredits(Math.max(1, figuresWithCrops.length + orphans.length + bgCandidates.length));
 
       const bgDecisions = await Promise.all(
         bgCandidates.map(async (cand) => {
@@ -4116,6 +4167,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       return res.send(outBuffer);
     } catch (err: any) {
       console.error(`[FLYER] ${req.file?.originalname || "unknown file"} -- tagging pipeline failed:`, err.message);
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       try {
         storage.createJob({
           type: "flyer",
@@ -4204,7 +4256,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
     }
   }
 
-  app.post("/api/flyer/fix", upload.single("file"), (req, res, next) => { req.setTimeout(180000); res.setTimeout(180000); next(); }, handleFlyerFix);
+  app.post("/api/flyer/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(180000); res.setTimeout(180000); next(); }, handleFlyerFix);
 
   // Body-size limit for this JSON payload (a full structuredHtml document)
   // is handled by the global express.json({ limit: "25mb" }) in index.ts.
@@ -4244,9 +4296,9 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
     }
   });
 
-  app.post("/api/alttext/generate", upload.single("image"), async (req, res) => {
+  app.post("/api/alttext/generate", upload.single("image"), restoreCreditContext, async (req, res) => {
     const context = req.body.context || "";
-    const clerkUserId: string | undefined = req.body?.clerkUserId;
+    const clerkUserId: string = res.locals.creditUserId;
 
     // ── Usage gate — pre-flight only, confirms user has ANY credits available ──
     if (clerkUserId) {
@@ -4276,6 +4328,8 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       } else {
         return res.status(400).json({ error: "No image or URL provided" });
       }
+
+      reserveTrialCredits(ALTTEXT_CREDITS_PER_IMAGE);
 
       // Use Claude vision to generate alt text
       const msg = await anthropic.messages.create({
@@ -4349,6 +4403,7 @@ Rules:
 
       res.json({ success: true, ...parsed, jobId: altTextJobId, creditsUsed: ALTTEXT_CREDITS_PER_IMAGE, creditsRemaining: altTextCreditsRemaining });
     } catch (err: any) {
+      if (err instanceof TrialCreditError) return res.status(err.status).json({ error: err.message, code: err.code });
       res.status(500).json({ error: err.message });
     }
   });
@@ -4833,6 +4888,12 @@ Rules:
     try {
       if (!stripe) return res.status(500).json({ error: "Stripe not configured" });
       const { pack, clerkUserId } = req.body;
+      if (clerkUserId) {
+        const buyer = await clerkClient.users.getUser(clerkUserId);
+        if ((buyer.publicMetadata as any)?.plan === "trial") {
+          return res.status(403).json({ error: "Choose an Individual or Team plan to continue after your trial.", code: "PLAN_REQUIRED", url: "/pricing" });
+        }
+      }
       // Page-credit blocks — quantity is fixed per pack (1 unit of the block price)
       const CREDIT_PACKS: Record<string, { price: string; credits: number }> = {
         "25": { price: "price_1Tx9hxAaDElV6hZxHqpBRDQ9", credits: 25 },

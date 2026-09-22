@@ -30,7 +30,8 @@ interface UsageStatus {
   monthlyLimit: number;
   purchasedCredits: number;
   creditsRemaining: number;
-  resetDate: string;
+  resetDate: string | null;
+  creditPeriod?: "one_time" | "monthly";
   plan: string;
   teamSeats: number;
   // Real team-purchased seat count (org-level), null for individual plans.
@@ -80,6 +81,7 @@ export default function Dashboard() {
 
   const meta = (user?.publicMetadata || {}) as any;
   const plan: string = usage?.plan || meta.plan || "individual";
+  const isTrial = plan === "trial";
   // A pending invoice makes the API report plan: "team" for display purposes
   // (see /api/usage/status), but no real org/subscription exists yet -- keep
   // this distinct so we don't show org-only UI (like the Team Dashboard link)
@@ -93,11 +95,11 @@ export default function Dashboard() {
   const teamSeats: number = usage?.teamSeats || meta.teamSeats || 1;
   const orgSeats: number | null = usage?.orgSeats ?? null;
 
-  const monthlyLimit = usage?.monthlyLimit ?? (plan === "team" ? teamSeats * 175 : 150);
+  const monthlyLimit = usage?.monthlyLimit ?? (isTrial ? (meta.trialCreditLimit || 0) : plan === "team" ? teamSeats * 175 : 150);
   const monthlyUsed = usage?.monthlyUsed ?? 0;
   const purchasedCredits = usage?.purchasedCredits ?? 0;
   const creditsRemaining = usage?.creditsRemaining ?? Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits;
-  const usagePct = Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100));
+  const usagePct = monthlyLimit > 0 ? Math.min(100, Math.round((monthlyUsed / monthlyLimit) * 100)) : 0;
   const isLow = usagePct >= 80;
 
   const resetDateStr = usage?.resetDate
@@ -114,7 +116,7 @@ export default function Dashboard() {
       ? orgSeats
         ? `Team (${orgSeats} seat${orgSeats !== 1 ? "s" : ""} total)`
         : "Team plan"
-      : "Individual";
+      : isTrial ? "Individual trial" : "Individual";
   const billingCycle = meta.subscribedAt
     ? new Date(meta.subscribedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
     : null;
@@ -145,6 +147,15 @@ export default function Dashboard() {
         )}
 
         {/* Top row — Usage + Plan */}
+        {isTrial && (
+          <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 mb-6" data-testid="trial-notice">
+            <p className="font-semibold text-[#115e59]">Your one-time trial</p>
+            <p className="text-sm text-[#115e59] mt-1">
+              {monthlyLimit} credits total, with no monthly refill or automatic charge.
+              {" "}Choose a paid plan when you need more credits.
+            </p>
+          </div>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
           {/* Usage card */}
@@ -154,11 +165,11 @@ export default function Dashboard() {
                 <Zap className="w-4 h-4 text-[#0f766e]" />
                 <span className="font-semibold text-[#3a485b] text-sm">Credit Usage</span>
               </div>
-              <span className="text-sm text-gray-700">Resets {resetDateStr}</span>
+              <span className="text-sm text-gray-700">{isTrial ? "One-time allowance · No refill" : `Resets ${resetDateStr}`}</span>
             </div>
             <div className="flex items-end gap-2 mb-3">
               <span className="text-4xl font-bold text-[#3a485b]">{loadingUsage ? "—" : monthlyUsed}</span>
-              <span className="text-gray-900 text-base mb-1">/ {monthlyLimit} Credits this month</span>
+              <span className="text-gray-900 text-base mb-1">/ {monthlyLimit} {isTrial ? "Trial credits used" : "Credits this month"}</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mb-3">
               <div
@@ -173,18 +184,24 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
                   <p className="text-sm text-amber-700 font-medium">
-                    {monthlyLimit - monthlyUsed <= 0 && purchasedCredits <= 0
+                    {isTrial
+                      ? creditsRemaining <= 0
+                        ? "Trial credits used up. Choose a paid plan to continue."
+                        : `${creditsRemaining} one-time trial credits remaining.`
+                      : monthlyLimit - monthlyUsed <= 0 && purchasedCredits <= 0
                       ? "Monthly Credits used up. Purchase more Credits to continue."
                       : `Only ${Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits} Credit${(Math.max(0, monthlyLimit - monthlyUsed) + purchasedCredits) === 1 ? "" : "s"} remaining this month.`}
                   </p>
                 </div>
-                <button
+                {isTrial ? (
+                  <Link href="/pricing" className="ml-3 shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold bg-[#0f766e] text-white" data-testid="trial-upgrade-low">Choose a plan</Link>
+                ) : <button
                   onClick={() => setBuyCreditsOpen(true)}
                   className="ml-3 shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition"
                 >
                   <ShoppingCart className="w-3 h-3" />
                   Buy More Credits
-                </button>
+                </button>}
               </div>
             )}
 
@@ -262,7 +279,7 @@ export default function Dashboard() {
             </div>
             <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#0f766e] text-white">
-                {plan === "team" ? "Team" : "Individual"}
+                {isTrial ? "Individual trial" : plan === "team" ? "Team" : "Individual"}
               </span>
               {isPendingInvoice ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
@@ -282,7 +299,7 @@ export default function Dashboard() {
             {billingCycle && (
               <p className="text-sm text-gray-700 mb-2">Member since {billingCycle}</p>
             )}
-            <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} Credits/mo</p>
+            <p className="text-sm text-gray-700 mb-4">{planLabel} · {monthlyLimit} {isTrial ? "credits total" : "Credits/mo"}</p>
 
             <div className="mt-auto flex flex-col gap-2">
               {hasRealTeamOrg && (
@@ -293,13 +310,13 @@ export default function Dashboard() {
                   </span>
                 </Link>
               )}
-              <button
+              {!isTrial && <button
                 onClick={() => setBuyCreditsOpen(true)}
                 className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-[#0f766e] text-[#0f766e] hover:bg-teal-50 transition"
               >
                 <ShoppingCart className="w-3 h-3" />
                 Buy More Credits
-              </button>
+              </button>}
               {meta.stripeCustomerId ? (
                 <button
                   disabled={portalLoading}
@@ -329,7 +346,7 @@ export default function Dashboard() {
               ) : (
                 <Link href="/pricing">
                   <span className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
-                    Upgrade Plan <ArrowRight className="w-3 h-3" />
+                    {isTrial ? "Choose a paid plan" : "Upgrade Plan"} <ArrowRight className="w-3 h-3" />
                   </span>
                 </Link>
               )}
