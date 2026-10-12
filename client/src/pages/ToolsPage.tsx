@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { Link } from "wouter";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { documentRequest, readDocumentJob, waitForDocument } from "@/lib/documentJobs";
+import type { DocumentTaskStatus } from "@shared/schema";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -133,7 +135,7 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
   const [stepIndex, setStepIndex] = useState(0);
   const defaultSteps = steps || [text];
 
-  useState(() => {
+  useEffect(() => {
     // Animate progress from 0 to 90 over ~30s, slowing near the end
     const intervals: ReturnType<typeof setInterval>[] = [];
     let p = 0;
@@ -152,7 +154,7 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
       intervals.push(stepTick);
     }
     return () => intervals.forEach(clearInterval);
-  });
+  }, []);
 
   return (
     <div className="space-y-3 p-4 rounded-xl bg-[#3a485b]/5 border border-[#0f766e]/20">
@@ -278,6 +280,21 @@ function RemedyDocsTab() {
   const { toast } = useToast();
   const { user: docsUser } = useUser();
   const creditFetch = useCreditFetch();
+  const [documentStage, setDocumentStage] = useState("");
+  const [recoveryJob, setRecoveryJob] = useState<DocumentTaskStatus | null>(null);
+  const polling = useRef<AbortController | null>(null);
+  const running = useRef(false);
+  useEffect(() => {
+    if (!docsUser?.id) return;
+    let cancelled = false;
+    documentRequest(creditFetch, "/api/remedy-docs/jobs/latest").then(async response => {
+      if (response.ok) {
+        const data = await response.json();
+        if (!cancelled && !running.current && data.job) setRecoveryJob(data.job);
+      }
+    }).catch(() => { /* The upload remains usable; explicit status checks show errors. */ });
+    return () => { cancelled = true; polling.current?.abort(); };
+  }, [docsUser?.id]);
 
   const showWordConversionNotice = file?.name.toLowerCase().endsWith(".pdf") && outputMode === "docx";
 
@@ -288,20 +305,32 @@ function RemedyDocsTab() {
     setError("");
     setErrorCode("");
     setWordConversionAcknowledged(false);
+    setRecoveryJob(null);
     setResetKey((k) => k + 1);
   };
 
-  const run = async () => {
-    if (!file) { toast({ title: "No file", variant: "destructive" }); return; }
+  const run = async (resume?: DocumentTaskStatus) => {
+    if (running.current) return;
+    if (!file && !resume) { toast({ title: "No file", variant: "destructive" }); return; }
+    running.current = true;
+    polling.current?.abort();
+    const pollController = new AbortController();
+    polling.current = pollController;
+    const inputName = resume?.filename || file!.name;
+    const selectedMode = resume?.mode || outputMode;
+    setOutputMode(selectedMode);
     setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
+    setDocumentStage(resume ? "Reconnecting to your document" : "Uploading your document");
     let chargedJobId: number | null = null;
     try {
-      const fd = new FormData(); fd.append("file", file);
+      let job = resume;
+      if (!job) {
+      const fd = new FormData(); fd.append("file", file!);
       if (docsUser?.id) fd.append("clerkUserId", docsUser.id);
       // The selected output format determines the processing pipeline: an
       // explicit choice ("pdf" or "docx") always uses the fast pipeline.
       // Auto-detection is reserved for callers that omit mode entirely.
-      fd.append("mode", outputMode);
+      fd.append("mode", selectedMode);
       // If the user explicitly acknowledged the Word-conversion warning card
       // (which is only shown when converting a PDF to Word), forward that
       // consent to the server so it will not block image-bearing PDFs. The
@@ -309,7 +338,27 @@ function RemedyDocsTab() {
       if (showWordConversionNotice && wordConversionAcknowledged) {
         fd.append("wordConversionAcknowledged", "true");
       }
-      const resp = await creditFetch("/api/remedy-docs/fix", { method: "POST", body: fd });
+      // Upload is acknowledged immediately. A slow upload gets a generous bound,
+      // but AI work never keeps this request open.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 240_000);
+      try {
+        job = await readDocumentJob(await creditFetch("/api/remedy-docs/jobs", { method: "POST", body: fd, signal: controller.signal }));
+      } catch (err) {
+        // A dropped upload acknowledgement might hide an accepted job. Discover
+        // it instead of automatically uploading (and potentially charging) again.
+        const latest = await documentRequest(creditFetch, "/api/remedy-docs/jobs/latest").catch(() => null);
+        const data = latest?.ok ? await latest.json() : null;
+        if (data?.job) setRecoveryJob(data.job);
+        throw err;
+      } finally { clearTimeout(timer); }
+      }
+      setRecoveryJob(job!);
+      const resp = await waitForDocument(creditFetch, job!, status => {
+        setRecoveryJob(status);
+        setDocumentStage(status.stage);
+      }, pollController.signal);
+      if (pollController.signal.aborted) throw new DOMException("Stopped checking document status", "AbortError");
       const contentType = resp.headers.get("Content-Type") || "";
 
       if (contentType.includes("application/pdf")) {
@@ -322,7 +371,7 @@ function RemedyDocsTab() {
         const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
         let fixes: string[] = [];
         try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
-        const baseName = file.name.replace(/\.pdf$/i, "");
+        const baseName = inputName.replace(/\.(pdf|docx)$/i, "");
         setVisionResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
         setLoading(false);
         return;
@@ -333,28 +382,16 @@ function RemedyDocsTab() {
       try {
         data = await parseApiResponse(resp);
       } catch (parseErr: any) {
-        if (resp.ok && docsUser?.id) {
-          try {
-            await creditFetch("/api/document/refund", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ inputName: file.name, clerkUserId: docsUser.id }),
-            });
-            throw new Error(parseErr.message + " Your credits for this attempt have been refunded.");
-          } catch (refundErr: any) {
-            throw refundErr;
-          }
-        }
         throw parseErr;
       }
       if (!resp.ok) { setErrorCode(data.code || ""); throw new Error(data.error); }
       chargedJobId = data.jobId ?? null;
 
-      if (outputMode === "pdf") {
+      if (selectedMode === "pdf") {
         // ── "Keep as PDF" on the fast (text-extraction) path: the server already
         // built fully structured, WCAG-tagged HTML for this document -- send it
         // to the standalone tagging endpoint instead of building a .docx.
-        const baseNamePdf = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
+        const baseNamePdf = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
         const pdfResp = await creditFetch("/api/remedy-docs/fix-as-pdf", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -379,7 +416,7 @@ function RemedyDocsTab() {
       const fixesMade: string[] = data.fixesMade || [];
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
-      const baseName = file.name.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
+      const baseName = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
       const filename = baseName + "-accessible.docx";
 
       const html: string = data.structuredHtml || data.htmlContent || "";
@@ -585,21 +622,26 @@ function RemedyDocsTab() {
       const blob = await Packer.toBlob(doc);
       setFastResult({ fixesMade, issues, blob, filename });
     } catch (e: any) {
+      if (e.name === "AbortError") {
+        setError("The connection was interrupted. Check your recent document job before uploading again.");
+        return;
+      }
       setError(e.message);
       if (chargedJobId && docsUser?.id) {
         try {
-          await creditFetch("/api/document/refund", {
+          const refund = await creditFetch("/api/document/refund", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ jobId: chargedJobId, clerkUserId: docsUser.id }),
           });
-          setError(e.message + " Your credits for this attempt have been refunded.");
+          const refundData = await refund.json().catch(() => ({}));
+          if (refund.ok && refundData.success) setError(e.message + " Your credits for this attempt have been refunded.");
         } catch {
           // Refund call itself failed silently — surface the original error only;
           // this is logged server-side and can be reconciled manually if needed.
         }
       }
-    } finally { setLoading(false); }
+    } finally { running.current = false; setLoading(false); }
   };
 
   return (
@@ -607,6 +649,7 @@ function RemedyDocsTab() {
       <FileDropZone
         accept=".docx,.pdf"
         onFile={(selectedFile) => {
+          if (running.current) return;
           setFile(selectedFile);
           setWordConversionAcknowledged(false);
         }}
@@ -621,7 +664,7 @@ function RemedyDocsTab() {
         <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
         <p>✓ Documents up to 50 pages</p>
       </div>
-      <fieldset className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
+      <fieldset disabled={loading} className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
         <div className="space-y-2" role="radiogroup" aria-label="Output format">
           {([
@@ -700,15 +743,24 @@ function RemedyDocsTab() {
 
       <Button
         className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold"
-        onClick={run}
+        onClick={() => run()}
         disabled={loading || !file || (showWordConversionNotice && !wordConversionAcknowledged)}
         aria-describedby={showWordConversionNotice ? "word-conversion-notice-title" : undefined}
         data-testid="btn-fix-doc"
       >
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
-      {loading && <LoadingState text="Analyzing document…" steps={["Reading your document…", "Detecting tables, images, and layout…", "Applying WCAG 2.1 fixes…", "Generating accessible version…"]} />}
-      {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Docs", errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
+      {loading && <div className="space-y-2 p-4 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" role="status" aria-live="polite" data-testid="doc-job-progress">
+        <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />{documentStage}</p>
+        <p className="text-sm text-muted-foreground">Large documents can take several minutes. Your job continues if this page disconnects. Reopen Remedy Docs to check it without uploading again.</p>
+        {recoveryJob && <p className="text-xs text-muted-foreground break-all">Reference: {recoveryJob.id}</p>}
+      </div>}
+      {recoveryJob && !loading && !fastResult && !visionResult && <div className="p-4 space-y-2 border rounded-xl" data-testid="doc-job-recovery">
+        <p className="text-sm font-semibold break-words">Recent document: {recoveryJob.filename}</p>
+        <p className="text-sm text-muted-foreground">{recoveryJob.stage}. Finished results are temporarily available for up to 15 minutes, unless the server restarts.</p>
+        <Button variant="outline" onClick={() => run(recoveryJob)}>Check status / retrieve result</Button>
+      </div>}
+      {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode: recoveryJob?.id || errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
@@ -719,7 +771,7 @@ function RemedyDocsTab() {
               <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
+              Download and save your file. Results are temporarily held for up to 15 minutes so you can recover from a connection problem without processing again; a server restart ends that recovery window. This is not permanent document storage. Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially images, tables, and reading order.
             </p>
           </div>
           {fastResult.blob && (
@@ -746,7 +798,7 @@ function RemedyDocsTab() {
               <span className="font-semibold text-red-800 dark:text-red-300 text-sm">Download this file now</span>
             </div>
             <p className="text-xs text-red-700/90 dark:text-red-400/90 leading-relaxed">
-              We don't store finished documents. Once you leave this page, you will need to upload the original again and spend credits to regenerate the file. Accessibility disclaimer: Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
+              Download and save your file. Results are temporarily held for up to 15 minutes so you can recover from a connection problem without processing again; a server restart ends that recovery window. This is not permanent document storage. Automated remediation cannot guarantee full WCAG 2.1 AA compliance. Review the file before publishing or distributing it, especially diagrams, equations, and tables.
             </p>
           </div>
           <Button

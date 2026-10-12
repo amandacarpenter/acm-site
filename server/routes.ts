@@ -8,15 +8,16 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
-import { storage, trialLedger } from "./storage";
-import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
+import { storage, trialLedger, documentTaskStore } from "./storage";
+import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
+import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, trialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
 import * as child_process from "child_process";
 import * as os from "os";
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware, getAdminAuthorizedParties } from "./adminAuth";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
@@ -342,12 +343,15 @@ function newUsageCounter(): UsageCounter { return { input: 0, output: 0 }; }
 async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384, usage?: UsageCounter): Promise<string> {
   let msg;
   try {
+    const deadline = documentTaskContext.getStore()?.deadline;
+    const remaining = deadline ? deadline - Date.now() : 240000;
+    if (remaining <= 1000) throw new Error("Document processing timed out. Please try a smaller section.");
     msg = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: maxTokens,
       messages: [{ role: "user", content: userContent }],
       system: systemPrompt,
-    });
+    }, { timeout: Math.min(240000, remaining) });
   } catch (err: any) {
     // Match both "timeout" and the SDK's actual wording "timed out" -- the plain
     // /timeout/i regex silently missed real timeout errors (message text
@@ -669,12 +673,13 @@ export function registerRoutes(httpServer: Server, app: Express) {
   app.use([
     "/api/document/fix", "/api/document/refund",
     "/api/remedy-docs/fix", "/api/remedy-docs/fix-as-pdf",
+    "/api/remedy-docs/jobs",
     "/api/complexpdf/fix", "/api/flyer/fix",
     "/api/video/transcribe", "/api/canvas/fix", "/api/alttext/generate",
   ], creditAccess);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "one-time-trials-v1" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-background-jobs-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -1524,7 +1529,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
     const { writeFile, unlink } = await import("fs/promises");
     const { tmpdir } = await import("os");
     const { join } = await import("path");
-    const tmpIn = join(tmpdir(), `detect-${Date.now()}.pdf`);
+    const tmpIn = join(tmpdir(), `detect-${randomUUID()}.pdf`);
     await writeFile(tmpIn, fileBuffer);
 
     const pyDetect = [
@@ -1676,7 +1681,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         const { writeFile, unlink } = await import("fs/promises");
         const { tmpdir } = await import("os");
         const { join } = await import("path");
-        const tmpIn = join(tmpdir(), `pdf-${Date.now()}.pdf`);
+        const tmpIn = join(tmpdir(), `pdf-${randomUUID()}.pdf`);
         await writeFile(tmpIn, req.file.buffer);
         const pyScript = [
           "import fitz, sys, re",
@@ -1719,8 +1724,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
             else resolve(stdout);
           });
           const backstop = setTimeout(() => { try { child.kill("SIGKILL"); } catch {} }, 130000);
-        });
-        await unlink(tmpIn).catch(() => {});
+        }).finally(() => unlink(tmpIn).catch(() => {}));
 
         const pageCountMatch = rawOutput.match(/___PAGECOUNT___(\d+)\n/);
         docPageCount = pageCountMatch ? parseInt(pageCountMatch[1], 10) : 1;
@@ -1961,11 +1965,15 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       // document. Sequential processing costs some latency on multi-chunk
       // documents but guarantees a consistent structural style throughout.
       const docUsage = newUsageCounter();
-      const auditPromise = callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage);
+      // Attach rejection handling immediately. Otherwise a failed audit can
+      // reject unhandled while sequential HTML chunks are still running.
+      const auditPromise = callClaude(auditSystemPrompt, `Analyze this document for accessibility issues. File: ${req.file.originalname}\n\nDocument text:\n${auditContent}`, 16384, docUsage)
+        .then(value => ({ value, error: null as unknown }), error => ({ value: "", error }));
 
       const PREV_CHUNK_STYLE_EXCERPT_LEN = 1200;
       const htmlChunkResultsArr: string[] = [];
       for (let i = 0; i < htmlChunks.length; i++) {
+        res.locals.documentStage?.(`Applying accessibility structure: section ${i + 1} of ${htmlChunks.length}`);
         const chunk = htmlChunks[i];
         const t0 = Date.now();
         let userContent = `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`;
@@ -1977,7 +1985,9 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         console.log(`[REMEDY DOCS] chunk ${i + 1}/${htmlChunks.length} took ${Date.now() - t0}ms`);
         htmlChunkResultsArr.push(r);
       }
-      const [auditResponse, htmlChunkResults] = await Promise.all([auditPromise, Promise.resolve(htmlChunkResultsArr)]);
+      const [auditOutcome, htmlChunkResults] = await Promise.all([auditPromise, Promise.resolve(htmlChunkResultsArr)]);
+      if (auditOutcome.error) throw auditOutcome.error;
+      const auditResponse = auditOutcome.value;
       // Strip any accidental code fences per-chunk before joining, then wrap the
       // assembled result in the single lang="en" div (each chunk was told not to
       // add its own wrapper, since a chunk boundary would otherwise produce
@@ -2485,7 +2495,7 @@ Canvas-specific rules:
       }
 
       const python3 = require("fs").existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
-      const ts = Date.now();
+      const ts = randomUUID();
 
       // Write uploaded PDF to temp file
       const tmpPdf = join(tmpdir(), `complexpdf-${ts}.pdf`);
@@ -2499,6 +2509,7 @@ Canvas-specific rules:
       const extractScript = join(pipelineDir, "complex_pdf_extract.py");
 
       const extractJson = await new Promise<string>((resolve, reject) => {
+        res.locals.documentStage?.("Extracting PDF pages and figures");
         execFile(python3, [extractScript, tmpPdf, tmpWorkDir], { timeout: 90000, killSignal: "SIGKILL" }, (err, stdout, stderr) => {
           if (err) reject(new Error("PDF extract failed: " + (stderr?.slice(-500) || err.message)));
           else resolve(stdout.trim());
@@ -2562,6 +2573,7 @@ CRITICAL RULES:
       const pageResults: any[] = [];
       const visionBatchSize = 4;
       for (let batchStart = 0; batchStart < pageData.length; batchStart += visionBatchSize) {
+        res.locals.documentStage?.(`Analyzing pages ${batchStart + 1}-${Math.min(batchStart + visionBatchSize, pageData.length)} of ${pageData.length}`);
         const batchResults = await Promise.all(pageData.slice(batchStart, batchStart + visionBatchSize).map(async ({
         page: pageNum,
         screenshot,
@@ -3609,6 +3621,7 @@ print('ok')
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
       const pdfBuildBudgetMs = processingDeadline - Date.now();
+      res.locals.documentStage?.("Building the accessible PDF");
       if (pdfBuildBudgetMs <= 1000) {
         throw new Error("PDF generation stopped because the document processing deadline was reached");
       }
@@ -3616,12 +3629,13 @@ print('ok')
         const proc = child_process.spawn(
           python3,
           [tmpPdfScript, tmpPdfOut, pipelineDir],
-          { timeout: Math.min(180000, pdfBuildBudgetMs) },
+          { timeout: Math.min(180000, pdfBuildBudgetMs), killSignal: "SIGKILL" },
         );
         proc.stdin.write(pdfInput);
         proc.stdin.end();
         let stderr = "";
         proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
+        proc.on("error", reject);
         proc.on("close", (code: number) => {
           if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
           else resolve();
@@ -3728,7 +3742,7 @@ print('ok')
   // the exact same, unchanged handlers used by the legacy routes above (kept
   // registered for backward compatibility / in case anything still links to
   // them directly). No duplicated logic -- this only decides which one to call.
-  app.post("/api/remedy-docs/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, async (req, res) => {
+  async function handleRemedyDocsFix(req: Request, res: any) {
     res.setHeader("X-Remedy-Docs-Version", "2026-08-21-explicit-output-route-v3r2");
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
     const ext = path.extname(req.file.originalname).toLowerCase();
@@ -3771,6 +3785,7 @@ print('ok')
       req.body?.wordConversionAcknowledged === true;
 
     let route: { useVision: boolean; reason: string };
+    res.locals.documentStage?.("Checking document layout and choosing a processing path");
     try {
       if (explicitMode === "pdf" || explicitMode === "docx") {
         route = await detectDocsRoute(req.file.buffer, ext, true);
@@ -3807,6 +3822,112 @@ print('ok')
       return handleComplexPdfFix(req, res);
     }
     return handleDocumentFix(req, res);
+  }
+  app.post("/api/remedy-docs/fix", upload.single("file"), restoreCreditContext, (req, res, next) => { req.setTimeout(600000); res.setTimeout(600000); next(); }, handleRemedyDocsFix);
+
+  // Only the short upload request needs a subscription/credit preflight.
+  // Status and download require a verified owner token, even after credits reach
+  // zero. Never expose cached output through an unauthenticated URL.
+  const documentTaskAuth: import("express").RequestHandler = async (req, res, next) => {
+    try {
+      const token = req.headers.authorization?.startsWith("Bearer ") ? req.headers.authorization.slice(7).trim() : "";
+      if (!token) return void res.status(401).json({ error: "Please sign in again to check your document." });
+      const claims = await verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY, authorizedParties: getAdminAuthorizedParties() });
+      if (!claims.sub) throw new Error("Missing user");
+      res.locals.creditUserId = claims.sub;
+      res.setHeader("Cache-Control", "no-store");
+      next();
+    } catch {
+      res.status(401).json({ error: "Please sign in again to check your document." });
+    }
+  };
+  app.get("/api/remedy-docs/jobs/latest", documentTaskAuth, (_req, res) => {
+    res.json({ job: documentTaskStore.latest(res.locals.creditUserId) || null });
+  });
+  app.get("/api/remedy-docs/jobs/:id", documentTaskAuth, (req, res) => {
+    const job = documentTaskStore.status(String(req.params.id), res.locals.creditUserId);
+    if (!job) return void res.status(404).json({ error: "Document job not found." });
+    res.json({ job });
+  });
+  app.get("/api/remedy-docs/jobs/:id/result", documentTaskAuth, (req, res) => {
+    const job = documentTaskStore.status(String(req.params.id), res.locals.creditUserId);
+    if (!job) return void res.status(404).json({ error: "Document job not found." });
+    const result = documentTaskStore.result(job.id, res.locals.creditUserId);
+    if (!result) return void res.status(job.state === "expired" || job.state === "interrupted" ? 410 : 409)
+      .json({ error: job.error || "This document is not ready or its recovery window has ended." });
+    for (const [key, value] of Object.entries(result.headers)) {
+      if (["content-type", "content-disposition", "x-total-pages", "x-fixes-made", "x-remedy-docs-route"].includes(key)) res.setHeader(key, value);
+    }
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.send(result.body);
+  });
+  app.post("/api/remedy-docs/jobs", upload.single("file"), restoreCreditContext, async (req, res) => {
+    if (!req.file) return void res.status(400).json({ error: "No file uploaded." });
+    if (![".pdf", ".docx"].includes(path.extname(req.file.originalname).toLowerCase())) {
+      return void res.status(400).json({ error: "Please upload a .docx or .pdf file." });
+    }
+    if (!["pdf", "docx"].includes(req.body?.mode)) return void res.status(400).json({ error: "Choose PDF or Word output." });
+    const userId = res.locals.creditUserId as string;
+    const mode = req.body.mode as "pdf" | "docx";
+    const file = req.file;
+    const acknowledged = req.body.wordConversionAcknowledged === "true";
+    // Keep only the needed file and verified context. Do not retain the HTTP
+    // request, its bearer token, cookies, or the socket after acknowledgement.
+    const trialContext = res.locals.trialCreditContext;
+    try {
+      const job = documentTaskStore.enqueue({ userId, mode, filename: file.originalname, buffer: file.buffer, acknowledged }, async documentStage => {
+        const execute = async () => {
+          const sink = new ProcessingResponse({ creditUserId: userId, documentStage, trialCreditContext: trialContext });
+          let completedFastJobId: number | undefined;
+          const refundFailedRender = async () => {
+            refundTrialRequest(userId);
+            if (!completedFastJobId) return;
+            const charged = storage.getJob(completedFastJobId);
+            if (charged?.clerkUserId === userId && charged.status === "completed" && charged.creditsUsed) {
+              await refundCredits(userId, charged.creditsUsed, charged.id);
+              storage.updateJob(charged.id, { status: "refunded" });
+            }
+          };
+          try {
+            const currentUser = await clerkClient.users.getUser(userId);
+            if ((currentUser.publicMetadata as any)?.subscribed !== true && currentUser.primaryEmailAddress?.emailAddress !== "amandathecarpenter@gmail.com") {
+              return sink.status(403).json({ error: "Your account no longer has processing access. This job was not started." }).result();
+            }
+            const input = { file, body: { mode, wordConversionAcknowledged: acknowledged } } as Request;
+            await handleRemedyDocsFix(input, sink);
+            let result = sink.result();
+            if (result.status < 400 && mode === "pdf" && result.headers["content-type"]?.includes("json")) {
+              const data = JSON.parse(result.body.toString());
+              completedFastJobId = data.jobId;
+              documentStage("Building the accessible PDF");
+              const pdfSink = new ProcessingResponse(sink.locals);
+              const name = file.originalname.replace(/\.(pdf|docx)$/i, "").replace(/[^\x20-\x7E]|["\\]/g, "");
+              await handleDocumentFixAsPdf({ body: { structuredHtml: data.structuredHtml || data.htmlContent, title: name, filename: name } } as Request, pdfSink);
+              result = pdfSink.result();
+              result.headers["x-total-pages"] = String(data.pageCount || 0);
+              result.headers["x-fixes-made"] = Buffer.from(JSON.stringify(data.fixesMade || [])).toString("base64");
+            }
+            if (result.status >= 400) {
+              // Legacy vision handler refunds its own failed work. Trials are
+              // idempotent by request ID, so this is also safe after that refund.
+              await refundFailedRender();
+            }
+            return result;
+          } catch (err) {
+            await refundFailedRender();
+            throw err;
+          }
+        };
+        const scoped = () => documentTaskContext.run({ deadline: Date.now() + 8 * 60_000 }, execute);
+        return trialContext ? trialRequest.run(trialContext, scoped) : scoped();
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.status(202).json({ job });
+    } catch (err) {
+      if (err instanceof DocumentTaskError) return void res.status(err.status).json({ error: err.message, jobId: err.taskId });
+      console.error("[DOCUMENT TASK] admission failed", err);
+      res.status(500).json({ error: "We couldn't start this document. Please try again." });
+    }
   });
 
   // ── FLYER / DESIGNED DOCUMENT: PDF-native tagging pipeline ──────────────────
@@ -3849,7 +3970,7 @@ print('ok')
     const { join } = await import("path");
     const python3 = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
     const pipelineDir = join(__dirname, "pdf_pipelines");
-    const ts = Date.now();
+    const ts = randomUUID();
     const tmpPdf = join(tmpdir(), `flyer-${ts}.pdf`);
     const tmpAnnotsOut = join(tmpdir(), `flyer-${ts}-annots-out.pdf`);
     const tmpOut = join(tmpdir(), `flyer-${ts}-out.pdf`);
@@ -4222,7 +4343,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
     const { join } = await import("path");
     const python3 = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
     const pipelineDir = join(__dirname, "pdf_pipelines");
-    const ts = Date.now();
+    const ts = randomUUID();
     const tmpOut = join(tmpdir(), `docpdf-${ts}-out.pdf`);
     const tmpScript = join(pipelineDir, "text_pdf_tag.py");
 
@@ -4231,7 +4352,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const stdinPayload = JSON.stringify({ html: structuredHtml, title: docTitle });
 
       await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(python3, [tmpScript, tmpOut], { timeout: 120000 });
+        const proc = child_process.spawn(python3, [tmpScript, tmpOut], { timeout: 120000, killSignal: "SIGKILL" });
         proc.stdin.write(stdinPayload);
         proc.stdin.end();
         let stderr = "";

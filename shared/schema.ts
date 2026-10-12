@@ -2,6 +2,33 @@ import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Document contents are not stored in this table. Results stay in a bounded,
+// short-lived memory cache; metadata permits an honest interrupted/expired state.
+export const documentTasks = sqliteTable("document_tasks", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull(),
+  fingerprint: text("fingerprint").notNull(),
+  filename: text("filename").notNull(),
+  mode: text("mode").notNull(),
+  state: text("state").notNull(),
+  stage: text("stage").notNull(),
+  error: text("error"),
+  createdAt: integer("created_at").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+  expiresAt: integer("expires_at"),
+});
+export const insertDocumentTaskSchema = createInsertSchema(documentTasks);
+export type DocumentTaskStatus = {
+  id: string;
+  filename: string;
+  mode: "pdf" | "docx";
+  state: "queued" | "processing" | "ready" | "failed" | "expired" | "interrupted";
+  stage: string;
+  error?: string;
+  createdAt: number;
+  expiresAt: number | null;
+};
+
 export const trialBalances = sqliteTable("trial_balances", {
   userId: text("user_id").primaryKey(),
   allocated: integer("allocated").notNull(),
