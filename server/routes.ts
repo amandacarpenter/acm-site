@@ -10,6 +10,7 @@ import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
 import { storage, trialLedger, documentTaskStore } from "./storage";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
+import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
 import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, trialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
@@ -340,6 +341,17 @@ async function refundCredits(clerkUserId: string, pagesToRefund: number, jobId?:
 type UsageCounter = { input: number; output: number };
 function newUsageCounter(): UsageCounter { return { input: 0, output: 0 }; }
 
+function documentAIText(msg: any): string {
+  if (msg.stop_reason === "max_tokens") {
+    throw new Error("AI output was incomplete. Processing stopped rather than returning a truncated document.");
+  }
+  const text = (Array.isArray(msg.content) ? msg.content : [])
+    .filter((block: any) => block.type === "text" && typeof block.text === "string")
+    .map((block: any) => block.text).join("\n");
+  if (!text.trim()) throw new Error("The AI service returned no document text. Processing stopped without generating an incomplete file.");
+  return text;
+}
+
 async function callClaude(systemPrompt: string, userContent: string, maxTokens = 16384, usage?: UsageCounter): Promise<string> {
   let msg;
   try {
@@ -366,7 +378,7 @@ async function callClaude(systemPrompt: string, userContent: string, maxTokens =
     usage.input += msg.usage?.input_tokens || 0;
     usage.output += msg.usage?.output_tokens || 0;
   }
-  return (msg.content[0] as any).text;
+  return documentAIText(msg);
 }
 
 // Real Claude Sonnet 4.6 pricing (per Anthropic's published rates) — used to
@@ -679,7 +691,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   ], creditAccess);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-background-jobs-v1" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-image-preservation-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -1667,14 +1679,16 @@ export function registerRoutes(httpServer: Server, app: Express) {
     try {
       let rawText = "";
       let htmlContent = "";
+      let preservedImages: PreservedImage[] = [];
       let docPageCount = 1; // .docx has no page concept pre-render; treated as 1 page equivalent below
 
       if (ext === ".docx") {
         const mammoth = await import("mammoth");
         const result = await mammoth.extractRawText({ buffer: req.file.buffer });
         rawText = result.value;
-        const htmlResult = await mammoth.convertToHtml({ buffer: req.file.buffer });
-        htmlContent = htmlResult.value;
+        const extracted = await extractWordImages(req.file.buffer, path.join(__dirname, "pdf_pipelines"));
+        htmlContent = extracted.html;
+        preservedImages = extracted.images;
       } else if (ext === ".pdf") {
         // Use Python pdfminer — reliable, available in Railway Docker image
         const { execFile } = await import("child_process");
@@ -1814,8 +1828,9 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
 == WCAG 2.1 AA RULES TO APPLY ==
 
 [1.1.1 Non-text Content]
-- For any figure/image reference (e.g. "Figure 1.", "Figure 2.", chart, diagram, map) add: <p role="note"><strong>Figure X:</strong> [Image — add descriptive alt text manually before publishing]</p>
-- Never leave an image without alt text handling
+- Image markers of the form [[REMEDY_IMG_...]] refer to real images held outside this text request. Copy EVERY marker EXACTLY ONCE, as text at its original content position and in the same order. Keep markers in their original paragraph or table cell, never in an HTML attribute.
+- Do not rename, duplicate, remove, summarize, or replace image markers. Actual images and their existing descriptions will be reinserted by the application.
+- Never invent visible "Figure" labels, [Image ...] placeholders, captions, or instructions to add alt text. Preserve any genuine captions already present in the source.
 
 [1.3.1 Info and Relationships — Semantic Structure]
 - Use <h1> for the document title (first and only h1)
@@ -2008,7 +2023,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         }
         return c;
       });
-      const structuredHtml = `<div lang="en">\n${cleanedChunks.join("\n")}\n</div>`;
+      const structuredHtml = restoreWordImages(`<div lang="en">\n${cleanedChunks.join("\n")}\n</div>`, preservedImages);
 
       let parsed: any;
       try {
@@ -2037,6 +2052,16 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
       const fixesMade: string[] = Array.isArray(parsed.fixesMade) && parsed.fixesMade.length > 0
         ? parsed.fixesMade
         : ["Accessibility audit completed — see issues list for details"];
+      if (preservedImages.length) {
+        const missingAlt = preservedImages.filter(image => !image.alt).length;
+        fixesMade.push(`Preserved ${preservedImages.length} images${missingAlt ? `; ${missingAlt} image description${missingAlt === 1 ? " needs" : "s need"} review` : " with existing descriptions"}`);
+        if (missingAlt) {
+          if (!Array.isArray(parsed.issues)) parsed.issues = [];
+          parsed.issues.push({ criterion: "1.1.1", type: "manual_review",
+            description: `${missingAlt} preserved images have no source description.`,
+            recommendation: "Review those images and supply meaningful alt text before distributing the document." });
+        }
+      }
 
       // Clean up the HTML response (strip any accidental code fences)
       let cleanHtml = structuredHtml.trim();
@@ -2088,6 +2113,7 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         rawText,
         htmlContent,
         structuredHtml: cleanHtml,
+        imageCount: preservedImages.length,
         issues: parsed.issues || [],
         fixesMade,
       });
@@ -2666,7 +2692,7 @@ CRITICAL RULES:
         // Accumulate real token usage across all parallel per-page Vision calls
         pdfUsage.input += visionResp.usage?.input_tokens || 0;
         pdfUsage.output += visionResp.usage?.output_tokens || 0;
-        let pageHtml = (visionResp.content[0] as any).text.trim();
+        let pageHtml = documentAIText(visionResp).trim();
         if (pageHtml.startsWith("```")) {
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }

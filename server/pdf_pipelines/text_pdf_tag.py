@@ -23,7 +23,7 @@ import traceback as _tb
 
 import pikepdf
 from bs4 import BeautifulSoup
-from weasyprint import HTML
+from weasyprint import HTML, default_url_fetcher
 from weasyprint.formatting_structure import boxes as _wp_boxes
 import weasyprint.pdf.tags as _wp_tags
 import pydyf as _pydyf
@@ -32,6 +32,24 @@ data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 source_html = data["html"]
 doc_title = data.get("title") or "Document"
+image_soup = BeautifulSoup(source_html, "html.parser")
+source_images = image_soup.find_all("img")
+for index, image in enumerate(source_images):
+    if not re.fullmatch(r"data:image/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+", image.get("src", "")):
+        raise RuntimeError("PDF output supports embedded PNG/JPEG images only; external or unsupported images are blocked.")
+    image["data-remedy-placement"] = str(index)
+    # HTML width attributes are ignored unless presentational hints are enabled.
+    # Use bounded CSS instead, retaining the image's aspect ratio.
+    try:
+        width = max(1, min(624, float(image.get("width", "624"))))
+    except (TypeError, ValueError):
+        width = 624
+    image["style"] = f"width:{width}px;max-width:100%;height:auto;max-height:720px;object-fit:contain"
+source_html = str(image_soup)
+def embedded_images_only(url):
+    if not re.fullmatch(r"data:image/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+", url):
+        raise ValueError("External and local-file resources are blocked.")
+    return default_url_fetcher(url)
 
 
 def clean_html(raw_html: str) -> str:
@@ -269,6 +287,7 @@ css_rules = [
     'div[style*="page: wide-table"] td { padding: 3pt 4pt; }',
     "blockquote { margin: 6pt 0 6pt 24pt; border-left: 2pt solid #999; padding-left: 8pt; }",
 ]
+css_rules.append("img { max-width: 100%; height: auto; object-fit: contain; vertical-align: middle; }")
 css = "\n".join(css_rules)
 
 full_html = (
@@ -360,7 +379,19 @@ def _patched_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
 _wp_tags._build_box_tree = _patched_build_box_tree
 
 try:
-    HTML(filename=tmp_html).write_pdf(output_path, pdf_tags=True)
+    rendered = HTML(filename=tmp_html, url_fetcher=embedded_images_only).render()
+    # Count actual replaced image boxes, not every PDF image XObject: color
+    # emoji/font glyphs can also be encoded as XObjects without being pictures.
+    from collections import Counter
+    placements = Counter()
+    for page in rendered.pages:
+        for box in page._page_box.descendants():
+            if isinstance(box, _wp_boxes.ReplacedBox) and box.element is not None and box.element.tag == "img":
+                placements[box.element.get("data-remedy-placement")] += 1
+    expected = Counter(str(i) for i in range(len(source_images)))
+    if placements != expected:
+        raise RuntimeError(f"PDF image-preservation check failed: expected {dict(expected)}, rendered {dict(placements)}.")
+    rendered.write_pdf(output_path, pdf_tags=True)
 except ValueError as wp_val_err:
     culprit = _find_table_wrapper_culprit(full_html) if "table" in str(wp_val_err).lower() else None
     try:
@@ -389,6 +420,10 @@ except Exception as wp_err:
 _OVERFLOW_TOLERANCE_PT = 3.0  # small allowance for antialiasing/rounding, not a loophole for real overflow
 import fitz as _fitz_overflow_check
 _overflow_doc = _fitz_overflow_check.open(output_path)
+rendered_image_count = sum(len(page.get_image_info()) for page in _overflow_doc)
+if rendered_image_count < len(source_images):
+    _overflow_doc.close()
+    raise RuntimeError(f"PDF image-preservation check failed: expected {len(source_images)} image placements, rendered {rendered_image_count}.")
 _overflow_findings = []
 for _pg_idx, _pg in enumerate(_overflow_doc):
     _mb = _pg.mediabox

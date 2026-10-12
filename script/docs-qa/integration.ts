@@ -6,6 +6,7 @@ import {PDFDocument, StandardFonts} from "pdf-lib";
 import {registerRoutes} from "../../server/routes";
 import {trialLedger, documentTaskStore} from "../../server/storage";
 import {calls} from "./mock-anthropic";
+import {Document,Packer,Paragraph,ImageRun} from "docx";
 
 const app=express(); app.use(express.json());
 const server=createServer(app); registerRoutes(server,app);
@@ -65,4 +66,31 @@ try{
   assert.equal(trialLedger.balance("owner",140).remaining,137);
   assert.equal((await fetch(`${base}/api/health`)).status,200);
   console.log("PASS actual routes: early audit failure does not crash server; trial reservation restored");
+  const imageDoc=await Packer.toBuffer(new Document({sections:[{children:[
+    new Paragraph("Shared image preservation route fixture."),
+    new Paragraph({children:[new ImageRun({type:"png",data:png,transformation:{width:150,height:150},altText:{name:"Fixture",title:"Blue square with red diagonal",description:"Blue square with red diagonal"}})]})
+  ]}]}));
+  for (const mode of ["docx","pdf"]){
+    const submitted=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload(mode,"image-fixture.docx",imageDoc)});
+    assert.equal(submitted.status,202);
+    const task=(await submitted.json() as any).job,done=await ready(task.id);
+    assert.equal(done.state,"ready",done.error);
+    const download=await fetch(`${base}/api/remedy-docs/jobs/${task.id}/result`,{headers:headers()});
+    if(mode==="docx"){
+      const data=await download.json() as any;
+      assert.equal(data.imageCount,1);assert.match(data.structuredHtml,/<img /);
+      assert.ok(!data.structuredHtml.includes("[[REMEDY_IMG_"));
+      assert.ok(!data.htmlContent.includes("base64"));
+    }else{
+      const result=Buffer.from(await download.arrayBuffer());
+      assert.equal(execFileSync("python3",["-c","import fitz,sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_image_info()) for p in d))"],{input:result}).toString().trim(),"1");
+    }
+    console.log("PASS actual routes: Word-input image preserved for",mode,"output");
+  }
+  const balanceBeforeLoss=trialLedger.balance("owner",140).remaining;
+  const loss=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("docx","dropped-image.docx",imageDoc)});
+  const lossJob=(await loss.json() as any).job,lossResult=await ready(lossJob.id);
+  assert.equal(lossResult.state,"failed");assert.match(lossResult.error,/Image-preservation check failed/);
+  assert.equal(trialLedger.balance("owner",140).remaining,balanceBeforeLoss);
+  console.log("PASS actual routes: dropped image blocks result and restores trial credits");
 }finally{documentTaskStore.close();await new Promise<void>(resolve=>server.close(()=>resolve()));}

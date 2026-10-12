@@ -281,6 +281,7 @@ function RemedyDocsTab() {
   const { user: docsUser } = useUser();
   const creditFetch = useCreditFetch();
   const [documentStage, setDocumentStage] = useState("");
+  const [imageReviewWarning, setImageReviewWarning] = useState("");
   const [recoveryJob, setRecoveryJob] = useState<DocumentTaskStatus | null>(null);
   const polling = useRef<AbortController | null>(null);
   const running = useRef(false);
@@ -306,6 +307,7 @@ function RemedyDocsTab() {
     setErrorCode("");
     setWordConversionAcknowledged(false);
     setRecoveryJob(null);
+    setImageReviewWarning("");
     setResetKey((k) => k + 1);
   };
 
@@ -320,6 +322,7 @@ function RemedyDocsTab() {
     const selectedMode = resume?.mode || outputMode;
     setOutputMode(selectedMode);
     setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
+    setImageReviewWarning("");
     setDocumentStage(resume ? "Reconnecting to your document" : "Uploading your document");
     let chargedJobId: number | null = null;
     try {
@@ -371,6 +374,7 @@ function RemedyDocsTab() {
         const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
         let fixes: string[] = [];
         try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
+        setImageReviewWarning(fixes.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
         const baseName = inputName.replace(/\.(pdf|docx)$/i, "");
         setVisionResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
         setLoading(false);
@@ -411,9 +415,11 @@ function RemedyDocsTab() {
         return;
       }
 
+      const docxModule = await import("docx");
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
-              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation } = await import("docx");
+              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation } = docxModule;
       const fixesMade: string[] = data.fixesMade || [];
+      setImageReviewWarning(fixesMade.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
       const baseName = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
@@ -422,6 +428,8 @@ function RemedyDocsTab() {
       const html: string = data.structuredHtml || data.htmlContent || "";
       const parser = new DOMParser();
       const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
+      const { wordContent } = await import("@/lib/wordImages");
+      const imageContent = wordContent(docxModule, parsed2.body, data.imageCount ?? parsed2.body.querySelectorAll("img").length);
 
       const docChildren: any[] = [];
       // Track which children were emitted while building a wide table, so we
@@ -492,7 +500,7 @@ function RemedyDocsTab() {
               width: { size: colWidth, type: WidthType.DXA },
               shading: isHeader ? { fill: "F5F5F5", type: ShadingType.CLEAR } : undefined,
               margins: cellMargins,
-              children: [new Paragraph({ children: [new TextRun({ text: cellText, bold: isHeader, size: fontSize })] })],
+              children: [new Paragraph({ children: imageContent.inline(cell, { bold: isHeader, size: fontSize }, Math.max(24, colWidth / 15 - 16)) })],
             });
           });
           while (docxCells.length < maxCols) {
@@ -518,25 +526,27 @@ function RemedyDocsTab() {
       const processNode = (node: Element) => {
         const tag = node.tagName?.toLowerCase();
         const text = cleanText((node.textContent || "").trim());
-        if (!text && tag !== "br" && tag !== "table") return;
+        if (!text && tag !== "br" && tag !== "table" && tag !== "img" && !node.querySelector("img")) return;
 
         if (tag === "h1") {
-          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: [new TextRun({ text })] }));
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_1, children: imageContent.inline(node) }));
         } else if (tag === "h2") {
-          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: [new TextRun({ text })] }));
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: imageContent.inline(node) }));
         } else if (tag === "h3") {
-          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: [new TextRun({ text })] }));
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: imageContent.inline(node) }));
         } else if (tag === "h4" || tag === "h5" || tag === "h6") {
-          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_4, children: [new TextRun({ text })] }));
+          docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_4, children: imageContent.inline(node) }));
         } else if (tag === "li") {
           const parentTag = node.parentElement?.tagName?.toLowerCase();
           if (parentTag === "ol") {
-            docChildren.push(new Paragraph({ numbering: { reference: "steps", level: 0 }, children: [new TextRun({ text })] }));
+            docChildren.push(new Paragraph({ numbering: { reference: "steps", level: 0 }, children: imageContent.inline(node) }));
           } else {
-            docChildren.push(new Paragraph({ numbering: { reference: "bullets", level: 0 }, children: [new TextRun({ text })] }));
+            docChildren.push(new Paragraph({ numbering: { reference: "bullets", level: 0 }, children: imageContent.inline(node) }));
           }
         } else if (tag === "p") {
-          if (text) docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 100 } }));
+          docChildren.push(new Paragraph({ children: imageContent.inline(node), spacing: { after: 100 } }));
+        } else if (tag === "img") {
+          docChildren.push(new Paragraph({ children: imageContent.inline(node), spacing: { after: 100 } }));
         } else if (tag === "table") {
           buildTable(node);
         } else if (tag === "div" || tag === "article" || tag === "header" || tag === "section") {
@@ -550,8 +560,8 @@ function RemedyDocsTab() {
           }
         } else if (tag === "body" || tag === "ul" || tag === "ol") {
           Array.from(node.children).forEach(child => processNode(child as Element));
-        } else if (text) {
-          docChildren.push(new Paragraph({ children: [new TextRun({ text })], spacing: { after: 80 } }));
+        } else if (text || node.querySelector("img")) {
+          docChildren.push(new Paragraph({ children: imageContent.inline(node), spacing: { after: 80 } }));
         }
       };
 
@@ -568,6 +578,7 @@ function RemedyDocsTab() {
         docChildren.push(new Paragraph({ children: [new TextRun({ text: rawText })] }));
       }
 
+      imageContent.assertComplete();
       const doc = new Document({
         numbering: {
           config: [
@@ -761,6 +772,10 @@ function RemedyDocsTab() {
         <Button variant="outline" onClick={() => run(recoveryJob)}>Check status / retrieve result</Button>
       </div>}
       {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode: recoveryJob?.id || errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
+      {imageReviewWarning && !error && !loading && <div role="status" className="p-4 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100" data-testid="doc-image-review">
+        <p className="text-sm font-semibold">{imageReviewWarning.replace(/\b1 descriptions need review\b/, "1 image description needs review")}.</p>
+        <p className="text-sm">The image files are included, but an existing description was missing. Add meaningful alt text before distributing the result.</p>
+      </div>}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
@@ -776,13 +791,13 @@ function RemedyDocsTab() {
           </div>
           {fastResult.blob && (
             <>
-              <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold" onClick={() => {
+              <Button className="w-full h-auto min-w-0 py-3 whitespace-normal bg-accent text-accent-foreground hover:bg-accent/90 font-semibold" onClick={() => {
                 const a = document.createElement("a");
                 a.href = URL.createObjectURL(fastResult.blob);
                 a.download = fastResult.filename;
                 a.click();
               }}>
-                <Download className="w-4 h-4 mr-2" />Download {fastResult.filename}
+                <Download className="w-4 h-4 mr-2 shrink-0" /><span className="min-w-0 break-all text-left">Download {fastResult.filename}</span>
               </Button>
             </>
           )}
@@ -802,7 +817,7 @@ function RemedyDocsTab() {
             </p>
           </div>
           <Button
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
+            className="w-full h-auto min-w-0 py-3 whitespace-normal bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
             onClick={() => {
               const url = URL.createObjectURL(visionResult.blob);
               const a = document.createElement("a");
@@ -812,7 +827,7 @@ function RemedyDocsTab() {
               URL.revokeObjectURL(url);
             }}
           >
-            <Download className="w-4 h-4 mr-2" />Download {visionResult.filename}
+            <Download className="w-4 h-4 mr-2 shrink-0" /><span className="min-w-0 break-all text-left">Download {visionResult.filename}</span>
           </Button>
         </div>
       )}
