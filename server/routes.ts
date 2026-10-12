@@ -11,6 +11,7 @@ import { Webhook as SvixWebhook } from "svix";
 import { storage, trialLedger, documentTaskStore } from "./storage";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
 import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
+import { runDocumentProcess } from "./documentProcess";
 import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, trialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
@@ -4377,18 +4378,7 @@ Respond with ONLY a JSON object, no markdown fences, no explanation:
       const docTitle = String(title || filename || "Document").replace(/\.(pdf|docx)$/i, "");
       const stdinPayload = JSON.stringify({ html: structuredHtml, title: docTitle });
 
-      await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(python3, [tmpScript, tmpOut], { timeout: 120000, killSignal: "SIGKILL" });
-        proc.stdin.write(stdinPayload);
-        proc.stdin.end();
-        let stderr = "";
-        proc.stderr.on("data", (d: Buffer) => (stderr += d.toString()));
-        proc.on("close", (code: number) => {
-          if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
-          else resolve();
-        });
-        proc.on("error", (err) => reject(err));
-      });
+      await runDocumentProcess(python3, [tmpScript, tmpOut], stdinPayload, 120000);
 
       const outBuffer = fs.readFileSync(tmpOut);
       const baseName = String(filename || docTitle).replace(/\.(pdf|docx)$/i, "");

@@ -1,6 +1,7 @@
 import express from "express";
 import {createServer} from "node:http";
 import {execFileSync} from "node:child_process";
+import {readFileSync, writeFileSync} from "node:fs";
 import assert from "node:assert/strict";
 import {PDFDocument, StandardFonts} from "pdf-lib";
 import {registerRoutes} from "../../server/routes";
@@ -93,4 +94,27 @@ try{
   assert.equal(lossResult.state,"failed");assert.match(lossResult.error,/Image-preservation check failed/);
   assert.equal(trialLedger.balance("owner",140).remaining,balanceBeforeLoss);
   console.log("PASS actual routes: dropped image blocks result and restores trial credits");
+  // The harness copies this renderer into an isolated temporary directory.
+  // Simulate an import-time renderer failure without altering source or production.
+  const renderer = new URL("./pdf_pipelines/text_pdf_tag.py", import.meta.url);
+  assert.ok(renderer.pathname.includes("/remedy-docs-integration-"));
+  const rendererSource = readFileSync(renderer);
+  const beforeRendererFailure = trialLedger.balance("owner",140).remaining;
+  try {
+    writeFileSync(renderer, "import sys\nsys.stderr.write('Synthetic renderer startup failure')\nsys.exit(1)\n");
+    const admission=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","renderer-failure-image-fixture.docx",imageDoc)});
+    const task=(await admission.json() as any).job, result=await ready(task.id);
+    assert.equal(result.state,"failed");
+    assert.match(result.error,/Synthetic renderer startup failure/);
+    assert.equal((await fetch(`${base}/api/health`)).status,200);
+    assert.equal(trialLedger.balance("owner",140).remaining,beforeRendererFailure);
+    assert.notEqual((await fetch(`${base}/api/remedy-docs/jobs/${task.id}/result`,{headers:headers()})).status,200);
+    console.log("PASS actual routes: renderer startup failure stays contained, blocks output and restores trial credits");
+  } finally {
+    writeFileSync(renderer, rendererSource);
+  }
+  const recovered=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","recovered-image-fixture.docx",imageDoc)});
+  const recoveredTask=(await recovered.json() as any).job;
+  assert.equal((await ready(recoveredTask.id)).state,"ready");
+  console.log("PASS actual routes: next PDF succeeds after a renderer failure without restarting server");
 }finally{documentTaskStore.close();await new Promise<void>(resolve=>server.close(()=>resolve()));}
