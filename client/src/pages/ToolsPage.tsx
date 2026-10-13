@@ -650,6 +650,10 @@ function RemedyDocsTab() {
 
   return (
     <div className="space-y-5">
+      <div className="text-xs text-muted-foreground space-y-0.5 px-1" data-testid="doc-upload-notes">
+        <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
+        <p>✓ Documents up to 50 pages</p>
+      </div>
       <FileDropZone
         accept=".docx,.pdf"
         onFile={(selectedFile) => {
@@ -664,13 +668,9 @@ function RemedyDocsTab() {
         testId="doc-upload"
         resetKey={resetKey}
       />
-      <div className="text-xs text-muted-foreground space-y-0.5 px-1">
-        <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
-        <p>✓ Documents up to 50 pages</p>
-      </div>
       <fieldset disabled={loading} className="space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="doc-output-mode">
         <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
-        <div className="space-y-2" role="radiogroup" aria-label="Output format">
+        <div className="grid grid-cols-2 gap-2 w-full max-w-xs" role="radiogroup" aria-label="Output format" aria-describedby="doc-output-guidance">
           {([
             { value: "pdf", label: "PDF", Icon: FileText },
             { value: "docx", label: "Word", Icon: FileText },
@@ -679,7 +679,7 @@ function RemedyDocsTab() {
               key={value}
               htmlFor={`mode-${value}`}
               data-testid={`mode-${value}`}
-              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+              className={`flex min-h-11 items-center justify-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
                 outputMode === value
                   ? "border-[#0f766e] bg-white dark:bg-background ring-1 ring-[#0f766e]"
                   : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0f766e]/50"
@@ -704,11 +704,10 @@ function RemedyDocsTab() {
             </label>
           ))}
         </div>
+        <p id="doc-output-guidance" className="text-xs text-muted-foreground leading-relaxed" data-testid="doc-output-guidance">
+          <strong className="font-semibold text-foreground">Not sure which output to choose?</strong> If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
+        </p>
       </fieldset>
-
-      <p className="text-xs text-muted-foreground px-1">
-        <strong className="font-semibold text-foreground">Not sure which output to choose?</strong> If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
-      </p>
 
       {showWordConversionNotice && (
         <section
