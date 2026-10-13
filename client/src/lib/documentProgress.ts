@@ -1,5 +1,6 @@
 /** Weighted stage estimate, not an elapsed-time animation or accessibility score. */
 export function documentProgress(stage: string): { percent: number; label: string } {
+  if (/checking pdf generator/i.test(stage)) return { percent: 10, label: "Preparing PDF output" };
   if (/ready to download/i.test(stage)) return { percent: 98, label: "Preparing your download" };
   if (/building.*pdf|finalizing/i.test(stage)) return { percent: 90, label: "Creating your document" };
   const section = stage.match(/section (\d+) of (\d+)/i);

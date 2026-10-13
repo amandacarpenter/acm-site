@@ -36,6 +36,11 @@ COPY transcribe_service.py transcribe_audio.py complexpdf_pipeline.py ./
 # Copy bundled fonts for PDF generation (DejaVu for Unicode support)
 COPY fonts/ ./fonts/
 
+# Verify imports, tagged rendering and embedded pictures using this exact
+# production Python environment. A broken renderer must fail the build, not
+# waste a customer's AI conversion and discover the problem at download time.
+RUN python dist/pdf_pipelines/text_pdf_health.py
+
 # Start both services via a shell script
 COPY start.sh ./
 RUN chmod +x start.sh

@@ -19,11 +19,13 @@ import sys
 import json
 import os
 import re
+import base64
 import traceback as _tb
 
 import pikepdf
 from bs4 import BeautifulSoup
-from weasyprint import HTML, default_url_fetcher
+from weasyprint import HTML
+from weasyprint.urls import URLFetcher, URLFetcherResponse
 from weasyprint.formatting_structure import boxes as _wp_boxes
 import weasyprint.pdf.tags as _wp_tags
 import pydyf as _pydyf
@@ -46,10 +48,18 @@ for index, image in enumerate(source_images):
         width = 624
     image["style"] = f"width:{width}px;max-width:100%;height:auto;max-height:720px;object-fit:contain"
 source_html = str(image_soup)
-def embedded_images_only(url):
-    if not re.fullmatch(r"data:image/(?:png|jpeg);base64,[A-Za-z0-9+/=\s]+", url):
-        raise ValueError("External and local-file resources are blocked.")
-    return default_url_fetcher(url)
+class EmbeddedImagesOnly(URLFetcher):
+    def __init__(self):
+        super().__init__(allowed_protocols=["data"], fail_on_errors=True)
+
+    def fetch(self, url, headers=None):
+        match = re.fullmatch(r"data:(image/(?:png|jpeg));base64,([A-Za-z0-9+/=\s]+)", url)
+        if not match:
+            raise ValueError("External and local-file resources are blocked.")
+        # Decode verified inline image data directly. Do not delegate to a
+        # general network fetcher or a deprecated WeasyPrint helper.
+        body = base64.b64decode(re.sub(r"\s+", "", match.group(2)), validate=True)
+        return URLFetcherResponse(url, body=body, headers={"Content-Type": match.group(1)})
 
 
 def clean_html(raw_html: str) -> str:
@@ -379,7 +389,7 @@ def _patched_build_box_tree(box, parent, pdf, page_number, nums, links, tags):
 _wp_tags._build_box_tree = _patched_build_box_tree
 
 try:
-    rendered = HTML(filename=tmp_html, url_fetcher=embedded_images_only).render()
+    rendered = HTML(string=full_html, url_fetcher=EmbeddedImagesOnly()).render()
     # Count actual replaced image boxes, not every PDF image XObject: color
     # emoji/font glyphs can also be encoded as XObjects without being pictures.
     from collections import Counter

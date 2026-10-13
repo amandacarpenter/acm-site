@@ -662,6 +662,22 @@ async function getGoogleAnalytics(): Promise<{
 }
 
 export function registerRoutes(httpServer: Server, app: Express) {
+  // One actual image-containing render per server process, before any AI work
+  // on the shared text-to-PDF path. Failed checks are not cached.
+  let textPdfReadiness: Promise<void> | undefined;
+  function ensureTextPdfReady(): Promise<void> {
+    if (!textPdfReadiness) {
+      const python = fs.existsSync("/opt/venv/bin/python3") ? "/opt/venv/bin/python3" : "python3";
+      textPdfReadiness = runDocumentProcess(
+        python, [path.join(__dirname, "pdf_pipelines", "text_pdf_health.py")], "", 30000,
+      ).catch(error => {
+        textPdfReadiness = undefined;
+        console.error("[PDF RENDERER PREFLIGHT]", error.message);
+        throw new Error("The PDF generator could not start. This attempt stopped before AI conversion and credit deduction. Please report this issue.");
+      });
+    }
+    return textPdfReadiness;
+  }
 
   // ── Stripe client (moved to top of function so it's in scope for every route,
   // including /api/admin/dashboard which is registered before the checkout routes) ──
@@ -693,7 +709,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   ], creditAccess);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-protected-images-v1" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-renderer-compat-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -1683,6 +1699,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
       let htmlContent = "";
       let preservedImages: PreservedImage[] = [];
       let docPageCount = 1; // .docx has no page concept pre-render; treated as 1 page equivalent below
+      if (req.body?.mode === "pdf") {
+        res.locals.documentStage?.("Checking PDF generator");
+        await ensureTextPdfReady();
+      }
 
       if (ext === ".docx") {
         const mammoth = await import("mammoth");

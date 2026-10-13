@@ -30,7 +30,7 @@ assert.equal(result.retainedBlocks,0);
 assert.ok(result.html.indexOf("First paragraph")<result.html.indexOf("REMEDY_IMG_test_1"));
 assert.ok(result.html.indexOf("REMEDY_IMG_test_2")<result.html.indexOf("Last paragraph"));
 checks++;
-for(const [stage,percent] of [["Uploading your document",3],["Applying accessibility structure: section 1 of 7",15],["Applying accessibility structure: section 7 of 7",71],["Checking images and assembling your document",85],["Building the accessible PDF",90],["Ready to download",98]] as [string,number][]){
+for(const [stage,percent] of [["Uploading your document",3],["Checking PDF generator",10],["Applying accessibility structure: section 1 of 7",15],["Applying accessibility structure: section 7 of 7",71],["Checking images and assembling your document",85],["Building the accessible PDF",90],["Ready to download",98]] as [string,number][]){
  const progress=documentProgress(stage);assert.equal(progress.percent,percent);assert.ok(!/section|of 7/i.test(progress.label));checks++;
 }
 if(process.env.DOCX_IMAGE_FIXTURE){

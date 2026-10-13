@@ -22,6 +22,23 @@ async function ready(id:string){for(let i=0;i<300;i++){const r=await fetch(`${ba
 try{
   const denied=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",body:upload()});
   assert.equal(denied.status,401);
+  const preflightScript = new URL("./pdf_pipelines/text_pdf_health.py", import.meta.url);
+  assert.ok(preflightScript.pathname.includes("/remedy-docs-integration-"));
+  const preflightSource = readFileSync(preflightScript);
+  const callsBeforePreflight = calls;
+  try {
+    writeFileSync(preflightScript, "import sys\nsys.stderr.write('Synthetic missing renderer dependency')\nsys.exit(1)\n");
+    const preflightAdmission=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","preflight-failure.pdf")});
+    const preflightJob=(await preflightAdmission.json() as any).job;
+    const preflightResult=await ready(preflightJob.id);
+    assert.equal(preflightResult.state,"failed");
+    assert.match(preflightResult.error,/stopped before AI conversion and credit deduction/);
+    assert.equal(calls,callsBeforePreflight);
+    assert.equal(trialLedger.balance("owner",140).remaining,140);
+    console.log("PASS actual routes: broken renderer rejected before any AI call or credit deduction");
+  } finally {
+    writeFileSync(preflightScript, preflightSource);
+  }
   const t=Date.now();const admission=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload()});
   assert.equal(admission.status,202);const {job}=await admission.json() as any;
   assert.ok(Date.now()-t<2000);console.log("PASS actual routes: 202 before document processing",Date.now()-t,"ms");
