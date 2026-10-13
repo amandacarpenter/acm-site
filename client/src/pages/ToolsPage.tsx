@@ -282,8 +282,6 @@ function RemedyDocsTab() {
   const { user: docsUser } = useUser();
   const creditFetch = useCreditFetch();
   const [documentStage, setDocumentStage] = useState("");
-  const [imageReviewWarning, setImageReviewWarning] = useState("");
-  const [structureReviewWarning, setStructureReviewWarning] = useState("");
   const progressDisplay = documentProgress(documentStage);
   const [recoveryJob, setRecoveryJob] = useState<DocumentTaskStatus | null>(null);
   const polling = useRef<AbortController | null>(null);
@@ -315,8 +313,6 @@ function RemedyDocsTab() {
     setErrorCode("");
     setWordConversionAcknowledged(false);
     setRecoveryJob(null);
-    setImageReviewWarning("");
-    setStructureReviewWarning("");
     setResetKey((k) => k + 1);
   };
 
@@ -331,8 +327,6 @@ function RemedyDocsTab() {
     const selectedMode = resume?.mode || outputMode;
     setOutputMode(selectedMode);
     setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
-    setImageReviewWarning("");
-    setStructureReviewWarning("");
     setDocumentStage(resume ? "Reconnecting to your document" : "Uploading your document");
     let chargedJobId: number | null = null;
     try {
@@ -384,8 +378,6 @@ function RemedyDocsTab() {
         const pages = parseInt(resp.headers.get("X-Total-Pages") || "0", 10);
         let fixes: string[] = [];
         try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
-        setImageReviewWarning(fixes.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
-        setStructureReviewWarning(fixes.filter(f => f.startsWith("Review: ")).map(f => f.slice(8)).join(" "));
         const baseName = inputName.replace(/\.(pdf|docx)$/i, "");
         setVisionResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
         setLoading(false);
@@ -432,8 +424,6 @@ function RemedyDocsTab() {
       const { wordTablePlan } = await import("@/lib/wordTables");
       const { normalizeDocumentHeadings } = await import("@shared/documentHeadings");
       const fixesMade: string[] = data.fixesMade || [];
-      setImageReviewWarning(fixesMade.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
-      setStructureReviewWarning(fixesMade.filter(f => f.startsWith("Review: ")).map(f => f.slice(8)).join(" "));
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
       const baseName = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
@@ -768,14 +758,6 @@ function RemedyDocsTab() {
         </>}
       </div>}
       {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode: recoveryJob?.id || errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
-      {imageReviewWarning && !error && !loading && <div role="status" className="p-4 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100" data-testid="doc-image-review">
-        <p className="text-sm font-semibold">{imageReviewWarning.replace(/\b1 descriptions need review\b/, "1 image description needs review")}.</p>
-        <p className="text-sm">The image files are included, but an existing description was missing. Add meaningful alt text before distributing the result.</p>
-      </div>}
-      {structureReviewWarning && !error && !loading && <div role="status" className="p-4 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100" data-testid="doc-structure-review">
-        <p className="text-sm font-semibold">Source structure retained for review</p>
-        <p className="text-sm">{structureReviewWarning}</p>
-      </div>}
 
       {fastResult && (
         <div className="space-y-4" data-testid="doc-result">
