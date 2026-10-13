@@ -650,10 +650,6 @@ function RemedyDocsTab() {
 
   return (
     <div className="space-y-5">
-      <div className="text-xs text-muted-foreground space-y-0.5 px-1" data-testid="doc-upload-notes">
-        <p>✓ Word (.docx) and PDF files supported — including scanned pages, images, tables, and multi-column layouts</p>
-        <p>✓ Documents up to 50 pages</p>
-      </div>
       <FileDropZone
         accept=".docx,.pdf"
         onFile={(selectedFile) => {
@@ -1095,7 +1091,7 @@ const ACCENT_SOFT_HOVER = "#0f766e1f";
 const TAB_META = [
   {
     id: "document", label: "Remedy\nDocs", icon: iconDocument, Icon: null, beta: false, comingSoon: false, badge: ".docx & .pdf",
-    title: "Remedy Docs", blurb: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document.",
+    title: "Remedy Docs", blurb: "Upload a Word document or PDF up to 50 pages. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document.",
   },
   {
     id: "video", label: "Remedy\nVideo", icon: iconVideo, Icon: null, beta: false, comingSoon: false, badge: "MP4, MOV, MP3",
