@@ -428,7 +428,9 @@ function RemedyDocsTab() {
 
       const docxModule = await import("docx");
       const { Document, Paragraph, TextRun, HeadingLevel, Packer, AlignmentType, LevelFormat,
-              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation } = docxModule;
+              Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation, TableLayoutType } = docxModule;
+      const { wordTablePlan } = await import("@/lib/wordTables");
+      const { normalizeDocumentHeadings } = await import("@shared/documentHeadings");
       const fixesMade: string[] = data.fixesMade || [];
       setImageReviewWarning(fixesMade.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
       setStructureReviewWarning(fixesMade.filter(f => f.startsWith("Review: ")).map(f => f.slice(8)).join(" "));
@@ -437,7 +439,7 @@ function RemedyDocsTab() {
       const baseName = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
       const filename = baseName + "-accessible.docx";
 
-      const html: string = data.structuredHtml || data.htmlContent || "";
+      const html: string = normalizeDocumentHeadings(data.structuredHtml || data.htmlContent || "").html;
       const parser = new DOMParser();
       const parsed2 = parser.parseFromString(`<body>${html}</body>`, "text/html");
       const { wordContent } = await import("@/lib/wordImages");
@@ -457,77 +459,54 @@ function RemedyDocsTab() {
 
       const cleanText = (raw: string) => raw.replace(/^\*{2,3}\s*/, "").trim();
 
-      // Wide-table handling -- same threshold as the vision/fast PDF pipelines
-      // (8+ columns). A portrait page has ~6.5in (9360 DXA) of usable width;
-      // dividing that across 8+ columns produces cells too narrow to hold
-      // real words without wrapping into an unreadable ladder of characters.
-      // Word itself never clips/overflows a table (it always renders the
-      // declared width), so this isn't a silent-data-loss bug like the PDF
-      // pipelines' -- but a squeezed table is still a real accessibility
-      // problem, so wide tables get their own landscape section instead
-      // (~9in / 12960 DXA usable width) plus a font-size floor for extreme
-      // column counts, mirroring the PDF pipelines' escape hatch.
-      const WIDE_TABLE_MIN_COLUMNS = 8;
-      const EXTREME_TABLE_MIN_COLUMNS = 16;
-
       const buildTable = (tableNode: Element) => {
         const thinBorder = { style: BorderStyle.SINGLE, size: 1, color: "B0B0B0" };
         const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
-        const rows = Array.from(tableNode.querySelectorAll("tr"));
-        if (rows.length === 0) return;
-        const maxCols = rows.reduce((m: number, r: Element) => Math.max(m, r.querySelectorAll("td,th").length), 0);
+        const plan = wordTablePlan(tableNode);
+        const maxCols = plan.columns;
         if (maxCols === 0) return;
-
-        const isWide = maxCols >= WIDE_TABLE_MIN_COLUMNS;
-        const isExtreme = maxCols >= EXTREME_TABLE_MIN_COLUMNS;
-        // Landscape letter usable width at 0.5in margins: 11in - 1in = 10in = 14400 DXA.
-        // Keep a little headroom below the true max so borders/padding never round up past it.
-        const portraitWidth = 9360;
-        const landscapeWidth = 14000;
-        // A minimum readable column width (in DXA) that takes priority over evenly
-        // dividing the page width -- for extreme column counts (16+), evenly dividing
-        // even a landscape page would squeeze columns below a legible floor. Word
-        // renders an over-width table by letting it extend past the printable
-        // margin on paper/print preview rather than clipping or dropping any cell
-        // data, so on-screen/exported text stays fully intact and readable, which
-        // is what matters most for accessibility -- column legibility wins over
-        // hard page-width containment for this degenerate case (mirrors the PDF
-        // pipelines' own graceful-degradation floor).
-        const minColWidth = isExtreme ? 500 : isWide ? 700 : 600;
-        const naturalColWidth = isWide ? Math.floor(landscapeWidth / maxCols) : Math.floor(portraitWidth / maxCols);
-        const colWidth = Math.max(naturalColWidth, minColWidth);
-        const tableWidth = colWidth * maxCols;
-        const fontSize = isExtreme ? 16 : isWide ? 18 : 24; // half-points: 8pt / 9pt / 12pt
+        const isWide = plan.landscape;
+        const fontSize = maxCols >= 16 ? 18 : isWide ? 20 : 24;
         const cellMargins = isWide ? { top: 40, bottom: 40, left: 60, right: 60 } : { top: 60, bottom: 60, left: 100, right: 100 };
 
         if (isWide) markOrientation("landscape");
 
-        const docxRows = rows.map((row: Element) => {
-          const cells = Array.from(row.querySelectorAll("td,th"));
-          const isHeader = cells.some((c: Element) => c.tagName.toLowerCase() === "th");
-          const docxCells = cells.map((cell: Element) => {
-            const cellText = (cell.textContent || "").trim();
+        const docxRows = plan.rows.map((cells, rowIndex) => {
+          const isHeader = cells.length > 0 && cells.every(({cell}) => cell.tagName === "TH");
+          const docxCells = cells.map(({cell, start, colSpan, rowSpan}) => {
+            const colWidth = plan.widths.slice(start, start + colSpan).reduce((a,b) => a+b,0);
             return new TableCell({
               borders: allBorders,
+              columnSpan: colSpan,
+              rowSpan,
               width: { size: colWidth, type: WidthType.DXA },
               shading: isHeader ? { fill: "F5F5F5", type: ShadingType.CLEAR } : undefined,
               margins: cellMargins,
               children: [new Paragraph({ children: imageContent.inline(cell, { bold: isHeader, size: fontSize }, Math.max(24, colWidth / 15 - 16)) })],
             });
           });
-          while (docxCells.length < maxCols) {
+          // Pad only genuinely empty grid positions. Continuations of rowspans
+          // are generated by docx and must not be counted as missing cells.
+          const covered = new Set<number>();
+          for (const previous of plan.rows.slice(0, rowIndex + 1).flat()) {
+            const origin = plan.rows.findIndex(row => row.includes(previous));
+            if (origin + previous.rowSpan > rowIndex)
+              for (let c=previous.start;c<previous.start+previous.colSpan;c++) covered.add(c);
+          }
+          for (let column=0;column<maxCols;column++) if (!covered.has(column)) {
             docxCells.push(new TableCell({
               borders: allBorders,
-              width: { size: colWidth, type: WidthType.DXA },
+              width: { size: plan.widths[column], type: WidthType.DXA },
               margins: cellMargins,
               children: [new Paragraph({ children: [new TextRun({ text: "", size: fontSize })] })],
             }));
           }
-          return new TableRow({ children: docxCells });
+          return new TableRow({ children: docxCells, tableHeader: rowIndex === 0 && isHeader });
         });
         docChildren.push(new Table({
-          width: { size: tableWidth, type: WidthType.DXA },
-          columnWidths: Array(maxCols).fill(colWidth),
+          width: { size: plan.width, type: WidthType.DXA },
+          columnWidths: plan.widths,
+          layout: TableLayoutType.FIXED,
           rows: docxRows,
         }));
         docChildren.push(new Paragraph({ children: [new TextRun({ text: "" })], spacing: { after: 100 } }));
@@ -546,8 +525,10 @@ function RemedyDocsTab() {
           docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_2, children: imageContent.inline(node) }));
         } else if (tag === "h3") {
           docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_3, children: imageContent.inline(node) }));
-        } else if (tag === "h4" || tag === "h5" || tag === "h6") {
+        } else if (tag === "h4") {
           docChildren.push(new Paragraph({ heading: HeadingLevel.HEADING_4, children: imageContent.inline(node) }));
+        } else if (tag === "h5" || tag === "h6") {
+          docChildren.push(new Paragraph({ heading: tag === "h5" ? HeadingLevel.HEADING_5 : HeadingLevel.HEADING_6, children: imageContent.inline(node) }));
         } else if (tag === "li") {
           const parentTag = node.parentElement?.tagName?.toLowerCase();
           if (parentTag === "ol") {

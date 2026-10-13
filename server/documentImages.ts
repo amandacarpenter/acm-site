@@ -3,8 +3,9 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import * as mammoth from "mammoth";
+import { parseFragment } from "parse5";
 
-export type PreservedImage = { sourceHash: string; data: string; mime: string; width: number; height: number; alt: string; transformed: boolean; token?: string };
+export type PreservedImage = { sourceHash: string; data: string; mime: string; width: number; height: number; alt: string; transformed: boolean; token?: string; qrUrl?: string; altSource?: "decoded_qr" };
 const escape = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 
 export async function extractWordImages(buffer: Buffer, pipelineDir: string) {
@@ -28,7 +29,7 @@ export async function extractWordImages(buffer: Buffer, pipelineDir: string) {
     const item=unused.splice(index,1)[0];
     item.token=`REMEDY_IMG_${prefix}_${images.length+1}`;
     const sourceAlt = (image as typeof image & { altText?: string }).altText;
-    if(!item.alt && sourceAlt)item.alt=sourceAlt;
+    if(!item.alt && sourceAlt && sourceAlt.trim() !== "Image description requires review")item.alt=sourceAlt;
     images.push(item);
     return {src:item.token};
   })});
@@ -38,6 +39,26 @@ export async function extractWordImages(buffer: Buffer, pipelineDir: string) {
   const html=result.value.replace(/<img\b[^>]*\bsrc="(REMEDY_IMG_[^"]+)"[^>]*>/gi,(_tag,id)=>`[[${id}]]`);
   const ordered=Array.from(html.matchAll(/\[\[(REMEDY_IMG_[\w]+)\]\]/g)).map(m=>images.find(i=>i.token===m[1])!);
   if(ordered.length!==manifest.length || ordered.some(i=>!i))throw new Error("Word image marker inventory mismatch.");
+  // Recover only destinations actually decoded from image pixels. The matching
+  // document link supplies its existing label; never infer where a QR goes
+  // from surrounding text or ask an LLM to guess a URL.
+  const labels = new Map<string, string>();
+  const text = (n: any): string => n.nodeName === "#text" ? n.value : (n.childNodes || []).map(text).join(" ");
+  const visit = (n: any) => {
+    if (n.tagName === "a") {
+      const href = n.attrs.find((a: any) => a.name === "href")?.value;
+      const label = text(n).replace(/\s+/g, " ").trim();
+      if (href && label && label.length <= 180) labels.set(href, label);
+    }
+    for (const child of n.childNodes || []) visit(child);
+  };
+  visit(parseFragment(result.value));
+  for (const image of ordered) {
+    if (!image.alt.trim() && image.qrUrl) {
+      image.alt = `QR code linking to ${labels.get(image.qrUrl) || image.qrUrl}`;
+      image.altSource = "decoded_qr";
+    }
+  }
   return {html, images:ordered};
 }
 

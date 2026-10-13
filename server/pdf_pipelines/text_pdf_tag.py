@@ -29,6 +29,7 @@ from weasyprint.urls import URLFetcher, URLFetcherResponse
 from weasyprint.formatting_structure import boxes as _wp_boxes
 import weasyprint.pdf.tags as _wp_tags
 import pydyf as _pydyf
+from heading_structure import normalize_heading_tags
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
@@ -246,7 +247,7 @@ def clean_html(raw_html: str) -> str:
     # while actually dropping columns of data from the visible/printable
     # page. Route any such table onto a named landscape page instead (see
     # the 'wide-table' @page rule below), which gives ~9in of usable width.
-    _WIDE_TABLE_MIN_COLUMNS = 8
+    _WIDE_TABLE_MIN_COLUMNS = 7
     for table in soup.find_all("table"):
         header_row = table.find("tr")
         if header_row is None:
@@ -289,7 +290,7 @@ css_rules = [
     "p { margin: 0 0 6pt 0; }",
     "ul, ol { margin: 4pt 0 4pt 18pt; padding: 0; }",
     "li { margin-bottom: 2pt; }",
-    "table { border-collapse: collapse; width: 100%; margin: 8pt 0; font-size: 10pt; }",
+    "table { border-collapse: collapse; width: 100%; table-layout: fixed; overflow-wrap: anywhere; margin: 8pt 0; font-size: 10pt; }",
     "th { background: #f0f0f0; border: 1px solid #999; padding: 4pt 6pt; text-align: left; font-weight: bold; }",
     "td { border: 1px solid #ccc; padding: 4pt 6pt; vertical-align: top; }",
     'div[style*="page: wide-table"] table { table-layout: fixed; font-size: 9pt; word-wrap: break-word; overflow-wrap: break-word; }',
@@ -621,6 +622,8 @@ if _pp_id_entries:
     _pp_st["/IDTree"] = pikepdf.Dictionary({"/Names": _pp_names_array})
 print(f"idtree-build: registered {len(_pp_id_entries)} struct element IDs into StructTreeRoot/IDTree", file=sys.stderr)
 
+_heading_changes = normalize_heading_tags(_pp_st)
+print(f"heading-levels: repaired {_heading_changes} skipped levels", file=sys.stderr)
 pp.save(output_path)
 pp.close()
 

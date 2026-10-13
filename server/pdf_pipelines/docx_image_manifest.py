@@ -5,6 +5,8 @@ import sys, io, json, hashlib, posixpath
 from zipfile import ZipFile
 from xml.etree import ElementTree as ET
 from PIL import Image, ImageOps
+import zxingcpp
+from urllib.parse import urlsplit
 
 NS = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main",
       "a": "http://schemas.openxmlformats.org/drawingml/2006/main",
@@ -56,6 +58,7 @@ def manifest(payload):
             if drawing is not None:
                 props = drawing.find(".//wp:docPr", NS)
                 if props is not None: alt = props.get("descr") or props.get("title") or ""
+            if alt.strip() == "Image description requires review": alt = ""
             crop = container.find(".//a:srcRect", NS) if container is not None else None
             transform = container.find(".//a:xfrm", NS) if container is not None else None
             with Image.open(io.BytesIO(raw)) as im:
@@ -76,6 +79,29 @@ def manifest(payload):
                     if transform.get("flipV") in ("1", "true"): im = ImageOps.flip(im); converted = True
                     angle = int(transform.get("rot", "0")) / 60000
                     if angle: im = im.rotate(-angle, expand=True); converted = True
+                qr_url = None
+                if not alt.strip() and len(images) < 50:
+                    # Bound decoder work without changing the preserved picture.
+                    scan = im.convert("RGB")
+                    scan.thumbnail((1600, 1600))
+                    urls = []
+                    try:
+                        codes = zxingcpp.read_barcodes(scan, formats=zxingcpp.BarcodeFormat.QRCode)
+                        for code in codes:
+                            try:
+                                target = urlsplit(code.text)
+                                if (code.valid and len(code.text) <= 500
+                                        and target.scheme in ("http", "https") and target.hostname
+                                        and not target.username and not target.password
+                                        and not any(ord(ch) < 32 for ch in code.text)):
+                                    urls.append(code.text)
+                            except ValueError:
+                                pass
+                    except Exception:
+                        # Optional recovery must not make a preserved image fail.
+                        # Missing/undecodable descriptions remain review-required.
+                        pass
+                    if len(urls) == 1: qr_url = urls[0]
                 width, height = im.size
                 ext = transform.find("a:ext", NS) if transform is not None else None
                 if ext is None and drawing is not None: ext = drawing.find(".//wp:extent", NS)
@@ -89,7 +115,7 @@ def manifest(payload):
             import base64
             images.append({"sourceHash":hashlib.sha256(raw).hexdigest(), "data":base64.b64encode(data).decode(),
                            "mime":mime, "width":max(1,round(width*scale)), "height":max(1,round(height*scale)),
-                           "alt":alt.strip(), "transformed":converted})
+                           "alt":alt.strip(), "transformed":converted, "qrUrl":qr_url})
             if len(images) > 500 or sum(len(i["data"]) for i in images) > 64 * 1024 * 1024:
                 raise ValueError("Embedded images exceed the safe processing limit. Split the document into smaller sections.")
     return images

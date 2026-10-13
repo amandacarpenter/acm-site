@@ -49,6 +49,17 @@ class TextPdfImageTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("external or unsupported images are blocked", result.stderr)
 
+    def test_seven_column_table_uses_landscape_and_contains_long_words(self):
+        row = "<tr>" + "".join("<td><p>" + ("LongWord" * 12) + "</p></td>" for _ in range(7)) + "</tr>"
+        with tempfile.TemporaryDirectory() as directory:
+            result, output = self.render("<h2>Schedule</h2><table>" + row * 4 + "</table>", directory)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            with fitz.open(output) as pdf:
+                self.assertTrue(any(page.rect.width > page.rect.height for page in pdf))
+                for page in pdf:
+                    for block in page.get_text("blocks"):
+                        self.assertLessEqual(block[2], page.rect.width - 20)
+
     def test_invalid_embedded_image_is_not_silently_omitted(self):
         with tempfile.TemporaryDirectory() as directory:
             result, _ = self.render('<p><img src="data:image/png;base64,aW52YWxpZA==" alt="Bad data"></p>', directory)

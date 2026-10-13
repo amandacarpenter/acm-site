@@ -21,12 +21,18 @@ export function wordContent(docx: typeof Docx, root: Element, expected: number) 
       return [new docx.ImageRun({type:match[1]==="jpeg"?"jpg":"png",
         data:Uint8Array.from(atob(match[2]),c=>c.charCodeAt(0)),
         transformation:{width:Math.max(1,Math.round(width*scale)),height:Math.max(1,Math.round(height*scale))},
-        altText:{name:`Document image ${rendered.size}`,title:alt,description:alt}})];
+        altText:{id:String(rendered.size),name:`Document image ${rendered.size}`,title:alt,description:alt}})];
     }
     if(["script","style"].includes(tag))return [];
     if(tag==="br")return [new docx.TextRun({break:1})];
     const style={...options,...(["strong","b"].includes(tag)?{bold:true}:{}),...(["em","i"].includes(tag)?{italics:true}:{})};
-    return Array.from(e.childNodes).flatMap(c=>inline(c,style,maxWidth));
+    return Array.from(e.childNodes).flatMap((c,i)=>{
+      const content=inline(c,style,maxWidth);
+      // Block boundaries within a table cell must not turn "Study" + "Time"
+      // into "StudyTime". Keep the text itself and only restore its line break.
+      const block=c.nodeType===1 && /^(P|DIV|LI|H[1-6])$/.test((c as Element).tagName);
+      return i>0 && block ? [new docx.TextRun({break:1}),...content] : content;
+    });
   };
   return {inline,assertComplete:()=>{if(rendered.size!==expected)throw new Error("Word export stopped because an image was omitted.");}};
 }

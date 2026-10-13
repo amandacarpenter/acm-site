@@ -13,6 +13,7 @@ import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./do
 import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
 import { runDocumentProcess } from "./documentProcess";
 import { planWordRemediation, assembleWordRemediation } from "./wordRemediation";
+import { normalizeDocumentHeadings } from "../shared/documentHeadings";
 import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, trialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
@@ -709,7 +710,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   ], creditAccess);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-renderer-compat-v1" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-heading-table-quality-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -2060,7 +2061,8 @@ Do not add explanatory text, document wrappers or content from other blocks.`;
       });
       res.locals.documentStage?.("Checking images and assembling your document");
       const protectedResult = wordPlan ? assembleWordRemediation(wordPlan, htmlChunkResultsArr) : null;
-      const structuredHtml = restoreWordImages(`<div lang="en">\n${protectedResult?.html ?? cleanedChunks.join("\n")}\n</div>`, preservedImages);
+      const headingResult = normalizeDocumentHeadings(`<div lang="en">\n${protectedResult?.html ?? cleanedChunks.join("\n")}\n</div>`);
+      const structuredHtml = restoreWordImages(headingResult.html, preservedImages);
 
       let parsed: any;
       try {
@@ -2091,7 +2093,9 @@ Do not add explanatory text, document wrappers or content from other blocks.`;
         : ["Accessibility audit completed — see issues list for details"];
       if (preservedImages.length) {
         const missingAlt = preservedImages.filter(image => !image.alt).length;
-        fixesMade.push(`Preserved ${preservedImages.length} images${missingAlt ? `; ${missingAlt} image description${missingAlt === 1 ? " needs" : "s need"} review` : " with existing descriptions"}`);
+        const recoveredAlt = preservedImages.filter(image => image.altSource === "decoded_qr").length;
+        fixesMade.push(`Preserved ${preservedImages.length} images${missingAlt ? `; ${missingAlt} image description${missingAlt === 1 ? " needs" : "s need"} review` : " with descriptions"}`);
+        if (recoveredAlt) fixesMade.push(`Recovered ${recoveredAlt} missing QR-code descriptions from decoded destinations; review before distributing.`);
         if (missingAlt) {
           if (!Array.isArray(parsed.issues)) parsed.issues = [];
           parsed.issues.push({ criterion: "1.1.1", type: "manual_review",
@@ -2099,6 +2103,7 @@ Do not add explanatory text, document wrappers or content from other blocks.`;
             recommendation: "Review those images and supply meaningful alt text before distributing the document." });
         }
       }
+      if (headingResult.changes) fixesMade.push(`Corrected ${headingResult.changes} heading levels across the complete document to remove skipped levels.`);
       const reviewNotes: string[] = [];
       if (protectedResult?.protectedBlocks) reviewNotes.push("Image-containing paragraphs and tables retained their source structure to protect picture placement. Review their headings and table headers before distributing.");
       if (protectedResult?.retainedBlocks) reviewNotes.push(`${protectedResult.retainedBlocks} text blocks retained their source structure because an AI rewrite could not be verified. Review those sections before distributing.`);

@@ -10,6 +10,7 @@ from pathlib import Path
 import fitz
 import pikepdf
 import weasyprint
+import zxingcpp  # Fail the build if the Word QR-description dependency is absent.
 from PIL import Image
 
 
