@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { documentProgress } from "@/lib/documentProgress";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -282,6 +283,8 @@ function RemedyDocsTab() {
   const creditFetch = useCreditFetch();
   const [documentStage, setDocumentStage] = useState("");
   const [imageReviewWarning, setImageReviewWarning] = useState("");
+  const [structureReviewWarning, setStructureReviewWarning] = useState("");
+  const progressDisplay = documentProgress(documentStage);
   const [recoveryJob, setRecoveryJob] = useState<DocumentTaskStatus | null>(null);
   const polling = useRef<AbortController | null>(null);
   const running = useRef(false);
@@ -291,7 +294,12 @@ function RemedyDocsTab() {
     documentRequest(creditFetch, "/api/remedy-docs/jobs/latest").then(async response => {
       if (response.ok) {
         const data = await response.json();
-        if (!cancelled && !running.current && data.job) setRecoveryJob(data.job);
+        if (!cancelled && !running.current && data.job) {
+          setRecoveryJob(data.job);
+          if (["failed", "interrupted", "expired"].includes(data.job.state)) {
+            setError(`${data.job.error || "This attempt has no downloadable result."} Reference: ${data.job.id}`);
+          }
+        }
       }
     }).catch(() => { /* The upload remains usable; explicit status checks show errors. */ });
     return () => { cancelled = true; polling.current?.abort(); };
@@ -308,6 +316,7 @@ function RemedyDocsTab() {
     setWordConversionAcknowledged(false);
     setRecoveryJob(null);
     setImageReviewWarning("");
+    setStructureReviewWarning("");
     setResetKey((k) => k + 1);
   };
 
@@ -323,6 +332,7 @@ function RemedyDocsTab() {
     setOutputMode(selectedMode);
     setLoading(true); setError(""); setErrorCode(""); setFastResult(null); setVisionResult(null);
     setImageReviewWarning("");
+    setStructureReviewWarning("");
     setDocumentStage(resume ? "Reconnecting to your document" : "Uploading your document");
     let chargedJobId: number | null = null;
     try {
@@ -375,6 +385,7 @@ function RemedyDocsTab() {
         let fixes: string[] = [];
         try { const raw = resp.headers.get("X-Fixes-Made") || ""; fixes = raw ? JSON.parse(atob(raw)) : []; } catch { fixes = []; }
         setImageReviewWarning(fixes.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
+        setStructureReviewWarning(fixes.filter(f => f.startsWith("Review: ")).map(f => f.slice(8)).join(" "));
         const baseName = inputName.replace(/\.(pdf|docx)$/i, "");
         setVisionResult({ blob, filename: `${baseName}-accessible.pdf`, pages, fixes });
         setLoading(false);
@@ -420,6 +431,7 @@ function RemedyDocsTab() {
               Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType, PageOrientation } = docxModule;
       const fixesMade: string[] = data.fixesMade || [];
       setImageReviewWarning(fixesMade.find(f => f.startsWith("Preserved ") && f.includes("review")) || "");
+      setStructureReviewWarning(fixesMade.filter(f => f.startsWith("Review: ")).map(f => f.slice(8)).join(" "));
       const issues: any[] = data.issues || [];
       const rawText: string = data.rawText || "";
       const baseName = inputName.replace(/\.pdf$/i, "").replace(/\.docx$/i, "");
@@ -762,19 +774,31 @@ function RemedyDocsTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing…</> : <><Zap className="w-4 h-4 mr-2" />Fix Accessibility</>}
       </Button>
       {loading && <div className="space-y-2 p-4 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" role="status" aria-live="polite" data-testid="doc-job-progress">
-        <p className="flex items-center gap-2 text-sm font-semibold"><Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />{documentStage}</p>
-        <p className="text-sm text-muted-foreground">Large documents can take several minutes. Your job continues if this page disconnects. Reopen Remedy Docs to check it without uploading again.</p>
-        {recoveryJob && <p className="text-xs text-muted-foreground break-all">Reference: {recoveryJob.id}</p>}
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-semibold">{progressDisplay.label}</p>
+          <span className="text-sm font-semibold tabular-nums shrink-0">{progressDisplay.percent}%</span>
+        </div>
+        <Progress value={progressDisplay.percent} aria-label="Estimated document processing progress" aria-valuetext={`${progressDisplay.percent}% estimated`} />
+        <p className="text-xs text-muted-foreground">Estimated progress. Large documents can take several minutes.</p>
       </div>}
       {recoveryJob && !loading && !fastResult && !visionResult && <div className="p-4 space-y-2 border rounded-xl" data-testid="doc-job-recovery">
         <p className="text-sm font-semibold break-words">Recent document: {recoveryJob.filename}</p>
-        <p className="text-sm text-muted-foreground">{recoveryJob.stage}. Finished results are temporarily available for up to 15 minutes, unless the server restarts.</p>
-        <Button variant="outline" onClick={() => run(recoveryJob)}>Check status / retrieve result</Button>
+        {["failed", "interrupted", "expired"].includes(recoveryJob.state) ? <>
+          <p className="text-sm text-muted-foreground">This attempt has no downloadable result. {recoveryJob.state === "interrupted" ? "Its credits need to be checked before another attempt." : "See the error details below before starting again."}</p>
+          <Button variant="outline" onClick={startOver}>Clear this attempt</Button>
+        </> : <>
+          <p className="text-sm text-muted-foreground">{recoveryJob.stage}. Finished results are temporarily available for up to 15 minutes, unless the server restarts.</p>
+          <Button variant="outline" onClick={() => run(recoveryJob)}>Check status / retrieve result</Button>
+        </>}
       </div>}
       {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode: recoveryJob?.id || errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
       {imageReviewWarning && !error && !loading && <div role="status" className="p-4 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100" data-testid="doc-image-review">
         <p className="text-sm font-semibold">{imageReviewWarning.replace(/\b1 descriptions need review\b/, "1 image description needs review")}.</p>
         <p className="text-sm">The image files are included, but an existing description was missing. Add meaningful alt text before distributing the result.</p>
+      </div>}
+      {structureReviewWarning && !error && !loading && <div role="status" className="p-4 rounded-xl border border-amber-400 bg-amber-50 text-amber-950 dark:bg-amber-950/30 dark:text-amber-100" data-testid="doc-structure-review">
+        <p className="text-sm font-semibold">Source structure retained for review</p>
+        <p className="text-sm">{structureReviewWarning}</p>
       </div>}
 
       {fastResult && (

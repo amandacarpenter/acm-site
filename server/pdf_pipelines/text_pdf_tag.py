@@ -5,9 +5,9 @@ This is a SEPARATE, purpose-built script for the "Keep as PDF" option -- it
 does not modify or import from the existing handleComplexPdfFix WeasyPrint
 pipeline in routes.ts. It is a trimmed adaptation of that same proven
 approach (WeasyPrint pdf_tags=True + pikepdf post-processing for PDF/UA
-compliance), simplified for a single already-structured HTML blob with no
-embedded figures/images and no multi-page merge logic, since the fast path
-never extracts images and already returns one assembled HTML document.
+structure), simplified for a single already-structured HTML blob with
+verified embedded pictures and no multi-page merge logic. Image placement
+is checked independently of color-font glyphs in the generated PDF.
 
 Usage: python3 text_pdf_tag.py <output.pdf>
 Reads JSON from stdin: {"html": "<div lang=\"en\">...</div>", "title": "..."}

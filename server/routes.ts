@@ -12,6 +12,7 @@ import { storage, trialLedger, documentTaskStore } from "./storage";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
 import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
 import { runDocumentProcess } from "./documentProcess";
+import { planWordRemediation, assembleWordRemediation } from "./wordRemediation";
 import { createCreditAccessMiddleware, restoreCreditContext, reserveTrialCredits, trialDeduction, refundTrialRequest, trialRequest, TrialCreditError, TRIAL_EXHAUSTED } from "./trialCredits";
 import * as fs from "fs";
 import * as path from "path";
@@ -692,7 +693,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   ], creditAccess);
 
   // ── HEALTH CHECK (for Railway) ──────────────────────────────────────────────
-  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-image-preservation-v1" }));
+  app.get("/api/health", (_req, res) => res.json({ status: "ok", version: "docs-protected-images-v1" }));
 
   // ── Incident banner (manual toggle, no redeploy needed) ─────────────────────
   // Set INCIDENT_BANNER_MESSAGE in Railway env vars to show a dismissible site-wide
@@ -1964,7 +1965,18 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         }
         return chunks;
       };
-      const htmlChunks: string[] = splitHtmlIntoChunks(htmlContent, HTML_CHUNK_SIZE);
+      const wordPlan = preservedImages.length ? planWordRemediation(htmlContent, HTML_CHUNK_SIZE) : null;
+      const htmlChunks: string[] = wordPlan
+        ? wordPlan.batches.map(batch => JSON.stringify({ blocks: batch.map(({ id, html }) => ({ id, html })) }))
+        : splitHtmlIntoChunks(htmlContent, HTML_CHUNK_SIZE);
+      const protectedWordPrompt = `${htmlSystemPrompt}
+
+OVERRIDE OUTPUT FORMAT FOR THIS REQUEST:
+This request contains independent text-only blocks. Pictures and their containing source blocks are protected by the application and are NOT included.
+Return ONLY JSON: {"blocks":[{"id":"the exact input id","html":"remediated HTML for that block"}]}.
+Return each supplied id exactly once. Preserve every word, link target and the order of text inside each block.
+Apply semantic headings, lists and table markup within each block; never merge blocks, invent captions, or add images or image markers.
+Do not add explanatory text, document wrappers or content from other blocks.`;
 
       // Run the audit call, then all HTML chunk calls, tracking real Claude token
       // usage for this job across every call.
@@ -1992,12 +2004,14 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         res.locals.documentStage?.(`Applying accessibility structure: section ${i + 1} of ${htmlChunks.length}`);
         const chunk = htmlChunks[i];
         const t0 = Date.now();
-        let userContent = `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`;
-        if (i > 0 && htmlChunkResultsArr[i - 1]) {
+        let userContent = wordPlan
+          ? `Remediate these independent text-only blocks. File: ${req.file!.originalname}\n\nBLOCKS_JSON:\n${chunk}`
+          : `Convert this to clean semantic HTML. File: ${req.file!.originalname}${htmlChunks.length > 1 ? ` (chunk ${i + 1} of ${htmlChunks.length})` : ""}\n\nMammoth HTML:\n${chunk}`;
+        if (!wordPlan && i > 0 && htmlChunkResultsArr[i - 1]) {
           const prevExcerpt = htmlChunkResultsArr[i - 1].trim().slice(-PREV_CHUNK_STYLE_EXCERPT_LEN);
           userContent = `The previous chunk of this SAME document was already converted to this structure (end excerpt shown below). Match this EXACT structural pattern/convention for any repetitive entries in your chunk -- e.g. if the previous chunk used one heading + one small table per entry, continue that same pattern; do NOT switch to a different convention (such as merging multiple entries into one large multi-column table) partway through the document, even if it seems like a reasonable alternative:\n\n--- END OF PREVIOUS CHUNK'S OUTPUT (for style reference only, do not repeat this content) ---\n${prevExcerpt}\n--- END EXCERPT ---\n\n${userContent}`;
         }
-        const r = await callClaude(htmlSystemPrompt, userContent, 16384, docUsage);
+        const r = await callClaude(wordPlan ? protectedWordPrompt : htmlSystemPrompt, userContent, 16384, docUsage);
         console.log(`[REMEDY DOCS] chunk ${i + 1}/${htmlChunks.length} took ${Date.now() - t0}ms`);
         htmlChunkResultsArr.push(r);
       }
@@ -2024,7 +2038,9 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
         }
         return c;
       });
-      const structuredHtml = restoreWordImages(`<div lang="en">\n${cleanedChunks.join("\n")}\n</div>`, preservedImages);
+      res.locals.documentStage?.("Checking images and assembling your document");
+      const protectedResult = wordPlan ? assembleWordRemediation(wordPlan, htmlChunkResultsArr) : null;
+      const structuredHtml = restoreWordImages(`<div lang="en">\n${protectedResult?.html ?? cleanedChunks.join("\n")}\n</div>`, preservedImages);
 
       let parsed: any;
       try {
@@ -2062,6 +2078,14 @@ Return ONLY the HTML — no markdown, no code fences, no explanation, no doctype
             description: `${missingAlt} preserved images have no source description.`,
             recommendation: "Review those images and supply meaningful alt text before distributing the document." });
         }
+      }
+      const reviewNotes: string[] = [];
+      if (protectedResult?.protectedBlocks) reviewNotes.push("Image-containing paragraphs and tables retained their source structure to protect picture placement. Review their headings and table headers before distributing.");
+      if (protectedResult?.retainedBlocks) reviewNotes.push(`${protectedResult.retainedBlocks} text blocks retained their source structure because an AI rewrite could not be verified. Review those sections before distributing.`);
+      if (reviewNotes.length) {
+        if (!Array.isArray(parsed.issues)) parsed.issues = [];
+        for (const note of reviewNotes) parsed.issues.push({ criterion: "1.3.1", type: "manual_review", description: note, recommendation: "Check source-retained structure manually." });
+        fixesMade.push(...reviewNotes.map(note => `Review: ${note}`));
       }
 
       // Clean up the HTML response (strip any accidental code fences)

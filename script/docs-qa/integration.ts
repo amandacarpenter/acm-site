@@ -91,9 +91,13 @@ try{
   const balanceBeforeLoss=trialLedger.balance("owner",140).remaining;
   const loss=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("docx","dropped-image.docx",imageDoc)});
   const lossJob=(await loss.json() as any).job,lossResult=await ready(lossJob.id);
-  assert.equal(lossResult.state,"failed");assert.match(lossResult.error,/Image-preservation check failed/);
-  assert.equal(trialLedger.balance("owner",140).remaining,balanceBeforeLoss);
-  console.log("PASS actual routes: dropped image blocks result and restores trial credits");
+  assert.equal(lossResult.state,"ready",lossResult.error);
+  const safeResult=await (await fetch(`${base}/api/remedy-docs/jobs/${lossJob.id}/result`,{headers:headers()})).json() as any;
+  assert.equal(safeResult.imageCount,1);
+  assert.match(safeResult.structuredHtml,/<img /);
+  assert.ok(safeResult.fixesMade.some((value:string)=>value.startsWith("Review: ")));
+  assert.equal(trialLedger.balance("owner",140).remaining,balanceBeforeLoss-1);
+  console.log("PASS actual routes: incomplete AI text response retains source content and picture with explicit review warning");
   // The harness copies this renderer into an isolated temporary directory.
   // Simulate an import-time renderer failure without altering source or production.
   const renderer = new URL("./pdf_pipelines/text_pdf_tag.py", import.meta.url);
