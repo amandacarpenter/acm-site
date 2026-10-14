@@ -51,6 +51,14 @@ export const ROUTES: RouteMeta[] = [
     jsonLd: "checker",
   },
   {
+    path: "/screen-reader-simulation",
+    title: "Free Screen Reader Simulation for PDF & Word | Remedy508",
+    description:
+      "Hear how a screen reader reads your PDF or Word document: headings, lists, tables, links, and alt text in reading order. Free, private, and no signup required.",
+    changefreq: "monthly",
+    priority: 0.8,
+  },
+  {
     path: "/pricing",
     title: "PDF & Document Remediation Pricing | Remedy508",
     description:

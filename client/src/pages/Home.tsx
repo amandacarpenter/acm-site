@@ -19,7 +19,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  SearchCheck, Presentation,
+  SearchCheck, AudioLines, Presentation,
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -39,11 +39,18 @@ const STATS = [
   { value: "1 in 4", label: "college students has a disability", source: "NCES" },
 ];
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; shortLabel?: string }[] = [
   { href: "/accessibility-checker", label: "Free Checker" },
+  { href: "/screen-reader-simulation", label: "Screen Reader Simulation", shortLabel: "Screen Reader" },
   { href: "/pricing", label: "Plans & Pricing" },
   { href: "/blog", label: "Blog" },
 ];
+
+const SimulationExperience = lazy(() =>
+  import("@/features/screen-reader-simulation/components/SimulationExperience").then((module) => ({
+    default: module.SimulationExperience,
+  })),
+);
 
 const CheckerExperience = lazy(() =>
   import("@/features/document-checker/components/CheckerExperience").then((module) => ({
@@ -131,7 +138,17 @@ export default function Home() {
                   <Link key={link.href} href={link.href}>
                     <span className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
                       location === link.href ? "text-white" : "text-white hover:text-white hover:bg-white/10"
-                    }`}>{link.label}</span>
+                    }`}>
+                      {link.shortLabel ? (
+                        <>
+                          {/* Short label keeps the homepage nav on one line between 1024px and 1279px */}
+                          <span className="xl:hidden">{link.shortLabel}</span>
+                          <span className="hidden xl:inline">{link.label}</span>
+                        </>
+                      ) : (
+                        link.label
+                      )}
+                    </span>
                   </Link>
                 ))}
                 <SignedOut>
@@ -257,6 +274,32 @@ export default function Home() {
           <Link href="/accessibility-checker">
             <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
               Learn more about the Free Document Accessibility Checker
+            </span>
+          </Link>
+        </div>
+      </section>
+
+      {/* ── FREE SCREEN READER SIMULATION ── */}
+      <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-simulation-heading">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 text-sm font-medium text-[#0f5f59] mb-5">
+            <AudioLines className="w-4 h-4" aria-hidden="true" />
+            Free Screen Reader Simulation
+          </div>
+          <h2 id="free-simulation-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
+            Want to hear how a screen reader reads your document?
+          </h2>
+          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
+            Open a PDF or Word document to hear its headings, lists, tables, links, and image descriptions in reading order, with missing alt text and skipped headings flagged as you go. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
+          </p>
+        </div>
+        <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the screen reader simulation…</p>}>
+          <SimulationExperience compact mainId="homepage-screen-reader-simulation" />
+        </Suspense>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
+          <Link href="/screen-reader-simulation">
+            <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
+              Learn more about the Free Screen Reader Simulation
             </span>
           </Link>
         </div>
