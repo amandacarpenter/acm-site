@@ -6,6 +6,7 @@ const footerGroups = [
     heading: "Product",
     links: [
       { href: "/accessibility-checker", label: "Free Checker" },
+      { href: "/screen-reader-simulation", label: "Screen Reader Simulation" },
       { href: "/pricing", label: "Plans & Pricing" },
     ],
   },

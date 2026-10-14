@@ -31,6 +31,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import LikelyHumanTracker from "@/components/LikelyHumanTracker";
 
 const DocumentChecker = lazy(() => import("@/pages/DocumentChecker"));
+const ScreenReaderSimulation = lazy(() => import("@/pages/ScreenReaderSimulation"));
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -91,6 +92,22 @@ export default function App() {
                   }
                 >
                   <DocumentChecker />
+                </Suspense>
+              )}
+            </Route>
+            <Route path="/screen-reader-simulation">
+              {() => (
+                <Suspense
+                  fallback={
+                    <div
+                      className="min-h-screen bg-[#faf6f1] p-8 text-[#3a485b]"
+                      role="status"
+                    >
+                      Loading screen reader simulation…
+                    </div>
+                  }
+                >
+                  <ScreenReaderSimulation />
                 </Suspense>
               )}
             </Route>
