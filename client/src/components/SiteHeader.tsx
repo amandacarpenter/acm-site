@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Menu, X } from "lucide-react";
+import { ArrowRight, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
@@ -10,7 +10,7 @@ function Logo() {
     <img
       src={logoUrl}
       alt="Remedy508 logo"
-      style={{ height: 52, width: "auto", maxWidth: 260, flexShrink: 0 }}
+      style={{ height: 50, width: "auto", maxWidth: 260, flexShrink: 0 }}
     />
   );
 }
@@ -30,21 +30,22 @@ export default function SiteHeader() {
     <>
       <IncidentBanner />
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+      {/* Same footprint as the homepage header: 1320px container, 96px tall, uppercase links with 30px gaps */}
+      <div className="max-w-[1320px] mx-auto px-[clamp(20px,4vw,56px)] h-20 min-[1200px]:h-24 flex items-center justify-between gap-10 font-['General_Sans','Inter',sans-serif]">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 no-underline" aria-label="Remedy508 home">
+        <Link href="/" className="flex items-center shrink-0 no-underline" aria-label="Remedy508 home">
           <Logo />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
-          <ul className="flex items-center gap-1 list-none p-0 m-0 whitespace-nowrap">
+        <nav className="hidden min-[1200px]:flex items-center ml-auto" aria-label="Main navigation">
+          <ul className="flex items-center gap-[30px] list-none p-0 m-0 whitespace-nowrap">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} aria-current={location === link.href ? "page" : undefined}>
                   {/* Same hover line as the homepage header; the current page is shown with teal text */}
                   <span
-                    className={`relative inline-block mx-3 py-2 text-sm font-bold transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0.5 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
+                    className={`relative inline-block py-1.5 text-[13px] font-semibold uppercase tracking-[.09em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
                       location === link.href
                         ? "text-[#0f766e]"
                         : "text-gray-700 hover:text-gray-900"
@@ -55,38 +56,36 @@ export default function SiteHeader() {
                 </Link>
               </li>
             ))}
-            <SignedOut>
-              <li>
-                <Link href="/login">
-                  <span className="ml-2 px-4 py-2 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] hover:bg-[#0f766e]/10 transition cursor-pointer">
-                    Log in
-                  </span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/signup">
-                  <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">
-                    Get Started →
-                  </span>
-                </Link>
-              </li>
-            </SignedOut>
-            <SignedIn>
-              <li>
-                <Link href="/dashboard">
-                  <span className="ml-2 px-4 py-2 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] hover:bg-[#0f766e]/10 transition cursor-pointer">
-                    Dashboard
-                  </span>
-                </Link>
-              </li>
-              <li><UserButton afterSignOutUrl="/" /></li>
-            </SignedIn>
           </ul>
         </nav>
 
+        {/* Account actions: same sizes and spacing as the homepage header */}
+        <div className="hidden min-[1200px]:flex items-center gap-[18px] ml-3 whitespace-nowrap">
+          <SignedOut>
+            <Link href="/login">
+              <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
+                Log in
+              </span>
+            </Link>
+            <Link href="/signup">
+              <span className="inline-flex items-center gap-2 h-[46px] px-[22px] rounded-full bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0b5c5a] transition-colors cursor-pointer">
+                Get Started <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </span>
+            </Link>
+          </SignedOut>
+          <SignedIn>
+            <Link href="/dashboard">
+              <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
+                Dashboard
+              </span>
+            </Link>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
+        </div>
+
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          className="min-[1200px]:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           data-testid="mobile-menu-toggle"
@@ -97,7 +96,7 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="lg:hidden border-t border-gray-100 bg-white">
+        <div className="min-[1200px]:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href}>
