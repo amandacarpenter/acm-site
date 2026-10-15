@@ -154,16 +154,18 @@ export default function HomeHero() {
               Accessibility<br /><span className="hh-made">Made Easy.</span>
             </h1>
             <p className="hh-display hh-sub">Not Accessible, Not Acceptable™</p>
-            <p className="hh-copy">
-              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video transcription, with presentation and flyer remediation coming soon. Built for higher education, government, healthcare, and accessibility teams.
-            </p>
+            <div className="hh-copy">
+              <p>
+                Start with a free accessibility check or hear how your document may sound with a screen reader. Then use RemedyTools to improve PDF and Word documents, clean up Canvas HTML, add image alt text, and transcribe video.
+              </p>
+              <p className="mt-4">
+                Built for higher education, government, healthcare, and accessibility teams. Presentation and flyer remediation is coming soon.
+              </p>
+            </div>
             <div className="hh-ctas">
               <Link href="/signup" className="hh-cta" data-testid="hero-cta">Get Started <ArrowRight size={16} aria-hidden="true" /></Link>
               <Link href="/pricing" className="hh-ghost" aria-label="See Pricing - view plans and features">See Pricing</Link>
             </div>
-            <p className="hh-note">
-              Hear your documents the way a screen reader does, then use <b>RemedyTools</b> to fix them.
-            </p>
           </div>
 
           <div className="hh-art">
