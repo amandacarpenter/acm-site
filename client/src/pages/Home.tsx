@@ -170,7 +170,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <h2 id="why-heading" className="text-3xl sm:text-4xl font-bold text-white mb-6">
-              Why This <span className="text-[#5eead4]">Matters</span>
+              Why This Matters
             </h2>
             <p className="text-white/90 leading-relaxed mb-12">
               When course materials aren't accessible, students using assistive technology can't complete their work.
@@ -198,14 +198,8 @@ export default function Home() {
       </section>
 
       {/* ── CTA ── */}
-      <section className="py-20 bg-[#3a485b]" aria-labelledby="cta-heading">
+      <section className="py-20 bg-[#3a485b]" aria-label="Get started">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <h2 id="cta-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Ready to make your content accessible?
-          </h2>
-          <p className="text-white/70 mb-8">
-            Individual or team — straightforward pricing built for higher education.
-          </p>
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/signup">
               <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition cursor-pointer shadow-sm">
