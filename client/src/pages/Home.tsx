@@ -9,7 +9,7 @@ import iconAlttext from "@/assets/icon-alttext.png";
 import IncidentBanner from "@/components/IncidentBanner";
 import {
   SearchCheck, AudioLines, Presentation,
-  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight
+  Shield, GraduationCap, Users, Sparkles, ChevronRight
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { SITE_NAV_LINKS } from "@/lib/site-navigation";
@@ -193,25 +193,6 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-20 bg-[#3a485b]" aria-label="Get started">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div className="flex flex-wrap gap-3 justify-center">
-            <Link href="/signup">
-              <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition cursor-pointer shadow-sm">
-                <Zap className="w-4 h-4" aria-hidden="true" />
-                Get Started →
-              </span>
-            </Link>
-            <Link href="/pricing" aria-label="See Pricing — choose a plan">
-              <span className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
-                See Pricing
-              </span>
-            </Link>
           </div>
         </div>
       </section>

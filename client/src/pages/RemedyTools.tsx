@@ -1,5 +1,4 @@
-import { Link } from "wouter";
-import { ArrowRight, Presentation } from "lucide-react";
+import { Presentation } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import HeroWatermark from "@/components/HeroWatermark";
@@ -13,7 +12,7 @@ const tools = [
   {
     name: "Remedy Docs",
     icon: iconDocument,
-    href: "/tools/document",
+    id: "document",
     purpose: "Make your documents easier to read and navigate.",
     description: "Upload a Word document or PDF to address accessibility issues such as heading structure, image descriptions and tables.",
     input: "Word documents (.docx) and PDFs",
@@ -23,7 +22,7 @@ const tools = [
   {
     name: "Remedy Video",
     icon: iconVideo,
-    href: "/tools/video",
+    id: "video",
     purpose: "Turn spoken content into text.",
     description: "Upload video or audio to generate a timecoded transcript. Review the wording and timing before using it for captions.",
     input: "Video or audio files, including MP4, MOV and MP3",
@@ -33,7 +32,7 @@ const tools = [
   {
     name: "Remedy HTML",
     icon: iconCanvas,
-    href: "/tools/canvas",
+    id: "canvas",
     purpose: "Clean up the structure of your Canvas content.",
     description: "Paste your Canvas page HTML to address issues with headings, color contrast, image alt text and tables.",
     input: "HTML copied from the Canvas HTML editor",
@@ -43,7 +42,7 @@ const tools = [
   {
     name: "Remedy Image",
     icon: iconAlttext,
-    href: "/tools/alttext",
+    id: "alttext",
     purpose: "Describe the information in your images.",
     description: "Upload an image or provide its URL to generate alt text. Get longer descriptions for more complex visuals, such as charts and diagrams.",
     input: "An image file or image URL",
@@ -53,7 +52,7 @@ const tools = [
   {
     name: "Remedy Layout",
     icon: null,
-    href: null,
+    id: "layout",
     comingSoon: true,
     purpose: "Improve accessibility without losing your visual design.",
     description: "Planned for visually designed documents, with a focus on improving accessibility while preserving their layout and appearance.",
@@ -62,8 +61,6 @@ const tools = [
     example: "Slide decks, event flyers and designed learning materials",
   },
 ];
-
-const textLink = "inline-flex min-h-11 items-center gap-2 font-semibold text-[#0f766e] underline underline-offset-4 hover:text-[#0b5c5a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]";
 
 export default function RemedyTools() {
   useDocumentTitle("Remedy Tools | Document, Video, HTML & Image Accessibility");
@@ -89,30 +86,29 @@ export default function RemedyTools() {
         <section className="max-w-6xl mx-auto px-5 sm:px-6 py-12 sm:py-16" aria-label="Remedy tools">
           <div className="grid md:grid-cols-2 gap-6">
             {tools.map((tool) => (
-              <article key={tool.name} className="rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col" aria-labelledby={`title-${tool.href?.split("/").pop() ?? "layout"}`}>
+              <article key={tool.name} className="rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col" aria-labelledby={`title-${tool.id}`}>
                 <div className="flex items-center gap-4 mb-5">
                   {tool.icon ? (
-                    <img src={tool.icon} alt="" width={48} height={48} className="w-12 h-12 object-contain shrink-0" />
+                    <img src={tool.icon} alt="" width={80} height={80} className="w-20 h-20 object-contain shrink-0" />
                   ) : (
-                    <div className="w-12 h-12 flex items-center justify-center shrink-0" aria-hidden="true">
-                      <span className="w-8 h-8 rounded-full bg-[#0f766e] text-white flex items-center justify-center">
-                        <Presentation className="w-4 h-4" />
+                    <div className="w-20 h-20 flex items-center justify-center shrink-0" aria-hidden="true">
+                      <span className="w-12 h-12 rounded-full bg-[#0f766e] text-white flex items-center justify-center">
+                        <Presentation className="w-6 h-6" />
                       </span>
                     </div>
                   )}
-                  <div>
-                    <h2 id={`title-${tool.href?.split("/").pop() ?? "layout"}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h2>
+                  <div className="min-w-0">
+                    <h2 id={`title-${tool.id}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h2>
                     {tool.comingSoon && <span className="inline-block mt-2 rounded-full bg-[#e6f4f3] px-3 py-1 text-sm font-semibold text-[#0b5c5a]">Coming soon</span>}
                   </div>
                 </div>
                 <p className="font-semibold text-[#111827] mb-2">{tool.purpose}</p>
                 <p className="leading-relaxed mb-5">{tool.description}</p>
-                <dl className="space-y-3 text-base mb-5">
+                <dl className="space-y-3 text-base">
                   <div><dt className="font-semibold text-[#111827]">Start with</dt><dd className="leading-relaxed">{tool.input}</dd></div>
                   <div><dt className="font-semibold text-[#111827]">Get back</dt><dd className="leading-relaxed">{tool.result}</dd></div>
                   <div><dt className="font-semibold text-[#111827]">Useful for</dt><dd className="leading-relaxed">{tool.example}</dd></div>
                 </dl>
-                {tool.href && <Link href={tool.href} className={`${textLink} mt-auto self-start`}>Open {tool.name}<ArrowRight size={16} aria-hidden="true" /></Link>}
               </article>
             ))}
           </div>
