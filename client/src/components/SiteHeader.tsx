@@ -41,12 +41,13 @@ export default function SiteHeader() {
           <ul className="flex items-center gap-1 list-none p-0 m-0 whitespace-nowrap">
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <Link href={link.href}>
+                <Link href={link.href} aria-current={location === link.href ? "page" : undefined}>
+                  {/* Same hover line as the homepage header; the current page is shown with teal text */}
                   <span
-                    className={`px-3 py-2 rounded-lg text-sm font-bold transition-colors cursor-pointer ${
+                    className={`relative inline-block mx-3 py-2 text-sm font-bold transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0.5 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
                       location === link.href
-                        ? "text-[#0f766e] bg-[#0f766e]/10"
-                        : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                        ? "text-[#0f766e]"
+                        : "text-gray-700 hover:text-gray-900"
                     }`}
                   >
                     {link.label}
