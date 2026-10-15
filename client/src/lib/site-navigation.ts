@@ -4,5 +4,4 @@ export const SITE_NAV_LINKS = [
   { href: "/remedy-tools", label: "Remedy Tools" },
   { href: "/screen-reader-simulation", label: "Screen Reader Simulation" },
   { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/blog", label: "Blog" },
 ];

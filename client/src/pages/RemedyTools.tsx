@@ -86,11 +86,7 @@ export default function RemedyTools() {
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-5 sm:px-6 py-12 sm:py-16" aria-labelledby="remediation-tools-heading">
-          <div className="mb-8">
-            <h2 id="remediation-tools-heading" className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">Choose the tool for your content</h2>
-            <p className="max-w-3xl leading-relaxed">Four tools are available now, with Remedy Layout coming soon. Available tools are included with Individual and Team plans and use Remedy508 Credits.</p>
-          </div>
+        <section className="max-w-6xl mx-auto px-5 sm:px-6 py-12 sm:py-16" aria-label="Remedy tools">
           <div className="grid md:grid-cols-2 gap-6">
             {tools.map((tool) => (
               <article key={tool.name} className="rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col" aria-labelledby={`title-${tool.href?.split("/").pop() ?? "layout"}`}>
@@ -98,10 +94,14 @@ export default function RemedyTools() {
                   {tool.icon ? (
                     <img src={tool.icon} alt="" width={48} height={48} className="w-12 h-12 object-contain shrink-0" />
                   ) : (
-                    <Presentation size={48} className="w-12 h-12 text-[#0f766e] shrink-0" aria-hidden="true" />
+                    <div className="w-12 h-12 flex items-center justify-center shrink-0" aria-hidden="true">
+                      <span className="w-8 h-8 rounded-full bg-[#0f766e] text-white flex items-center justify-center">
+                        <Presentation className="w-4 h-4" />
+                      </span>
+                    </div>
                   )}
                   <div>
-                    <h3 id={`title-${tool.href?.split("/").pop() ?? "layout"}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h3>
+                    <h2 id={`title-${tool.href?.split("/").pop() ?? "layout"}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h2>
                     {tool.comingSoon && <span className="inline-block mt-2 rounded-full bg-[#e6f4f3] px-3 py-1 text-sm font-semibold text-[#0b5c5a]">Coming soon</span>}
                   </div>
                 </div>
@@ -116,7 +116,6 @@ export default function RemedyTools() {
               </article>
             ))}
           </div>
-          <p className="text-sm leading-relaxed mt-8 max-w-3xl">Always review your results before sharing. Automated fixes do not guarantee accessibility or replace testing with assistive technology.</p>
         </section>
       </main>
       <SiteFooter />
