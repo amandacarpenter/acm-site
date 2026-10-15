@@ -68,28 +68,33 @@ export default function Home() {
       <HomeHero />
 
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
-      <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 text-sm font-medium text-[#0f5f59] mb-5">
-            <SearchCheck className="w-4 h-4" aria-hidden="true" />
-            Free Document Accessibility Checker
+      <section className="bg-white border-b border-gray-200" aria-labelledby="free-checker-heading">
+        {/* Slate band with the heading, so this section stands apart from the white hero */}
+        <div className="bg-[#3a485b] py-14 sm:py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-5">
+              <SearchCheck className="w-4 h-4" aria-hidden="true" />
+              Free Document Accessibility Checker
+            </div>
+            <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+              Not sure if your documents are accessible?
+            </h2>
+            <p className="text-lg text-white/85 leading-relaxed max-w-2xl mx-auto">
+              Check PDF and Word document accessibility online for tags, headings, tables, alt text, language, and other machine-detectable barriers. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
+            </p>
           </div>
-          <h2 id="free-checker-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
-            Not sure if your documents are accessible?
-          </h2>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-            Check PDF and Word document accessibility online for tags, headings, tables, alt text, language, and other machine-detectable barriers. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
-          </p>
         </div>
-        <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
-          <CheckerExperience compact mainId="homepage-document-checker" />
-        </Suspense>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
-          <Link href="/accessibility-checker">
-            <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
-              Learn more about the Free Document Accessibility Checker
-            </span>
-          </Link>
+        <div className="pt-10 sm:pt-12 pb-16 sm:pb-20">
+          <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the free checker…</p>}>
+            <CheckerExperience compact mainId="homepage-document-checker" />
+          </Suspense>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
+            <Link href="/accessibility-checker">
+              <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
+                Learn more about the Free Document Accessibility Checker
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
 
