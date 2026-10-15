@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { ArrowRight, Menu, Volume2, X } from "lucide-react";
 import logoWhite from "@/assets/logo-white-header.png";
-import heroListener from "@/assets/hero-listener.webp";
+import heroListener from "@/assets/hero-listener-headphones.webp";
 import "./home-hero.css";
 
 export type HomeNavLink = { href: string; label: string };
@@ -171,7 +171,7 @@ export default function HomeHero() {
           <div className="hh-art">
             <div className="hh-circle" aria-hidden="true" />
             <div className="hh-clip">
-              <img src={heroListener} alt="Smiling woman wearing white headphones" width={900} height={895} fetchPriority="high" />
+              <img src={heroListener} alt="Young woman listening on orange headphones" width={1000} height={897} fetchPriority="high" />
             </div>
             <div className="hh-card"><NowReading /></div>
           </div>
