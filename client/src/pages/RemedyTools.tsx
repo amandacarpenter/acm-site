@@ -13,52 +13,32 @@ const tools = [
     name: "Remedy Docs",
     icon: iconDocument,
     id: "document",
-    purpose: "Make your documents easier to read and navigate.",
-    description: "Upload a Word document or PDF to address accessibility issues such as heading structure, image descriptions and tables.",
-    input: "Word documents (.docx) and PDFs",
-    result: "A remediated Word document or PDF to download and review",
-    example: "Course syllabi, handouts, reports and resource guides",
+    description: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.",
   },
   {
     name: "Remedy Video",
     icon: iconVideo,
     id: "video",
-    purpose: "Turn spoken content into text.",
-    description: "Upload video or audio to generate a timecoded transcript. Review the wording and timing before using it for captions.",
-    input: "Video or audio files, including MP4, MOV and MP3",
-    result: "A timecoded, VTT-style transcript",
-    example: "Recorded lectures, training videos and interviews",
+    description: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.",
   },
   {
     name: "Remedy HTML",
     icon: iconCanvas,
     id: "canvas",
-    purpose: "Clean up the structure of your Canvas content.",
-    description: "Paste your Canvas page HTML to address issues with headings, color contrast, image alt text and tables.",
-    input: "HTML copied from the Canvas HTML editor",
-    result: "Updated HTML to review and paste back into Canvas",
-    example: "Course pages, assignment instructions and learning resources",
+    description: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.",
   },
   {
     name: "Remedy Image",
     icon: iconAlttext,
     id: "alttext",
-    purpose: "Describe the information in your images.",
-    description: "Upload an image or provide its URL to generate alt text. Get longer descriptions for more complex visuals, such as charts and diagrams.",
-    input: "An image file or image URL",
-    result: "Suggested alt text and, when needed, a longer description",
-    example: "Photos, instructional images, charts and diagrams",
+    description: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.",
   },
   {
     name: "Remedy Layout",
     icon: null,
     id: "layout",
     comingSoon: true,
-    purpose: "Improve accessibility without losing your visual design.",
-    description: "Planned for visually designed documents, with a focus on improving accessibility while preserving their layout and appearance.",
-    input: "Presentations, flyers and other visually designed documents",
-    result: "Planned: a remediated document that retains its visual layout",
-    example: "Slide decks, event flyers and designed learning materials",
+    description: "Remediate presentations, flyers, and other visually designed documents while preserving their original layout and appearance.",
   },
 ];
 
@@ -102,13 +82,7 @@ export default function RemedyTools() {
                     {tool.comingSoon && <span className="inline-block mt-2 rounded-full bg-[#e6f4f3] px-3 py-1 text-sm font-semibold text-[#0b5c5a]">Coming soon</span>}
                   </div>
                 </div>
-                <p className="font-semibold text-[#111827] mb-2">{tool.purpose}</p>
-                <p className="leading-relaxed mb-5">{tool.description}</p>
-                <dl className="space-y-3 text-base">
-                  <div><dt className="font-semibold text-[#111827]">Start with</dt><dd className="leading-relaxed">{tool.input}</dd></div>
-                  <div><dt className="font-semibold text-[#111827]">Get back</dt><dd className="leading-relaxed">{tool.result}</dd></div>
-                  <div><dt className="font-semibold text-[#111827]">Useful for</dt><dd className="leading-relaxed">{tool.example}</dd></div>
-                </dl>
+                <p className="leading-relaxed">{tool.description}</p>
               </article>
             ))}
           </div>
