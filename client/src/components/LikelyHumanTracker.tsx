@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 const VISITOR_COOKIE = "r508_visitor";
-const ENGAGED_COOKIE = "r508_engaged_date";
+// New reporting period: allow a visitor already seen today to count once again.
+const ENGAGED_COOKIE = "r508_engaged_date_v2";
 
 function readCookie(name: string): string | null {
   const prefix = `${name}=`;

@@ -10,12 +10,13 @@ import {
   type InsertCheckerUsage,
   type InsertLikelyHumanVisit,
 } from "@shared/schema";
-import { eq, desc, lt } from "drizzle-orm";
+import { eq, desc, lt, gte, and } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { TrialLedger, linkTrialJob } from "./trialCredits";
 import { DocumentTasks } from "./documentTasks";
 import { SimulationUsageStore } from "./simulationUsage";
+import { ensureReportingPeriod } from "./reportingPeriod";
 
 // On Railway, /data is a mounted persistent volume — files written there survive
 // deploys and restarts. Locally (and anywhere /data doesn't exist), fall back to
@@ -35,6 +36,7 @@ const db = drizzle(sqlite);
 export const trialLedger = new TrialLedger(sqlite);
 export const documentTaskStore = new DocumentTasks(sqlite);
 export const simulationUsageStore = new SimulationUsageStore(sqlite);
+export const reportingStartedAt = ensureReportingPeriod(sqlite);
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS jobs (
@@ -122,14 +124,14 @@ export interface IStorage {
   updateJob(id: number, updates: Partial<Job>): Job | undefined;
   getRecentJobsForUser(clerkUserId: string, limit?: number): Job[];
   getCostSummary(sinceMs?: number): CostSummary;
-  getRecentJobs(limit?: number): Job[];
-  getRecentFailedJobs(limit?: number): Job[];
+  getRecentJobs(limit?: number, sinceMs?: number): Job[];
+  getRecentFailedJobs(limit?: number, sinceMs?: number): Job[];
   getJobCountsSince(sinceMs: number): { total: number; failed: number; completed: number };
-  getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[];
+  getDailyJobCounts(days: number, sinceMs?: number): { date: string; jobs: number; pages: number; failed: number }[];
   createCheckerUsage(event: InsertCheckerUsage): CheckerUsage;
-  getCheckerUsageSummary(): CheckerUsageSummary;
+  getCheckerUsageSummary(sinceMs?: number): CheckerUsageSummary;
   createLikelyHumanVisit(event: InsertLikelyHumanVisit): boolean;
-  getLikelyHumanVisitSummary(): LikelyHumanVisitSummary;
+  getLikelyHumanVisitSummary(sinceMs?: number): LikelyHumanVisitSummary;
   backupTo(destPath: string): Promise<void>;
 }
 
@@ -184,14 +186,14 @@ export class Storage implements IStorage {
     }
     return summary;
   }
-  getRecentJobs(limit = 50): Job[] {
-    return db.select().from(jobs).orderBy(desc(jobs.createdAt)).limit(limit).all();
+  getRecentJobs(limit = 50, sinceMs = 0): Job[] {
+    return db.select().from(jobs).where(gte(jobs.createdAt, sinceMs)).orderBy(desc(jobs.createdAt)).limit(limit).all();
   }
-  getRecentFailedJobs(limit = 50): Job[] {
+  getRecentFailedJobs(limit = 50, sinceMs = 0): Job[] {
     return db
       .select()
       .from(jobs)
-      .where(eq(jobs.status, "failed"))
+      .where(and(eq(jobs.status, "failed"), gte(jobs.createdAt, sinceMs)))
       .orderBy(desc(jobs.createdAt))
       .limit(limit)
       .all();
@@ -204,8 +206,8 @@ export class Storage implements IStorage {
       completed: all.filter((j) => j.status === "completed").length,
     };
   }
-  getDailyJobCounts(days: number): { date: string; jobs: number; pages: number; failed: number }[] {
-    const sinceMs = Date.now() - days * 24 * 60 * 60 * 1000;
+  getDailyJobCounts(days: number, reportingSince = 0): { date: string; jobs: number; pages: number; failed: number }[] {
+    const sinceMs = Math.max(reportingSince, Date.now() - days * 24 * 60 * 60 * 1000);
     const all = db.select().from(jobs).all().filter((j) => j.createdAt >= sinceMs);
     const byDate = new Map<string, { jobs: number; pages: number; failed: number }>();
     for (const j of all) {
@@ -225,12 +227,12 @@ export class Storage implements IStorage {
     db.delete(checkerUsage).where(lt(checkerUsage.createdAt, retentionCutoff)).run();
     return db.insert(checkerUsage).values(event).returning().get();
   }
-  getCheckerUsageSummary(): CheckerUsageSummary {
+  getCheckerUsageSummary(sinceMs = 0): CheckerUsageSummary {
     const now = Date.now();
     const cutoff90 = now - 90 * 24 * 60 * 60 * 1000;
     const cutoff30 = now - 30 * 24 * 60 * 60 * 1000;
     db.delete(checkerUsage).where(lt(checkerUsage.createdAt, cutoff90)).run();
-    const all = db.select().from(checkerUsage).orderBy(desc(checkerUsage.createdAt)).all();
+    const all = db.select().from(checkerUsage).where(gte(checkerUsage.createdAt, sinceMs)).orderBy(desc(checkerUsage.createdAt)).all();
     return {
       last90Days: all.length,
       last30Days: all.filter((event) => event.createdAt >= cutoff30).length,
@@ -249,13 +251,13 @@ export class Storage implements IStorage {
       .run();
     return result.changes > 0;
   }
-  getLikelyHumanVisitSummary(): LikelyHumanVisitSummary {
+  getLikelyHumanVisitSummary(sinceMs = 0): LikelyHumanVisitSummary {
     const now = Date.now();
     const cutoff90 = now - 90 * 24 * 60 * 60 * 1000;
     const cutoff7d = now - 7 * 24 * 60 * 60 * 1000;
     const cutoff1h = now - 60 * 60 * 1000;
     db.delete(likelyHumanVisits).where(lt(likelyHumanVisits.createdAt, cutoff90)).run();
-    const all = db.select().from(likelyHumanVisits).orderBy(desc(likelyHumanVisits.createdAt)).all();
+    const all = db.select().from(likelyHumanVisits).where(gte(likelyHumanVisits.createdAt, sinceMs)).orderBy(desc(likelyHumanVisits.createdAt)).all();
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Los_Angeles",
       year: "numeric",

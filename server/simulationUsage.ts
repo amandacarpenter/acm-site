@@ -29,10 +29,10 @@ export class SimulationUsageStore {
       event.event === "failed" ? "failed" : "completed",
       event.event === "playback" ? 1 : 0, localDay(now), now);
   }
-  summary(now = Date.now()): SimulationUsageSummary {
+  summary(now = Date.now(), sinceMs = 0): SimulationUsageSummary {
     this.db.prepare("DELETE FROM simulation_usage WHERE created_at < ?").run(now - 90 * DAY);
     const count = (where: string, ...args: (string | number)[]) =>
-      (this.db.prepare(`SELECT COUNT(*) AS n FROM simulation_usage WHERE ${where}`).get(...args) as { n: number }).n;
+      (this.db.prepare(`SELECT COUNT(*) AS n FROM simulation_usage WHERE created_at >= ? AND (${where})`).get(sinceMs, ...args) as { n: number }).n;
     const cutoff = now - 30 * DAY;
     return {
       today: count("local_day = ?", localDay(now)),
@@ -44,8 +44,8 @@ export class SimulationUsageStore {
       pdf30d: count("created_at >= ? AND file_type = 'PDF'", cutoff),
       docx30d: count("created_at >= ? AND file_type = 'DOCX'", cutoff),
       recent: this.db.prepare(`SELECT run_id AS runId, file_type AS fileType, source,
-        status, played, created_at AS createdAt FROM simulation_usage ORDER BY created_at DESC LIMIT 20`)
-        .all() as SimulationUsageSummary["recent"],
+        status, played, created_at AS createdAt FROM simulation_usage WHERE created_at >= ? ORDER BY created_at DESC LIMIT 20`)
+        .all(sinceMs) as SimulationUsageSummary["recent"],
     };
   }
 }

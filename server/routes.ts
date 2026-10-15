@@ -8,8 +8,9 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
-import { storage, trialLedger, documentTaskStore, simulationUsageStore } from "./storage";
+import { storage, trialLedger, documentTaskStore, simulationUsageStore, reportingStartedAt } from "./storage";
 import { registerSimulationUsage } from "./simulationUsage";
+import { gaReportingBoundary } from "./reportingPeriod";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
 import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
 import { runDocumentProcess } from "./documentProcess";
@@ -519,7 +520,7 @@ function getGaClient(): BetaAnalyticsDataClient | null {
   }
 }
 
-async function getGoogleAnalytics(): Promise<{
+async function getGoogleAnalytics(sinceMs = 0): Promise<{
   visitors7d: number | null;
   pageViews7d: number | null;
   dailyCounts7d: { date: string; visitors: number; pageViews: number }[];
@@ -552,9 +553,13 @@ async function getGoogleAnalytics(): Promise<{
   }
   const property = `properties/${propertyId}`;
   try {
+    // Remedy508's connected GA4 property reports in America/Los_Angeles.
+    const boundary = gaReportingBoundary(sinceMs);
+    const dimensionFilter = sinceMs ? boundary.dimensionFilter : undefined;
     const [daily, today, lastHour, topPages, topCountries, sourcesToday, sources7d] = await Promise.all([
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
         dimensions: [{ name: "date" }],
         metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
@@ -562,15 +567,18 @@ async function getGoogleAnalytics(): Promise<{
       }),
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "today", endDate: "today" }],
         metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }],
       }),
-      client.runRealtimeReport({
+      boundary.realtimeMinutes < 0 ? Promise.resolve([{ rows: [] }]) : client.runRealtimeReport({
         property,
         metrics: [{ name: "activeUsers" }],
+        minuteRanges: sinceMs ? [{ startMinutesAgo: boundary.realtimeMinutes, endMinutesAgo: 0 }] : undefined,
       }),
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "today", endDate: "today" }],
         dimensions: [{ name: "pagePath" }],
         metrics: [{ name: "screenPageViews" }],
@@ -579,6 +587,7 @@ async function getGoogleAnalytics(): Promise<{
       }),
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "today", endDate: "today" }],
         dimensions: [{ name: "country" }],
         metrics: [{ name: "totalUsers" }],
@@ -587,6 +596,7 @@ async function getGoogleAnalytics(): Promise<{
       }),
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "today", endDate: "today" }],
         dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
@@ -595,6 +605,7 @@ async function getGoogleAnalytics(): Promise<{
       }),
       client.runReport({
         property,
+        dimensionFilter,
         dateRanges: [{ startDate: "6daysAgo", endDate: "today" }],
         dimensions: [{ name: "sessionSourceMedium" }],
         metrics: [{ name: "sessions" }, { name: "screenPageViews" }],
@@ -1297,7 +1308,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       day: "2-digit",
     }).format(new Date());
     const visitorIdHash = createHash("sha256")
-      .update(`${parsed.data.visitorId}:${process.env.ANALYTICS_HASH_SALT || "remedy508-first-party-analytics"}`)
+      .update(`${parsed.data.visitorId}:${process.env.ANALYTICS_HASH_SALT || "remedy508-first-party-analytics"}:${reportingStartedAt}`)
       .digest("hex");
     const created = storage.createLikelyHumanVisit({
       visitorIdHash,
@@ -1321,7 +1332,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const INDIVIDUAL_ANNUAL_MONTHLY_EQUIV = 199 / 12;
       const TEAM_SEAT_MONTHLY_EQUIV = 249 / 12;
 
-      const googleAnalyticsPromise = getGoogleAnalytics();
+      const googleAnalyticsPromise = getGoogleAnalytics(reportingStartedAt);
 
       let allUsers: any[] = [];
       let offset = 0;
@@ -1344,8 +1355,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
       for (const u of allUsers) {
         const meta = (u.publicMetadata || {}) as any;
         const createdAt = u.createdAt || 0;
-        if (now - createdAt <= 7 * 24 * 60 * 60 * 1000) newSignups7d++;
-        if (now - createdAt <= 30 * 24 * 60 * 60 * 1000) newSignups30d++;
+        if (createdAt >= reportingStartedAt && now - createdAt <= 7 * 24 * 60 * 60 * 1000) newSignups7d++;
+        if (createdAt >= reportingStartedAt && now - createdAt <= 30 * 24 * 60 * 60 * 1000) newSignups30d++;
 
         if (meta.subscribed && meta.plan === "individual") {
           individualSubs++;
@@ -1405,16 +1416,16 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const mrr = stripeMrr != null ? stripeMrr : estimatedMrr;
 
       // ── Usage & cost (real logged token usage) ──────────────────────────
-      const sinceMs30 = now - 30 * 24 * 60 * 60 * 1000;
+      const sinceMs30 = Math.max(reportingStartedAt, now - 30 * 24 * 60 * 60 * 1000);
       const costSummary30d = storage.getCostSummary(sinceMs30);
       const totalCost30d = tokenCostUsd(costSummary30d.totalInputTokens, costSummary30d.totalOutputTokens);
-      const costAllTime = storage.getCostSummary();
+      const costAllTime = storage.getCostSummary(reportingStartedAt);
       const totalCostAllTime = tokenCostUsd(costAllTime.totalInputTokens, costAllTime.totalOutputTokens);
 
       // ── Errors & health ──────────────────────────────────────────────────
-      const jobCounts24h = storage.getJobCountsSince(now - 24 * 60 * 60 * 1000);
-      const jobCounts7d = storage.getJobCountsSince(now - 7 * 24 * 60 * 60 * 1000);
-      const recentFailures = storage.getRecentFailedJobs(10).map((j) => ({
+      const jobCounts24h = storage.getJobCountsSince(Math.max(reportingStartedAt, now - 24 * 60 * 60 * 1000));
+      const jobCounts7d = storage.getJobCountsSince(Math.max(reportingStartedAt, now - 7 * 24 * 60 * 60 * 1000));
+      const recentFailures = storage.getRecentFailedJobs(10, reportingStartedAt).map((j) => ({
         id: j.id,
         type: j.type,
         inputName: j.inputName,
@@ -1429,7 +1440,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           u.emailAddresses.find((e: any) => e.id === u.primaryEmailAddressId)?.emailAddress || "",
         ])
       );
-      const recentJobs = storage.getRecentJobs(15).map((j) => ({
+      const recentJobs = storage.getRecentJobs(15, reportingStartedAt).map((j) => ({
         id: j.id,
         type: j.type,
         status: j.status,
@@ -1440,13 +1451,14 @@ export function registerRoutes(httpServer: Server, app: Express) {
         submittedBy: j.clerkUserId ? (userEmailById.get(j.clerkUserId) || j.clerkUserId) : null,
       }));
 
-      const dailyCounts14d = storage.getDailyJobCounts(14);
-      const checkerUsage = storage.getCheckerUsageSummary();
-      const likelyHumanVisitors = storage.getLikelyHumanVisitSummary();
+      const dailyCounts14d = storage.getDailyJobCounts(14, reportingStartedAt);
+      const checkerUsage = storage.getCheckerUsageSummary(reportingStartedAt);
+      const likelyHumanVisitors = storage.getLikelyHumanVisitSummary(reportingStartedAt);
       const analytics = await googleAnalyticsPromise;
 
       res.json({
         generatedAt: new Date().toISOString(),
+        reportingStartedAt: new Date(reportingStartedAt).toISOString(),
         analytics,
         revenue: {
           mrr: Number(mrr.toFixed(2)),
@@ -1486,7 +1498,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           recentFailures,
         },
         checkerUsage,
-        simulationUsage: simulationUsageStore.summary(),
+        simulationUsage: simulationUsageStore.summary(now, reportingStartedAt),
         likelyHumanVisitors,
         recentActivity: recentJobs,
       });

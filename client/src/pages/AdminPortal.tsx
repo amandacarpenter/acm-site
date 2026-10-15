@@ -9,6 +9,7 @@ const REFRESH_MS = 45000;
 
 // ── Types (mirrors /api/admin/dashboard response) ────────────────
 interface DashboardData {
+  reportingStartedAt?: string;
   simulationUsage?: SimulationUsageSummary;
   generatedAt: string;
   analytics: {
@@ -301,6 +302,13 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
         <div style={{ fontSize: "0.75rem", color: "#dc2626", marginBottom: 20 }}>refresh failed, showing last good data</div>
       )}
 
+      {data.reportingStartedAt && (
+        <div role="note" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 12, padding: 16, marginBottom: 24, color: "#065f46", fontSize: "0.9rem", lineHeight: 1.6 }}>
+          <strong>Fresh reporting period</strong><br />
+          Activity counts begin {new Date(data.reportingStartedAt).toLocaleString("en-US", { timeZone: "America/Los_Angeles", dateStyle: "medium", timeStyle: "short" })} Pacific time.
+          {" "}7-, 30-, and 90-day views include only activity since that start. Billing, accounts, credits, and historical records are unchanged.
+        </div>
+      )}
       <section aria-labelledby="admin-overview" style={{ marginBottom: 28 }}>
         <h2 id="admin-overview" style={{ fontSize: "1.1rem", fontWeight: 700, color: "#334155", marginBottom: 12 }}>At a glance</h2>
         <StatGrid>
@@ -340,6 +348,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
       <DetailSection title="Website traffic">
       <div style={{ marginBottom: 28 }}>
         <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Google Analytics unavailable" : "Live from Google Analytics (GA4) · admin, local, and automated QA sessions are excluded going forward"} />
+        {data.reportingStartedAt && <p style={{ color: "#475569", fontSize: "0.85rem", marginBottom: 12 }}>GA4 counts start at the first full minute after the reporting reset and may take time to appear. Historical Google Analytics data has not been deleted.</p>}
         <div style={{ background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
           <div style={{ fontSize: "0.72rem", color: "#047857", fontWeight: 700, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>
             Likely Human Visitors · First-Party
