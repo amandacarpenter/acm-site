@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
-import { ArrowRight, Volume2 } from "lucide-react";
+import { ArrowRight, Menu, Volume2, X } from "lucide-react";
 import logoWhite from "@/assets/logo-white-header.png";
 import heroListener from "@/assets/hero-listener.webp";
 import "./home-hero.css";
@@ -87,32 +87,59 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
           </SignedIn>
         </div>
 
+        {/* Mobile toggle: same as SiteHeader, but white because it sits on the navy band */}
         <button
           type="button"
-          className="hh-burger"
+          className="hh-toggle p-2 rounded-lg"
+          onClick={() => setOpen(!open)}
           aria-label={open ? "Close menu" : "Open menu"}
           aria-expanded={open}
           aria-controls="hh-mobile-menu"
-          onClick={() => setOpen(!open)}
+          data-testid="mobile-menu-toggle"
         >
-          <i /><i /><i />
+          {open ? <X className="w-5 h-5" aria-hidden="true" /> : <Menu className="w-5 h-5" aria-hidden="true" />}
         </button>
       </div>
 
+      {/* Mobile menu: same markup and styles as SiteHeader */}
       {open && (
-        <nav id="hh-mobile-menu" className="hh-menu" aria-label="Mobile navigation">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} onClick={close} aria-current={location === l.href ? "page" : undefined}>{l.label}</Link>
-          ))}
-          <SignedOut>
-            <Link href="/login" onClick={close}>Log in</Link>
-            <Link href="/signup" onClick={close} className="hh-menu-cta">Get Started <ArrowRight size={16} aria-hidden="true" /></Link>
-          </SignedOut>
-          <SignedIn>
-            <Link href="/dashboard" onClick={close}>Dashboard</Link>
-            <div className="hh-menu-user"><UserButton afterSignOutUrl="/" /></div>
-          </SignedIn>
-        </nav>
+        <div id="hh-mobile-menu" className="hh-mobile-menu border-t border-gray-100 bg-white">
+          <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
+            {links.map((link) => (
+              <Link key={link.href} href={link.href}>
+                <span
+                  onClick={close}
+                  aria-current={location === link.href ? "page" : undefined}
+                  className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                >
+                  {link.label}
+                </span>
+              </Link>
+            ))}
+            <SignedOut>
+              <Link href="/login">
+                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                  Log in
+                </span>
+              </Link>
+              <Link href="/signup">
+                <span onClick={close} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
+                  Get Started →
+                </span>
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/dashboard">
+                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                  Dashboard
+                </span>
+              </Link>
+              <div className="px-3 py-2">
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            </SignedIn>
+          </nav>
+        </div>
       )}
     </header>
   );
