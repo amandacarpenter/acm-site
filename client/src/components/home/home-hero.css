@@ -98,3 +98,11 @@
   .hh-wave b, .hh-fade { animation: none !important; }
   .hh-cta, .hh-ghost, .hh-pill, .hh-links a::after { transition: none; }
 }
+
+/* Homepage checker section sits on slate blue (#3a485b): let the section color show around the white checker card */
+/* Upload state: transparent so the white card sits on the blue */
+.home-checker-on-dark .document-checker-page:has(.checker-upload),
+.home-checker-on-dark .document-checker-page .checker-upload { background: transparent; }
+/* Analyzing and results states: keep the checker's light panel, inset with rounded corners */
+.home-checker-on-dark .document-checker-page:not(:has(.checker-upload)) { max-width: 1200px; margin: 0 auto; border-radius: 20px; padding: 8px 0 16px; }
+@media (max-width: 1240px) { .home-checker-on-dark .document-checker-page:not(:has(.checker-upload)) { margin: 0 16px; } }
