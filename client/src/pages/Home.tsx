@@ -2,25 +2,19 @@ import { Link } from "wouter";
 import { lazy, Suspense } from "react";
 import SiteFooter from "@/components/SiteFooter";
 import HomeHero, { HomeHeader } from "@/components/home/HomeHero";
-import iconDocument from "@/assets/icon-document.png";
-import iconVideo from "@/assets/icon-video.png";
-import iconCanvas from "@/assets/icon-canvas.png";
-import iconAlttext from "@/assets/icon-alttext.png";
 import IncidentBanner from "@/components/IncidentBanner";
 import {
-  SearchCheck, AudioLines, Presentation,
-  Shield, GraduationCap, Users, Sparkles, ChevronRight
+  SearchCheck, AudioLines,
+  Shield, GraduationCap, Users, ChevronRight
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { SITE_NAV_LINKS } from "@/lib/site-navigation";
-// Note: tool cards on homepage are display-only, not linked
-
 const TOOLS = [
-  { icon: iconDocument, Icon: null, title: "Remedy Docs", desc: "Upload any Word doc or PDF. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document — no need to pick a tool.", tag: ".docx & .pdf", tab: "document", comingSoon: false },
-  { icon: iconVideo, Icon: null, title: "Remedy Video", desc: "Upload any video or audio file. Get a timecoded, VTT-style transcript ready for captions, in seconds.", tag: "MP4, MOV, MP3", tab: "video", comingSoon: false },
-  { icon: iconCanvas, Icon: null, title: "Remedy HTML", desc: "Paste your Canvas page HTML — Remedy508 fixes heading hierarchy, color contrast, missing alt text, and table issues.", tag: "Canvas LMS", tab: "canvas", comingSoon: false },
-  { icon: iconAlttext, Icon: null, title: "Remedy Image", desc: "Upload or link an image. Remedy508 generates concise, WCAG-compliant alt text — with long descriptions for complex charts.", tag: "Images & charts", tab: "alttext", comingSoon: false },
-  { icon: null, Icon: Presentation, title: "Remedy Layout", desc: "Remediate presentations, flyers, and other visually designed documents while preserving their original layout and appearance.", tag: "Presentations & Flyers", tab: "layout", comingSoon: true },
+  { title: "Remedy Docs", comingSoon: false },
+  { title: "Remedy Video", comingSoon: false },
+  { title: "Remedy HTML", comingSoon: false },
+  { title: "Remedy Image", comingSoon: false },
+  { title: "Remedy Layout", comingSoon: true },
 ];
 
 const STATS = [
@@ -117,51 +111,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
+      {/* ── REMEDY TOOLS ── */}
       <section className="py-20 sm:py-28 bg-gray-50" aria-labelledby="how-heading">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
-
-          {/* Section header */}
-          <div className="text-center mb-14">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/20 text-sm font-semibold text-[#0f5f59] mb-4 border border-[#0f766e]/30">
-              <Sparkles className="w-4 h-4" aria-hidden="true" />
-              What’s included with Remedy508
-            </div>
-            <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4">
-              Four Tools Available, One Coming Soon
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Every paid Remedy508 plan includes four accessibility remediation tools for PDFs and Word documents, videos, Canvas HTML, and images. Remedy Layout for presentations and flyers is coming soon.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-4 max-w-5xl mx-auto">
-              {TOOLS.map((tool) => (
-                <div key={tool.tab} className="w-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm" data-testid={`tool-card-${tool.tab}`}>
-                  <div className="flex items-start gap-4">
-                    {tool.icon ? (
-                      <img src={tool.icon} alt="" aria-hidden="true" className="w-20 h-20 object-contain shrink-0" />
-                    ) : tool.Icon ? (
-                      <div className="w-20 h-20 flex items-center justify-center shrink-0" aria-hidden="true">
-                        <span className="w-12 h-12 rounded-full bg-[#0f766e] flex items-center justify-center">
-                          <tool.Icon className="w-6 h-6 text-white" strokeWidth={1.8} />
-                        </span>
-                      </div>
-                    ) : null}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <h3 className="font-bold text-[#3a485b] text-base">{tool.title}</h3>
-                        <span className="px-2 py-0.5 rounded-full bg-gray-300 text-gray-700 text-xs font-medium">{tool.tag}</span>
-                        {tool.comingSoon && (
-                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold">Coming Soon</span>
-                        )}
-                      </div>
-                      <p className="text-base text-gray-600 leading-relaxed">{tool.desc}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+          <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-10">Remedy Tools</h2>
+          <ul className="flex flex-wrap items-start justify-center gap-x-10 gap-y-6 list-none p-0 m-0">
+            {TOOLS.map((tool) => (
+              <li key={tool.title} className="flex flex-col items-center gap-2">
+                <span className="text-lg font-semibold text-[#3a485b]">{tool.title}</span>
+                {tool.comingSoon && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold">Coming Soon</span>}
+              </li>
+            ))}
+          </ul>
+          <Link href="/remedy-tools" className="inline-flex items-center justify-center mt-10 min-h-12 px-7 py-3 rounded-lg bg-[#0f766e] text-white font-semibold hover:bg-[#115e59] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]">
+            Learn more
+          </Link>
         </div>
       </section>
 

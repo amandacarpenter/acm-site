@@ -58,7 +58,7 @@ export default function RemedyTools() {
             <p className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Meet your accessibility toolkit</p>
             <h1 id="remedy-tools-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">Remedy Tools</h1>
             <p className="text-lg leading-relaxed text-white max-w-2xl mx-auto">
-              Find the right tool to improve the accessibility of your documents, video, Canvas content and images. Here is what each Remedy508 tool does.
+              All four available tools are included with paid Individual and Team plans and use Remedy508 Credits. Remedy Layout is coming soon.
             </p>
           </div>
         </section>
