@@ -1,15 +1,11 @@
-import { Link, useLocation } from "wouter";
-import { lazy, Suspense, useState } from "react";
-import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { Link } from "wouter";
+import { lazy, Suspense } from "react";
 import SiteFooter from "@/components/SiteFooter";
+import HomeHero, { HomeHeader } from "@/components/home/HomeHero";
 import iconDocument from "@/assets/icon-document.png";
 import iconVideo from "@/assets/icon-video.png";
 import iconCanvas from "@/assets/icon-canvas.png";
 import iconAlttext from "@/assets/icon-alttext.png";
-import heroPerson from "@/assets/hero-person.png";
-import logoUrl from "@/assets/logo.png";
-import logoHero from "@/assets/logo-hero.jpg";
-import HeroWatermark from "@/components/HeroWatermark";
 import IncidentBanner from "@/components/IncidentBanner";
 import PromoBanner from "@/components/PromoBanner";
 import {
@@ -20,7 +16,7 @@ import {
 } from "@/components/ui/accordion";
 import {
   SearchCheck, AudioLines, Presentation,
-  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen, Menu, X
+  Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 // Note: tool cards on homepage are display-only, not linked
@@ -39,9 +35,9 @@ const STATS = [
   { value: "1 in 4", label: "college students has a disability", source: "NCES" },
 ];
 
-const NAV_LINKS: { href: string; label: string; shortLabel?: string }[] = [
+const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/accessibility-checker", label: "Free Checker" },
-  { href: "/screen-reader-simulation", label: "Screen Reader Simulation", shortLabel: "Screen Reader" },
+  { href: "/screen-reader-simulation", label: "Screen Reader Simulation" },
   { href: "/pricing", label: "Plans & Pricing" },
   { href: "/blog", label: "Blog" },
 ];
@@ -60,8 +56,6 @@ const CheckerExperience = lazy(() =>
 
 export default function Home() {
   useDocumentTitle("Document Accessibility Remediation Software | Remedy508");
-  const [location] = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-white" data-testid="home-page">
@@ -69,189 +63,11 @@ export default function Home() {
       <PromoBanner />
       <IncidentBanner />
 
+      <HomeHeader links={NAV_LINKS} />
+
       <main id="main-content">
       {/* ── HERO ── */}
-      <section className="relative flex flex-col lg:flex-row lg:min-h-[max(560px,65svh)]" aria-labelledby="hero-heading">
-
-        {/* ─ LEFT dark panel — full height, skinny, logo at top, copy vertically centered ─ */}
-        <div className="hidden lg:flex flex-col relative overflow-hidden bg-[#111827] lg:w-[32%] xl:w-[30%] px-8 xl:px-12 min-h-[max(560px,65svh)]">
-          <HeroWatermark corner="left" className="top-auto bottom-[-10%]" />
-          {/* Logo row at very top */}
-          <div className="relative pt-6 pb-4">
-            <Link href="/" className="flex items-center no-underline" aria-label="Remedy508 home">
-              <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
-            </Link>
-          </div>
-
-          {/* Copy — centered vertically in remaining space */}
-          <div className="relative flex flex-col justify-center flex-1 pb-16">
-            <h1 id="hero-heading" className="text-3xl xl:text-4xl font-extrabold text-white leading-tight mb-5">
-              Not Accessible,<br />Not Acceptable™
-            </h1>
-            <p className="text-white/90 text-base leading-relaxed mb-8">
-              Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video transcription, with presentation and flyer remediation coming soon. Built for higher education, government, healthcare, and accessibility teams.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/signup">
-                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0f766e] text-white font-bold text-sm hover:bg-[#115e59] transition cursor-pointer" data-testid="hero-cta">
-                  <Zap className="w-4 h-4" aria-hidden="true" />
-                  Get Started →
-                </span>
-              </Link>
-              <Link href="/pricing" aria-label="See Pricing — view plans and features">
-                <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/40 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
-                  See Pricing ›
-                </span>
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* ─ RIGHT: full-bleed photo + nav + overlay text ─ */}
-        <div className="relative lg:flex-1 flex flex-col lg:min-h-[max(560px,65svh)]">
-
-          {/* Desktop: photo fills entire column absolutely */}
-          <img
-            src={heroPerson}
-            alt="Professional smiling while working on a laptop in a modern office"
-            className="hidden lg:block absolute inset-0 w-full h-full object-cover"
-            style={{ objectPosition: "50% 10%" }}
-          />
-
-          {/* Nav bar — always on top */}
-          <div className="relative z-20 w-full lg:absolute lg:top-0 lg:left-0 lg:right-0">
-            {/* Mobile bg — solid dark bar */}
-            <div className="absolute top-0 left-0 right-0 h-20 bg-[#111827] lg:hidden" />
-            {/* Desktop bg — gradient over photo */}
-            <div className="absolute inset-0 hidden lg:block" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 100%)" }} />
-            <div className="relative h-20 flex items-center justify-between px-6 sm:px-8">
-              {/* Mobile logo — logo-hero.jpg blends into the solid dark bar above */}
-              <Link href="/" className="flex lg:hidden items-center no-underline" aria-label="Remedy508 home">
-                <img src={logoHero} alt="Remedy508" style={{ height: 52, width: "auto" }} />
-              </Link>
-              {/* Spacer on desktop so nav sits right */}
-              <div className="hidden lg:block" />
-
-              {/* Desktop nav */}
-              <nav className="hidden lg:flex items-center gap-1 whitespace-nowrap" aria-label="Main navigation">
-                {NAV_LINKS.map((link) => (
-                  <Link key={link.href} href={link.href}>
-                    <span className={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer ${
-                      location === link.href ? "text-white" : "text-white hover:text-white hover:bg-white/10"
-                    }`}>
-                      {link.shortLabel ? (
-                        <>
-                          {/* Short label keeps the homepage nav on one line between 1024px and 1279px */}
-                          <span className="xl:hidden">{link.shortLabel}</span>
-                          <span className="hidden xl:inline">{link.label}</span>
-                        </>
-                      ) : (
-                        link.label
-                      )}
-                    </span>
-                  </Link>
-                ))}
-                <SignedOut>
-                  <Link href="/login">
-                    <span className="ml-2 px-4 py-2 rounded-lg border border-white/70 text-sm font-semibold text-white hover:bg-white/10 transition cursor-pointer">Log in</span>
-                  </Link>
-                  <Link href="/signup">
-                    <span className="ml-2 px-4 py-2 rounded-lg text-sm font-semibold bg-[#0f766e] text-white hover:bg-[#115e59] transition cursor-pointer">Get Started →</span>
-                  </Link>
-                </SignedOut>
-                <SignedIn>
-                  <Link href="/dashboard">
-                    <span className="ml-2 px-4 py-2 rounded-lg border border-white/70 text-sm font-semibold text-white hover:bg-white/10 transition cursor-pointer">Dashboard</span>
-                  </Link>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
-              </nav>
-
-              {/* Mobile hamburger */}
-              <button
-                className="lg:hidden p-2 rounded-lg text-white/80 hover:text-white"
-                onClick={() => setMobileOpen(!mobileOpen)}
-                aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {/* Mobile dropdown */}
-            {mobileOpen && (
-              <div className="lg:hidden bg-[#111827]/95 border-t border-white/10">
-                <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
-                  {NAV_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href}>
-                      <span onClick={() => setMobileOpen(false)} className="block px-3 py-2 rounded-lg text-base font-bold text-white hover:bg-white/10 cursor-pointer">{link.label}</span>
-                    </Link>
-                  ))}
-                  <SignedOut>
-                    <Link href="/login"><span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-white/70 text-sm font-bold text-white text-center hover:bg-white/10 cursor-pointer">Log in</span></Link>
-                    <Link href="/signup"><span onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center cursor-pointer">Get Started →</span></Link>
-                  </SignedOut>
-                  <SignedIn>
-                    <Link href="/dashboard"><span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-white/70 text-sm font-bold text-white text-center hover:bg-white/10 cursor-pointer">Dashboard</span></Link>
-                    <div className="px-3 py-2"><UserButton afterSignOutUrl="/" /></div>
-                  </SignedIn>
-                </nav>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile: photo below nav with Accessibility Made Easy overlaid */}
-          <div className="lg:hidden relative">
-            <img
-              src={heroPerson}
-              alt=""
-              aria-hidden="true"
-              className="w-full object-cover"
-              style={{ height: "52vw", minHeight: 210, maxHeight: 290, objectPosition: "50% 15%" }}
-            />
-            <div className="absolute inset-0 flex items-end px-5 pb-5" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%)" }}>
-              <p className="text-white font-black leading-none" style={{ fontSize: "clamp(2.2rem, 9vw, 3rem)", textShadow: "0 2px 20px rgba(0,0,0,0.7)" }}>
-                Accessibility<br />Made Easy.
-              </p>
-            </div>
-          </div>
-
-          {/* Desktop: Accessibility Made Easy overlay */}
-          <div className="hidden lg:flex relative z-10 flex-1 items-center px-6 sm:px-10 pb-0 pt-16">
-            <p
-              className="text-white font-black leading-none"
-              style={{ fontSize: "clamp(2.5rem, 4.5vw, 4rem)", textShadow: "0 2px 40px rgba(0,0,0,0.6)" }}
-              aria-hidden="true"
-            >
-              Accessibility<br />Made Easy.
-            </p>
-          </div>
-        </div>
-
-        {/* Mobile-only copy block — below the photo */}
-        <div className="lg:hidden relative overflow-hidden bg-[#111827] px-6 py-8">
-          <HeroWatermark corner="right" />
-          <h1 id="hero-heading" className="relative text-2xl font-extrabold text-white leading-tight mb-4">
-            Not Accessible,<br />Not Acceptable™
-          </h1>
-          <p className="text-white/70 text-sm leading-relaxed mb-7">
-            Remedy508 combines a free document accessibility checker with PDF and Word remediation software, Canvas HTML cleanup, image alt text, and video transcription. Built for higher education, government, healthcare, and accessibility teams.
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <Link href="/signup">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#0f766e] text-white font-bold text-sm hover:bg-[#115e59] transition cursor-pointer">
-                <Zap className="w-4 h-4" aria-hidden="true" />
-                Get Started →
-              </span>
-            </Link>
-            <Link href="/pricing" aria-label="See Pricing — compare individual and team plans">
-              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-white/30 text-white font-semibold text-sm hover:bg-white/10 transition cursor-pointer">
-                See Pricing ›
-              </span>
-            </Link>
-          </div>
-        </div>
-
-      </section>
+      <HomeHero />
 
       {/* ── FREE ACCESSIBILITY CHECKER ── */}
       <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-checker-heading">
