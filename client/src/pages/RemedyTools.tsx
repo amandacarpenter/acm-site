@@ -1,7 +1,8 @@
 import { Link } from "wouter";
-import { ArrowRight, AudioLines, Presentation, SearchCheck } from "lucide-react";
+import { ArrowRight, Presentation } from "lucide-react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import HeroWatermark from "@/components/HeroWatermark";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import iconDocument from "@/assets/icon-document.png";
 import iconVideo from "@/assets/icon-video.png";
@@ -49,6 +50,17 @@ const tools = [
     result: "Suggested alt text and, when needed, a longer description",
     example: "Photos, instructional images, charts and diagrams",
   },
+  {
+    name: "Remedy Layout",
+    icon: null,
+    href: null,
+    comingSoon: true,
+    purpose: "Improve accessibility without losing your visual design.",
+    description: "Planned for visually designed documents, with a focus on improving accessibility while preserving their layout and appearance.",
+    input: "Presentations, flyers and other visually designed documents",
+    result: "Planned: a remediated document that retains its visual layout",
+    example: "Slide decks, event flyers and designed learning materials",
+  },
 ];
 
 const textLink = "inline-flex min-h-11 items-center gap-2 font-semibold text-[#0f766e] underline underline-offset-4 hover:text-[#0b5c5a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]";
@@ -63,12 +75,13 @@ export default function RemedyTools() {
       </a>
       <SiteHeader />
       <main id="remedy-tools-main" tabIndex={-1}>
-        <section className="bg-[#3a485b] py-14 sm:py-20" aria-labelledby="remedy-tools-heading">
-          <div className="max-w-6xl mx-auto px-5 sm:px-6">
-            <p className="text-sm font-semibold uppercase tracking-widest text-white/80 mb-4">Meet your accessibility toolkit</p>
-            <h1 id="remedy-tools-heading" className="text-4xl sm:text-5xl font-bold text-white mb-5">Remedy Tools</h1>
-            <p className="text-lg leading-relaxed text-white max-w-2xl">
-              Check your content, hear how it may sound with a screen reader, and choose the right tool to help fix it. Here is what each Remedy508 tool does.
+        <section className="relative overflow-hidden bg-[#3a485b] py-20 sm:py-24" aria-labelledby="remedy-tools-heading">
+          <HeroWatermark corner="right" />
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <p className="inline-flex items-center px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">Meet your accessibility toolkit</p>
+            <h1 id="remedy-tools-heading" className="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">Remedy Tools</h1>
+            <p className="text-lg leading-relaxed text-white max-w-2xl mx-auto">
+              Find the right tool to improve the accessibility of your documents, video, Canvas content and images. Here is what each Remedy508 tool does.
             </p>
           </div>
         </section>
@@ -76,14 +89,21 @@ export default function RemedyTools() {
         <section className="max-w-6xl mx-auto px-5 sm:px-6 py-12 sm:py-16" aria-labelledby="remediation-tools-heading">
           <div className="mb-8">
             <h2 id="remediation-tools-heading" className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">Choose the tool for your content</h2>
-            <p className="max-w-3xl leading-relaxed">All four tools are included with Individual and Team plans and use Remedy508 Credits. Choose a tool below to open its workspace.</p>
+            <p className="max-w-3xl leading-relaxed">Four tools are available now, with Remedy Layout coming soon. Available tools are included with Individual and Team plans and use Remedy508 Credits.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             {tools.map((tool) => (
-              <article key={tool.name} className="rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col" aria-labelledby={`title-${tool.href.split("/").pop()}`}>
+              <article key={tool.name} className="rounded-xl border border-gray-200 p-6 sm:p-8 flex flex-col" aria-labelledby={`title-${tool.href?.split("/").pop() ?? "layout"}`}>
                 <div className="flex items-center gap-4 mb-5">
-                  <img src={tool.icon} alt="" width={48} height={48} className="w-12 h-12 object-contain" />
-                  <h3 id={`title-${tool.href.split("/").pop()}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h3>
+                  {tool.icon ? (
+                    <img src={tool.icon} alt="" width={48} height={48} className="w-12 h-12 object-contain shrink-0" />
+                  ) : (
+                    <Presentation size={48} className="w-12 h-12 text-[#0f766e] shrink-0" aria-hidden="true" />
+                  )}
+                  <div>
+                    <h3 id={`title-${tool.href?.split("/").pop() ?? "layout"}`} className="text-2xl font-bold text-[#111827]">{tool.name}</h3>
+                    {tool.comingSoon && <span className="inline-block mt-2 rounded-full bg-[#e6f4f3] px-3 py-1 text-sm font-semibold text-[#0b5c5a]">Coming soon</span>}
+                  </div>
                 </div>
                 <p className="font-semibold text-[#111827] mb-2">{tool.purpose}</p>
                 <p className="leading-relaxed mb-5">{tool.description}</p>
@@ -92,52 +112,11 @@ export default function RemedyTools() {
                   <div><dt className="font-semibold text-[#111827]">Get back</dt><dd className="leading-relaxed">{tool.result}</dd></div>
                   <div><dt className="font-semibold text-[#111827]">Useful for</dt><dd className="leading-relaxed">{tool.example}</dd></div>
                 </dl>
-                <Link href={tool.href} className={`${textLink} mt-auto self-start`}>Open {tool.name}<ArrowRight size={16} aria-hidden="true" /></Link>
+                {tool.href && <Link href={tool.href} className={`${textLink} mt-auto self-start`}>Open {tool.name}<ArrowRight size={16} aria-hidden="true" /></Link>}
               </article>
             ))}
           </div>
-        </section>
-
-        <section className="bg-[#f0f7f6] py-12 sm:py-16" aria-labelledby="free-tools-heading">
-          <div className="max-w-6xl mx-auto px-5 sm:px-6">
-            <h2 id="free-tools-heading" className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">Two free ways to get started</h2>
-            <p className="mb-8 leading-relaxed">No account or Remedy508 Credits required. These tools help you review a document; they do not change it.</p>
-            <div className="grid md:grid-cols-2 gap-8 md:gap-12">
-              <article aria-labelledby="free-checker-title">
-                <SearchCheck size={28} className="text-[#0f766e] mb-4" aria-hidden="true" />
-                <h3 id="free-checker-title" className="text-xl font-bold text-[#111827] mb-3">Free Document Accessibility Checker</h3>
-                <p className="leading-relaxed mb-4">Check a PDF or Word document for machine-detectable issues with tags, headings, tables, alt text and language. Use the results to identify areas that need attention.</p>
-                <Link href="/accessibility-checker" className={textLink}>Try the Free Checker<ArrowRight size={16} aria-hidden="true" /></Link>
-              </article>
-              <article aria-labelledby="simulation-title">
-                <AudioLines size={28} className="text-[#0f766e] mb-4" aria-hidden="true" />
-                <h3 id="simulation-title" className="text-xl font-bold text-[#111827] mb-3">Free Screen Reader Simulation</h3>
-                <p className="leading-relaxed mb-4">Listen to your PDF or Word document and follow its headings, lists, tables, links and image descriptions in reading order. Notice missing descriptions or confusing structure before you share it.</p>
-                <Link href="/screen-reader-simulation" className={textLink}>Try the Screen Reader Simulation<ArrowRight size={16} aria-hidden="true" /></Link>
-              </article>
-            </div>
-          </div>
-        </section>
-
-        <section className="max-w-6xl mx-auto px-5 sm:px-6 py-12 sm:py-16" aria-labelledby="layout-title">
-          <div className="flex flex-col sm:flex-row gap-5 border-b border-gray-200 pb-10">
-            <Presentation size={32} className="text-[#0f766e] shrink-0" aria-hidden="true" />
-            <div className="max-w-3xl">
-              <p className="text-sm font-semibold uppercase tracking-wider text-[#0f766e] mb-2">Coming soon</p>
-              <h2 id="layout-title" className="text-2xl font-bold text-[#111827] mb-3">Remedy Layout</h2>
-              <p className="leading-relaxed">Planned for presentations, flyers and other visually designed documents, with a focus on improving accessibility while preserving their layout and appearance. This tool is not available yet.</p>
-            </div>
-          </div>
-          <div className="pt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div>
-              <h2 className="text-2xl font-bold text-[#111827] mb-2">Ready to get started?</h2>
-              <p>Compare plans or start with one of the free tools above.</p>
-            </div>
-            <Link href="/pricing" className="inline-flex min-h-12 items-center justify-center gap-2 self-start rounded-lg bg-[#0f766e] px-6 py-3 font-semibold text-white hover:bg-[#0b5c5a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e]">
-              See Plans &amp; Pricing<ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
-          <p className="text-sm leading-relaxed mt-8 max-w-3xl">Always review your results before sharing. Automated checks, fixes and simulations do not guarantee accessibility or replace testing with assistive technology.</p>
+          <p className="text-sm leading-relaxed mt-8 max-w-3xl">Always review your results before sharing. Automated fixes do not guarantee accessibility or replace testing with assistive technology.</p>
         </section>
       </main>
       <SiteFooter />

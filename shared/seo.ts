@@ -54,7 +54,7 @@ export const ROUTES: RouteMeta[] = [
     path: "/remedy-tools",
     title: "Remedy Tools | Document, Video, HTML & Image Accessibility",
     description:
-      "Explore Remedy Docs, Video, HTML and Image, plus the free document accessibility checker and screen reader simulation. Find the right tool for your content.",
+      "Explore Remedy Docs, Video, HTML and Image, with Remedy Layout coming soon. Find the right accessibility remediation tool for your content.",
     changefreq: "monthly",
     priority: 0.9,
   },
