@@ -15,7 +15,7 @@ export function SimAnalyzing({ fileName, stage, onCancel }: Props) {
   return (
     <section className="analyzing" aria-labelledby="sim-analyzing-title">
       <div className="analyzing-card">
-        <h2 id="sim-analyzing-title">Preparing your simulation</h2>
+        <h2 id="sim-analyzing-title">Preparing your document</h2>
         <p className="analyzing-file" data-testid="sim-analyzing-file">
           {fileName}
         </p>

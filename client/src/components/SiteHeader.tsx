@@ -39,7 +39,7 @@ export default function SiteHeader() {
                 <Link href={link.href} aria-current={location === link.href ? "page" : undefined}>
                   {/* Same hover line as the homepage header; the current page is shown with teal text */}
                   <span
-                    className={`relative inline-block py-1.5 text-[13px] font-semibold uppercase tracking-[.09em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
+                    className={`relative inline-block py-1.5 text-[13px] font-bold uppercase tracking-[.09em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
                       location === link.href
                         ? "text-[#0f766e]"
                         : "text-gray-700 hover:text-gray-900"
@@ -111,7 +111,7 @@ export default function SiteHeader() {
                 </span>
               </Link>
               <Link href="/signup">
-                <span onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center cursor-pointer">
                   Get Started →
                 </span>
               </Link>

@@ -91,7 +91,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-5">
               <AudioLines className="w-4 h-4" aria-hidden="true" />
-              Free Screen Reader Simulation
+              Free Screen Reader Simulator
             </div>
             <h2 id="free-simulation-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
               Want to hear how a screen reader reads your document?
@@ -102,13 +102,13 @@ export default function Home() {
           </div>
         </div>
         <div className="pt-10 sm:pt-12 pb-16 sm:pb-20">
-          <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the screen reader simulation…</p>}>
+          <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the screen reader simulator…</p>}>
             <SimulationExperience compact mainId="homepage-screen-reader-simulation" />
           </Suspense>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
             <Link href="/screen-reader-simulation">
               <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
-                Learn more about the Free Screen Reader Simulation
+                Learn more about the Free Screen Reader Simulator
               </span>
             </Link>
           </div>

@@ -78,7 +78,7 @@ export function SimulationExperience({ compact = false, mainId }: Props) {
         report('failed');
         setError({
           title: 'This document could not be simulated',
-          message: err instanceof Error ? err.message : 'An unexpected error stopped the simulation. Try another file.',
+          message: err instanceof Error ? err.message : 'An unexpected error stopped the simulator. Try another file.',
         });
         setView('idle');
       }

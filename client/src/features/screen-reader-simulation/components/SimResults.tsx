@@ -309,7 +309,7 @@ export function SimResults({ model, onReset, onPlayback }: { model: SimModel; on
     <section className="results wrap" aria-labelledby={`${uid}-results-title`}>
       <div className="results-head">
         <div>
-          <h1 id={`${uid}-results-title`}>Screen reader simulation results</h1>
+          <h1 id={`${uid}-results-title`}>Screen reader simulator results</h1>
           <p className="file-chip" data-testid="sim-file-summary">
             <strong>{model.name}</strong>
             <span className="dot" aria-hidden="true">

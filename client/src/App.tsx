@@ -105,7 +105,7 @@ export default function App() {
                       className="min-h-screen bg-[#faf6f1] p-8 text-[#3a485b]"
                       role="status"
                     >
-                      Loading screen reader simulation…
+                      Loading screen reader simulator…
                     </div>
                   }
                 >

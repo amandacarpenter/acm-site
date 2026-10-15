@@ -6,7 +6,7 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 import { SimulationExperience } from "@/features/screen-reader-simulation/components/SimulationExperience";
 
 export default function ScreenReaderSimulation() {
-  useDocumentTitle("Free Screen Reader Simulation for PDF & Word | Remedy508");
+  useDocumentTitle("Free Screen Reader Simulator for PDF & Word | Remedy508");
 
   return (
     <>
@@ -14,7 +14,7 @@ export default function ScreenReaderSimulation() {
         href="#screen-reader-simulation-main"
         className="fixed left-3 top-[-80px] z-[100] rounded-lg bg-[#0f766e] px-4 py-3 font-semibold text-white focus:top-3"
       >
-        Skip to screen reader simulation
+        Skip to screen reader simulator
       </a>
       <SiteHeader />
       <section
@@ -25,7 +25,7 @@ export default function ScreenReaderSimulation() {
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 text-center">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-6">
             <AudioLines className="w-4 h-4" aria-hidden="true" />
-            Free Screen Reader Simulation
+            Free Screen Reader Simulator
           </div>
           <h1
             id="simulation-page-title"

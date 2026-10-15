@@ -125,7 +125,7 @@ export function SimUploader({ onFile, error, setError, compact = false }: Props)
               <ScanLine size={18} aria-hidden="true" />
               <span>
                 <strong>Private document processing.</strong> Your document is opened and read in your browser. It is
-                not uploaded or saved, and the simulation does not record your filename. Anonymous usage counts
+                not uploaded or saved, and the simulator does not record your filename. Anonymous usage counts
                 include file type, processing outcome, and whether Play was pressed.
               </span>
             </p>
@@ -133,7 +133,7 @@ export function SimUploader({ onFile, error, setError, compact = false }: Props)
             <p className="disclaimer" data-testid="sim-automation-note">
               <TriangleAlert size={18} aria-hidden="true" />
               <span>
-                <strong>A simulation, not certification.</strong> NVDA, JAWS, and VoiceOver each announce content a
+                <strong>A simulator, not certification.</strong> NVDA, JAWS, and VoiceOver each announce content a
                 little differently. Confirm final documents with a real screen reader.
               </span>
             </p>
@@ -159,7 +159,7 @@ export function SimUploader({ onFile, error, setError, compact = false }: Props)
             <div className="section-head">
               <h2 id="sim-hears-title">What you will hear</h2>
               <p>
-                The simulation reads your document's structure the way a screen reader does, so you can hear problems
+                The simulator reads your document's structure the way a screen reader does, so you can hear problems
                 that are easy to miss by looking at the page.
               </p>
             </div>
@@ -216,13 +216,13 @@ export function SimUploader({ onFile, error, setError, compact = false }: Props)
                 </li>
               </ol>
               <div className="note-card">
-                <h3>Where the simulation stops</h3>
+                <h3>What the simulator cannot check</h3>
                 <p>
-                  The simulation shows what a screen reader is given to work with. It cannot tell you whether alt text
+                  The simulator shows what a screen reader is given to work with. It cannot tell you whether alt text
                   is accurate or whether a heading describes its section; those still need a person.
                 </p>
                 <p>
-                  Each screen reader has its own wording and verbosity settings, so use the simulation to find and fix
+                  Each screen reader has its own wording and verbosity settings, so use the simulator to find and fix
                   problems early, then confirm final files with NVDA, JAWS, or VoiceOver.
                 </p>
               </div>

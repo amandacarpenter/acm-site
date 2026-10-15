@@ -44,7 +44,7 @@ export function validateSimFile(file: File): SimValidationError | null {
   if (file.size > SIM_MAX_BYTES) {
     return {
       title: 'File is too large',
-      message: `“${file.name}” is ${formatBytes(file.size)}. The simulation accepts files up to 50 MB.`,
+      message: `“${file.name}” is ${formatBytes(file.size)}. The simulator accepts files up to 50 MB.`,
     };
   }
   return null;

@@ -46,7 +46,7 @@ function NowReading() {
         <span className="hh-wave"><b /><b /><b /><b /><b /><b /><b /></span>
       </div>
       <div key={i} className="hh-now-text hh-fade">{r.say}</div>
-      <div className="hh-now-sub"><Volume2 size={13} /> Screen reader simulation</div>
+      <div className="hh-now-sub"><Volume2 size={13} /> Screen reader simulator</div>
     </div>
   );
 }
@@ -123,7 +123,7 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
                 </span>
               </Link>
               <Link href="/signup">
-                <span onClick={close} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-semibold bg-[#0f766e] text-white text-center cursor-pointer">
+                <span onClick={close} className="block mt-2 px-3 py-2.5 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center cursor-pointer">
                   Get Started →
                 </span>
               </Link>

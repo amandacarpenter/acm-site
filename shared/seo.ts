@@ -60,7 +60,7 @@ export const ROUTES: RouteMeta[] = [
   },
   {
     path: "/screen-reader-simulation",
-    title: "Free Screen Reader Simulation for PDF & Word | Remedy508",
+    title: "Free Screen Reader Simulator for PDF & Word | Remedy508",
     description:
       "Hear how a screen reader reads your PDF or Word document: headings, lists, tables, links, and alt text in reading order. Free, private, and no signup required.",
     changefreq: "monthly",

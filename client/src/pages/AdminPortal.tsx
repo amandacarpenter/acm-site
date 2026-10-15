@@ -175,7 +175,7 @@ function DetailSection({ title, children }: { title: string; children: React.Rea
 function SimulationUsagePanel({ usage }: { usage?: SimulationUsageSummary }) {
   return (
     <section aria-labelledby="simulation-usage-heading" style={{ marginBottom: 28 }}>
-      <h2 id="simulation-usage-heading" style={{ fontSize: "1.1rem", fontWeight: 700, color: "#334155", marginBottom: 8 }}>Screen Reader Simulation Usage</h2>
+      <h2 id="simulation-usage-heading" style={{ fontSize: "1.1rem", fontWeight: 700, color: "#334155", marginBottom: 8 }}>Screen Reader Simulator Usage</h2>
       <p style={{ fontSize: "0.85rem", color: "#475569", marginBottom: 14 }}>Document runs, not unique people. Tracking begins with this update.</p>
       {!usage ? <p role="status">Usage data is not available yet. Refresh after the update finishes.</p> : <>
         <StatGrid>
@@ -187,13 +187,13 @@ function SimulationUsagePanel({ usage }: { usage?: SimulationUsageSummary }) {
         <p style={{ fontSize: "0.85rem", color: "#475569", margin: "12px 0" }}>
           Last 30 days: {usage.completed30d} processed successfully · {usage.failed30d} failed · {usage.pdf30d} PDF · {usage.docx30d} Word
         </p>
-        {usage.failed30d > 0 && <p role="status" style={{ color: "#991b1b", marginBottom: 12 }}>Some simulation runs failed. Expand recent activity for their timestamps.</p>}
-        <DetailSection title="Simulation activity & tracking details">
+        {usage.failed30d > 0 && <p role="status" style={{ color: "#991b1b", marginBottom: 12 }}>Some simulator runs failed. Expand recent activity for their timestamps.</p>}
+        <DetailSection title="Simulator activity & tracking details">
           <p style={{ fontSize: "0.85rem", color: "#475569", marginBottom: 12 }}>No filenames, document contents, or audio are collected. Admin, local, and automated QA runs are excluded. Repeated Play clicks count once per document run. Counts are best-effort browser reports; canceled runs and files rejected before processing are not counted. Play does not confirm audible speech or accessibility.</p>
-          {usage.recent.length === 0 ? <p>No simulation activity recorded yet.</p> :
+          {usage.recent.length === 0 ? <p>No simulator activity recorded yet.</p> :
             <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
               {usage.recent.map(event => <li key={event.runId} style={{ padding: "12px 0", borderTop: "1px solid #e5e7eb", fontSize: "0.85rem", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
-                <span>{event.fileType === "DOCX" ? "Word" : "PDF"} · {event.source === "homepage" ? "Homepage" : "Simulation page"} · {event.status === "completed" ? "Processed" : "Failed"}{event.played ? " · Played" : ""}</span>
+                <span>{event.fileType === "DOCX" ? "Word" : "PDF"} · {event.source === "homepage" ? "Homepage" : "Simulator page"} · {event.status === "completed" ? "Processed" : "Failed"}{event.played ? " · Played" : ""}</span>
                 <time dateTime={new Date(event.createdAt).toISOString()} title={new Date(event.createdAt).toLocaleString("en-US", { timeZone: "America/Los_Angeles", timeZoneName: "short" })}>{timeAgo(event.createdAt)}</time>
               </li>)}
             </ul>}
