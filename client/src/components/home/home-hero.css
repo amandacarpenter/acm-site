@@ -39,8 +39,8 @@
     radial-gradient(70% 60% at 85% 0%, rgba(94,234,212,.35) 0%, rgba(94,234,212,0) 60%),
     linear-gradient(180deg, #d3efeb 0%, #e9f7f5 38%, #ffffff 82%); }
 .hh-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 32px; align-items: center; min-height: 620px; padding-top: 28px; }
-.hh-h1 { font-size: clamp(3rem, 6.3vw, 6.2rem); line-height: .92; margin: 0 0 18px; color: var(--ink); }
-.hh-made { color: var(--teal); }
+.hh-h1 { font-size: clamp(2.5rem, 5vw, 4.9rem); line-height: .92; margin: 0 0 18px; color: var(--teal); }
+.hh-made { color: #1f2937; }
 .hh-sub { font-size: clamp(1.35rem, 2vw, 1.9rem); line-height: 1.15; color: var(--slate); margin: 0 0 20px; }
 .hh-copy { font-size: 17px; line-height: 1.65; color: var(--muted); max-width: 33rem; margin: 0; }
 .hh-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
@@ -83,7 +83,7 @@
   .hh-clip img { height: 97%; }
 }
 @media (max-width: 640px) {
-  .hh-h1 { font-size: clamp(2.6rem, 13vw, 3.6rem); }
+  .hh-h1 { font-size: clamp(2.15rem, 10.6vw, 2.9rem); }
   .hh-copy { font-size: 16px; }
   .hh-art { max-width: 340px; }
   .hh-art { margin-bottom: 9%; }
