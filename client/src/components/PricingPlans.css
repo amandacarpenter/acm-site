@@ -13,10 +13,10 @@
 .pricing-design h1,.pricing-design h2,.pricing-design p{margin:0;font-family:inherit}
 .pricing-design button,.pricing-design a{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .pricing-design button:focus-visible,.pricing-design a:focus-visible{outline:3px solid var(--pricing-teal);outline-offset:4px}
-.pricing-hero{position:relative;overflow:hidden;background:var(--pricing-slate);color:white;text-align:center;padding:56px 24px 84px}
+.pricing-hero{position:relative;overflow:hidden;background:var(--pricing-slate);color:white;text-align:center;padding:56px 24px 84px;font-family:"General Sans","Inter",sans-serif}
 .pricing-watermark{position:absolute;width:360px;right:-30px;top:-28px;opacity:.07;pointer-events:none}
 .pricing-hero-copy{position:relative}
-.pricing-hero h1{font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px}
+.pricing-hero h1{font-family:"Clash Display","General Sans",sans-serif;font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px}
 .pricing-hero p{font-size:18px;max-width:590px;margin:auto;line-height:1.6}
 .pricing-plans-section{background:#f6f8f8;padding:0 24px 64px;display:flow-root}
 .pricing-plans{position:relative;max-width:1000px;margin:-32px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:28px}
