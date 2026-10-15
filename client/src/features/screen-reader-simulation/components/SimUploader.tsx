@@ -125,7 +125,8 @@ export function SimUploader({ onFile, error, setError, compact = false }: Props)
               <ScanLine size={18} aria-hidden="true" />
               <span>
                 <strong>Private document processing.</strong> Your document is opened and read in your browser. It is
-                not uploaded or saved, and the simulation does not record your filename.
+                not uploaded or saved, and the simulation does not record your filename. Anonymous usage counts
+                include file type, processing outcome, and whether Play was pressed.
               </span>
             </p>
 

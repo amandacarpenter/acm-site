@@ -15,6 +15,7 @@ import fs from "fs";
 import path from "path";
 import { TrialLedger, linkTrialJob } from "./trialCredits";
 import { DocumentTasks } from "./documentTasks";
+import { SimulationUsageStore } from "./simulationUsage";
 
 // On Railway, /data is a mounted persistent volume — files written there survive
 // deploys and restarts. Locally (and anywhere /data doesn't exist), fall back to
@@ -33,6 +34,7 @@ sqlite.pragma("journal_mode = WAL");
 const db = drizzle(sqlite);
 export const trialLedger = new TrialLedger(sqlite);
 export const documentTaskStore = new DocumentTasks(sqlite);
+export const simulationUsageStore = new SimulationUsageStore(sqlite);
 
 sqlite.exec(`
   CREATE TABLE IF NOT EXISTS jobs (

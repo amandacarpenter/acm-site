@@ -2,12 +2,14 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { Redirect } from "wouter";
 import logoFull from "@/assets/logo-hero.jpg";
+import type { SimulationUsageSummary } from "@shared/simulationUsage";
 
 const ADMIN_EMAIL = "amandathecarpenter@gmail.com";
 const REFRESH_MS = 45000;
 
 // ── Types (mirrors /api/admin/dashboard response) ────────────────
 interface DashboardData {
+  simulationUsage?: SimulationUsageSummary;
   generatedAt: string;
   analytics: {
     visitors7d: number | null;
@@ -161,6 +163,46 @@ function StatGrid({ children }: { children: React.ReactNode }) {
   return <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>{children}</div>;
 }
 
+function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details style={{ marginBottom: 20, border: "1px solid #d1d5db", borderRadius: 12, background: "#fff" }}>
+      <summary style={{ cursor: "pointer", padding: "16px", fontSize: "1rem", fontWeight: 600, color: "#334155" }}>{title}</summary>
+      <div style={{ padding: "0 16px 16px", minWidth: 0 }}>{children}</div>
+    </details>
+  );
+}
+
+function SimulationUsagePanel({ usage }: { usage?: SimulationUsageSummary }) {
+  return (
+    <section aria-labelledby="simulation-usage-heading" style={{ marginBottom: 28 }}>
+      <h2 id="simulation-usage-heading" style={{ fontSize: "1.1rem", fontWeight: 700, color: "#334155", marginBottom: 8 }}>Screen Reader Simulation Usage</h2>
+      <p style={{ fontSize: "0.85rem", color: "#475569", marginBottom: 14 }}>Document runs, not unique people. Tracking begins with this update.</p>
+      {!usage ? <p role="status">Usage data is not available yet. Refresh after the update finishes.</p> : <>
+        <StatGrid>
+          <StatCard label="Today" value={String(usage.today)} sub="Pacific time" />
+          <StatCard label="Last 7 days" value={String(usage.last7Days)} />
+          <StatCard label="Last 30 days" value={String(usage.last30Days)} />
+          <StatCard label="Played (30d)" value={String(usage.playback30d)} sub="documents with Play pressed" />
+        </StatGrid>
+        <p style={{ fontSize: "0.85rem", color: "#475569", margin: "12px 0" }}>
+          Last 30 days: {usage.completed30d} processed successfully · {usage.failed30d} failed · {usage.pdf30d} PDF · {usage.docx30d} Word
+        </p>
+        {usage.failed30d > 0 && <p role="status" style={{ color: "#991b1b", marginBottom: 12 }}>Some simulation runs failed. Expand recent activity for their timestamps.</p>}
+        <DetailSection title="Simulation activity & tracking details">
+          <p style={{ fontSize: "0.85rem", color: "#475569", marginBottom: 12 }}>No filenames, document contents, or audio are collected. Admin, local, and automated QA runs are excluded. Repeated Play clicks count once per document run. Counts are best-effort browser reports; canceled runs and files rejected before processing are not counted. Play does not confirm audible speech or accessibility.</p>
+          {usage.recent.length === 0 ? <p>No simulation activity recorded yet.</p> :
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              {usage.recent.map(event => <li key={event.runId} style={{ padding: "12px 0", borderTop: "1px solid #e5e7eb", fontSize: "0.85rem", display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+                <span>{event.fileType === "DOCX" ? "Word" : "PDF"} · {event.source === "homepage" ? "Homepage" : "Simulation page"} · {event.status === "completed" ? "Processed" : "Failed"}{event.played ? " · Played" : ""}</span>
+                <time dateTime={new Date(event.createdAt).toISOString()} title={new Date(event.createdAt).toLocaleString("en-US", { timeZone: "America/Los_Angeles", timeZoneName: "short" })}>{timeAgo(event.createdAt)}</time>
+              </li>)}
+            </ul>}
+        </DetailSection>
+      </>}
+    </section>
+  );
+}
+
 function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const mins = Math.floor(diff / 60000);
@@ -259,7 +301,20 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
         <div style={{ fontSize: "0.75rem", color: "#dc2626", marginBottom: 20 }}>refresh failed, showing last good data</div>
       )}
 
+      <section aria-labelledby="admin-overview" style={{ marginBottom: 28 }}>
+        <h2 id="admin-overview" style={{ fontSize: "1.1rem", fontWeight: 700, color: "#334155", marginBottom: 12 }}>At a glance</h2>
+        <StatGrid>
+          <StatCard label="Visitors today" value={String(data.likelyHumanVisitors.today)} sub="estimated engaged browsers" />
+          <StatCard label={revenue.mrrSource === "stripe" ? "Monthly revenue" : "Est. monthly revenue"} value={`$${revenue.mrr.toLocaleString()}`} sub="recurring subscriptions" />
+          <StatCard label="Tool jobs (30d)" value={String(usageAndCost.last30Days.totalJobs)} />
+          <StatCard label="Failed jobs (24h)" value={String(health.last24h.failed)} tone={health.last24h.failed > 0 ? "bad" : "good"} />
+        </StatGrid>
+        <p style={{ fontSize: "0.8rem", color: "#475569", marginTop: 10 }}>Updated {new Date(data.generatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}. Refreshes automatically.</p>
+      </section>
+      <SimulationUsagePanel usage={data.simulationUsage} />
+
       {/* Revenue & Subscribers */}
+      <DetailSection title="Revenue & subscribers">
       <div style={{ marginBottom: 28 }}>
         <SectionHeader
           title="Revenue & Subscribers"
@@ -279,8 +334,10 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
           <StatCard label="New (30d)" value={String(revenue.newSignups30d)} />
         </StatGrid>
       </div>
+      </DetailSection>
 
       {/* Site Traffic (Google Analytics) */}
+      <DetailSection title="Website traffic">
       <div style={{ marginBottom: 28 }}>
         <SectionHeader title="Site Traffic" subtitle={analytics.error ? "Google Analytics unavailable" : "Live from Google Analytics (GA4) · admin, local, and automated QA sessions are excluded going forward"} />
         <div style={{ background: "#ecfdf5", border: "1px solid #6ee7b7", borderRadius: 12, padding: "14px 16px", marginBottom: 12 }}>
@@ -409,6 +466,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
           </>
         )}
       </div>
+      </DetailSection>
 
       {/* Free Accessibility Checker */}
       <div style={{ marginBottom: 28 }}>
@@ -422,6 +480,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
           <StatCard label="Completed" value={String(checkerUsage.completed)} />
           <StatCard label="Failed" value={String(checkerUsage.failed)} tone={checkerUsage.failed > 0 ? "warn" : "good"} />
         </StatGrid>
+        <DetailSection title="Recent checker activity">
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
           {checkerUsage.recent.length === 0 && (
             <div style={{ padding: "16px", fontSize: "0.8rem", color: "#9ca3af" }}>No checker activity yet</div>
@@ -466,9 +525,11 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
             </div>
           ))}
         </div>
+        </DetailSection>
       </div>
 
       {/* Usage & Cost */}
+      <DetailSection title="Tool usage & API costs">
       <div style={{ marginBottom: 28 }}>
         <SectionHeader title="Usage & Cost" subtitle="Real logged Anthropic token usage, last 30 days" />
         <StatGrid>
@@ -482,6 +543,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
           <MiniBarChart data={usageAndCost.dailyCounts14d} />
         </div>
       </div>
+      </DetailSection>
 
       {/* Errors & Health */}
       <div style={{ marginBottom: 28 }}>
@@ -513,6 +575,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
       </div>
 
       {/* Recent Activity */}
+      <DetailSection title="Recent tool activity">
       <div style={{ marginBottom: 8 }}>
         <SectionHeader title="Recent Activity" />
         <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, overflow: "hidden" }}>
@@ -550,6 +613,7 @@ function LiveDashboard({ getToken }: { getToken: () => Promise<string | null> })
           ))}
         </div>
       </div>
+      </DetailSection>
     </div>
   );
 }
@@ -575,7 +639,7 @@ export default function AdminPortal() {
           </h1>
           <button
             onClick={() => window.dispatchEvent(new Event("admin-dashboard-refresh"))}
-            style={{ background: "#dc2626", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
+            style={{ background: "#0f766e", color: "#fff", border: "none", borderRadius: 8, padding: "10px 18px", fontSize: "0.9rem", fontWeight: 600, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6 }}
           >
             <span aria-hidden="true">↻</span> Refresh
           </button>
@@ -591,6 +655,7 @@ export default function AdminPortal() {
         </div>
 
         {/* Live Sites */}
+        <DetailSection title="Sites, services & social links">
         <div style={{ marginBottom: 32 }}>
           <SectionHeader title="Live Sites" subtitle="All currently deployed properties" />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
@@ -642,6 +707,7 @@ export default function AdminPortal() {
             ))}
           </div>
         </div>
+        </DetailSection>
 
       </div>
     </div>

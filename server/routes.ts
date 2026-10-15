@@ -8,7 +8,8 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
-import { storage, trialLedger, documentTaskStore } from "./storage";
+import { storage, trialLedger, documentTaskStore, simulationUsageStore } from "./storage";
+import { registerSimulationUsage } from "./simulationUsage";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
 import { extractWordImages, restoreWordImages, type PreservedImage } from "./documentImages";
 import { runDocumentProcess } from "./documentProcess";
@@ -1241,6 +1242,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // The checker runs entirely in the browser. This endpoint receives only a
   // filename and basic result metadata so the owner can understand adoption.
   // It intentionally does not accept document bytes or extracted document text.
+  registerSimulationUsage(app, simulationUsageStore);
   app.post("/api/checker-usage", (req, res) => {
     const parsed = z.object({
       fileName: z.string().min(1).max(255),
@@ -1484,6 +1486,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
           recentFailures,
         },
         checkerUsage,
+        simulationUsage: simulationUsageStore.summary(),
         likelyHumanVisitors,
         recentActivity: recentJobs,
       });

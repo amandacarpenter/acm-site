@@ -63,7 +63,7 @@ function SeverityBadge({ severity }: { severity: Severity }) {
   );
 }
 
-export function SimResults({ model, onReset }: { model: SimModel; onReset: () => void }) {
+export function SimResults({ model, onReset, onPlayback }: { model: SimModel; onReset: () => void; onPlayback?: () => void }) {
   const { isSignedIn } = useAuth();
   const remediationUrl = isSignedIn ? '/dashboard' : '/pricing';
   const uid = useId().replace(/:/g, '');
@@ -210,8 +210,9 @@ export function SimResults({ model, onReset }: { model: SimModel; onReset: () =>
       return;
     }
     setPlay(true);
+    onPlayback?.();
     select(live.current.index >= items.length - 1 ? 0 : live.current.index, { speak: true });
-  }, [items.length, select, setPlay, stopSpeech]);
+  }, [items.length, select, setPlay, stopSpeech, onPlayback]);
 
   // Start at the top; stop speaking when leaving the results
   useEffect(() => {

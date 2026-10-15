@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useUser } from '@clerk/clerk-react';
+import { createSimulationUsage } from '../lib/usage';
 import { SimAnalyzing } from './SimAnalyzing';
 import { SimResults } from './SimResults';
 import { SimUploader } from './SimUploader';
@@ -16,9 +18,11 @@ interface Props {
 
 /**
  * Free Screen Reader Simulation. Uses the Free Checker's layout and styles.
- * Documents are read in the browser only; nothing is uploaded or logged.
+ * Documents stay in the browser. Only anonymous run metadata is reported.
  */
 export function SimulationExperience({ compact = false, mainId }: Props) {
+  const { user, isLoaded } = useUser();
+  const reportUsage = useRef<ReturnType<typeof createSimulationUsage>>(() => {});
   const [view, setView] = useState<View>('idle');
   const [error, setError] = useState<SimValidationError | null>(null);
   const [model, setModel] = useState<SimModel | null>(null);
@@ -45,6 +49,13 @@ export function SimulationExperience({ compact = false, mainId }: Props) {
   const handleFile = useCallback(
     async (file: File) => {
       const id = ++run.current;
+      // If identity is still loading, skip analytics rather than counting admin testing.
+      let report: ReturnType<typeof createSimulationUsage> = () => {};
+      try {
+        report = createSimulationUsage(file, compact, !isLoaded ||
+          user?.primaryEmailAddress?.emailAddress?.toLowerCase() === 'amandathecarpenter@gmail.com');
+      } catch { /* Analytics is optional. */ }
+      reportUsage.current = report;
       setError(null);
       setFileName(file.name);
       setStage('read');
@@ -59,10 +70,12 @@ export function SimulationExperience({ compact = false, mainId }: Props) {
           return;
         }
         replaceModel(result);
+        report('completed');
         setView('results');
         focusMain();
       } catch (err) {
         if (id !== run.current) return;
+        report('failed');
         setError({
           title: 'This document could not be simulated',
           message: err instanceof Error ? err.message : 'An unexpected error stopped the simulation. Try another file.',
@@ -70,7 +83,7 @@ export function SimulationExperience({ compact = false, mainId }: Props) {
         setView('idle');
       }
     },
-    [focusMain, replaceModel],
+    [focusMain, replaceModel, compact, user, isLoaded],
   );
 
   const reset = useCallback(() => {
@@ -93,7 +106,7 @@ export function SimulationExperience({ compact = false, mainId }: Props) {
       >
         {view === 'idle' && <SimUploader onFile={handleFile} error={error} setError={setError} compact={compact} />}
         {view === 'analyzing' && <SimAnalyzing fileName={fileName} stage={stage} onCancel={reset} />}
-        {view === 'results' && model && <SimResults model={model} onReset={reset} />}
+        {view === 'results' && model && <SimResults model={model} onReset={reset} onPlayback={() => reportUsage.current('playback')} />}
       </Root>
     </div>
   );
