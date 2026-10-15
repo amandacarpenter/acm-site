@@ -99,28 +99,33 @@ export default function Home() {
       </section>
 
       {/* ── FREE SCREEN READER SIMULATION ── */}
-      <section className="bg-white py-16 sm:py-20 border-b border-gray-200" aria-labelledby="free-simulation-heading">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0f766e]/10 border border-[#0f766e]/20 text-sm font-medium text-[#0f5f59] mb-5">
-            <AudioLines className="w-4 h-4" aria-hidden="true" />
-            Free Screen Reader Simulation
+      <section className="bg-white border-b border-gray-200" aria-labelledby="free-simulation-heading">
+        {/* Slate band with the heading, matching the checker section above */}
+        <div className="bg-[#3a485b] py-14 sm:py-16">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white mb-5">
+              <AudioLines className="w-4 h-4" aria-hidden="true" />
+              Free Screen Reader Simulation
+            </div>
+            <h2 id="free-simulation-heading" className="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+              Want to hear how a screen reader reads your document?
+            </h2>
+            <p className="text-lg text-white/85 leading-relaxed max-w-2xl mx-auto">
+              Open a PDF or Word document to hear its headings, lists, tables, links, and image descriptions in reading order, with missing alt text and skipped headings flagged as you go. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
+            </p>
           </div>
-          <h2 id="free-simulation-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-4 leading-tight">
-            Want to hear how a screen reader reads your document?
-          </h2>
-          <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto mb-8">
-            Open a PDF or Word document to hear its headings, lists, tables, links, and image descriptions in reading order, with missing alt text and skipped headings flagged as you go. It is free, requires no account, uses no Remedy508 Credits, and keeps document contents in your browser.
-          </p>
         </div>
-        <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the screen reader simulation…</p>}>
-          <SimulationExperience compact mainId="homepage-screen-reader-simulation" />
-        </Suspense>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
-          <Link href="/screen-reader-simulation">
-            <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
-              Learn more about the Free Screen Reader Simulation
-            </span>
-          </Link>
+        <div className="pt-10 sm:pt-12 pb-16 sm:pb-20">
+          <Suspense fallback={<p className="py-10 text-center text-gray-600" aria-live="polite">Loading the screen reader simulation…</p>}>
+            <SimulationExperience compact mainId="homepage-screen-reader-simulation" />
+          </Suspense>
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mt-2">
+            <Link href="/screen-reader-simulation">
+              <span className="text-sm font-semibold text-[#0f766e] hover:underline cursor-pointer">
+                Learn more about the Free Screen Reader Simulation
+              </span>
+            </Link>
+          </div>
         </div>
       </section>
 
