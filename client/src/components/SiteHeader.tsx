@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
 import IncidentBanner from "@/components/IncidentBanner";
+import { SITE_NAV_LINKS } from "@/lib/site-navigation";
 
 function Logo() {
   return (
@@ -15,13 +16,6 @@ function Logo() {
   );
 }
 
-const NAV_LINKS = [
-  { href: "/accessibility-checker", label: "Free Checker" },
-  { href: "/screen-reader-simulation", label: "Screen Reader Simulation" },
-  { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/blog", label: "Blog" },
-];
-
 export default function SiteHeader() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,17 +24,17 @@ export default function SiteHeader() {
     <>
       <IncidentBanner />
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
-      {/* Same footprint as the homepage header: 1320px container, 96px tall, uppercase links with 30px gaps */}
-      <div className="max-w-[1320px] mx-auto px-[clamp(20px,4vw,56px)] h-20 min-[1200px]:h-24 flex items-center justify-between gap-10 font-['General_Sans','Inter',sans-serif]">
+      {/* Match the homepage header; compact gaps keep all five links readable. */}
+      <div className="max-w-[1320px] mx-auto px-[clamp(20px,4vw,56px)] h-20 min-[1280px]:h-24 flex items-center justify-between gap-6 font-['General_Sans','Inter',sans-serif]">
         {/* Logo */}
         <Link href="/" className="flex items-center shrink-0 no-underline" aria-label="Remedy508 home">
           <Logo />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden min-[1200px]:flex items-center ml-auto" aria-label="Main navigation">
-          <ul className="flex items-center gap-[30px] list-none p-0 m-0 whitespace-nowrap">
-            {NAV_LINKS.map((link) => (
+        <nav className="hidden min-[1280px]:flex items-center ml-auto" aria-label="Main navigation">
+          <ul className="flex items-center gap-5 list-none p-0 m-0 whitespace-nowrap">
+            {SITE_NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} aria-current={location === link.href ? "page" : undefined}>
                   {/* Same hover line as the homepage header; the current page is shown with teal text */}
@@ -60,7 +54,7 @@ export default function SiteHeader() {
         </nav>
 
         {/* Account actions: same sizes and spacing as the homepage header */}
-        <div className="hidden min-[1200px]:flex items-center gap-[18px] ml-3 whitespace-nowrap">
+        <div className="hidden min-[1280px]:flex items-center gap-3.5 whitespace-nowrap">
           <SignedOut>
             <Link href="/login">
               <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
@@ -85,9 +79,11 @@ export default function SiteHeader() {
 
         {/* Mobile hamburger */}
         <button
-          className="min-[1200px]:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          className="min-[1280px]:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          aria-controls="site-mobile-menu"
           data-testid="mobile-menu-toggle"
         >
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -96,10 +92,10 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="min-[1200px]:hidden border-t border-gray-100 bg-white">
+        <div id="site-mobile-menu" className="min-[1280px]:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
-            {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href}>
+            {SITE_NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} aria-current={location === link.href ? "page" : undefined}>
                 <span
                   onClick={() => setMobileOpen(false)}
                   className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"

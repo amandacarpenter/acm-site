@@ -51,6 +51,14 @@ export const ROUTES: RouteMeta[] = [
     jsonLd: "checker",
   },
   {
+    path: "/remedy-tools",
+    title: "Remedy Tools | Document, Video, HTML & Image Accessibility",
+    description:
+      "Explore Remedy Docs, Video, HTML and Image, plus the free document accessibility checker and screen reader simulation. Find the right tool for your content.",
+    changefreq: "monthly",
+    priority: 0.9,
+  },
+  {
     path: "/screen-reader-simulation",
     title: "Free Screen Reader Simulation for PDF & Word | Remedy508",
     description:

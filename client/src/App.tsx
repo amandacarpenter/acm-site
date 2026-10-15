@@ -5,6 +5,7 @@ import { queryClient } from "@/lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { ClerkProvider, SignedIn, SignedOut, RedirectToSignIn } from "@clerk/clerk-react";
 import Home from "@/pages/Home";
+import RemedyTools from "@/pages/RemedyTools";
 import ToolsPage from "@/pages/ToolsPage";
 import PricingPage from "@/pages/PricingPage";
 import LoginPage from "@/pages/LoginPage";
@@ -77,6 +78,7 @@ export default function App() {
                 specific case and it cannot be overridden via component props). */}
             <Route path="/" component={Home} />
             <Route path="/home" component={Home} />
+            <Route path="/remedy-tools" component={RemedyTools} />
             <Route path="/tools" component={ToolsPage} />
             <Route path="/tools/:tab" component={ToolsPage} />
             <Route path="/accessibility-checker">

@@ -18,6 +18,7 @@ import {
   Zap, Shield, GraduationCap, Users, Sparkles, ChevronRight, BookOpen
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { SITE_NAV_LINKS } from "@/lib/site-navigation";
 // Note: tool cards on homepage are display-only, not linked
 
 const TOOLS = [
@@ -32,13 +33,6 @@ const STATS = [
   { value: "26%", label: "of US adults have a disability", source: "CDC" },
   { value: "97%", label: "of top websites have WCAG failures", source: "WebAIM 2025" },
   { value: "1 in 4", label: "college students has a disability", source: "NCES" },
-];
-
-const NAV_LINKS: { href: string; label: string }[] = [
-  { href: "/accessibility-checker", label: "Free Checker" },
-  { href: "/screen-reader-simulation", label: "Screen Reader Simulation" },
-  { href: "/pricing", label: "Plans & Pricing" },
-  { href: "/blog", label: "Blog" },
 ];
 
 const SimulationExperience = lazy(() =>
@@ -61,7 +55,7 @@ export default function Home() {
       <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-[#0f766e] focus:text-white focus:rounded-lg focus:font-semibold">Skip to main content</a>
       <IncidentBanner />
 
-      <HomeHeader links={NAV_LINKS} />
+      <HomeHeader links={SITE_NAV_LINKS} />
 
       <main id="main-content">
       {/* ── HERO ── */}
