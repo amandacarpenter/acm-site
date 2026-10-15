@@ -4,7 +4,6 @@ import { useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
 import IncidentBanner from "@/components/IncidentBanner";
-import PromoBanner from "@/components/PromoBanner";
 
 function Logo() {
   return (
@@ -29,7 +28,6 @@ export default function SiteHeader() {
 
   return (
     <>
-      <PromoBanner />
       <IncidentBanner />
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
