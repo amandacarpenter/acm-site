@@ -3,18 +3,22 @@ import { lazy, Suspense } from "react";
 import SiteFooter from "@/components/SiteFooter";
 import HomeHero, { HomeHeader } from "@/components/home/HomeHero";
 import IncidentBanner from "@/components/IncidentBanner";
+import iconDocument from "@/assets/icon-document.png";
+import iconVideo from "@/assets/icon-video.png";
+import iconCanvas from "@/assets/icon-canvas.png";
+import iconAlttext from "@/assets/icon-alttext.png";
 import {
-  SearchCheck, AudioLines,
+  SearchCheck, AudioLines, Presentation,
   Shield, GraduationCap, Users, ChevronRight
 } from "lucide-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { SITE_NAV_LINKS } from "@/lib/site-navigation";
 const TOOLS = [
-  { title: "Remedy Docs", comingSoon: false },
-  { title: "Remedy Video", comingSoon: false },
-  { title: "Remedy HTML", comingSoon: false },
-  { title: "Remedy Image", comingSoon: false },
-  { title: "Remedy Layout", comingSoon: true },
+  { title: "Remedy Docs", icon: iconDocument, comingSoon: false },
+  { title: "Remedy Video", icon: iconVideo, comingSoon: false },
+  { title: "Remedy HTML", icon: iconCanvas, comingSoon: false },
+  { title: "Remedy Image", icon: iconAlttext, comingSoon: false },
+  { title: "Remedy Layout", icon: null, comingSoon: true },
 ];
 
 const STATS = [
@@ -114,11 +118,20 @@ export default function Home() {
       {/* ── REMEDY TOOLS ── */}
       <section className="py-20 sm:py-28 bg-gray-50" aria-labelledby="how-heading">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-10">Remedy Tools</h2>
-          <ul className="flex flex-wrap items-start justify-center gap-x-10 gap-y-6 list-none p-0 m-0">
+          <h2 id="how-heading" className="text-3xl sm:text-4xl font-bold text-[#3a485b] mb-10">Meet The Remedy Tools</h2>
+          <ul className="grid grid-cols-2 lg:grid-cols-5 gap-4 list-none p-0 m-0">
             {TOOLS.map((tool) => (
-              <li key={tool.title} className="flex flex-col items-center gap-2">
-                <span className="text-lg font-semibold text-[#3a485b]">{tool.title}</span>
+              <li key={tool.title} className="flex flex-col items-center gap-2 min-h-[176px] rounded-xl border border-gray-200 bg-white p-4 last:col-span-2 last:w-[calc(50%-0.5rem)] last:justify-self-center lg:last:col-span-1 lg:last:w-full">
+                {tool.icon ? (
+                  <img src={tool.icon} alt="" width={64} height={64} className="w-16 h-16 object-contain shrink-0" />
+                ) : (
+                  <div className="w-16 h-16 flex items-center justify-center shrink-0" aria-hidden="true">
+                    <span className="w-10 h-10 rounded-full bg-[#0f766e] text-white flex items-center justify-center">
+                      <Presentation className="w-5 h-5" />
+                    </span>
+                  </div>
+                )}
+                <span className="text-base font-semibold text-[#3a485b]">{tool.title}</span>
                 {tool.comingSoon && <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-bold">Coming Soon</span>}
               </li>
             ))}
