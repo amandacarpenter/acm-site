@@ -36,17 +36,14 @@ export default function SiteHeader() {
           <ul className="flex items-center gap-5 list-none p-0 m-0 whitespace-nowrap">
             {SITE_NAV_LINKS.map((link) => (
               <li key={link.href}>
-                <Link href={link.href} aria-current={location === link.href ? "page" : undefined}>
-                  {/* Same hover line as the homepage header; the current page is shown with teal text */}
-                  <span
-                    className={`relative inline-block py-1.5 text-[13px] font-bold uppercase tracking-[.09em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
-                      location === link.href
-                        ? "text-[#0f766e]"
-                        : "text-gray-700 hover:text-gray-900"
-                    }`}
-                  >
-                    {link.label}
-                  </span>
+                <Link
+                  href={link.href}
+                  aria-current={location === link.href ? "page" : undefined}
+                  className={`relative inline-block py-1.5 text-[13px] font-bold uppercase tracking-[.09em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
+                    location === link.href ? "text-[#0f766e]" : "text-gray-900 hover:text-[#0f766e]"
+                  }`}
+                >
+                  {link.label}
                 </Link>
               </li>
             ))}
@@ -95,10 +92,10 @@ export default function SiteHeader() {
         <div id="site-mobile-menu" className="min-[1280px]:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {SITE_NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} aria-current={location === link.href ? "page" : undefined}>
+              <Link key={link.href} href={link.href} className="font-bold" aria-current={location === link.href ? "page" : undefined}>
                 <span
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                 >
                   {link.label}
                 </span>
