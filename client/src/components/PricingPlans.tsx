@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Loader2 } from "lucide-react";
-import watermark from "@/assets/accessibility-watermark.png";
+import HeroWatermark from "@/components/HeroWatermark";
 import "./PricingPlans.css";
 
 type PricingPlansProps = {
@@ -14,7 +14,7 @@ export default function PricingPlans({ annual, setAnnual, loading, onGetStarted 
   return (
     <div className="pricing-design">
       <section className="pricing-hero" aria-labelledby="pricing-heading">
-        <img src={watermark} className="pricing-watermark" alt="" />
+        <HeroWatermark corner="right" className="pricing-watermark" />
         <div className="pricing-hero-copy">
           <h1 id="pricing-heading">Choose your plan.</h1>
           <p>Accessible content, whether you work on your own or with a team.</p>
