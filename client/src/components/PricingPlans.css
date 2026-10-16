@@ -5,21 +5,23 @@
   --pricing-ink: #17212f;
   --pricing-muted: #526070;
   --pricing-border: #dce3e7;
-  font-family: "Raleway", "General Sans", sans-serif;
+  font-family: "General Sans", "Inter", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--pricing-ink);
 }
-.pricing-design h1,.pricing-design h2,.pricing-design p{margin:0;font-family:inherit}
+.pricing-design h1,.pricing-design h2,.pricing-design p{margin:0}
+.pricing-design h1,.pricing-design h2{font-family:"Clash Display","General Sans",sans-serif}
+.pricing-design p{font-family:inherit}
 .pricing-design button,.pricing-design a{font-family:inherit;-webkit-tap-highlight-color:transparent}
 .pricing-design button:focus-visible,.pricing-design a:focus-visible{outline:3px solid var(--pricing-teal);outline-offset:4px}
-.pricing-hero{position:relative;overflow:hidden;background:var(--pricing-slate);color:white;text-align:center;padding:56px 24px 84px;font-family:"General Sans","Inter",sans-serif}
+.pricing-hero{position:relative;overflow:hidden;background:var(--pricing-slate);color:white;text-align:center;padding:56px 24px;font-family:"General Sans","Inter",sans-serif}
 .pricing-watermark{position:absolute;width:360px;right:-30px;top:-28px;opacity:.07;pointer-events:none}
 .pricing-hero-copy{position:relative}
 .pricing-hero h1{font-family:"Clash Display","General Sans",sans-serif;font-size:48px;font-weight:700;line-height:1.15;margin-bottom:16px}
 .pricing-hero p{font-size:18px;max-width:590px;margin:auto;line-height:1.6}
-.pricing-plans-section{background:#f6f8f8;padding:0 24px 64px;display:flow-root}
-.pricing-plans{position:relative;max-width:1000px;margin:-32px auto 0;display:grid;grid-template-columns:1fr 1fr;gap:28px}
+.pricing-plans-section{background:#f6f8f8;padding:40px 24px 64px;display:flow-root}
+.pricing-plans{position:relative;max-width:1000px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:28px}
 .pricing-plan{background:white;border:1px solid #d6dfe2;border-top:4px solid var(--pricing-teal);border-radius:20px;box-shadow:0 16px 36px -20px #243c4c45,0 3px 8px #243c4c06;padding:0 32px 24px;display:flex;flex-direction:column}
 .pricing-plan-intro{margin:0 -32px;padding:28px 32px 24px;border-radius:16px 16px 0 0;background:#f8faf9;border-bottom:1px solid #e7ecec}
 .pricing-plan h2{font-size:29px;line-height:1.2;font-weight:700;color:var(--pricing-slate)}
@@ -51,8 +53,8 @@
 .pricing-design button:disabled{opacity:.7;cursor:not-allowed}
 .pricing-design .pricing-terms{margin-top:12px;color:var(--pricing-muted);font-size:13px;line-height:1.5;min-height:40px}
 @media(max-width:700px){
-  .pricing-hero{padding:38px 22px 62px}.pricing-hero h1{font-size:35px}.pricing-hero p{font-size:17px}.pricing-watermark{width:280px;right:-110px}
-  .pricing-plans-section{padding:0 16px 40px}.pricing-plans{grid-template-columns:1fr;gap:24px;margin-top:-24px}.pricing-plan{padding:0 22px 20px}
+  .pricing-hero{padding:38px 22px}.pricing-hero h1{font-size:35px}.pricing-hero p{font-size:17px}.pricing-watermark{width:280px;right:-110px}
+  .pricing-plans-section{padding:24px 16px 40px}.pricing-plans{grid-template-columns:1fr;gap:24px;margin-top:0}.pricing-plan{padding:0 22px 20px}
   .pricing-plan-intro{margin:0 -22px;padding:24px 22px 20px}
   .pricing-plan h2{font-size:27px}.pricing-price>span:first-child{font-size:48px}.pricing-price-area{min-height:98px}
   .pricing-design .pricing-terms{min-height:0}
