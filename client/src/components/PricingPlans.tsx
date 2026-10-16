@@ -16,7 +16,8 @@ export default function PricingPlans({ annual, setAnnual, loading, onGetStarted 
       <section className="pricing-hero" aria-labelledby="pricing-heading">
         <HeroWatermark corner="right" className="pricing-watermark" />
         <div className="pricing-hero-copy">
-          <h1 id="pricing-heading">Choose your plan.</h1>
+          <span className="pricing-hero-pill">Plans &amp; Pricing</span>
+          <h1 id="pricing-heading">Choose your plan</h1>
           <p>Accessible content, whether you work on your own or with a team.</p>
         </div>
       </section>
