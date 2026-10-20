@@ -178,6 +178,10 @@ const UNTITLED_PUBLIC_PAGES: Record<string, { title: string; description: string
     title: "Team plans | Remedy508",
     description: "Buy Remedy508 team seats by card or invoice.",
   },
+  "/dashboard": {
+    title: "Dashboard | Remedy508",
+    description: "Your Remedy508 plan, credits, and recent activity.",
+  },
   "/team/setup": {
     title: "Team dashboard | Remedy508",
     description: "Manage your Remedy508 team, seats, and usage.",

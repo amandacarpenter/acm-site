@@ -3,6 +3,7 @@ import SiteFooter from "@/components/SiteFooter";
 import { Link } from "wouter";
 import { useUser } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { FileText, Video, Image, Code, FileSearch, CheckCircle2, Zap, CreditCard, Clock, ArrowRight, ShoppingCart, AlertTriangle, XCircle, LifeBuoy, Users, Presentation } from "lucide-react";
 import logoUrl from "@/assets/logo.png";
 import BuyCreditsModal from "@/components/BuyCreditsModal";
@@ -55,6 +56,7 @@ const TOOL_LABELS: Record<string, string> = {
 };
 
 export default function Dashboard() {
+  useDocumentTitle("Dashboard | Remedy508");
   const { user } = useUser();
   const [buyCreditsOpen, setBuyCreditsOpen] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -364,18 +366,14 @@ export default function Dashboard() {
 
         {/* Tools CTA */}
         <div className="mb-8 flex flex-wrap items-center gap-3">
-          <Link href="/tools">
-            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
+          <Link href="/tools" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
               <Zap className="w-4 h-4" />
               Access the Tools
-            </button>
-          </Link>
-          <Link href="/contact">
-            <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#d63b1f] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
+            </Link>
+          <Link href="/contact" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#d63b1f] text-white font-semibold text-sm hover:brightness-110 transition shadow-sm">
               <LifeBuoy className="w-4 h-4" />
               Support &amp; Help
-            </button>
-          </Link>
+            </Link>
         </div>
 
         {/* Recent activity */}
