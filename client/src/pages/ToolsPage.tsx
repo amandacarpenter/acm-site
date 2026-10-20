@@ -70,6 +70,8 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
   }, [resetKey]);
 
   return (
+    <>
+    <input ref={inputRef} type="file" accept={accept} hidden aria-label={label} data-testid={`${testId}-input`} onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelected(f); onFile(f); }}} />
     <div
       data-testid={testId}
       className={`upload-zone flex flex-col items-center justify-center gap-3 p-8 text-center min-h-[160px] ${dragging ? "drag-over" : ""}`}
@@ -80,7 +82,6 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
       role="button" tabIndex={0} aria-label={selected ? `${label}. Selected file: ${selected.name}. Activate to choose a different file.` : label}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
     >
-      <input ref={inputRef} type="file" accept={accept} className="sr-only" tabIndex={-1} aria-hidden="true" aria-label={label} onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelected(f); onFile(f); }}} />
       {selected ? (
         <>
           <CheckCircle2 className="w-10 h-10 text-emerald-500" />
@@ -100,6 +101,7 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
         </>
       )}
     </div>
+    </>
   );
 }
 
