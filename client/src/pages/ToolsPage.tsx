@@ -77,10 +77,10 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); const f = e.dataTransfer.files[0]; if (f) { setSelected(f); onFile(f); } }}
       onClick={() => inputRef.current?.click()}
-      role="button" tabIndex={0} aria-label={label}
-      onKeyDown={(e) => e.key === "Enter" && inputRef.current?.click()}
+      role="button" tabIndex={0} aria-label={selected ? `${label}. Selected file: ${selected.name}. Activate to choose a different file.` : label}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); inputRef.current?.click(); } }}
     >
-      <input ref={inputRef} type="file" accept={accept} className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelected(f); onFile(f); }}} />
+      <input ref={inputRef} type="file" accept={accept} className="sr-only" tabIndex={-1} aria-hidden="true" aria-label={label} onChange={(e) => { const f = e.target.files?.[0]; if (f) { setSelected(f); onFile(f); }}} />
       {selected ? (
         <>
           <CheckCircle2 className="w-10 h-10 text-emerald-500" />
@@ -103,19 +103,19 @@ function FileDropZone({ accept, onFile, label, sublabel, icon: Icon, iconImg, te
   );
 }
 
-function CopyBtn({ text, testId }: { text: string; testId?: string }) {
+function CopyBtn({ text, testId, label }: { text: string; testId?: string; label?: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <Button variant="outline" size="sm" data-testid={testId} onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+    <Button variant="outline" size="sm" data-testid={testId} aria-label={label ? (copied ? `Copied ${label}` : `Copy ${label}`) : undefined} onClick={() => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
       {copied ? <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
       {copied ? "Copied!" : "Copy"}
     </Button>
   );
 }
 
-function DownloadBtn({ content, filename, testId }: { content: string; filename: string; testId?: string }) {
+function DownloadBtn({ content, filename, testId, label }: { content: string; filename: string; testId?: string; label?: string }) {
   return (
-    <Button variant="outline" size="sm" data-testid={testId} onClick={() => {
+    <Button variant="outline" size="sm" data-testid={testId} aria-label={label ? `Download ${label}` : undefined} onClick={() => {
       const blob = new Blob([content], { type: "text/plain" }); const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
     }}>
@@ -172,6 +172,10 @@ function LoadingState({ text, steps }: { text: string; steps?: string[] }) {
       <p className="text-xs text-muted-foreground">{Math.round(progress)}% complete</p>
     </div>
   );
+}
+
+function ToolAnnouncer({ message }: { message: string }) {
+  return <p role="status" aria-live="polite" aria-atomic="true" className="sr-only">{message}</p>;
 }
 
 function StartOverButton({ onClick }: { onClick: () => void }) {
@@ -757,6 +761,7 @@ function RemedyDocsTab() {
           <Button variant="outline" onClick={() => run(recoveryJob)}>Check status / retrieve result</Button>
         </>}
       </div>}
+      <ToolAnnouncer message={fastResult || visionResult ? "Remediation complete. Your accessible file is ready to download below." : ""} />
       {error && <ErrorAlert message={error} reportContext={{ tool: "Remedy Docs", errorCode: recoveryJob?.id || errorCode, userEmail: docsUser?.primaryEmailAddress?.emailAddress, file }} />}
 
       {fastResult && (
@@ -856,6 +861,7 @@ function VideoTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Transcribing…</> : <><Zap className="w-4 h-4 mr-2" />Generate Timecoded Transcript</>}
       </Button>
       {loading && <LoadingState text="Transcribing…" steps={["Uploading file…", "Extracting audio track…", "Running AI transcription…", "Generating timecoded transcript…"]} />}
+      <ToolAnnouncer message={loading ? "Working. This can take a minute." : result ? "Transcript ready. The results are below." : ""} />
       {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Video", errorCode, userEmail: videoUser?.primaryEmailAddress?.emailAddress, file }} />}
       {result && (
         <div className="space-y-4" data-testid="video-result">
@@ -875,8 +881,8 @@ function VideoTab() {
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">{view === "timecoded" ? "Timecoded Transcript" : "Plain Text"}</h3>
               <div className="flex gap-2">
-                <CopyBtn text={view === "timecoded" ? result.timecodedTranscript : result.plainText} />
-                <Button size="sm" variant="outline" onClick={async () => {
+                <CopyBtn text={view === "timecoded" ? result.timecodedTranscript : result.plainText} label="transcript" />
+                <Button size="sm" variant="outline" aria-label="Download transcript as a Word document" onClick={async () => {
                   const { Document, Paragraph, TextRun, HeadingLevel, Packer } = await import("docx");
                   const baseName = result.filename?.replace(/\.[^.]+$/, "") || "transcript";
                   const content = view === "timecoded" ? result.timecodedTranscript : result.plainText;
@@ -942,6 +948,7 @@ function CanvasTab() {
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Making it accessible…</> : <><Zap className="w-4 h-4 mr-2" />Fix Canvas Accessibility</>}
       </Button>
       {loading && <LoadingState text="Fixing Canvas HTML…" steps={["Parsing your HTML…", "Checking color contrast…", "Fixing heading structure…", "Adding ARIA labels…", "Finalizing accessible HTML…"]} />}
+      <ToolAnnouncer message={loading ? "Working. This can take a minute." : result ? "Accessible HTML ready. The results are below." : ""} />
       {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy HTML (Canvas)", errorCode, userEmail: canvasUser?.primaryEmailAddress?.emailAddress, htmlFallback: html }} />}
       {result && (
         <div className="space-y-4" data-testid="canvas-result">
@@ -961,7 +968,7 @@ function CanvasTab() {
           {result.changes?.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-sm flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-500" />Changes ({result.changes.length})</h3>
-              <div className="space-y-1.5 max-h-40 overflow-y-auto">
+              <div className="space-y-1.5 max-h-40 overflow-y-auto" tabIndex={0} role="region" aria-label="List of changes made">
                 {result.changes.map((c: any, i: number) => (
                   <div key={i} className="flex items-start gap-2 text-sm p-2 rounded-lg bg-muted">
                     <ChevronRight className="w-3.5 h-3.5 mt-0.5 text-[#0f766e] shrink-0" />
@@ -972,7 +979,7 @@ function CanvasTab() {
             </div>
           )}
           <div className="space-y-2">
-            <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Paste Back into Canvas</h3><CopyBtn text={result.accessibleHtml} testId="copy-canvas" /></div>
+            <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Paste Back into Canvas</h3><CopyBtn text={result.accessibleHtml} testId="copy-canvas" label="accessible HTML" /></div>
             <pre className="result-panel">{result.accessibleHtml}</pre>
           </div>
         </div>
@@ -1031,6 +1038,7 @@ function AltTextTab() {
       <Button className="w-full bg-[#0f766e] text-white hover:brightness-110 font-semibold" onClick={run} disabled={loading || (!file && !imageUrl.trim())} data-testid="btn-gen-alt">
         {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</> : <><Eye className="w-4 h-4 mr-2" />Generate Alt Text</>}
       </Button>
+      <ToolAnnouncer message={loading ? "Working. This can take a minute." : result ? "Alt text ready. The results are below." : ""} />
       {error && <ErrorAlert message={error} showCreditNote reportContext={{ tool: "Remedy Image (Alt Text)", errorCode, userEmail: altTextUser?.primaryEmailAddress?.emailAddress, file, htmlFallback: !file && imageUrl ? `Image URL: ${imageUrl}` : undefined }} />}
       {result && (
         <div className="space-y-4" data-testid="alt-result">
@@ -1043,16 +1051,16 @@ function AltTextTab() {
           ) : (
             <>
               <div className="space-y-2">
-                <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Alt Text</h3><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{result.altText?.length} chars</span><CopyBtn text={result.altText} testId="copy-alt" /></div></div>
+                <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Alt Text</h3><div className="flex items-center gap-2"><span className="text-xs text-muted-foreground">{result.altText?.length} chars</span><CopyBtn text={result.altText} testId="copy-alt" label="alt text" /></div></div>
                 <div className="p-3 rounded-lg bg-muted border font-mono text-sm" data-testid="alt-output">{result.altText}</div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">HTML Snippet</h3><CopyBtn text={`alt="${result.altText}"`} /></div>
+                <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">HTML Snippet</h3><CopyBtn text={`alt="${result.altText}"`} label="HTML snippet" /></div>
                 <pre className="result-panel">{`alt="${result.altText}"`}</pre>
               </div>
               {result.longDescription && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Long Description</h3><CopyBtn text={result.longDescription} /></div>
+                  <div className="flex items-center justify-between"><h3 className="font-semibold text-sm">Long Description</h3><CopyBtn text={result.longDescription} label="long description" /></div>
                   <div className="p-3 rounded-lg bg-muted border text-sm">{result.longDescription}</div>
                 </div>
               )}
@@ -1171,22 +1179,22 @@ export default function ToolsPage() {
                 <TabsTrigger
                   key={tab.id}
                   value={tab.id}
-                  className={`flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px] rounded-lg border-2 transition-colors ${isActive ? "border-transparent shadow-sm" : "border-transparent opacity-50"}`}
+                  className={`flex flex-col items-center justify-start gap-1.5 py-3 px-1 h-full min-h-[112px] rounded-lg border-2 transition-colors ${isActive ? "border-transparent shadow-sm" : "border-transparent"}`}
                   style={isActive ? { backgroundColor: "#fff", borderColor: ACCENT } : undefined}
                   onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = ACCENT_SOFT_HOVER; }}
                   onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.backgroundColor = ""; }}
                   data-testid={`tab-${tab.id}`}
                 >
                   {tab.icon ? (
-                    <img src={tab.icon} alt="" aria-hidden="true" className="w-16 h-16 object-contain shrink-0" />
+                    <img src={tab.icon} alt="" aria-hidden="true" className={`w-16 h-16 object-contain shrink-0 ${isActive ? "" : "opacity-50"}`} />
                   ) : tab.Icon ? (
-                    <span className="w-16 h-16 flex items-center justify-center shrink-0" aria-hidden="true">
+                    <span className={`w-16 h-16 flex items-center justify-center shrink-0 ${isActive ? "" : "opacity-50"}`} aria-hidden="true">
                       <span className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center">
                         <tab.Icon className="w-5 h-5 text-white" strokeWidth={1.8} />
                       </span>
                     </span>
                   ) : null}
-                  <span className="font-bold text-base text-center leading-tight whitespace-pre-line w-full text-black">{tab.label}</span>
+                  <span className={`font-bold text-base text-center leading-tight whitespace-pre-line w-full ${isActive ? "text-black" : "text-gray-600"}`}>{tab.label}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-[9px] font-bold px-1 py-0.5 rounded-full leading-none">BETA</span>}
                   {tab.comingSoon && <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">COMING SOON</span>}
                 </TabsTrigger>
@@ -1201,7 +1209,7 @@ export default function ToolsPage() {
                     instead of in a separate block above the tabs. */}
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="font-bold text-lg text-black">{tab.title}</span>
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{tab.badge}</span>
+                  <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{tab.badge}</span>
                   {tab.beta && <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">BETA</span>}
                   {tab.comingSoon && <span className="bg-amber-100 text-amber-900 text-xs font-bold px-2 py-0.5 rounded-full">COMING SOON</span>}
                 </div>
