@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { CheckCircle2, Loader2, Minus, Plus, CreditCard, FileText } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 // Team price ID lives server-side only (server/routes.ts TODO_STRIPE_PRICE_TEAM_249) --
 // this page just posts seat count to /api/stripe/create-team-checkout and displays $249/seat.
@@ -21,6 +22,7 @@ const TEAM_FEATURES = [
 ];
 
 export default function TeamCheckout() {
+  useDocumentTitle("Team plans | Remedy508");
   const [seats, setSeats] = useState(2);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">("card");
   const [loading, setLoading] = useState(false);
@@ -101,7 +103,7 @@ export default function TeamCheckout() {
                 <button
                   onClick={() => adjustSeats(-1)}
                   disabled={seats <= 2}
-                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  className="w-10 h-10 rounded-xl border border-[#767676] flex items-center justify-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                   aria-label="Remove seat"
                 >
                   <Minus className="w-4 h-4" />
@@ -112,13 +114,13 @@ export default function TeamCheckout() {
                   max={MAX_TEAM_SEATS}
                   value={seats}
                   onChange={(e) => setSeats(Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(e.target.value) || 2)))}
-                  className="w-20 text-center text-2xl font-bold text-[#3a485b] border border-gray-200 rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
+                  className="w-20 text-center text-2xl font-bold text-[#3a485b] border border-[#767676] rounded-xl py-2 focus:outline-none focus:ring-2 focus:ring-[#0f766e]"
                   aria-label="Seat count"
                 />
                 <button
                   onClick={() => adjustSeats(1)}
                   disabled={seats >= MAX_TEAM_SEATS}
-                  className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  className="w-10 h-10 rounded-xl border border-[#767676] flex items-center justify-center text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                   aria-label="Add seat"
                 >
                   <Plus className="w-4 h-4" />
@@ -153,7 +155,7 @@ export default function TeamCheckout() {
             <div className="mb-6">
               <p className="text-sm font-semibold text-[#3a485b] mb-3">Payment method</p>
               <div className="space-y-3">
-                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "card" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-gray-200 hover:border-gray-300"}`}>
+                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "card" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-[#767676] hover:border-[#3a485b]"}`}>
                   <input
                     type="radio"
                     name="payment"
@@ -171,7 +173,7 @@ export default function TeamCheckout() {
                   </div>
                 </label>
 
-                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "invoice" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-gray-200 hover:border-gray-300"}`}>
+                <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition ${paymentMethod === "invoice" ? "border-[#0f766e] bg-[#0f766e]/5" : "border-[#767676] hover:border-[#3a485b]"}`}>
                   <input
                     type="radio"
                     name="payment"

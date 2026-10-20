@@ -3,10 +3,14 @@ import { useLocation } from "wouter";
 import { useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useClerkAutocomplete } from "@/hooks/use-clerk-autocomplete";
 
 export default function LoginPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
+  useDocumentTitle("Log in | Remedy508");
+  useClerkAutocomplete("current-password");
 
   useEffect(() => {
     if (isSignedIn) navigate("/");

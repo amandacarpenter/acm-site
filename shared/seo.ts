@@ -160,10 +160,53 @@ export function getBlogRouteMeta(): RouteMeta[] {
   }));
 }
 
+/** Titles for public pages that should not be added to the sitemap. */
+const UNTITLED_PUBLIC_PAGES: Record<string, { title: string; description: string }> = {
+  "/login": {
+    title: "Log in | Remedy508",
+    description: "Log in to Remedy508 to remediate documents, images, video, and Canvas HTML.",
+  },
+  "/signup": {
+    title: "Create an account | Remedy508",
+    description: "Create a Remedy508 account to start accessibility remediation.",
+  },
+  "/team": {
+    title: "Team plans | Remedy508",
+    description: "Buy Remedy508 team seats by card or invoice.",
+  },
+  "/team/checkout": {
+    title: "Team plans | Remedy508",
+    description: "Buy Remedy508 team seats by card or invoice.",
+  },
+  "/team/setup": {
+    title: "Team dashboard | Remedy508",
+    description: "Manage your Remedy508 team, seats, and usage.",
+  },
+  "/invoice-request": {
+    title: "Request an invoice | Remedy508",
+    description: "Request a Remedy508 team invoice for your institution.",
+  },
+  "/coming-soon": {
+    title: "Coming soon | Remedy508",
+    description: "Request early access to Remedy508.",
+  },
+};
+
 export function getRouteMeta(pathname: string): RouteMeta | undefined {
   // exact match first
   const exact = ROUTES.find((r) => r.path === pathname);
   if (exact) return exact;
+
+  const titled = UNTITLED_PUBLIC_PAGES[pathname];
+  if (titled) {
+    return {
+      path: pathname,
+      title: titled.title,
+      description: titled.description,
+      changefreq: "yearly",
+      priority: 0.1,
+    };
+  }
 
   // Remedy508 Insights articles get a unique title, description, canonical URL,
   // post-specific share image, and Article structured data.

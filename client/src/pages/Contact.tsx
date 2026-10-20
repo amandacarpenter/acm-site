@@ -115,7 +115,8 @@ export default function Contact() {
                       required
                       value={form.name}
                       onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
+                      autoComplete="name"
+                      className="w-full rounded-lg border border-[#767676] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
                       placeholder="Your name"
                     />
                   </div>
@@ -127,7 +128,8 @@ export default function Contact() {
                       required
                       value={form.email}
                       onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
+                      autoComplete="email"
+                      className="w-full rounded-lg border border-[#767676] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent"
                       placeholder="you@institution.edu"
                     />
                   </div>
@@ -138,7 +140,7 @@ export default function Contact() {
                     id="subject"
                     value={form.subject}
                     onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent bg-white"
+                    className="w-full rounded-lg border border-[#767676] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent bg-white"
                   >
                     {subjects.map(s => <option key={s}>{s}</option>)}
                   </select>
@@ -151,7 +153,7 @@ export default function Contact() {
                     rows={6}
                     value={form.message}
                     onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent resize-none"
+                    className="w-full rounded-lg border border-[#767676] px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e] focus:border-transparent resize-none"
                     placeholder="How can we help?"
                   />
                 </div>

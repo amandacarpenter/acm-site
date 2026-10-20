@@ -74,7 +74,9 @@ export default function Privacy() {
                   ["Stripe", "Payment processing", "Billing and subscription data"],
                   ["Clerk", "User authentication", "Email address and login credentials"],
                   ["Resend", "Transactional email", "Email address and notification content"],
-                  ["Anthropic (Claude)", "AI remediation", "Uploaded file content during processing only"],
+                  ["Anthropic (Claude)", "AI remediation", "Text and images from uploaded files. Commercial API inputs may be kept for up to 30 days and are not used to train models."],
+                  ["Zoho Mail", "Support mailbox", "Messages you send to hello@remedy508.com, and files you choose to attach to an error report"],
+                  ["Webshare", "Public transcript lookup", "The YouTube address, only when you submit a YouTube link"],
                   ["Google Analytics", "Website analytics", "Page activity, browser and device information, and approximate country-level location"],
                 ].map(([sp, role, data], i) => (
                   <tr key={sp} className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}>
@@ -117,7 +119,7 @@ export default function Privacy() {
           </Section>
 
           <Section title="6. FERPA Compliance">
-            <p>Higher education institutions using Remedy508 may upload course materials that contain student educational records covered by FERPA. Left Coast Learning LLC acts as a service provider on behalf of the institution under 34 C.F.R. § 99.31(a)(1). We process student-related data only to perform accessibility remediation, do not use it for any other purpose, do not re-disclose it, and do not retain it after processing is complete.</p>
+            <p>Higher education institutions using Remedy508 may upload course materials that contain student educational records covered by FERPA. Left Coast Learning LLC acts as a service provider on behalf of the institution under 34 C.F.R. § 99.31(a)(1). We process student-related data only to perform accessibility remediation, do not use it for any other purpose, and do not re-disclose it except to the sub-processors listed above. Generated results are held for up to 15 minutes, as described in this policy. Anthropic may keep commercial API inputs for up to 30 days and does not use them to train models.</p>
           </Section>
 
           <Section title="7. California Residents — CCPA Rights">
@@ -147,7 +149,7 @@ export default function Privacy() {
                 {[
                   ["Uploaded files", "Not retained — deleted immediately after processing"],
                   ["Free checker usage metadata", "Up to 90 days"],
-                  ["Processed output", "Available until you delete or subscription ends"],
+                  ["Processed output", "Up to 15 minutes, then deleted. Not permanent storage."],
                   ["Account information", "Retained while subscription is active"],
                   ["Billing records", "As required by law (typically 7 years)"],
                   ["Usage/analytics data", "Aggregate or de-identified form"],
