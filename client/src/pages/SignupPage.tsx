@@ -3,10 +3,14 @@ import { useLocation } from "wouter";
 import { useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
+import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useClerkAutocomplete } from "@/hooks/use-clerk-autocomplete";
 
 export default function SignupPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
+  useDocumentTitle("Create an account | Remedy508");
+  useClerkAutocomplete("new-password");
 
   useEffect(() => {
     if (isSignedIn) navigate("/pricing");

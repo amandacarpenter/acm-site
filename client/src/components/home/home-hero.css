@@ -71,6 +71,9 @@
 @keyframes hhwave { 0%, 100% { height: 25%; } 50% { height: 100%; } }
 .hh-now-text { margin-top: 10px; font-size: 15px; line-height: 1.35; font-weight: 500; }
 .hh-now-sub { margin-top: 8px; font-size: 11.5px; color: rgba(255,255,255,.7); display: flex; gap: 6px; align-items: center; }
+.hh-pause { margin-top: 10px; min-height: 32px; padding: 6px 10px; border-radius: 8px; border: 1px solid #fff; background: transparent; color: #fff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.hh-pause:focus-visible { outline: 3px solid #5eead4; outline-offset: 2px; }
+.hh-now.is-paused .hh-wave b, .hh-now.is-paused .hh-fade { animation: none; }
 .hh-fade { animation: hhfade .35s ease; }
 @keyframes hhfade { from { opacity: .2; transform: translateY(3px); } to { opacity: 1; transform: none; } }
 

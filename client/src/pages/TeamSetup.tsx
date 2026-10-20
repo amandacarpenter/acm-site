@@ -1,4 +1,4 @@
-import { useOrganization, useOrganizationList, OrganizationProfile, useUser } from "@clerk/clerk-react";
+import { useOrganization, useOrganizationList, OrganizationProfile, useUser, useAuth } from "@clerk/clerk-react";
 import { Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
@@ -6,6 +6,7 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Users, FileText, AlertCircle, Plus, Minus, X } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 interface TeamMemberUsage {
   userId: string;
@@ -21,7 +22,9 @@ interface TeamMemberUsage {
 const TEAM_CREDITS_PER_SEAT = 145; // must match server/routes.ts TEAM_CREDITS_PER_SEAT
 
 export default function TeamSetup() {
-  const { user } = useUser();
+  useDocumentTitle("Team dashboard | Remedy508");
+  const { user, isLoaded: userLoaded } = useUser();
+  const { isSignedIn, isLoaded: authLoaded } = useAuth();
   const { organization, membership } = useOrganization();
   const { userMemberships, setActive, isLoaded: orgListLoaded } = useOrganizationList({
     userMemberships: { infinite: true },
@@ -162,7 +165,22 @@ export default function TeamSetup() {
     // While Clerk is still loading org membership data, or while we're actively
     // switching the session to the user's org, show a neutral loading state
     // rather than immediately claiming there's no team.
-    const stillResolving = !orgListLoaded || activating || (userMemberships?.data?.length ?? 0) > 0;
+    const signedOut = authLoaded && userLoaded && !isSignedIn && !user;
+    const stillResolving = !signedOut && (!orgListLoaded || activating || (userMemberships?.data?.length ?? 0) > 0);
+
+    if (signedOut) {
+      return (
+        <div className="min-h-screen bg-white">
+          <SiteHeader />
+          <div className="flex flex-col items-center justify-center py-32 px-4 text-center">
+            <h1 className="text-2xl font-bold text-[#3a485b] mb-3">Sign in to manage your team</h1>
+            <p className="text-gray-600 mb-6 max-w-sm">The team dashboard is available after you sign in with a team account.</p>
+            <a href="/login" className="px-6 py-2.5 rounded-xl bg-[#0f766e] text-white font-semibold text-sm hover:bg-[#115e59] transition">Log in</a>
+          </div>
+          <SiteFooter />
+        </div>
+      );
+    }
 
     if (stillResolving) {
       return (
@@ -330,7 +348,7 @@ export default function TeamSetup() {
                 </table>
               </div>
             ) : (
-              <p className="px-6 pb-6 text-sm text-gray-400">No teammates yet — invite below to see their usage here.</p>
+              <p className="px-6 pb-6 text-sm text-gray-600">No teammates yet — invite below to see their usage here.</p>
             )}
           </div>
 

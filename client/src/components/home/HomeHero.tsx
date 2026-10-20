@@ -26,27 +26,38 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function useStep(ms: number) {
+function useStep(ms: number, paused: boolean) {
   const [i, setI] = useState(START);
   useEffect(() => {
-    if (prefersReducedMotion()) return;
+    if (paused) return;
     const t = setInterval(() => setI((n) => (n + 1) % ROWS.length), ms);
     return () => clearInterval(t);
-  }, [ms]);
+  }, [ms, paused]);
   return i;
 }
 
 function NowReading() {
-  const i = useStep(2200);
+  const [paused, setPaused] = useState(prefersReducedMotion);
+  const i = useStep(2200, paused);
   const r = ROWS[i];
   return (
-    <div className="hh-now" aria-hidden="true">
-      <div className="hh-now-top">
-        <span className="hh-chip">{r.chip}</span>
-        <span className="hh-wave"><b /><b /><b /><b /><b /><b /><b /></span>
+    <div className={`hh-now${paused ? " is-paused" : ""}`}>
+      <div aria-hidden="true">
+        <div className="hh-now-top">
+          <span className="hh-chip">{r.chip}</span>
+          <span className="hh-wave"><b /><b /><b /><b /><b /><b /><b /></span>
+        </div>
+        <div key={i} className="hh-now-text hh-fade">{r.say}</div>
+        <div className="hh-now-sub"><Volume2 size={13} /> Screen reader simulator</div>
       </div>
-      <div key={i} className="hh-now-text hh-fade">{r.say}</div>
-      <div className="hh-now-sub"><Volume2 size={13} /> Screen reader simulator</div>
+      <button
+        type="button"
+        className="hh-pause"
+        aria-pressed={paused}
+        onClick={() => setPaused((value) => !value)}
+      >
+        {paused ? "Play animation" : "Pause animation"}
+      </button>
     </div>
   );
 }

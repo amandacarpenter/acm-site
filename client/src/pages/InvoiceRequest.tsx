@@ -5,10 +5,12 @@ import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 
 const MAX_TEAM_SEATS = 20; // Clerk org membership cap on current plan (no B2B Authentication add-on)
 
 export default function InvoiceRequest() {
+  useDocumentTitle("Request an invoice | Remedy508");
   const [, navigate] = useLocation();
   const { userId } = useAuth();
   const params = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
@@ -58,7 +60,7 @@ export default function InvoiceRequest() {
     }
   }
 
-  const inputClass = "w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#0f766e] bg-white";
+  const inputClass = "w-full rounded-xl border border-[#767676] px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#0f766e] bg-white";
   const labelClass = "block text-sm font-semibold text-[#3a485b] mb-1.5";
 
   if (submitted) {
@@ -73,7 +75,7 @@ export default function InvoiceRequest() {
           <p className="text-gray-500 max-w-md mb-2">
             We'll email you an invoice within one business day. Once paid, your team dashboard will be ready to set up.
           </p>
-          <p className="text-sm text-gray-400">Questions? Email us at <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline">hello@remedy508.com</a></p>
+          <p className="text-sm text-gray-600">Questions? Email us at <a href="mailto:hello@remedy508.com" className="text-[#0f766e] underline">hello@remedy508.com</a></p>
         </div>
         <SiteFooter />
       </div>
@@ -99,23 +101,23 @@ export default function InvoiceRequest() {
 
             <div>
               <label htmlFor="institutionName" className={labelClass}>Institution / Organization name *</label>
-              <input id="institutionName" name="institutionName" required value={form.institutionName} onChange={handleChange} className={inputClass} placeholder="Name of Institution or Organization" />
+              <input id="institutionName" name="institutionName" autoComplete="organization" required value={form.institutionName} onChange={handleChange} className={inputClass} placeholder="Name of Institution or Organization" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="contactName" className={labelClass}>Billing contact name *</label>
-                <input id="contactName" name="contactName" required value={form.contactName} onChange={handleChange} className={inputClass} placeholder="Jane Smith" />
+                <input id="contactName" name="contactName" autoComplete="name" required value={form.contactName} onChange={handleChange} className={inputClass} placeholder="Jane Smith" />
               </div>
               <div>
                 <label htmlFor="contactEmail" className={labelClass}>Billing contact email *</label>
-                <input id="contactEmail" name="contactEmail" type="email" required value={form.contactEmail} onChange={handleChange} className={inputClass} placeholder="jane@college.edu" />
+                <input id="contactEmail" name="contactEmail" type="email" autoComplete="email" required value={form.contactEmail} onChange={handleChange} className={inputClass} placeholder="jane@college.edu" />
               </div>
             </div>
 
             <div>
-              <label htmlFor="contactPhone" className={labelClass}>Billing contact phone <span className="font-normal text-gray-400">(optional)</span></label>
-              <input id="contactPhone" name="contactPhone" type="tel" value={form.contactPhone} onChange={handleChange} className={inputClass} placeholder="(555) 555-5555" />
+              <label htmlFor="contactPhone" className={labelClass}>Billing contact phone <span className="font-normal text-gray-600">(optional)</span></label>
+              <input id="contactPhone" name="contactPhone" type="tel" autoComplete="tel" value={form.contactPhone} onChange={handleChange} className={inputClass} placeholder="(555) 555-5555" />
             </div>
 
             <div>
@@ -134,10 +136,10 @@ export default function InvoiceRequest() {
             <div>
               <label htmlFor="seats" className={labelClass}>Number of seats needed *</label>
               <input id="seats" name="seats" type="number" min={2} max={MAX_TEAM_SEATS} required value={form.seats} onChange={handleChange} className={inputClass} />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 {form.seats} seat{form.seats !== 1 ? "s" : ""} × $249 = ${(form.seats * 249).toLocaleString()}/year · {form.seats * 145} Credits/month total (not pooled — each seat gets its own)
               </p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-600 mt-1">
                 Up to {MAX_TEAM_SEATS} seats per team — need more seats?{" "}
                 <Link href="/contact?topic=more-seats">
                   <span className="underline font-medium cursor-pointer text-[#0f766e]">Contact us</span>
@@ -146,7 +148,7 @@ export default function InvoiceRequest() {
             </div>
 
             <div>
-              <label htmlFor="poNumber" className={labelClass}>PO number <span className="font-normal text-gray-400">(if available — optional)</span></label>
+              <label htmlFor="poNumber" className={labelClass}>PO number <span className="font-normal text-gray-600">(if available — optional)</span></label>
               <input id="poNumber" name="poNumber" value={form.poNumber} onChange={handleChange} className={inputClass} placeholder="PO-12345" />
             </div>
 
@@ -161,7 +163,7 @@ export default function InvoiceRequest() {
             </div>
 
             <div>
-              <label htmlFor="notes" className={labelClass}>Notes <span className="font-normal text-gray-400">(optional)</span></label>
+              <label htmlFor="notes" className={labelClass}>Notes <span className="font-normal text-gray-600">(optional)</span></label>
               <textarea id="notes" name="notes" value={form.notes} onChange={handleChange} className={inputClass} rows={3} placeholder="Any additional context, special requirements, or questions…" />
             </div>
 
@@ -173,7 +175,7 @@ export default function InvoiceRequest() {
               {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending…</> : "Submit Invoice Request"}
             </button>
 
-            <p className="text-xs text-gray-400 text-center">
+            <p className="text-xs text-gray-600 text-center">
               By submitting, you confirm this request is for institutional use as described in our <a href="/terms" className="text-[#0f766e] underline">Terms of Service</a>.
             </p>
           </form>
