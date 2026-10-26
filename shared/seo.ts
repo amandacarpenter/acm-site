@@ -10,7 +10,8 @@
 import { getBlogPost, getSortedBlogPosts } from "./blog";
 
 export const SITE_URL = "https://remedy508.com";
-export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/remedy508-share-2026-10.png`;
+export const DEFAULT_OG_IMAGE_ALT = "Remedy508 logo. Accessibility Made Easy.";
 
 export interface RouteMeta {
   path: string;

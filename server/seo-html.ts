@@ -3,7 +3,7 @@
 // client. This is what lets crawlers and link-preview bots that don't run
 // JS see real per-page metadata, since the app itself is a client-rendered
 // Vite/React SPA with no server-side rendering.
-import { getRouteMeta, SITE_URL, DEFAULT_OG_IMAGE } from "../shared/seo";
+import { getRouteMeta, SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_ALT } from "../shared/seo";
 import { BLOG_AUTHOR, BLOG_NAME, getBlogPost } from "../shared/blog";
 
 function escapeHtml(s: string): string {
@@ -242,6 +242,13 @@ export function injectSeoMeta(html: string, requestPath: string): string {
     `<meta name="twitter:description" content="${description}" />`,
     `<meta name="twitter:image" content="${ogImage}" />`,
   ];
+
+  if (!meta.ogImage || meta.ogImage === DEFAULT_OG_IMAGE) {
+    extraTags.push(
+      `<meta property="og:image:alt" content="${escapeHtml(DEFAULT_OG_IMAGE_ALT)}" />`,
+      `<meta name="twitter:image:alt" content="${escapeHtml(DEFAULT_OG_IMAGE_ALT)}" />`,
+    );
+  }
 
   if (meta.jsonLd === "software") {
     extraTags.push(`<script type="application/ld+json">${softwareApplicationJsonLd()}</script>`);
