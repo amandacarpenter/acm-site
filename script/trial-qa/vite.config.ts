@@ -8,6 +8,7 @@ export default defineConfig(({mode})=>mergeConfig(config,{
   resolve:{alias:{"@clerk/clerk-react":path.join(root,"script/trial-qa/clerk-preview.tsx")}},
   plugins:[{
     name:"explicit-trial-preview",
+    enforce:"pre",
     transform(code:string,id:string) {
       if (id.endsWith("/client/src/main.tsx")) return `${mode==="trial-preview" ? 'if (!location.hash) location.hash = "/free-trial";\n' : ""}import "../../script/trial-qa/bootstrap";\n${code}`;
       if (mode==="trial-preview" && id.endsWith("/client/src/App.tsx")) return `import { useHashLocation } from "wouter/use-hash-location";\n${code.replace('<Router base="">','<Router hook={useHashLocation}>')}`;
