@@ -1,5 +1,13 @@
 # Trial change: flow inventory
 
+## Embedded-preview recovery
+- Start directly on the trial page regardless of the viewer's URL or fragment.
+- Load from a sandboxed srcdoc frame with no same-origin permission.
+- Keep navigation in memory; do not call browser history from preview navigation.
+- Bundle preview JavaScript/CSS inline so cached HTML cannot reference removed chunks.
+- Exercise account preview, consent, activation, dashboard, home and mobile menu.
+- Production routing, authentication, billing and deployment remain unchanged.
+
 Baseline: main commit 303fa29e. Live homepage rendered at 1440px before edits.
 Authenticated production flows require a designated test account and are not implied
 by mocked local checks. Do not run production purchases or processing without approval.

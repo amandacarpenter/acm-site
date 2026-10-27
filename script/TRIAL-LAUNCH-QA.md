@@ -65,7 +65,9 @@ process uploads, charge cards, or change production data.
   to inspect additional states.
 - `/` tests the separate dark homepage navigation.
 - Review build: `npx vite build --config script/trial-qa/vite.config.ts --mode trial-preview`.
-  It uses hash routing only for the private preview, not the production app.
+  It uses in-memory routing and inline JavaScript/CSS only for the private
+  preview, not the production app. This avoids dependency on the embedded
+  viewer's URL, browser history, and previously cached chunk filenames.
 
 ## Results from this working copy
 
@@ -85,6 +87,20 @@ process uploads, charge cards, or change production data.
 - New offer text/button contrast pairs measured above 4.5:1. This is not a whole-site
   accessibility audit or assistive-technology test.
 - `npm run check` still reports the seven pre-existing diagnostics described above.
+
+## Embedded-preview recovery checks
+
+- Rebuilt the review-only bundle with in-memory navigation and inline JS/CSS.
+- Inlining runs after Vite's final preload transform so lazy pages do not retain
+  unresolved `__VITE_PRELOAD__` placeholders.
+- Tested an opaque sandboxed srcdoc frame with no asset base URL: sample signup,
+  explicit consent, activation, dashboard balance, homepage, and Tools entry passed.
+- Desktop-to-mobile-to-desktop resizing and mobile menu navigation passed.
+  No horizontal overflow or new browser errors were observed.
+- The actual authenticated Perplexity viewer could not be inspected from the
+  cloud browser due to its Cloudflare challenge. These checks verify the hosted
+  content and embedded-frame behavior, not the user's exact browser environment.
+- This recovery changes only the review harness, not production auth or billing.
 
 ## Before production activation
 
