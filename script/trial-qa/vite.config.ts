@@ -3,6 +3,7 @@ import config from "../../vite.config";
 import path from "node:path";
 const root=path.resolve(import.meta.dirname,"../..");
 export default defineConfig(({mode})=>mergeConfig(config,{
+  base: mode==="trial-preview" ? "./" : "/",
   define: { "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify("preview-only-not-a-key") },
   resolve:{alias:{"@clerk/clerk-react":path.join(root,"script/trial-qa/clerk-preview.tsx")}},
   plugins:[{
@@ -14,7 +15,7 @@ export default defineConfig(({mode})=>mergeConfig(config,{
     },
     transformIndexHtml(html:string) {
       // Remove analytics and other remote scripts from the review build.
-      return html.replace(/<script>[\s\S]*?<\/script>/g,"");
+      return html.replace(/<script>[\s\S]*?<\/script>/g,"").replaceAll('href="/favicon','href="./favicon');
     },
   }],
   build:{outDir:path.join(root,"trial-preview-dist")},
