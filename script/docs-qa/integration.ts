@@ -159,4 +159,27 @@ try{
   assert.equal(publicUsage.creditsRemaining,29);assert.equal(publicUsage.resetDate,null);
   assert.ok(publicUsage.trialExpiresAt>Date.now());
   console.log("PASS actual routes: public activation, PDF processing/download, 30-Credit pool, expiry and usage reporting");
+  trialLedger.reserve("public-trial", "exhaustion-fixture", 29);
+  const lastCreditDownload = await fetch(`${base}/api/remedy-docs/jobs/${publicTask.id}/result`, {headers:headers("public-trial")});
+  assert.equal(lastCreditDownload.status, 200);
+  assert.equal((await fetch(`${base}/api/remedy-docs/jobs`, {
+    method:"POST", headers:headers("public-trial"), body:upload("pdf","after-exhaustion.pdf"),
+  })).status, 402);
+  console.log("PASS actual routes: exhausting the allowance blocks new jobs but preserves available downloads");
+  trialLedger.refund("exhaustion-fixture", "public-trial");
+  const originalClock = Date.now;
+  Date.now = () => publicUsage.trialExpiresAt;
+  try {
+    for (const route of ["/api/document/fix", "/api/remedy-docs/fix", "/api/remedy-docs/jobs",
+      "/api/complexpdf/fix", "/api/flyer/fix", "/api/video/transcribe", "/api/canvas/fix", "/api/alttext/generate"]) {
+      const blocked = await fetch(base+route, {method:"POST",headers:headers("public-trial")});
+      assert.equal(blocked.status, 402, route);
+      assert.equal((await blocked.json() as any).code, "TRIAL_EXPIRED", route);
+    }
+    const expiredUsage = await (await fetch(`${base}/api/usage/status?clerkUserId=public-trial`)).json() as any;
+    assert.equal(expiredUsage.creditsRemaining, 0);
+    assert.equal(expiredUsage.trialExpired, true);
+    assert.equal(trialLedger.balance("public-trial",30).used, 1);
+    console.log("PASS actual routes: exact expiration blocks all processing endpoints without spending Credits");
+  } finally { Date.now = originalClock; }
 }finally{documentTaskStore.close();await new Promise<void>(resolve=>server.close(()=>resolve()));}

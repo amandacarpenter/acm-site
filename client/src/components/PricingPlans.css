@@ -66,3 +66,34 @@
 }
 @media(max-width:359px){.pricing-hero{min-height:426px}}
 @media(prefers-reduced-motion:reduce){.pricing-design *{transition:none!important}}
+.pricing-trial-offer {
+  max-width: 1000px;
+  margin: 0 auto 24px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background: #edf7f5;
+  border: 1px solid #bfded8;
+  border-radius: 16px;
+}
+.pricing-trial-offer h2 {
+  margin: 0 0 6px;
+  color: #3a485b;
+  font-size: 1.25rem;
+}
+.pricing-trial-offer p {
+  margin: 0;
+  color: #3a485b;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.pricing-trial-offer .pricing-choose {
+  width: auto;
+  flex-shrink: 0;
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .pricing-trial-offer { flex-direction: column; align-items: stretch; padding: 20px; gap: 16px; }
+}

@@ -104,6 +104,23 @@ process uploads, charge cards, or change production data.
 
 ## Before production activation
 
+### October 27 public-signup follow-up
+
+- Added the 14-day / 30-Credit offer directly above pricing cards. Existing cards,
+  pricing hero, FAQ and Credit explanation remain unchanged.
+- Kept Tools mounted for exhausted/expired trials so focus/refetch cannot discard
+  the result of a job that reserved the last Credit. New work remains server-blocked.
+- Added real-route tests for download at zero balance and expiration blocking on
+  all eight processing entry points.
+- Re-ran the 30 public-trial checks, 25 legacy-trial checks, real document-route
+  fixture suite, production build and isolated review build.
+- The local browser activation, pricing billing toggle, dashboard, four tool tabs,
+  expiry/exhaustion/verification/error states and mobile overflow checks passed.
+- Authentication and AI remain mocked in these tests. No live accounts, documents,
+  billing, or production database have been modified.
+- Typecheck still reports the same seven existing server diagnostics; it is not a
+  passing check. Installed dependencies are excluded from commits.
+
 - Review the page copy and eligibility rules.
 - Take the normal production SQLite backup and confirm the persistent `/data` volume.
 - Deploy first to the normal staging environment with Clerk test credentials.

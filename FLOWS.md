@@ -19,6 +19,9 @@ by mocked local checks. Do not run production purchases or processing without ap
 - Test 1440, 1280, 375px and keyboard; no horizontal clipping.
 
 ## Trial entry
+- Pricing: show a compact 14-day / 30-Credit / no-card offer above the unchanged
+  paid cards for signed-out or eligible users; active trials link to their status.
+- Keep the existing pricing FAQ, credit explanation, fonts and hero unchanged.
 - Signed out: offer says 14 days, 30 Credits, no card; signup/login return to /free-trial.
 - Eligible verified account: explicit activation grants once and shows end date/balance.
 - Unverified, existing paid, existing legacy trial, duplicate email, service failure:
@@ -28,6 +31,8 @@ by mocked local checks. Do not run production purchases or processing without ap
 ## Tools and dashboard
 - New trial can enter all four existing tool tabs using existing metering.
 - Expired/exhausted trial cannot start new work; dashboard shows expiry and upgrade.
+- Expired/exhausted trial retains the Tools view and document-result retrieval;
+  refocusing the window must not discard a job that used the final Credit.
 - Accepted jobs/refunds retain their original Credit source.
 - Existing paid and legacy-trial entitlements unchanged.
 

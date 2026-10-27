@@ -6,6 +6,7 @@ import PricingPlans from "@/components/PricingPlans";
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { useFreeTrial } from "@/hooks/use-free-trial";
 
 const PRICE_MONTHLY = "price_1U0nJxAaDElV6hZxPUcTnm6i"; // $19/mo
 const PRICE_ANNUAL  = "price_1U0nK2AaDElV6hZxv9vmPBz4"; // $199/yr
@@ -15,6 +16,9 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isSignedIn, userId } = useAuth();
+  const trial = useFreeTrial();
+  const trialOffer = !isSignedIn || trial.data?.state === "eligible" || trial.data?.state === "verification_required"
+    ? "start" : trial.data?.state === "active" ? "active" : null;
   const [, navigate] = useLocation();
 
   async function handleGetStarted() {
@@ -48,7 +52,7 @@ export default function PricingPage() {
       <SiteHeader />
       <main>
 
-      <PricingPlans annual={annual} setAnnual={setAnnual} loading={loading} onGetStarted={handleGetStarted} />
+      <PricingPlans annual={annual} setAnnual={setAnnual} loading={loading} onGetStarted={handleGetStarted} trialOffer={trialOffer} />
 
       {/* FAQ */}
       <section className="py-16 sm:py-20 bg-white border-t" aria-labelledby="faq-heading">

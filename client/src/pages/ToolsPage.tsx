@@ -1145,7 +1145,10 @@ export default function ToolsPage() {
   const isAdmin = user?.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com";
   if (!subscribed && !isAdmin) {
     if (trial.isError) return <div className="min-h-screen bg-gray-50"><SiteHeader /><main className="max-w-2xl mx-auto p-8"><h1 className="text-2xl font-bold">We couldn't check your trial</h1><p role="alert" className="my-4">{trial.error.message}</p><button onClick={()=>trial.refetch()} className="underline text-[#0f766e]">Try again</button></main></div>;
-    if (trial.data?.state !== "active") {
+    // Keep results and retrieval controls mounted when the last Credits are
+    // reserved or the clock expires. The server rejects every NEW processing
+    // request; an accepted job and its downloads must not disappear on refocus.
+    if (!["active", "expired", "exhausted"].includes(trial.data?.state || "")) {
       navigate("/free-trial");
       return null;
     }
@@ -1157,6 +1160,12 @@ export default function ToolsPage() {
 
       <main id="main-content">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+        {!subscribed && !isAdmin && (trial.data?.state === "expired" || trial.data?.state === "exhausted") && (
+          <div role="status" className="rounded-xl border border-teal-200 bg-teal-50 p-4 text-[#115e59]" data-testid="trial-processing-paused">
+            <p className="font-semibold">{trial.data.state === "expired" ? "Your 14-day trial has ended" : "Your trial Credits are used up"}</p>
+            <p className="text-sm mt-1">New processing is paused. You can still retrieve an available result from an accepted job. <Link href="/pricing" className="underline font-semibold">Choose a paid plan to continue.</Link></p>
+          </div>
+        )}
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm">
           <Link href="/">

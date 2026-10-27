@@ -8,9 +8,10 @@ type PricingPlansProps = {
   setAnnual: (annual: boolean) => void;
   loading: boolean;
   onGetStarted: () => void;
+  trialOffer?: "start" | "active" | null;
 };
 
-export default function PricingPlans({ annual, setAnnual, loading, onGetStarted }: PricingPlansProps) {
+export default function PricingPlans({ annual, setAnnual, loading, onGetStarted, trialOffer }: PricingPlansProps) {
   return (
     <div className="pricing-design">
       <section className="pricing-hero" aria-labelledby="pricing-heading">
@@ -22,6 +23,15 @@ export default function PricingPlans({ annual, setAnnual, loading, onGetStarted 
         </div>
       </section>
       <section className="pricing-plans-section" aria-label="Compare Individual and Team plans">
+        {trialOffer && <aside className="pricing-trial-offer" aria-labelledby="pricing-trial-title">
+          <div>
+            <h2 id="pricing-trial-title">{trialOffer === "active" ? "Your free trial is ready" : "Try Remedy508 free for 14 days"}</h2>
+            <p>30 one-time Credits across all four tools. No credit card. No automatic charge.</p>
+          </div>
+          <Link href="/free-trial" className="pricing-choose" data-testid="pricing-free-trial">
+            {trialOffer === "active" ? "View your trial" : "Start Free Trial"} <span aria-hidden="true">→</span>
+          </Link>
+        </aside>}
         <div className="pricing-plans">
           <article className="pricing-plan" aria-labelledby="individual-title">
             <div className="pricing-plan-intro">

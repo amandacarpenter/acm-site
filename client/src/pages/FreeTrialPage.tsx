@@ -84,6 +84,7 @@ export default function FreeTrialPage() {
             </> : <>
               <p className="mb-5" role="status">{data?.message}</p>
               <Link href={ended ? "/pricing" : "/dashboard"} className={button}>{ended ? "Explore paid plans" : "Go to your dashboard"}</Link>
+              {ended && <Link href="/tools/document" className="block mt-4 text-sm underline text-[#0f766e]">Retrieve an available document result</Link>}
             </>}
             {error && <p role="alert" className="text-red-800 text-sm mt-4">{error}</p>}
             <p className="text-xs leading-relaxed text-[#566373] mt-6">One trial per eligible account and verified email. Existing paid, complimentary, team, and previous-trial accounts are excluded. No monthly refill or Credit rollover. No purchase required.</p>
