@@ -73,8 +73,7 @@
 .pricing-trial-plan{scroll-margin-top:120px}
 .pricing-trial-actions{margin-top:auto}
 .pricing-trial-actions .pricing-choose{width:100%}
-.pricing-design .pricing-trial-secondary{font-size:13px;color:var(--pricing-muted);margin-top:12px;text-align:center}
-.pricing-trial-secondary a,.pricing-trial-consent a{text-decoration:underline;color:var(--pricing-teal-dark)}
+.pricing-trial-consent a{text-decoration:underline;color:var(--pricing-teal-dark)}
 .pricing-trial-consent{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5;margin-bottom:16px}
 .pricing-trial-consent input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--pricing-teal)}
 .pricing-design .pricing-trial-status{font-size:14px;margin-bottom:16px}

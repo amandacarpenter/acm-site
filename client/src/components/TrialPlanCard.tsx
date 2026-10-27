@@ -55,7 +55,6 @@ export default function TrialPlanCard() {
     <div className="pricing-trial-actions">
       {!isLoaded || (isSignedIn && trial.isLoading) ? <p role="status">Checking your account…</p> : !isSignedIn ? <>
         <Link href="/signup?trial=1" className="pricing-choose" data-testid="pricing-free-trial">Start Free Trial <span aria-hidden="true">→</span></Link>
-        <p className="pricing-trial-secondary">Already have an account? <Link href="/login?trial=1">Log in</Link>.</p>
       </> : trial.isError ? <>
         <p role="alert">{trial.error.message}</p>
         <button className="pricing-choose" onClick={() => trial.refetch()}>Try again</button>
