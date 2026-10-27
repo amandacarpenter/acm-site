@@ -1,7 +1,6 @@
 import { defineConfig, mergeConfig } from "vite";
 import config from "../../vite.config";
 import path from "node:path";
-import { writeFile } from "node:fs/promises";
 const root=path.resolve(import.meta.dirname,"../..");
 export default defineConfig(({mode})=>mergeConfig(config,{
   base: mode==="trial-preview" ? "./" : "/",
@@ -37,27 +36,6 @@ export default defineConfig(({mode})=>mergeConfig(config,{
       // Replace those reads with an empty transient object: no browser storage
       // is accessed, and the helper always uses its default warning behavior.
       return {code:code.replace(/\b[A-Za-z_$][\w$]*\.localStorage\b/g, "({})"), map:null};
-    },
-  }, {
-    name: "self-contained-preview-entry",
-    enforce: "post",
-    async writeBundle(_options, bundle) {
-      if (mode !== "trial-preview") return;
-      const entry = bundle["index.html"];
-      if (!entry || entry.type !== "asset") throw new Error("Missing preview HTML");
-      let html = String(entry.source);
-      for (const [filename, asset] of Object.entries(bundle)) {
-        if (asset.type === "chunk" && asset.isEntry) {
-          html = html.replace(/<script\b[^>]*\bsrc="[^"]+"[^>]*><\/script>/,
-            () => `<script type="module">${asset.code.replace(/<\/script/gi, "<\\/script")}</script>`);
-        } else if (asset.type === "asset" && filename.endsWith(".css")) {
-          html = html.replace(/<link\b[^>]*rel="stylesheet"[^>]*href="[^"]*assets\/[^"]+\.css"[^>]*>/,
-            () => `<style>${String(asset.source)}</style>`);
-        }
-      }
-      html = html.replace('<div id="root"></div>', '<div id="root"><div style="padding:48px;font:18px/1.6 system-ui;color:#3a485b"><h1>Remedy508 free trial preview</h1><p>14 days. 30 shared Credits. No credit card required.</p><p>Loading the interactive preview…</p></div></div>');
-      // Run after Vite has resolved lazy-import preload placeholders.
-      await writeFile(path.join(root, "trial-preview-dist/index.html"), html);
     },
   }],
   build:{
