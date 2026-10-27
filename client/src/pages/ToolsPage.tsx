@@ -23,6 +23,7 @@ import { Link } from "wouter";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { documentRequest, readDocumentJob, waitForDocument } from "@/lib/documentJobs";
 import type { DocumentTaskStatus } from "@shared/schema";
+import { useFreeTrial } from "@/hooks/use-free-trial";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -1110,6 +1111,7 @@ export default function ToolsPage() {
   const { isSignedIn, isLoaded } = useAuth();
   const { user } = useUser();
   const [, navigate] = useLocation();
+  const trial = useFreeTrial();
 
   // Active tab is tracked in state (not just Tabs' internal defaultValue) so the
   // tab strip and its content panel can share one color per tool. Keep the URL
@@ -1123,7 +1125,7 @@ export default function ToolsPage() {
   }, []);
 
   // Wait for Clerk to load before checking auth
-  if (!isLoaded) {
+  if (!isLoaded || (isSignedIn && !(user?.publicMetadata as any)?.subscribed && trial.isLoading)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#0f766e]" />
@@ -1142,8 +1144,11 @@ export default function ToolsPage() {
   // Allow admin (amandathecarpenter@gmail.com) to bypass
   const isAdmin = user?.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com";
   if (!subscribed && !isAdmin) {
-    navigate("/pricing");
-    return null;
+    if (trial.isError) return <div className="min-h-screen bg-gray-50"><SiteHeader /><main className="max-w-2xl mx-auto p-8"><h1 className="text-2xl font-bold">We couldn't check your trial</h1><p role="alert" className="my-4">{trial.error.message}</p><button onClick={()=>trial.refetch()} className="underline text-[#0f766e]">Try again</button></main></div>;
+    if (trial.data?.state !== "active") {
+      navigate("/free-trial");
+      return null;
+    }
   }
 
   return (

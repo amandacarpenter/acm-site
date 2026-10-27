@@ -18,7 +18,7 @@ pdf.addPage().drawText("Diagnostic fixture. This paragraph contains more than fi
 const bytes=await pdf.save();
 const headers=(who="owner")=>({Authorization:`Bearer ${who}`});
 function upload(mode="pdf",name="fixture.pdf",content:Uint8Array=bytes){const form=new FormData();form.append("file",new Blob([content],{type:"application/pdf"}),name);form.append("mode",mode);return form;}
-async function ready(id:string){for(let i=0;i<300;i++){const r=await fetch(`${base}/api/remedy-docs/jobs/${id}`,{headers:headers()});const {job}=await r.json() as any;if(["ready","failed"].includes(job.state))return job;await new Promise(r=>setTimeout(r,100));}throw new Error("Test timed out");}
+async function ready(id:string,who="owner"){for(let i=0;i<300;i++){const r=await fetch(`${base}/api/remedy-docs/jobs/${id}`,{headers:headers(who)});const {job}=await r.json() as any;if(["ready","failed"].includes(job.state))return job;await new Promise(r=>setTimeout(r,100));}throw new Error("Test timed out");}
 try{
   const denied=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",body:upload()});
   assert.equal(denied.status,401);
@@ -68,14 +68,14 @@ try{
   const image=await imagePdf.embedPng(png);
   imagePdf.getPages()[0].drawImage(image,{x:100,y:200,width:150,height:150});
   const visionBytes=await imagePdf.save();
-  assert.equal(execFileSync("python3",["-c","import fitz,sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); p=d[0]; print(sum(len(p.get_image_rects(i[0])) for i in p.get_images(full=True)))"],{input:visionBytes}).toString().trim(),"1");
+  assert.equal(execFileSync("python3",["-c","import pymupdf as fitz; import sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); p=d[0]; print(sum(len(p.get_image_rects(i[0])) for i in p.get_images(full=True)))"],{input:visionBytes}).toString().trim(),"1");
   const vision=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","vision.pdf",visionBytes)});
   const visionJob=(await vision.json() as any).job;const visionDone=await ready(visionJob.id);
   assert.equal(visionDone.state,"ready",visionDone.error);
   const visionPdf=await fetch(`${base}/api/remedy-docs/jobs/${visionJob.id}/result`,{headers:headers()});
   assert.equal(visionPdf.status,200);assert.equal(visionPdf.headers.get("x-remedy-docs-route"),"vision");
   const renderedVision=Buffer.from(await visionPdf.arrayBuffer());
-  assert.ok(Number(execFileSync("python3",["-c","import fitz,sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_images()) for p in d))"],{input:renderedVision}).toString().trim())>=1,"Vision output must contain an embedded image");
+  assert.ok(Number(execFileSync("python3",["-c","import pymupdf as fitz; import sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_images()) for p in d))"],{input:renderedVision}).toString().trim())>=1,"Vision output must contain an embedded image");
   assert.equal(trialLedger.balance("owner",140).remaining,137);
   console.log("PASS actual routes: vision extraction + PDF renderer through job transport; one trial debit");
   const failure=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","fail-audit.pdf",Buffer.concat([bytes,Buffer.from('\\n')]))});
@@ -101,7 +101,7 @@ try{
       assert.ok(!data.htmlContent.includes("base64"));
     }else{
       const result=Buffer.from(await download.arrayBuffer());
-      assert.equal(execFileSync("python3",["-c","import fitz,sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_image_info()) for p in d))"],{input:result}).toString().trim(),"1");
+      assert.equal(execFileSync("python3",["-c","import pymupdf as fitz; import sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_image_info()) for p in d))"],{input:result}).toString().trim(),"1");
     }
     console.log("PASS actual routes: Word-input image preserved for",mode,"output");
   }
@@ -138,4 +138,25 @@ try{
   const recoveredTask=(await recovered.json() as any).job;
   assert.equal((await ready(recoveredTask.id)).state,"ready");
   console.log("PASS actual routes: next PDF succeeds after a renderer failure without restarting server");
+  // New public trial through actual activation, usage, job, and download routes.
+  const activation=await fetch(`${base}/api/free-trial/start`,{
+    method:"POST",headers:{...headers("public-trial"),"Content-Type":"application/json"},
+    body:JSON.stringify({acceptTerms:true}),
+  });
+  assert.equal(activation.status,200);
+  assert.equal((await activation.json() as any).remaining,30);
+  const publicAdmission=await fetch(`${base}/api/remedy-docs/jobs`,{
+    method:"POST",headers:headers("public-trial"),body:upload("pdf","public-trial-fixture.pdf"),
+  });
+  assert.equal(publicAdmission.status,202);
+  const publicTask=(await publicAdmission.json() as any).job;
+  assert.equal((await ready(publicTask.id,"public-trial")).state,"ready");
+  const publicDownload=await fetch(`${base}/api/remedy-docs/jobs/${publicTask.id}/result`,{headers:headers("public-trial")});
+  assert.equal(publicDownload.status,200);
+  assert.equal(publicDownload.headers.get("content-type"),"application/pdf");
+  const publicUsage=await (await fetch(`${base}/api/usage/status?clerkUserId=public-trial`)).json() as any;
+  assert.equal(publicUsage.plan,"trial");assert.equal(publicUsage.monthlyLimit,30);
+  assert.equal(publicUsage.creditsRemaining,29);assert.equal(publicUsage.resetDate,null);
+  assert.ok(publicUsage.trialExpiresAt>Date.now());
+  console.log("PASS actual routes: public activation, PDF processing/download, 30-Credit pool, expiry and usage reporting");
 }finally{documentTaskStore.close();await new Promise<void>(resolve=>server.close(()=>resolve()));}

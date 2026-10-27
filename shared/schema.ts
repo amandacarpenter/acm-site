@@ -50,6 +50,17 @@ export const insertTrialDebitSchema = createInsertSchema(trialDebits);
 export type InsertTrialDebit = z.infer<typeof insertTrialDebitSchema>;
 export type TrialDebit = typeof trialDebits.$inferSelect;
 
+// New public trials only. Legacy trial_balances rows retain their existing terms.
+export const freeTrialActivations = sqliteTable("free_trial_activations", {
+  userId: text("user_id").primaryKey(),
+  emailHash: text("email_hash").notNull().unique(),
+  startsAt: integer("starts_at").notNull(),
+  expiresAt: integer("expires_at").notNull(),
+});
+export const insertFreeTrialActivationSchema = createInsertSchema(freeTrialActivations);
+export type InsertFreeTrialActivation = z.infer<typeof insertFreeTrialActivationSchema>;
+export type FreeTrialActivation = typeof freeTrialActivations.$inferSelect;
+
 export const jobs = sqliteTable("jobs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   type: text("type").notNull(),

@@ -9,12 +9,14 @@ import { useClerkAutocomplete } from "@/hooks/use-clerk-autocomplete";
 export default function LoginPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
+  const trialEntry = new URLSearchParams(window.location.search).get("trial") === "1";
+  const destination = trialEntry ? "/free-trial" : "/";
   useDocumentTitle("Log in | Remedy508");
   useClerkAutocomplete("current-password");
 
   useEffect(() => {
-    if (isSignedIn) navigate("/");
-  }, [isSignedIn]);
+    if (isSignedIn) navigate(destination);
+  }, [isSignedIn, destination, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -23,8 +25,9 @@ export default function LoginPage() {
         <h1 className="sr-only">Log in to Remedy508</h1>
         <SignIn
           routing="virtual"
-          signUpUrl="/signup"
-          afterSignInUrl="/"
+          signUpUrl={trialEntry ? "/signup?trial=1" : "/signup"}
+          afterSignInUrl={destination}
+          forceRedirectUrl={trialEntry ? destination : undefined}
           appearance={{
             variables: {
               colorPrimary: "#0f766e",

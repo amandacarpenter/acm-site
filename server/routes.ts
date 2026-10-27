@@ -1,6 +1,5 @@
 import type { Express, Request } from "express";
 import { kbDb } from "./kb";
-import fs from "fs";
 import { Server } from "http";
 import multer from "multer";
 import Anthropic from "@anthropic-ai/sdk";
@@ -25,6 +24,9 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { z } from "zod";
 import { createHash, randomUUID } from "crypto";
 import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware, getAdminAuthorizedParties } from "./adminAuth";
+import { registerFreeTrialRoutes } from "./freeTrial";
+import { canUsePublicTrial, TRIAL_EXPIRED } from "./trialCredits";
+import { FREE_TRIAL_CREDITS } from "../shared/trial";
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -174,6 +176,16 @@ async function getCreditBalance(clerkUserId: string): Promise<{
     }
   }
 
+  // Team provisioning above takes priority over a prior public-trial grant.
+  const publicTrial = canUsePublicTrial(meta) ? trialLedger.activation(clerkUserId) : null;
+  if (publicTrial) {
+    const balance = trialLedger.balance(clerkUserId, FREE_TRIAL_CREDITS);
+    return {
+      monthlyUsed: balance.used, monthlyLimit: balance.allocated, purchasedCredits: 0,
+      meta: { ...meta, plan: "trial", trialCreditLimit: balance.allocated, trialExpiresAt: publicTrial.expiresAt },
+    };
+  }
+
   const monthlyLimit = getMonthlyCreditLimit(meta);
   let monthlyUsed: number = meta.monthlyCreditsUsed ?? meta.monthlyDocsUsed ?? 0;
   const purchasedCredits: number = meta.purchasedCredits || 0;
@@ -224,6 +236,9 @@ async function checkHasCredits(clerkUserId: string): Promise<{ allowed: boolean;
     }
 
     const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
+    if (meta.plan === "trial" && meta.trialExpiresAt && Date.now() >= meta.trialExpiresAt && !trialRequest.getStore()?.reserved) {
+      return { allowed: false, reason: TRIAL_EXPIRED };
+    }
 
     // Fix #3/#6: a team whose renewal payment has failed is immediately restricted
     // to read-only (per product decision) -- this blocks NEW processing jobs for
@@ -702,6 +717,15 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // a Clerk login) to authenticate with ADMIN_STATS_KEY, in addition to normal
   // Clerk admin sessions for browser use. See adminAuth.ts for details.
   const requireAdminOrBackupKey = createAdminOrBackupKeyMiddleware(requireAdmin);
+  registerFreeTrialRoutes(app, {
+    ledger: trialLedger,
+    verify: token => verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY, authorizedParties: getAdminAuthorizedParties() }),
+    getUser: id => clerkClient.users.getUser(id),
+    hasTeam: async id => {
+      const memberships = await clerkClient.users.getOrganizationMembershipList({ userId: id });
+      return memberships.data.some(m => (m.organization.publicMetadata as any)?.plan === "team");
+    },
+  });
 
   // All paid processing uses the verified session subject, never a posted ID.
   // This also prevents bypassing a trial by omitting/changing clerkUserId.
@@ -712,6 +736,10 @@ export function registerRoutes(httpServer: Server, app: Express) {
       authorizedParties: getAdminAuthorizedParties(),
     }),
     getUser: id => clerkClient.users.getUser(id),
+    hasTeam: async id => {
+      const memberships = await clerkClient.users.getOrganizationMembershipList({ userId: id });
+      return memberships.data.some(m => (m.organization.publicMetadata as any)?.plan === "team");
+    },
   });
   app.use([
     "/api/document/fix", "/api/document/refund",
@@ -802,7 +830,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
         monthlyUsed,
         monthlyLimit: displayLimit,
         purchasedCredits,
-        creditsRemaining: Math.max(0, displayLimit - monthlyUsed) + purchasedCredits,
+        creditsRemaining: meta.plan === "trial" && meta.trialExpiresAt && Date.now() >= meta.trialExpiresAt ? 0 : Math.max(0, displayLimit - monthlyUsed) + purchasedCredits,
+        trialExpiresAt: meta.plan === "trial" ? meta.trialExpiresAt || null : null,
+        trialExpired: Boolean(meta.plan === "trial" && meta.trialExpiresAt && Date.now() >= meta.trialExpiresAt),
         resetDate: meta.plan === "trial" ? null : (meta.usageResetDate || getResetDate()),
         creditPeriod: meta.plan === "trial" ? "one_time" : "monthly",
         plan: pendingTeamInvoice ? "team" : (meta.plan || "individual"),
@@ -3981,7 +4011,14 @@ print('ok')
           };
           try {
             const currentUser = await clerkClient.users.getUser(userId);
-            if ((currentUser.publicMetadata as any)?.subscribed !== true && currentUser.primaryEmailAddress?.emailAddress !== "amandathecarpenter@gmail.com") {
+            const currentMeta = currentUser.publicMetadata as any;
+            const publicGrant = trialContext && canUsePublicTrial(currentMeta) ? trialLedger.activation(userId) : null;
+            let publicTrialAllowed = Boolean(publicGrant && Date.now() < publicGrant.expiresAt);
+            if (publicTrialAllowed) {
+              const memberships = await clerkClient.users.getOrganizationMembershipList({ userId });
+              publicTrialAllowed = !memberships.data.some(m => (m.organization.publicMetadata as any)?.plan === "team");
+            }
+            if (currentMeta?.subscribed !== true && !publicTrialAllowed && currentUser.primaryEmailAddress?.emailAddress !== "amandathecarpenter@gmail.com") {
               return sink.status(403).json({ error: "Your account no longer has processing access. This job was not started." }).result();
             }
             const input = { file, body: { mode, wordConversionAcknowledged: acknowledged } } as Request;
@@ -5091,7 +5128,8 @@ Rules:
       const { pack, clerkUserId } = req.body;
       if (clerkUserId) {
         const buyer = await clerkClient.users.getUser(clerkUserId);
-        if ((buyer.publicMetadata as any)?.plan === "trial") {
+        if ((buyer.publicMetadata as any)?.plan === "trial" ||
+          (canUsePublicTrial(buyer.publicMetadata) && trialLedger.activation(clerkUserId))) {
           return res.status(403).json({ error: "Choose an Individual or Team plan to continue after your trial.", code: "PLAN_REQUIRED", url: "/pricing" });
         }
       }

@@ -33,6 +33,8 @@ interface UsageStatus {
   creditsRemaining: number;
   resetDate: string | null;
   creditPeriod?: "one_time" | "monthly";
+  trialExpiresAt?: number | null;
+  trialExpired?: boolean;
   plan: string;
   teamSeats: number;
   // Real team-purchased seat count (org-level), null for individual plans.
@@ -151,11 +153,13 @@ export default function Dashboard() {
         {/* Top row — Usage + Plan */}
         {isTrial && (
           <div className="rounded-xl border border-teal-200 bg-teal-50 p-4 mb-6" data-testid="trial-notice">
-            <p className="font-semibold text-[#115e59]">Your one-time trial</p>
+            <p className="font-semibold text-[#115e59]">{usage?.trialExpired ? "Your free trial has ended" : usage?.trialExpiresAt ? "Your 14-day free trial" : "Your one-time trial"}</p>
             <p className="text-sm text-[#115e59] mt-1">
               {monthlyLimit} credits total, with no monthly refill or automatic charge.
               {" "}Choose a paid plan when you need more credits.
+              {usage?.trialExpiresAt && <> {usage.trialExpired ? "Ended" : "Ends"} {new Date(usage.trialExpiresAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}. Unused trial Credits expire.</>}
             </p>
+            {usage?.trialExpiresAt && <p className="text-sm text-[#115e59] mt-2"><strong>{creditsRemaining} Credits available.</strong> <Link href="/pricing" className="underline">Explore paid plans</Link></p>}
           </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">

@@ -2,8 +2,18 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import type Database from "better-sqlite3";
 import type { RequestHandler } from "express";
+import { FREE_TRIAL_CREDITS, FREE_TRIAL_MS } from "../shared/trial";
 
 export const TRIAL_EXHAUSTED = "Your one-time trial credits are used up. Choose a paid plan to continue at /pricing. Trial credits do not refill.";
+export const TRIAL_EXPIRED = "Your 14-day trial has ended. No charge was made. Choose a paid plan at /pricing to continue processing.";
+
+// Paid, complimentary, canceled, and legacy-trial metadata always take precedence.
+// Public trials never write Clerk subscription metadata or call Stripe.
+export function canUsePublicTrial(meta: Record<string, any>): boolean {
+  return !meta.plan && meta.subscribed !== true && !meta.stripeCustomerId &&
+    !meta.subscribedAt && !meta.orgId && !meta.trialCreditLimit &&
+    !(meta.purchasedCredits > 0);
+}
 
 export class TrialCreditError extends Error {
   status = 402;
@@ -31,7 +41,40 @@ export class TrialLedger {
         job_id INTEGER UNIQUE,
         created_at INTEGER NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS free_trial_activations (
+        user_id TEXT PRIMARY KEY,
+        email_hash TEXT NOT NULL UNIQUE,
+        starts_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
+      );
     `);
+  }
+
+  activation(userId: string): { startsAt: number; expiresAt: number } | null {
+    return (this.db.prepare("SELECT starts_at AS startsAt, expires_at AS expiresAt FROM free_trial_activations WHERE user_id = ?").get(userId) as { startsAt: number; expiresAt: number } | undefined) || null;
+  }
+
+  hasGrant(userId: string): boolean {
+    return Boolean(this.db.prepare("SELECT 1 FROM trial_balances WHERE user_id = ?").get(userId));
+  }
+
+  hasEmail(emailHash: string): boolean {
+    return Boolean(this.db.prepare("SELECT 1 FROM free_trial_activations WHERE email_hash = ?").get(emailHash));
+  }
+
+  activate(userId: string, emailHash: string, now = Date.now()) {
+    return this.db.transaction(() => {
+      const current = this.activation(userId);
+      if (current) return current;
+      if (this.hasGrant(userId) || this.hasEmail(emailHash)) {
+        throw new TrialCreditError("A free trial has already been used for this account or email. Choose a plan to continue.");
+      }
+      const expiresAt = now + FREE_TRIAL_MS;
+      this.db.prepare("INSERT INTO free_trial_activations(user_id,email_hash,starts_at,expires_at) VALUES (?,?,?,?)")
+        .run(userId,emailHash,now,expiresAt);
+      this.balance(userId,FREE_TRIAL_CREDITS);
+      return { startsAt: now, expiresAt };
+    }).immediate();
   }
 
   balance(userId: string, allocation: number): Balance {
@@ -47,6 +90,9 @@ export class TrialLedger {
     if (!Number.isSafeInteger(total) || total < 1) throw new TrialCreditError("Invalid credit amount.");
     return this.db.transaction(() => {
       const current = this.db.prepare("SELECT amount, refunded FROM trial_debits WHERE id = ? AND user_id = ?").get(requestId, userId) as { amount: number; refunded: number } | undefined;
+      const activation = this.activation(userId);
+      // A previously accepted/reserved job can finish; new reservations cannot.
+      if (!current && activation && Date.now() >= activation.expiresAt) throw new TrialCreditError(TRIAL_EXPIRED);
       if (current?.refunded) throw new TrialCreditError("This request has already been refunded. Start a new request.");
       const delta = total - (current?.amount || 0);
       if (delta < 0) throw new TrialCreditError("Credit reservation cannot be reduced.");
@@ -135,11 +181,12 @@ type Dependencies = {
   ledger: TrialLedger;
   verify: (token: string) => Promise<{ sub: string }>;
   getUser: (id: string) => Promise<{ publicMetadata: Record<string, any>; primaryEmailAddress?: { emailAddress: string } | null }>;
+  hasTeam?: (id: string) => Promise<boolean>;
 };
 
 // Authenticate paid processing rather than trusting caller-supplied user IDs.
 // Free checker/contact routes are intentionally outside this middleware.
-export function createCreditAccessMiddleware({ ledger, verify, getUser }: Dependencies): RequestHandler {
+export function createCreditAccessMiddleware({ ledger, verify, getUser, hasTeam }: Dependencies): RequestHandler {
   return async (req, res, next) => {
     if (req.method !== "POST") return next();
     const token = req.headers.authorization?.startsWith("Bearer ")
@@ -157,15 +204,20 @@ export function createCreditAccessMiddleware({ ledger, verify, getUser }: Depend
       const user = await getUser(userId);
       const meta = user.publicMetadata;
       const isAdmin = user.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com";
-      if (!isAdmin && meta.subscribed !== true) {
+      const grant = canUsePublicTrial(meta) ? ledger.activation(userId) : null;
+      const activation = grant && !(hasTeam && await hasTeam(userId)) ? grant : null;
+      if (!isAdmin && meta.subscribed !== true && !activation) {
         return res.status(403).json({ error: "Choose a paid plan to access processing tools at /pricing.", code: "PLAN_REQUIRED" });
       }
       res.locals.creditUserId = userId;
-      if (meta.plan !== "trial") return next();
-      const balance = ledger.balance(userId, meta.trialCreditLimit);
+      if (meta.plan !== "trial" && !activation) return next();
+      const balance = ledger.balance(userId, activation ? FREE_TRIAL_CREDITS : meta.trialCreditLimit);
       // Refunds and post-processing PDF rendering must remain available at zero.
       const isProcessing = !req.originalUrl.split("?")[0].endsWith("/refund") &&
         !req.originalUrl.split("?")[0].endsWith("/fix-as-pdf");
+      if (isProcessing && activation && Date.now() >= activation.expiresAt) {
+        return res.status(402).json({ error: TRIAL_EXPIRED, code: "TRIAL_EXPIRED" });
+      }
       if (isProcessing && balance.remaining === 0) {
         return res.status(402).json({ error: TRIAL_EXHAUSTED, code: "TRIAL_CREDITS_REQUIRED" });
       }

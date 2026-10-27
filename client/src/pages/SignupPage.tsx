@@ -9,12 +9,14 @@ import { useClerkAutocomplete } from "@/hooks/use-clerk-autocomplete";
 export default function SignupPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
+  const trialEntry = new URLSearchParams(window.location.search).get("trial") === "1";
+  const destination = trialEntry ? "/free-trial" : "/pricing";
   useDocumentTitle("Create an account | Remedy508");
   useClerkAutocomplete("new-password");
 
   useEffect(() => {
-    if (isSignedIn) navigate("/pricing");
-  }, [isSignedIn]);
+    if (isSignedIn) navigate(destination);
+  }, [isSignedIn, destination, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -24,8 +26,9 @@ export default function SignupPage() {
         <div className="flex flex-col items-center">
           <SignUp
             routing="virtual"
-            signInUrl="/login"
-            afterSignUpUrl="/pricing"
+            signInUrl={trialEntry ? "/login?trial=1" : "/login"}
+            afterSignUpUrl={destination}
+            forceRedirectUrl={trialEntry ? destination : undefined}
             appearance={{
               variables: {
                 colorPrimary: "#0f766e",
