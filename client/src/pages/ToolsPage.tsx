@@ -1149,7 +1149,7 @@ export default function ToolsPage() {
     // reserved or the clock expires. The server rejects every NEW processing
     // request; an accepted job and its downloads must not disappear on refocus.
     if (!["active", "expired", "exhausted"].includes(trial.data?.state || "")) {
-      navigate("/free-trial");
+      navigate("/pricing");
       return null;
     }
   }

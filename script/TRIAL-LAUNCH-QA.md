@@ -104,6 +104,24 @@ process uploads, charge cards, or change production data.
 
 ## Before production activation
 
+### Optional trial card on pricing (October 27 revision)
+
+- Replaced the separate trial landing page and pricing strip with a matching
+  Free Trial card beside Individual and Team. Existing FAQ content is unchanged.
+- Restored Get Started and added a separate outlined Free Trial action to both
+  site headers, their mobile menus, and the homepage hero.
+- Trial signup/login returns to pricing; activation requires its own consent and
+  click. The old /free-trial address redirects to /pricing?trial=1.
+- Local browser test: paid signup and checkout path made zero trial activation
+  requests. Choosing and consenting to the trial then made exactly one.
+- Verified active, expired, exhausted, unverified, error, and protected paid states.
+- Checked responsive widths 1440, 1280, 1024, 375, and 320 without horizontal overflow.
+- Re-ran 30 public-trial checks, 25 legacy-trial checks, the document-route suite,
+  and production/preview builds. Real-route legacy-link redirect test passes.
+- Full typecheck still reports the seven pre-existing server diagnostics.
+- These are local/mock checks, not real signup, email delivery, payment, or
+  assistive-technology validation. Await deployment approval for this revision.
+
 ### October 27 public-signup follow-up
 
 - Added the 14-day / 30-Credit offer directly above pricing cards. Existing cards,

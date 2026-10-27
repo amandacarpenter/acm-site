@@ -10,7 +10,7 @@ export default function SignupPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
   const trialEntry = new URLSearchParams(window.location.search).get("trial") === "1";
-  const destination = trialEntry ? "/free-trial" : "/pricing";
+  const destination = trialEntry ? "/pricing?trial=1" : "/pricing";
   useDocumentTitle("Create an account | Remedy508");
   useClerkAutocomplete("new-password");
 

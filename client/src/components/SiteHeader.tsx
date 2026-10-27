@@ -26,14 +26,14 @@ export default function SiteHeader() {
       <IncidentBanner />
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200" role="banner">
       {/* Match the homepage header; compact gaps keep all five links readable. */}
-      <div className="max-w-[1320px] mx-auto px-[clamp(20px,4vw,56px)] h-20 min-[1280px]:h-24 flex items-center justify-between gap-4 font-['General_Sans','Inter',sans-serif]">
+      <div className="max-w-[1440px] mx-auto px-[clamp(20px,4vw,56px)] h-20 min-[1280px]:h-24 flex items-center justify-between gap-4 font-['General_Sans','Inter',sans-serif]">
         {/* Logo */}
         <Link href="/" className="flex items-center shrink-0 no-underline" aria-label="Remedy508 home">
           <Logo />
         </Link>
 
         {/* Desktop nav */}
-        <nav className="hidden min-[1280px]:flex items-center ml-auto" aria-label="Main navigation">
+        <nav className="hidden min-[1440px]:flex items-center ml-auto" aria-label="Main navigation">
           <ul className="flex items-center gap-3.5 list-none p-0 m-0 whitespace-nowrap">
             {SITE_NAV_LINKS.map((link) => (
               <li key={link.href}>
@@ -52,15 +52,16 @@ export default function SiteHeader() {
         </nav>
 
         {/* Account actions: same sizes and spacing as the homepage header */}
-        <div className="hidden min-[1280px]:flex items-center gap-3.5 whitespace-nowrap">
+        <div className="hidden min-[1440px]:flex items-center gap-3.5 whitespace-nowrap">
           <SignedOut>
             <Link href="/login">
               <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
                 Log in
               </span>
             </Link>
+            <Link href="/pricing" className="inline-flex items-center justify-center h-[46px] px-4 rounded-full bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0b5c5a]">Get Started</Link>
           </SignedOut>
-          <TrialNavLink className="inline-flex items-center gap-2 h-[46px] px-4 rounded-full bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0b5c5a] transition-colors" />
+          <TrialNavLink className="inline-flex items-center gap-2 h-[46px] px-4 rounded-full border border-[#0f766e] text-[#0f766e] text-sm font-bold hover:bg-teal-50 transition-colors" />
           <SignedIn>
             <Link href="/dashboard">
               <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
@@ -73,7 +74,7 @@ export default function SiteHeader() {
 
         {/* Mobile hamburger */}
         <button
-          className="min-[1280px]:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
+          className="min-[1440px]:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-50"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
@@ -86,7 +87,7 @@ export default function SiteHeader() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div id="site-mobile-menu" className="min-[1280px]:hidden border-t border-gray-100 bg-white">
+        <div id="site-mobile-menu" className="min-[1440px]:hidden border-t border-gray-100 bg-white">
           <nav className="px-4 py-3 space-y-1" aria-label="Mobile navigation">
             {SITE_NAV_LINKS.map((link) => (
               <Link key={link.href} href={link.href} className="font-bold" aria-current={location === link.href ? "page" : undefined}>
@@ -104,8 +105,9 @@ export default function SiteHeader() {
                   Log in
                 </span>
               </Link>
+              <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center">Get Started</Link>
             </SignedOut>
-            <TrialNavLink onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center" />
+            <TrialNavLink onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center" />
             <SignedIn>
               <Link href="/dashboard">
                 <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">

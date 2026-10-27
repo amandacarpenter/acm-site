@@ -10,7 +10,7 @@ export default function LoginPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
   const trialEntry = new URLSearchParams(window.location.search).get("trial") === "1";
-  const destination = trialEntry ? "/free-trial" : "/";
+  const destination = trialEntry ? "/pricing?trial=1" : "/";
   useDocumentTitle("Log in | Remedy508");
   useClerkAutocomplete("current-password");
 

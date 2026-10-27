@@ -10,7 +10,6 @@ import ToolsPage from "@/pages/ToolsPage";
 import PricingPage from "@/pages/PricingPage";
 import LoginPage from "@/pages/LoginPage";
 import SignupPage from "@/pages/SignupPage";
-import FreeTrialPage from "@/pages/FreeTrialPage";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import Accessibility from "@/pages/Accessibility";
@@ -120,7 +119,7 @@ export default function App() {
             <Route path="/pricing" component={PricingPage} />
             <Route path="/login" component={LoginPage} />
             <Route path="/signup" component={SignupPage} />
-            <Route path="/free-trial" component={FreeTrialPage} />
+            <Route path="/free-trial"><Redirect to="/pricing?trial=1" replace /></Route>
             <Route path="/dashboard">{() => <ProtectedRoute component={Dashboard} />}</Route>
             <Route path="/privacy" component={Privacy} />
             <Route path="/terms" component={Terms} />

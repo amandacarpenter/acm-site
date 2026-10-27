@@ -717,6 +717,8 @@ export function registerRoutes(httpServer: Server, app: Express) {
   // a Clerk login) to authenticate with ADMIN_STATS_KEY, in addition to normal
   // Clerk admin sessions for browser use. See adminAuth.ts for details.
   const requireAdminOrBackupKey = createAdminOrBackupKeyMiddleware(requireAdmin);
+  // Keep previously shared trial links usable without a separate landing page.
+  app.get("/free-trial", (_req, res) => res.redirect(302, "/pricing?trial=1"));
   registerFreeTrialRoutes(app, {
     ledger: trialLedger,
     verify: token => verifyToken(token, { secretKey: process.env.CLERK_SECRET_KEY, authorizedParties: getAdminAuthorizedParties() }),

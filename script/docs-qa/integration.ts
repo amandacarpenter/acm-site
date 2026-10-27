@@ -20,6 +20,10 @@ const headers=(who="owner")=>({Authorization:`Bearer ${who}`});
 function upload(mode="pdf",name="fixture.pdf",content:Uint8Array=bytes){const form=new FormData();form.append("file",new Blob([content],{type:"application/pdf"}),name);form.append("mode",mode);return form;}
 async function ready(id:string,who="owner"){for(let i=0;i<300;i++){const r=await fetch(`${base}/api/remedy-docs/jobs/${id}`,{headers:headers(who)});const {job}=await r.json() as any;if(["ready","failed"].includes(job.state))return job;await new Promise(r=>setTimeout(r,100));}throw new Error("Test timed out");}
 try{
+  const oldTrialLink=await fetch(`${base}/free-trial`,{redirect:"manual"});
+  assert.equal(oldTrialLink.status,302);
+  assert.equal(oldTrialLink.headers.get("location"),"/pricing?trial=1");
+  console.log("PASS actual routes: old trial link redirects to pricing without creating a trial");
   const denied=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",body:upload()});
   assert.equal(denied.status,401);
   const preflightScript = new URL("./pdf_pipelines/text_pdf_health.py", import.meta.url);

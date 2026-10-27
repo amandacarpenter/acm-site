@@ -66,34 +66,20 @@
 }
 @media(max-width:359px){.pricing-hero{min-height:426px}}
 @media(prefers-reduced-motion:reduce){.pricing-design *{transition:none!important}}
-.pricing-trial-offer {
-  max-width: 1000px;
-  margin: 0 auto 24px;
-  padding: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  background: #edf7f5;
-  border: 1px solid #bfded8;
-  border-radius: 16px;
-}
-.pricing-trial-offer h2 {
-  margin: 0 0 6px;
-  color: #3a485b;
-  font-size: 1.25rem;
-}
-.pricing-trial-offer p {
-  margin: 0;
-  color: #3a485b;
-  font-size: 1rem;
-  line-height: 1.5;
-}
-.pricing-trial-offer .pricing-choose {
-  width: auto;
-  flex-shrink: 0;
-  margin: 0;
-}
-@media (max-width: 640px) {
-  .pricing-trial-offer { flex-direction: column; align-items: stretch; padding: 20px; gap: 16px; }
+.pricing-plans.has-trial{max-width:1240px;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.has-trial .pricing-plan{padding-left:24px;padding-right:24px}
+.has-trial .pricing-plan-intro{margin-left:-24px;margin-right:-24px;padding-left:24px;padding-right:24px;min-height:130px}
+.has-trial .pricing-allowance{min-height:158px}
+.pricing-trial-plan{scroll-margin-top:120px}
+.pricing-trial-actions{margin-top:auto}
+.pricing-trial-actions .pricing-choose{width:100%}
+.pricing-design .pricing-trial-secondary{font-size:13px;color:var(--pricing-muted);margin-top:12px;text-align:center}
+.pricing-trial-secondary a,.pricing-trial-consent a{text-decoration:underline;color:var(--pricing-teal-dark)}
+.pricing-trial-consent{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.5;margin-bottom:16px}
+.pricing-trial-consent input{width:18px;height:18px;flex-shrink:0;margin-top:2px;accent-color:var(--pricing-teal)}
+.pricing-design .pricing-trial-status{font-size:14px;margin-bottom:16px}
+.pricing-trial-recheck{font-size:13px;text-decoration:underline;color:var(--pricing-teal-dark);margin-top:12px}
+@media(max-width:1000px){
+  .pricing-plans.has-trial{grid-template-columns:1fr;max-width:560px}
+  .has-trial .pricing-plan-intro,.has-trial .pricing-allowance{min-height:0}
 }

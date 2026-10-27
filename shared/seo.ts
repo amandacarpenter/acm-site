@@ -34,13 +34,6 @@ export interface RouteMeta {
 
 export const ROUTES: RouteMeta[] = [
   {
-    path: "/free-trial",
-    title: "14-Day Free Trial | 30 Credits, No Credit Card | Remedy508",
-    description: "Try Remedy508 for 14 days with 30 shared Credits across document, image, HTML and video tools. No credit card or automatic charge.",
-    changefreq: "monthly",
-    priority: 0.8,
-  },
-  {
     path: "/",
     title: "Document Accessibility Remediation Software | Remedy508",
     description:

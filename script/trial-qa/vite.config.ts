@@ -21,7 +21,7 @@ export default defineConfig(({mode})=>mergeConfig(config,{
           "function config(name) { return false; }");
       }
       if (id.endsWith("/client/src/main.tsx")) return `import "../../script/trial-qa/bootstrap";\n${code}`;
-      if (mode==="trial-preview" && id.endsWith("/client/src/App.tsx")) return `import { usePreviewLocation } from "../../script/trial-qa/memory-location";\n${code.replace('<Router base="">','<Router hook={usePreviewLocation}>')}`;
+      if (mode==="trial-preview" && id.endsWith("/client/src/App.tsx")) return `import { usePreviewLocation, usePreviewSearch } from "../../script/trial-qa/memory-location";\n${code.replace('<Router base="">','<Router hook={usePreviewLocation} searchHook={usePreviewSearch}>')}`;
       if (mode==="trial-preview" && (id.endsWith("/SignupPage.tsx") || id.endsWith("/LoginPage.tsx"))) return code.replace('new URLSearchParams(window.location.search).get("trial") === "1"','true');
       if (mode==="trial-preview" && id.endsWith("/ToolsPage.tsx")) return code.replace('window.history.pushState({}, "", `/tools/${id}`);','navigate(`/tools/${id}`);');
     },

@@ -91,8 +91,9 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
         <div className="hh-right">
           <SignedOut>
             <Link href="/login" className="hh-login">Log in</Link>
+            <Link href="/pricing" className="hh-pill">Get Started</Link>
           </SignedOut>
-          <TrialNavLink className="hh-pill" />
+          <TrialNavLink className="hh-pill hh-pill-outline" />
           <SignedIn>
             <Link href="/dashboard" className="hh-login">Dashboard</Link>
             <UserButton afterSignOutUrl="/" />
@@ -134,8 +135,9 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
                   Log in
                 </span>
               </Link>
+              <Link href="/pricing" onClick={close} className="block mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center">Get Started</Link>
             </SignedOut>
-            <TrialNavLink onClick={close} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center" />
+            <TrialNavLink onClick={close} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center" />
             <SignedIn>
               <Link href="/dashboard">
                 <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
@@ -171,10 +173,10 @@ export default function HomeHero() {
               </p>
             </div>
             <div className="hh-ctas">
-              <Link href="/free-trial" className="hh-cta" data-testid="hero-cta">Start a Free Trial <ArrowRight size={16} aria-hidden="true" /></Link>
-              <Link href="/pricing" className="hh-ghost" aria-label="See Pricing - view plans and features">See Pricing</Link>
+              <Link href="/pricing" className="hh-cta" data-testid="hero-cta">Get Started <ArrowRight size={16} aria-hidden="true" /></Link>
+              <Link href="/pricing?trial=1" className="hh-ghost">Free Trial</Link>
             </div>
-            <p className="hh-note">14 days. 30 Credits. No credit card required.</p>
+            <p className="hh-note">Optional free trial: 14 days, 30 Credits. No credit card required.</p>
           </div>
 
           <div className="hh-art">

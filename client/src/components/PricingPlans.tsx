@@ -2,16 +2,17 @@ import { Link } from "wouter";
 import { Loader2 } from "lucide-react";
 import HeroWatermark from "@/components/HeroWatermark";
 import "./PricingPlans.css";
+import type { ReactNode } from "react";
 
 type PricingPlansProps = {
   annual: boolean;
   setAnnual: (annual: boolean) => void;
   loading: boolean;
   onGetStarted: () => void;
-  trialOffer?: "start" | "active" | null;
+  trialCard?: ReactNode;
 };
 
-export default function PricingPlans({ annual, setAnnual, loading, onGetStarted, trialOffer }: PricingPlansProps) {
+export default function PricingPlans({ annual, setAnnual, loading, onGetStarted, trialCard }: PricingPlansProps) {
   return (
     <div className="pricing-design">
       <section className="pricing-hero" aria-labelledby="pricing-heading">
@@ -22,17 +23,9 @@ export default function PricingPlans({ annual, setAnnual, loading, onGetStarted,
           <p>Accessible content, whether you work on your own or with a team.</p>
         </div>
       </section>
-      <section className="pricing-plans-section" aria-label="Compare Individual and Team plans">
-        {trialOffer && <aside className="pricing-trial-offer" aria-labelledby="pricing-trial-title">
-          <div>
-            <h2 id="pricing-trial-title">{trialOffer === "active" ? "Your free trial is ready" : "Try Remedy508 free for 14 days"}</h2>
-            <p>30 one-time Credits across all four tools. No credit card. No automatic charge.</p>
-          </div>
-          <Link href="/free-trial" className="pricing-choose" data-testid="pricing-free-trial">
-            {trialOffer === "active" ? "View your trial" : "Start Free Trial"} <span aria-hidden="true">→</span>
-          </Link>
-        </aside>}
-        <div className="pricing-plans">
+      <section className="pricing-plans-section" aria-label="Compare Free Trial, Individual and Team plans">
+        <div className={`pricing-plans${trialCard ? " has-trial" : ""}`}>
+          {trialCard}
           <article className="pricing-plan" aria-labelledby="individual-title">
             <div className="pricing-plan-intro">
               <h2 id="individual-title">Individual</h2>
