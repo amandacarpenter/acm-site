@@ -11,6 +11,13 @@ export default defineConfig(({mode})=>mergeConfig(config,{
     name:"explicit-trial-preview",
     enforce:"pre",
     transform(code:string,id:string) {
+      // The deprecation helper only uses browser storage for optional logging
+      // flags. In the review build, always use its default logging behavior;
+      // remove the storage-reading function rather than hiding its API name.
+      if (mode==="trial-preview" && (id.endsWith("/util-deprecate/browser.js") || id.endsWith("/pdfkit/js/pdfkit.standalone.js"))) {
+        return code.replace(/function config \(name\) \{[\s\S]*?return String\(val\)\.toLowerCase\(\) === 'true';\s*\}/,
+          "function config(name) { return false; }");
+      }
       if (id.endsWith("/client/src/main.tsx")) return `import "../../script/trial-qa/bootstrap";\n${code}`;
       if (mode==="trial-preview" && id.endsWith("/client/src/App.tsx")) return `import { usePreviewLocation } from "../../script/trial-qa/memory-location";\n${code.replace('<Router base="">','<Router hook={usePreviewLocation}>')}`;
       if (mode==="trial-preview" && (id.endsWith("/SignupPage.tsx") || id.endsWith("/LoginPage.tsx"))) return code.replace('new URLSearchParams(window.location.search).get("trial") === "1"','true');
