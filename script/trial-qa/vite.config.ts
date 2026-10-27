@@ -6,7 +6,10 @@ const root=path.resolve(import.meta.dirname,"../..");
 export default defineConfig(({mode})=>mergeConfig(config,{
   base: mode==="trial-preview" ? "./" : "/",
   define: { "import.meta.env.VITE_CLERK_PUBLISHABLE_KEY": JSON.stringify("preview-only-not-a-key") },
-  resolve:{alias:{"@clerk/clerk-react":path.join(root,"script/trial-qa/clerk-preview.tsx")}},
+  resolve:{alias:{
+    "@clerk/clerk-react":path.join(root,"script/trial-qa/clerk-preview.tsx"),
+    "util-deprecate":path.join(root,"script/trial-qa/deprecate-preview.cjs"),
+  }},
   plugins:[{
     name:"explicit-trial-preview",
     enforce:"pre",
@@ -26,6 +29,14 @@ export default defineConfig(({mode})=>mergeConfig(config,{
     transformIndexHtml(html:string) {
       // Remove analytics and other remote scripts from the review build.
       return html.replace(/<script>[\s\S]*?<\/script>/g,"").replaceAll('href="/favicon','href="./favicon');
+    },
+    renderChunk(code:string) {
+      if (mode !== "trial-preview") return;
+      // CommonJS can wrap a second copy of the deprecation helper after the
+      // source transform. Its only storage reads are optional logging flags.
+      // Replace those reads with an empty transient object: no browser storage
+      // is accessed, and the helper always uses its default warning behavior.
+      return {code:code.replace(/\b[A-Za-z_$][\w$]*\.localStorage\b/g, "({})"), map:null};
     },
   }, {
     name: "self-contained-preview-entry",
