@@ -1,22 +1,28 @@
 import { SignUp, useAuth } from "@clerk/clerk-react";
-import { useLocation } from "wouter";
+import { useLocation, Redirect } from "wouter";
 import { useEffect } from "react";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { useClerkAutocomplete } from "@/hooks/use-clerk-autocomplete";
+import { readSignupIntent, intentQuery, intentDestination } from "@/lib/signupIntent";
 
 export default function SignupPage() {
   const { isSignedIn } = useAuth();
   const [, navigate] = useLocation();
-  const trialEntry = new URLSearchParams(window.location.search).get("trial") === "1";
-  const destination = trialEntry ? "/pricing?trial=1" : "/pricing";
+  const intent = readSignupIntent(window.location.search);
+  // Paid plans continue straight to payment; the trial continues to the trial card.
+  const planDestination = intentDestination(intent);
+  const destination = planDestination ?? "/pricing";
   useDocumentTitle("Create an account | Remedy508");
   useClerkAutocomplete("new-password");
 
   useEffect(() => {
     if (isSignedIn) navigate(destination);
   }, [isSignedIn, destination, navigate]);
+
+  // No plan, no trial, no team invitation: pick a plan first.
+  if (intent.kind === "none" && !isSignedIn) return <Redirect to="/pricing" />;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -26,9 +32,9 @@ export default function SignupPage() {
         <div className="flex flex-col items-center">
           <SignUp
             routing="virtual"
-            signInUrl={trialEntry ? "/login?trial=1" : "/login"}
+            signInUrl={`/login${intentQuery(intent)}`}
             afterSignUpUrl={destination}
-            forceRedirectUrl={trialEntry ? destination : undefined}
+            forceRedirectUrl={planDestination ?? undefined}
             appearance={{
               variables: {
                 colorPrimary: "#0f766e",
