@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import { useLocation, Link } from "wouter";
 import SiteHeader from "@/components/SiteHeader";
@@ -23,7 +23,10 @@ const TEAM_FEATURES = [
 
 export default function TeamCheckout() {
   useDocumentTitle("Team plans | Remedy508");
-  const [seats, setSeats] = useState(2);
+  const initialParams = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const [seats, setSeats] = useState(() =>
+    Math.min(MAX_TEAM_SEATS, Math.max(2, parseInt(initialParams.get("seats") || "2") || 2)));
+  const autoCheckoutStarted = useRef(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">("card");
   const [loading, setLoading] = useState(false);
   const { isSignedIn, userId } = useAuth();
@@ -37,7 +40,8 @@ export default function TeamCheckout() {
 
   async function handleCheckout() {
     if (!isSignedIn) {
-      navigate("/signup");
+      // Create the account first, then continue straight to payment for this team size.
+      navigate(`/signup?plan=team&seats=${seats}&payment=${paymentMethod}`);
       return;
     }
 
@@ -66,8 +70,22 @@ export default function TeamCheckout() {
     }
   }
 
+  // Arriving from sign-up / log-in with ?checkout=1: go straight to Stripe.
+  useEffect(() => {
+    if (initialParams.get("checkout") !== "1") return;
+    if (!isSignedIn || autoCheckoutStarted.current) return;
+    autoCheckoutStarted.current = true;
+    handleCheckout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSignedIn]);
+
   return (
     <div className="min-h-screen bg-white">
+      {loading && initialParams.get("checkout") === "1" && (
+        <div role="status" className="bg-[#0f766e] text-white text-center text-sm font-medium px-4 py-3">
+          Your account is ready. Taking you to secure checkout…
+        </div>
+      )}
       <SiteHeader />
 
       <section className="relative overflow-hidden bg-[#3a485b] py-16 sm:py-20" aria-labelledby="team-heading">

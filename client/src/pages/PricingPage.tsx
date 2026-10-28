@@ -3,8 +3,8 @@ import SiteFooter from "@/components/SiteFooter";
 import { useLocation, useSearch } from "wouter";
 import { FileText, Image, Video, Code, Presentation } from "lucide-react";
 import PricingPlans from "@/components/PricingPlans";
-import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/clerk-react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import TrialPlanCard from "@/components/TrialPlanCard";
 
@@ -16,7 +16,10 @@ export default function PricingPage() {
   const [annual, setAnnual] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isSignedIn, userId } = useAuth();
+  const { user, isLoaded: userLoaded } = useUser();
   const search = useSearch();
+  const autoCheckoutStarted = useRef(false);
+  const [autoRedirecting, setAutoRedirecting] = useState(false);
   useEffect(() => {
     if (new URLSearchParams(search).get("trial") === "1") {
       document.getElementById("free-trial")?.scrollIntoView({block: "start"});
@@ -24,12 +27,8 @@ export default function PricingPage() {
   }, [search]);
   const [, navigate] = useLocation();
 
-  async function handleGetStarted() {
-    if (!isSignedIn) {
-      navigate("/signup");
-      return;
-    }
-    const priceId = annual ? PRICE_ANNUAL : PRICE_MONTHLY;
+  async function startCheckout(billing: "monthly" | "annual") {
+    const priceId = billing === "annual" ? PRICE_ANNUAL : PRICE_MONTHLY;
     setLoading(true);
     try {
       const res = await fetch("/api/stripe/create-checkout-session", {
@@ -50,10 +49,41 @@ export default function PricingPage() {
     }
   }
 
+  async function handleGetStarted() {
+    if (!isSignedIn) {
+      // Create the account first, then continue straight to payment for this plan.
+      navigate(`/signup?plan=${annual ? "annual" : "monthly"}`);
+      return;
+    }
+    await startCheckout(annual ? "annual" : "monthly");
+  }
+
+  // Arriving from sign-up / log-in with a chosen plan (?checkout=monthly|annual):
+  // go straight to Stripe instead of asking them to pick the plan again.
+  useEffect(() => {
+    const checkout = new URLSearchParams(search).get("checkout");
+    if (checkout !== "monthly" && checkout !== "annual") return;
+    if (!isSignedIn || !userLoaded || autoCheckoutStarted.current) return;
+    autoCheckoutStarted.current = true;
+    if ((user?.publicMetadata as any)?.subscribed === true) {
+      navigate("/dashboard");
+      return;
+    }
+    setAnnual(checkout === "annual");
+    setAutoRedirecting(true);
+    startCheckout(checkout).finally(() => setAutoRedirecting(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, isSignedIn, userLoaded]);
+
   return (
     <div className="min-h-screen bg-white">
       <SiteHeader />
       <main>
+        {autoRedirecting && (
+          <div role="status" className="bg-[#0f766e] text-white text-center text-sm font-medium px-4 py-3">
+            Your account is ready. Taking you to secure checkout…
+          </div>
+        )}
 
       <PricingPlans annual={annual} setAnnual={setAnnual} loading={loading} onGetStarted={handleGetStarted} trialCard={<TrialPlanCard />} />
 

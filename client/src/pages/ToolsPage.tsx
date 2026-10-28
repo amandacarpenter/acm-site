@@ -1133,9 +1133,9 @@ export default function ToolsPage() {
     );
   }
 
-  // Not signed in — send to signup
+  // Not signed in — send to log in (its "Sign up" link goes to pricing)
   if (!isSignedIn) {
-    navigate("/signup");
+    navigate("/login");
     return null;
   }
 
