@@ -34,6 +34,8 @@ export default function SignupPage() {
             routing="virtual"
             signInUrl={`/login${intentQuery(intent)}`}
             afterSignUpUrl={destination}
+            // Recorded on the new account so the owner's sign-up alert email shows what they chose.
+            unsafeMetadata={{ signupIntent: intent.kind === "individual" ? intent.billing : intent.kind }}
             forceRedirectUrl={planDestination ?? undefined}
             appearance={{
               variables: {
