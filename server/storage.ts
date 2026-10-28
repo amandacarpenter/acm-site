@@ -34,6 +34,8 @@ const sqlite = new Database(DB_PATH);
 sqlite.pragma("journal_mode = WAL");
 const db = drizzle(sqlite);
 export const trialLedger = new TrialLedger(sqlite);
+// Shared connection for small owner-alert bookkeeping tables (server/adminAlerts.ts).
+export const alertsDb = sqlite;
 export const documentTaskStore = new DocumentTasks(sqlite);
 export const simulationUsageStore = new SimulationUsageStore(sqlite);
 export const reportingStartedAt = ensureReportingPeriod(sqlite);

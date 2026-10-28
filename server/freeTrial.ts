@@ -12,6 +12,8 @@ export type TrialDependencies = {
   verify: (token: string) => Promise<{ sub: string }>;
   getUser: (id: string) => Promise<User>;
   hasTeam: (id: string) => Promise<boolean>;
+  // Optional owner alert after a brand-new trial activation (best-effort).
+  onTrialStarted?: (userId: string, user: User) => void;
 };
 
 export async function getFreeTrialStatus(userId: string, user: User, deps: TrialDependencies): Promise<FreeTrialStatus> {
@@ -75,6 +77,7 @@ export function registerFreeTrialRoutes(app: Express, deps: TrialDependencies) {
       if (status.state === "active" || status.state === "exhausted" || status.state === "expired") return res.json(status);
       if (status.state !== "eligible") return res.status(403).json({error:status.message,...status});
       deps.ledger.activate(id,hashTrialEmail(user.primaryEmailAddress!.emailAddress));
+      try { deps.onTrialStarted?.(id,user); } catch { /* alerts never block the trial */ }
       // No external metadata write: activation and Credit allocation commit together.
       res.json(await getFreeTrialStatus(id,user,deps));
     } catch (err) {

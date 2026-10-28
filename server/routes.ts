@@ -7,7 +7,7 @@ import { Resend } from "resend";
 import Stripe from "stripe";
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { Webhook as SvixWebhook } from "svix";
-import { storage, trialLedger, documentTaskStore, simulationUsageStore, reportingStartedAt } from "./storage";
+import { storage, trialLedger, documentTaskStore, simulationUsageStore, reportingStartedAt, alertsDb } from "./storage";
 import { registerSimulationUsage } from "./simulationUsage";
 import { gaReportingBoundary } from "./reportingPeriod";
 import { DocumentTaskError, ProcessingResponse, documentTaskContext } from "./documentTasks";
@@ -25,6 +25,7 @@ import { z } from "zod";
 import { createHash, randomUUID } from "crypto";
 import { createAdminAuthMiddleware, createAdminOrBackupKeyMiddleware, getAdminAuthorizedParties } from "./adminAuth";
 import { registerFreeTrialRoutes } from "./freeTrial";
+import { startNewAccountAlerts, trialStartedAlert, paymentAlert } from "./adminAlerts";
 import { canUsePublicTrial, TRIAL_EXPIRED } from "./trialCredits";
 import { FREE_TRIAL_CREDITS } from "../shared/trial";
 
@@ -727,7 +728,17 @@ export function registerRoutes(httpServer: Server, app: Express) {
       const memberships = await clerkClient.users.getOrganizationMembershipList({ userId: id });
       return memberships.data.some(m => (m.organization.publicMetadata as any)?.plan === "team");
     },
+    onTrialStarted: (_id, user) => trialStartedAlert(resend, user as any),
   });
+
+  // Owner email alerts for new accounts (polls Clerk; see server/adminAlerts.ts).
+  if (process.env.NODE_ENV === "production") {
+    startNewAccountAlerts({
+      db: alertsDb,
+      resend,
+      listNewestUsers: async () => (await clerkClient.users.getUserList({ orderBy: "-created_at", limit: 50 })).data as any,
+    });
+  }
 
   // All paid processing uses the verified session subject, never a posted ID.
   // This also prevents bypassing a trial by omitting/changing clerkUserId.
@@ -4673,6 +4684,23 @@ Rules:
     }
 
     // Handle checkout completed — mark user as subscribed in Clerk
+    // Owner alert for every completed checkout (best-effort, never blocks the webhook).
+    if (event.type === "checkout.session.completed") {
+      const cs = event.data.object as Stripe.Checkout.Session;
+      if (cs.payment_status === "paid" || cs.payment_status === "no_payment_required") {
+        paymentAlert(resend, {
+          email: cs.customer_details?.email,
+          name: cs.customer_details?.name,
+          amountTotal: cs.amount_total,
+          currency: cs.currency,
+          plan: (cs.metadata as any)?.plan,
+          seats: (cs.metadata as any)?.seats,
+          mode: cs.mode,
+          sessionId: cs.id,
+        });
+      }
+    }
+
     if (event.type === "checkout.session.completed" || event.type === "customer.subscription.created") {
       (async () => {
         try {
