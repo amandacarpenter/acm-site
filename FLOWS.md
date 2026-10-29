@@ -1,8 +1,8 @@
 # Trial pricing-card change: flow inventory
 
-## Restore signed-out header actions
-- Home and interior headers: signed-out users see Get Started, Free Trial and outlined Log in on desktop and mobile.
-- Get Started opens /pricing; Free Trial opens /pricing?trial=1; neither activates an account or trial.
+## Simplify signed-out header actions
+- Home and interior headers: signed-out users see a white Free Trial button and outlined Log in on desktop and mobile; no header Get Started.
+- Free Trial opens /pricing?trial=1 without activating an account or trial. Page-level Get Started and pricing options remain untouched.
 - Keep 15px bold short labels, original logo/header heights and signed-in Dashboard/profile.
 - Check desktop 1440px, breakpoint 1439px and mobile 375px/320px for clipping.
 - Exercise mobile CTA navigation and menu closing, desktop login navigation, and mocked sign-in/sign-out.
@@ -11,8 +11,8 @@
 ## October 29 cleaner header preview
 - Shorten shared navigation only; keep URLs and full page headings unchanged.
 - Use 15px bold title-case labels and a restrained outlined Log in link.
-- Signed-in state shows Dashboard and profile; signed-out state shows Get Started, Free Trial and Log in.
-- Retain both header and page-level plan/trial choices per the user's correction.
+- Signed-in state shows Dashboard and profile; signed-out state shows Free Trial and Log in.
+- Latest correction: remove redundant header Get Started, retain page-level plan choices and make Free Trial white.
 - Preserve existing logo sizes, header heights, themes and responsive breakpoints.
 - Check home and interior headers, signed-in/out, all nav routes, mobile menu close and no overflow.
 - Preview only until production deployment is approved.
@@ -89,7 +89,7 @@
 - All trial states (eligible, active, expired, exhausted, unverified, error,
   ineligible) render inside the card. Existing accounts cannot restart a trial.
 - Legacy /free-trial links redirect to /pricing?trial=1.
-- Desktop and mobile headers retain both Get Started and Free Trial for guests.
+- Desktop and mobile headers retain Free Trial and Log in for guests; Get Started remains only at page level.
 - Keep backend allocation, expiry, credit reservation/refunds and paid checkout unchanged.
 - Review at 1440/1280/1024/375/320px; exercise paid and trial paths independently.
 
@@ -108,7 +108,7 @@ by mocked local checks. Do not run production purchases or processing without ap
 ## Shared navigation
 - Home uses HomeHeader; interior pages use SiteHeader.
 - Desktop and mobile: checker, Remedy Tools, simulator, pricing, login/account remain.
-- Requested delta: separate Get Started and Free Trial buttons open pricing.
+- Current header: white Free Trial opens trial pricing; page-level Get Started opens normal pricing.
 - Test 1440, 1280, 375px and keyboard; no horizontal clipping.
 
 ## Trial entry
