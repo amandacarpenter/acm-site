@@ -4,6 +4,7 @@ import { useState } from "react";
 import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
 import IncidentBanner from "@/components/IncidentBanner";
+import TrialNavLink from "@/components/TrialNavLink";
 import { SITE_NAV_LINKS } from "@/lib/site-navigation";
 
 function Logo() {
@@ -53,6 +54,10 @@ export default function SiteHeader() {
         {/* Account actions: same sizes and spacing as the homepage header */}
         <div className="hidden min-[1440px]:flex items-center gap-3.5 whitespace-nowrap">
           <SignedOut>
+            <Link href="/pricing" className="inline-flex items-center justify-center min-h-11 px-4 rounded-lg bg-[#0f766e] text-white text-[15px] font-bold hover:bg-[#0b5c5a] transition-colors">
+              Get Started
+            </Link>
+            <TrialNavLink className="inline-flex items-center gap-1.5 min-h-11 text-[15px] font-bold text-[#0f766e] hover:text-[#0b5c5a]" />
             <Link href="/login" className="inline-flex items-center justify-center min-h-11 px-4 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 hover:border-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e] transition-colors">
               Log in
             </Link>
@@ -95,6 +100,10 @@ export default function SiteHeader() {
               </Link>
             ))}
             <SignedOut>
+              <Link href="/pricing" onClick={() => setMobileOpen(false)} className="flex items-center justify-center mt-3 px-3 min-h-11 rounded-lg bg-[#0f766e] text-white text-[15px] font-bold hover:bg-[#0b5c5a]">
+                Get Started
+              </Link>
+              <TrialNavLink onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-1.5 px-3 min-h-11 text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 rounded-lg" />
               <Link href="/login">
                 <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/5 cursor-pointer">
                   Log in

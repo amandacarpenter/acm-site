@@ -4,6 +4,7 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import { ArrowRight, Menu, Volume2, X } from "lucide-react";
 import logoWhite from "@/assets/logo-white-header.png";
 import heroListener from "@/assets/hero-listener-headphones.webp";
+import TrialNavLink from "@/components/TrialNavLink";
 import "./home-hero.css";
 
 export type HomeNavLink = { href: string; label: string };
@@ -89,6 +90,8 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
 
         <div className="hh-right">
           <SignedOut>
+            <Link href="/pricing" className="hh-login hh-login-button hh-start-button">Get Started</Link>
+            <TrialNavLink className="hh-login hh-trial-link" />
             <Link href="/login" className="hh-login hh-login-button">Log in</Link>
           </SignedOut>
           <SignedIn>
@@ -127,6 +130,10 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
               </Link>
             ))}
             <SignedOut>
+              <Link href="/pricing" onClick={close} className="flex items-center justify-center mt-3 px-3 min-h-11 rounded-lg bg-[#0f766e] text-white text-[15px] font-bold hover:bg-[#0b5c5a]">
+                Get Started
+              </Link>
+              <TrialNavLink onClick={close} className="flex items-center justify-center gap-1.5 px-3 min-h-11 text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 rounded-lg" />
               <Link href="/login">
                 <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/5 cursor-pointer">
                   Log in

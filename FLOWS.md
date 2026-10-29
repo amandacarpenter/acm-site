@@ -1,10 +1,18 @@
 # Trial pricing-card change: flow inventory
 
+## Restore signed-out header actions
+- Home and interior headers: signed-out users see Get Started, Free Trial and outlined Log in on desktop and mobile.
+- Get Started opens /pricing; Free Trial opens /pricing?trial=1; neither activates an account or trial.
+- Keep 15px bold short labels, original logo/header heights and signed-in Dashboard/profile.
+- Check desktop 1440px, breakpoint 1439px and mobile 375px/320px for clipping.
+- Exercise mobile CTA navigation and menu closing, desktop login navigation, and mocked sign-in/sign-out.
+- Verify pricing cards and existing checker/tools/simulator navigation. No production payment/upload processing is in scope.
+
 ## October 29 cleaner header preview
 - Shorten shared navigation only; keep URLs and full page headings unchanged.
 - Use 15px bold title-case labels and a restrained outlined Log in link.
-- Signed-in state shows Dashboard and profile; signed-out state shows Log in.
-- Remove header-only Get Started/Free Trial clutter; retain page-level plan/trial choices.
+- Signed-in state shows Dashboard and profile; signed-out state shows Get Started, Free Trial and Log in.
+- Retain both header and page-level plan/trial choices per the user's correction.
 - Preserve existing logo sizes, header heights, themes and responsive breakpoints.
 - Check home and interior headers, signed-in/out, all nav routes, mobile menu close and no overflow.
 - Preview only until production deployment is approved.
