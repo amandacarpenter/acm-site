@@ -46,6 +46,14 @@ Before activation:
 
 Subsequent Railway inspection verified one replica, a durable `/data` volume, configured capacity of 24 GB RAM and 24 vCPU, and `claude-sonnet-5-5` in the production provider's model list. This establishes configuration, not load-test success. A SQLite backup was created on the volume and passed `PRAGMA quick_check` before deploying the additive bookkeeping changes.
 
+## Private-stage findings and narrow corrections
+
+Commit `f5dc2180` reached production with both public flags false. Real authenticated 51-source-page PDF and Word jobs completed with exact 51-Credit reservations, stable duplicate reuse, and an insufficient-balance rejection before processing. The private gate denied the same signed-in QA account when its private permission was removed. A paused QA job refunded 51 Credits once on removal; repeated removal returned 404. A fresh three-page standard Docs upload also completed and downloaded with its normal three-Credit debit.
+
+The PDF passed syntax checks but veraPDF's PDF/UA-1 profile found two bare paragraph structures directly under list items. The large-only PDF renderer now wraps those structures in `LBody`, preserving order and parent references. A repair of the downloaded QA artifact passed the profile with zero failed rules/checks; all 162 rendered pages and extracted text were identical before and after this tag-only change.
+
+Word contained all six expected images with descriptions, but visual inspection found that native table conversion omitted HTML captions. The large-only Word exporter now preserves exact captions above their tables and keeps paragraph boundaries in cells and list items. Targeted regressions cover these cases. Neither change modifies the AI prompt, model, extraction, image bytes, or standard Docs renderer. The corrections must still be deployed privately and checked against reassembled production checkpoints before public activation.
+
 ## Configuration
 
 Default remains off. Activation requires:

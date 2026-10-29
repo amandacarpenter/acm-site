@@ -50,6 +50,8 @@ def render_word(markup, output, title):
             return
         if not isinstance(node, Tag):
             return
+        if node.name in ("p", "div", "blockquote") and paragraph.text.strip():
+            paragraph.add_run().add_break()
         if node.name == "br":
             paragraph.add_run().add_break(); return
         if node.name == "img":
@@ -92,6 +94,11 @@ def render_word(markup, output, title):
             columns = max(sum(int(c.get("colspan", 1)) for c in r.find_all(["th", "td"], recursive=False)) for r in rows)
             if not columns:
                 return
+            caption = node.find("caption", recursive=False)
+            if caption:
+                paragraph = container.add_paragraph()
+                paragraph.paragraph_format.keep_with_next = True
+                inline(caption, paragraph, bold=True)
             table = container.add_table(rows=len(rows), cols=columns)
             table.style = "Table Grid"; table.autofit = False
             for col in table.columns:

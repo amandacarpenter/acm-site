@@ -907,6 +907,9 @@ if _pp_id_entries:
     _pp_st['/IDTree'] = pikepdf.Dictionary({'/Names': _pp_names_array})
 print(f'idtree-build: registered {len(_pp_id_entries)} struct element IDs into StructTreeRoot/IDTree', file=sys.stderr)
 
+from large_document_tags import normalize_list_bodies
+print(f'large-list-tags: repaired {normalize_list_bodies(pp)} list bodies', file=sys.stderr)
+
 pp.save(output_path)
 pp.close()
 
