@@ -1106,7 +1106,9 @@ const ACCENT_SOFT_HOVER = "#0f766e1f";
 const TAB_META = [
   {
     id: "document", label: "Remedy\nDocs", icon: iconDocument, Icon: null, beta: false, comingSoon: false, badge: ".docx & .pdf",
-    title: "Remedy Docs", blurb: "Upload a Word document or PDF up to 50 pages. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document.",
+    title: "Remedy Docs", blurb: import.meta.env.VITE_LARGE_DOCS_ENABLED === "true"
+      ? "Upload a Word document or PDF. Choose Standard for up to 50 pages, or Large document for PDFs over 50 pages."
+      : "Upload a Word document or PDF up to 50 pages. Remedy508 automatically detects images, tables, and multi-column layouts and remediates the whole document.",
   },
   {
     id: "video", label: "Remedy\nVideo", icon: iconVideo, Icon: null, beta: false, comingSoon: false, badge: "MP4, MOV, MP3",
