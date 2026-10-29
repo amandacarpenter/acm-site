@@ -1,5 +1,22 @@
 # Trial pricing-card change: flow inventory
 
+## Large-document isolated test version
+- Live site and main branch remain unchanged. This branch starts from c72ecc97.
+- Upload one PDF (test ceiling: 400 pages, 25 MB), select PDF or Word, receive one file.
+- Keep the current brand, simple output selector and percentage progress bar.
+- Reuse production extraction, image normalization and a versioned copy of its PDF renderer.
+- Assemble semantic content BEFORE the final render, rather than concatenate tagged PDFs.
+- Persist page responses and completed sections; resume without rerunning completed AI pages.
+- Pause, resume, recover after refresh/restart, retry failures, and clear test files.
+- Preview uses a separate filesystem store, no production accounts/database/credits.
+- Production routes are not integrated at all. Any later integration requires verified
+  user ownership, an explicit tester allowlist, credit rules and separate deployment approval.
+- Both actual AI and deterministic workflow tests must be identified accurately.
+- Test 374-page catalog assembly in both formats; bounded actual-AI sample separately.
+- Test invalid/encrypted/oversized inputs, owner isolation, duplicate submit, recovery, expiry,
+  combined headings, cross-page anchors, image colors, alt text, and single-download behavior.
+- Inspect desktop/mobile/short viewport, errors, progress and download states in browser.
+
 ## October 28 PDF image-fidelity fix
 - No UI, account, pricing, credit-allocation or database schema changes.
 - Public homepage, pricing, free checker, simulator and tool information remain reachable.
