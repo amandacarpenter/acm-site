@@ -31,9 +31,9 @@ The user approved the successful private catalog result and the existing rate of
 
 The user's report that the earlier real-AI catalog scored 100 on their checker remains user-reported evidence. These integration tests do not certify every document or substitute for fresh production testing.
 
-## Live rollout is not yet approved or verified
+## Staged rollout approved; production checks pending
 
-Main remained at `c72ecc97` during the read-only source check. Nothing was pushed to main or deployed to Railway during this work.
+The user approved a staged rollout with public visibility withheld until production checks pass. Main remained at `c72ecc97` immediately before this rollout. Public UI and server access stay off independently; only the internal QA account can test the enabled backend.
 
 Before activation:
 
@@ -41,10 +41,10 @@ Before activation:
 - Verify CPU and memory headroom while standard tools are operating. The candidate refuses to enable large processing below 3 GiB container memory; this is a floor, not a performance guarantee. Earlier offline catalog testing peaked around 1.62 GiB for the worker alone, so additional application/concurrent-work headroom is necessary.
 - Verify the production provider/model and repeat a representative real-AI sample. The accepted preview used the Computer alias `claude_sonnet_5_5`; the existing production code names `claude-sonnet-4-6`. They are not assumed equivalent, and Computer proxy credentials must not be copied into Railway.
 - Confirm Clerk receipt behavior and production credit handling with a designated test account before public activation.
-- Obtain explicit approval to deploy the candidate and configure the feature flags.
+- Preserve the approved private stage until all production checks pass.
 - After deployment, test a fresh signed-in PDF and Word job, inspect the live health checks, verify the stored credit/reporting records, and confirm that standard processing still works.
 
-The attempted local-browser Railway inspection did not establish a browser connection, so no hosting settings or production model availability were verified.
+Subsequent Railway inspection verified one replica, a durable `/data` volume, configured capacity of 24 GB RAM and 24 vCPU, and `claude-sonnet-5-5` in the production provider's model list. This establishes configuration, not load-test success. A SQLite backup was created on the volume and passed `PRAGMA quick_check` before deploying the additive bookkeeping changes.
 
 ## Configuration
 
@@ -53,12 +53,15 @@ Default remains off. Activation requires:
 ```text
 VITE_LARGE_DOCS_ENABLED=true       # Build-time UI flag
 LARGE_DOCS_ENABLED=true            # Server flag
+LARGE_DOCS_PUBLIC_ENABLED=false    # Keep false until production checks pass
 LARGE_DOCS_MODEL=<verified production model ID>
 LARGE_DOCS_SINGLE_INSTANCE=true    # Set only after verifying deployment topology
 LARGE_DOCS_DATA_DIR=/data/large-documents
 ```
 
 The normal production Anthropic credential must be available to the worker. An invalid large-worker configuration disables that feature rather than preventing the other tools from starting.
+
+While public access is off, only accounts with backend-only `privateMetadata.largeDocsQa === true` can reach the large-document endpoints. A hidden frontend alone is not treated as an access restriction.
 
 ## Operational notes
 

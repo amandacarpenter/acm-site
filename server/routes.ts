@@ -4021,8 +4021,16 @@ print('ok')
       model: process.env.LARGE_DOCS_MODEL, production: true, minPages: 51, chunkSize: 20, billing: largeBilling,
       onSave: (job, owner, reference) => largeBilling!.report(job, owner, reference),
     }, (req, res, next) => documentTaskAuth(req, res, () => {
-      res.locals.largeDocumentOwner = res.locals.creditUserId;
-      next();
+      void (async () => {
+        if (process.env.LARGE_DOCS_PUBLIC_ENABLED !== "true") {
+          const user = await clerkClient.users.getUser(res.locals.creditUserId);
+          if (user.privateMetadata?.largeDocsQa !== true) {
+            return void res.status(503).json({ error: "Large-document processing is in private testing. Standard Remedy Docs remains available." });
+          }
+        }
+        res.locals.largeDocumentOwner = res.locals.creditUserId;
+        next();
+      })().catch(() => res.status(503).json({ error: "Large-document access could not be verified. Please try again later." }));
     }));
     process.once("SIGTERM", () => manager.close());
     largeDocsAvailable = true;
