@@ -50,15 +50,41 @@ def _is_page_scan_background(
 ) -> bool:
     """Return true for a page-sized scan layer, not a content figure.
 
-    A one-bit image covering most of a page is almost always the scanned text
-    background.  A page-sized image with another image layered on top is also a
-    background candidate even when its encoding reports more than one bit.
-    A lone full-page photograph or poster is retained.
+    Only exclude a one-bit scan with a separate overlay. Size and the presence
+    of another image do NOT establish that a color photograph is a scan.
     """
 
-    return coverage >= 0.75 and (
-        bits_per_component <= 1 or images_on_page > 1
-    )
+    return coverage >= 0.75 and bits_per_component == 1 and images_on_page > 1
+
+
+def _portable_image(doc: fitz.Document, xref: int, mask_xref: int) -> tuple[bytes, str]:
+    """Resolve PDF-only color/decode semantics before embedding in HTML.
+
+    InDesign can encode grayscale-looking photographs as DeviceN /Black.
+    Extracting their JPEG bytes loses the tint transform and inverts the image
+    when a browser interprets those bytes as DeviceGray. MuPDF, not Pillow,
+    must apply the PDF color space and Decode array first.
+    """
+    extracted = doc.extract_image(xref)
+    pixmap = fitz.Pixmap(doc, xref)
+    plain_color = pixmap.colorspace and pixmap.colorspace.name in {"DeviceRGB", "DeviceGray"}
+    special_decode = doc.xref_get_key(xref, "Decode")[0] != "null"
+    color_key_mask = doc.xref_get_key(xref, "Mask")[0] != "null"
+    if plain_color and not (special_decode or mask_xref or color_key_mask or pixmap.alpha):
+        if extracted["ext"].lower() in {"png", "jpg", "jpeg"}:
+            return extracted["image"], extracted["ext"].lower()
+    if not pixmap.colorspace:
+        raise ValueError("Image stencil needs a rendered page crop")
+    pixmap = fitz.Pixmap(fitz.csRGB, pixmap)
+    if mask_xref and not pixmap.alpha:
+        pixmap = fitz.Pixmap(pixmap, fitz.Pixmap(doc, mask_xref))
+    # Flatten transparency only after applying PDF colors and mask semantics.
+    image = Image.open(io.BytesIO(pixmap.tobytes("png"))).convert("RGBA")
+    background = Image.new("RGBA", image.size, "white")
+    background.alpha_composite(image)
+    buffer = io.BytesIO()
+    background.convert("RGB").save(buffer, format="PNG")
+    return buffer.getvalue(), "png"
 
 
 def _is_structural_sliver(rect: fitz.Rect | None) -> bool:
@@ -109,20 +135,19 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
         # printed on the page.
         source_text = page.get_text().strip()
 
-        image_list = page.get_images(full=True)
+        resources = {info[0]: info for info in page.get_images(full=True)}
+        # Enumerate actual placements, including inline images. get_images()
+        # lists resources, not occurrences, and omits inline logos entirely.
+        image_list = page.get_image_info(xrefs=True)
         page_images: list[dict[str, Any]] = []
         for image_idx, image_info in enumerate(image_list):
-            xref = image_info[0]
-            soft_mask_xref = image_info[1]
-            bits_per_component = int(image_info[4] or 0) if len(image_info) > 4 else 0
+            xref = image_info["xref"]
+            soft_mask_xref = resources.get(xref, (0, 0))[1]
+            bits_per_component = int(image_info.get("bpc", 0))
 
             try:
-                base_image = doc.extract_image(xref)
-                image_bytes = base_image["image"]
-                image_ext = str(base_image["ext"]).lower()
-                image_width = int(base_image.get("width", 0) or 0)
-                image_height = int(base_image.get("height", 0) or 0)
-                rects, largest_rect, coverage = _placement_stats(page, xref)
+                largest_rect = fitz.Rect(image_info["bbox"]) & page.rect
+                coverage = largest_rect.get_area() / page.rect.get_area()
 
                 if _is_page_scan_background(
                     coverage=coverage,
@@ -136,42 +161,40 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
                     diagnostics["structural_images_skipped"] += 1
                     continue
 
-                image_hash = hashlib.md5(image_bytes).hexdigest()
-
-                # Composite a soft mask onto white before saving. Some PDFs
-                # store the visible artwork primarily in the alpha channel.
-                if soft_mask_xref:
-                    try:
-                        mask_image = doc.extract_image(soft_mask_xref)
-                        color = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-                        mask = Image.open(io.BytesIO(mask_image["image"])).convert("L")
-                        if mask.size != color.size:
-                            mask = mask.resize(color.size)
-                        white = Image.new("RGB", color.size, (255, 255, 255))
-                        composited = Image.composite(color, white, mask)
-                        buffer = io.BytesIO()
-                        composited.save(buffer, format="PNG")
-                        image_bytes = buffer.getvalue()
-                        image_ext = "png"
-                    except Exception:
-                        pass
-
-                # Claude accepts PNG/JPEG/GIF/WebP image blocks. Convert other
-                # encodings so every retained candidate can be shown alongside
-                # its stable ID instead of leaving the model to guess.
-                if image_ext not in {"png", "jpg", "jpeg", "gif", "webp"}:
-                    pixmap = fitz.Pixmap(doc, xref)
-                    if pixmap.alpha:
-                        pixmap = fitz.Pixmap(fitz.csRGB, pixmap)
-                    image_bytes = pixmap.tobytes("png")
+                image_hash = _image_hash(doc, xref) if xref else None
+                transform = fitz.Matrix(image_info["transform"])
+                needs_crop = (
+                    abs(transform.b) > 0.01 or abs(transform.c) > 0.01
+                    or transform.a < 0 or transform.d < 0
+                    or largest_rect != fitz.Rect(image_info["bbox"])
+                    or (xref and doc.xref_get_key(xref, "ImageMask")[1] == "true")
+                )
+                if needs_crop:
+                    # Rotation, reflection, clipping and painted stencils are
+                    # placement properties, not properties of extracted bytes.
+                    image_bytes = page.get_pixmap(
+                        matrix=fitz.Matrix(2, 2), clip=largest_rect, alpha=False
+                    ).tobytes("png")
                     image_ext = "png"
+                elif xref:
+                    image_bytes, image_ext = _portable_image(doc, xref, soft_mask_xref)
+                else:
+                    # Render inline content through the PDF engine as well;
+                    # its ColorSpace/Decode may not survive raw extraction.
+                    image_bytes = page.get_pixmap(
+                        matrix=fitz.Matrix(2, 2), clip=largest_rect, alpha=False
+                    ).tobytes("png")
+                    image_ext = "png"
+                with Image.open(io.BytesIO(image_bytes)) as verified:
+                    verified.load()
+                    image_width, image_height = verified.size
 
                 image_filename = f"page_{page_num:03d}_img_{image_idx:02d}.{image_ext}"
                 image_path = os.path.join(work_dir, image_filename)
                 with open(image_path, "wb") as image_file:
                     image_file.write(image_bytes)
 
-                # Keep the original extraction for final PDF embedding, but send
+                # Keep the color-correct extraction for final PDF embedding, but send
                 # Vision a bounded JPEG copy. Large source rasters can otherwise
                 # exceed request limits or make a single page disproportionately
                 # expensive to analyze.
@@ -205,8 +228,11 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
                     }
                 )
                 diagnostics["candidate_images"] += 1
-            except Exception:
+            except Exception as error:
                 diagnostics["extraction_failures"] += 1
+                raise RuntimeError(
+                    f"Image-preservation check failed on page {page_num}, image {image_idx + 1}"
+                ) from error
 
         result.append(
             {
@@ -214,6 +240,8 @@ def extract_pdf(input_path: str, work_dir: str) -> dict[str, Any]:
                 "screenshot": screenshot_path,
                 "images": page_images,
                 "source_text": source_text,
+                "page_width": page.rect.width,
+                "page_height": page.rect.height,
             }
         )
 

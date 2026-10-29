@@ -64,7 +64,7 @@ def _matches_source(candidate: str, normalized_source: str) -> bool:
 def normalize_figures(
     soup: BeautifulSoup,
     source_text: str,
-    transparent_pixel: str,
+    transparent_pixel: str | None = None,
 ) -> None:
     """Normalize every figure in ``soup`` in place.
 
@@ -90,12 +90,9 @@ def normalize_figures(
 
         figure.clear()
         if not images:
-            placeholder = soup.new_tag(
-                "img",
-                src=transparent_pixel,
-                alt=data_alt or "Figure",
+            raise ValueError(
+                "Image-preservation check failed: figure has no actual image"
             )
-            images = [placeholder]
 
         for image in images:
             if data_alt:

@@ -2683,7 +2683,7 @@ CRITICAL RULES:
 - For chemical equations: render in Unicode (e.g. H\u2082C=CH\u2082 + HBr \u21cc CH\u2083CH\u2082Br)
 - For EACH diagram, figure, chart, or illustration you see: output a <figure data-extracted="true"> element.
   Put the image's alternative description in the figure's data-alt attribute: <figure data-extracted="true" data-alt="specific description">. Alternative text is metadata for assistive technology and MUST NOT be emitted as visible page text.
-  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="the same specific description"/> as the first child, using that exact ID. Never guess an ID from its number alone. If no candidate visually matches (e.g. the figure is vector artwork that could not be extracted as a raster image), omit the <img>; the data-alt value will be attached to a non-visible tagged placeholder later.
+  Candidate extracted images may be shown after the full-page screenshot, each immediately preceded by its exact ID and metadata. Compare the candidate itself with the figure visible in the screenshot. If it matches, include <img src="cid:IMAGE_ID" alt="the same specific description"/> as the first child, using that exact ID. Never guess an ID from its number alone. Include each supplied candidate exactly once, including photographs and logos. If no candidate visually matches (e.g. vector artwork), omit the <img> and provide data-bbox="x0,y0,x1,y1" on the figure, using coordinates from 0 to 1000 relative to the full-page screenshot, origin at top left. The box must tightly enclose the entire actual figure without clipping it. This will preserve a real crop of the original artwork, not a blank placeholder. Never invent a figure or describe ordinary page text as a figure.
   Include <figcaption data-source-caption="true"> only when a caption is visibly printed in the source PDF, and reproduce only that printed caption text. Never create a figcaption merely to hold an image description. Never duplicate alt text as a caption or paragraph.
 - For tables: use proper <table><caption><thead><th scope="col"><tbody><td> structure. If the FIRST COLUMN of a table contains row labels (e.g. a criteria name, a spec name, a category) that identify what each row is about — common in comparison tables, spec sheets, and VPAT-style tables — mark those first-column cells as <th scope="row"> instead of <td>. A table can have BOTH: <th scope="col"> across the header row AND <th scope="row"> down the first column of the body. Never output a <th> without a scope attribute.
 - CRITICAL — a table's real columns are ONLY the columns inside its own ruled/shaded grid box (the bordered/shaded rectangle the header row sits in). A separate, physically distinct decoration OUTSIDE that box — e.g. a free-floating arrow, gradient bar, or color-graded strip drawn beside/below the table with its own labels like "Stronger acid"/"Weaker acid"/"Increasing X" — is NOT a table column; describe it in one short sentence in a <p> right before the <table> (or omit it if it just restates the table's own trend), and never create a <td>/<th> for it.
@@ -2713,11 +2713,15 @@ CRITICAL RULES:
         screenshot,
         images: extractedImages,
         source_text: sourceText,
+        page_width: pageWidth,
+        page_height: pageHeight,
       }: {
         page: number;
         screenshot: string;
         images: any[];
         source_text: string;
+        page_width: number;
+        page_height: number;
       }) => {
         const imgBase64 = require("fs").readFileSync(screenshot).toString("base64");
         const candidateBlocks: any[] = [];
@@ -2804,8 +2808,9 @@ CRITICAL RULES:
         if (pageHtml.startsWith("```")) {
           pageHtml = pageHtml.replace(/^```(?:html)?\s*/m, "").replace(/```\s*$/m, "").trim();
         }
-        await unlink(screenshot).catch(() => {});
-        return { html: pageHtml, images: extractedImages, sourceText };
+        // Keep the screenshot until the work directory is cleaned up: vector
+        // figures need verified source-page crops during PDF assembly.
+        return { html: pageHtml, images: extractedImages, sourceText, screenshot, pageWidth, pageHeight };
         }));
         pageResults.push(...batchResults);
       }
@@ -2816,6 +2821,9 @@ CRITICAL RULES:
           html: p.html,
           images: p.images,
           sourceText: p.sourceText || "",
+          screenshot: p.screenshot,
+          pageWidth: p.pageWidth,
+          pageHeight: p.pageHeight,
           pageNum: i + 1,
         })),
         title: req.file!.originalname.replace(/\.pdf$/i, ""),
@@ -2826,17 +2834,14 @@ import sys, json, os, re, base64
 from bs4 import BeautifulSoup
 sys.path.insert(0, sys.argv[2])
 from figure_html_normalize import normalize_figures
+from complex_pdf_images import embed_page_images, validate_rendered_images
 
 data = json.loads(sys.stdin.read())
 output_path = sys.argv[1]
 pages = data['pages']
 doc_title = data['title']
 
-# 1x1 transparent PNG, used as a placeholder image so caption-only figures
-# still get a real <img> element (WeasyPrint only tags <img> as PDF /Figure).
-TRANSPARENT_PIXEL = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
-
-def clean_html(raw_html, page_images, source_text):
+def clean_html(raw_html, page_images, source_text, screenshot, page_width, page_height):
     soup = BeautifulSoup(raw_html, 'html.parser')
     for tag in soup.find_all(['style', 'script']): tag.decompose()
     # Repair cell-in-cell nesting caused by an unclosed <td>/<th> tag in the
@@ -3023,36 +3028,12 @@ def clean_html(raw_html, page_images, source_text):
         for th in table.find_all('th'):
             if not th.get('scope'):
                 th['scope'] = 'col'
-    images_by_id = {img.get('id'): img for img in page_images if img.get('id')}
-
-    # Match Claude's <img src="cid:IMAGE_ID"> references (see vision prompt) against
-    # the actual extracted image files by stable ID, and embed as base64 data URIs.
-    matched_ids = set()
-    for img_tag in soup.find_all('img'):
-        src = img_tag.get('src', '')
-        img_id = src[4:] if src.startswith('cid:') else None
-        info = images_by_id.get(img_id) if img_id else None
-        if info and os.path.exists(info['path']):
-            try:
-                with open(info['path'], 'rb') as f:
-                    b64 = base64.b64encode(f.read()).decode()
-                ext = os.path.splitext(info['path'])[1].lstrip('.').lower() or 'png'
-                mime = 'jpeg' if ext in ('jpg', 'jpeg') else ext
-                img_tag['src'] = 'data:image/' + mime + ';base64,' + b64
-                if not img_tag.get('alt'):
-                    img_tag['alt'] = 'Figure'
-                matched_ids.add(img_id)
-                continue
-            except Exception:
-                pass
-        # No real image matched this <img> tag -- the src is a dangling cid:
-        # reference. Repoint it at the 1x1 placeholder (handled below) instead
-        # of leaving an unresolved src, which WeasyPrint's tagger flags as a
-        # missing-alt-description error.
-        img_tag['src'] = TRANSPARENT_PIXEL
+    recovered = embed_page_images(soup, page_images, screenshot, page_width, page_height)
+    if recovered:
+        print('Image review required (description/reading order): ' + ', '.join(recovered), file=sys.stderr)
     # Vision HTML is untrusted. Rebuild figures so alternative descriptions
     # remain metadata and only source-validated captions remain visible.
-    normalize_figures(soup, source_text, TRANSPARENT_PIXEL)
+    normalize_figures(soup, source_text)
     return str(soup)
 
 html_parts = []
@@ -3060,7 +3041,10 @@ for pg in pages:
     page_html = pg.get('html', '')
     page_images = pg.get('images', [])
     source_text = pg.get('sourceText', '')
-    html_parts.append('<div class="page">' + clean_html(page_html, page_images, source_text) + '</div>')
+    html_parts.append('<div class="page">' + clean_html(
+        page_html, page_images, source_text, pg.get('screenshot'),
+        pg.get('pageWidth', 612), pg.get('pageHeight', 792)
+    ) + '</div>')
 
 # Document-level heading normalization. Each page is extracted by Claude
 # independently, so heading levels are only consistent WITHIN a page --
@@ -3745,12 +3729,14 @@ print(f'idtree-build: registered {len(_pp_id_entries)} struct element IDs into S
 pp.save(output_path)
 pp.close()
 
+validate_rendered_images(full_html, output_path)
 print('ok')
 `;
 
       const tmpPdfOut = join(tmpdir(), `accessible-${ts}.pdf`);
       const tmpPdfScript = join(tmpdir(), `gen_pdf_${ts}.py`);
       tempFiles.add(tmpPdfOut);
+      tempFiles.add(tmpPdfOut + ".html");
       tempFiles.add(tmpPdfScript);
       await writeFile(tmpPdfScript, pyPdf, "utf8");
 
@@ -3759,22 +3745,22 @@ print('ok')
       if (pdfBuildBudgetMs <= 1000) {
         throw new Error("PDF generation stopped because the document processing deadline was reached");
       }
-      await new Promise<void>((resolve, reject) => {
-        const proc = child_process.spawn(
-          python3,
-          [tmpPdfScript, tmpPdfOut, pipelineDir],
-          { timeout: Math.min(180000, pdfBuildBudgetMs), killSignal: "SIGKILL" },
+      try {
+        // Use the same EPIPE-safe, bounded-output process runner as Word/PDF
+        // conversion. Large embedded pictures must not crash the server if a
+        // renderer exits before consuming the entire JSON payload.
+        await runDocumentProcess(
+          python3, [tmpPdfScript, tmpPdfOut, pipelineDir],
+          pdfInput, Math.min(180000, pdfBuildBudgetMs),
         );
-        proc.stdin.write(pdfInput);
-        proc.stdin.end();
-        let stderr = "";
-        proc.stderr.on("data", (d: Buffer) => stderr += d.toString());
-        proc.on("error", reject);
-        proc.on("close", (code: number) => {
-          if (code !== 0) reject(new Error("PDF generation failed: " + stderr.slice(-800)));
-          else resolve();
-        });
-      });
+      } catch (renderError: any) {
+        const detail = String(renderError.message || renderError);
+        console.error("[COMPLEXPDF RENDER]", detail);
+        // Store the actual final error, not a traceback prefix that can
+        // consume the job store's limit and hide the useful cause.
+        const reason = detail.trim().split(/\r?\n/).filter(Boolean).pop() || "Renderer failed";
+        throw new Error("PDF generation failed: " + reason.slice(0, 400));
+      }
 
       await unlink(tmpPdfScript).catch(() => {});
 
@@ -3796,7 +3782,7 @@ print('ok')
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="${baseName}-accessible.pdf"`);
       const fixesMadeArr = [
-        `1.1.1 - All figures embedded with AI-generated alt text`,
+        `1.1.1 - Real images embedded and checked; alternative text requires review`,
         `1.3.1 - Semantic headings, tables with captions and scoped headers`,
         `1.3.2 - Content in logical reading order across ${totalPages} pages`,
         `2.4.2 - Document title set`,

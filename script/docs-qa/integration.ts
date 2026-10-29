@@ -82,6 +82,14 @@ try{
   assert.ok(Number(execFileSync("python3",["-c","import pymupdf as fitz; import sys; d=fitz.open(stream=sys.stdin.buffer.read(),filetype='pdf'); print(sum(len(p.get_images()) for p in d))"],{input:renderedVision}).toString().trim())>=1,"Vision output must contain an embedded image");
   assert.equal(trialLedger.balance("owner",140).remaining,137);
   console.log("PASS actual routes: vision extraction + PDF renderer through job transport; one trial debit");
+  const imageFailureBalance = trialLedger.balance("owner",140).remaining;
+  const badImage = await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","bad-pdf-image.pdf",visionBytes)});
+  const badImageJob = (await badImage.json() as any).job;
+  const badImageDone = await ready(badImageJob.id);
+  assert.equal(badImageDone.state,"failed");
+  assert.match(badImageDone.error,/Image-preservation check failed/);
+  assert.equal(trialLedger.balance("owner",140).remaining,imageFailureBalance);
+  console.log("PASS actual routes: invalid PDF image reference blocks output and refunds trial credit");
   const failure=await fetch(`${base}/api/remedy-docs/jobs`,{method:"POST",headers:headers(),body:upload("pdf","fail-audit.pdf",Buffer.concat([bytes,Buffer.from('\\n')]))});
   const failureJob=(await failure.json() as any).job;const failed=await ready(failureJob.id);
   assert.equal(failed.state,"failed");assert.match(failed.error,/Synthetic audit failure/);

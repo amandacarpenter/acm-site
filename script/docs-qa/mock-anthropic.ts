@@ -11,6 +11,9 @@ export default class Anthropic {
     if (!String(input.system).includes("auditing a document") && JSON.stringify(input.messages).includes("image-fixture.docx")) {
       text=String(input.messages[0].content).split("Mammoth HTML:\n").pop()!;
     }
+    if (String(input.system).includes("processing one page") && JSON.stringify(input.messages).includes("bad-pdf-image.pdf")) {
+      text = '<h1>Diagnostic fixture</h1><figure data-alt="Unmatched image"><img src="cid:nonexistent"></figure>';
+    }
     if (String(input.messages[0].content).includes("BLOCKS_JSON:\n")) {
       const blocks = JSON.parse(String(input.messages[0].content).split("BLOCKS_JSON:\n").pop()!).blocks;
       if (JSON.stringify(blocks).includes("REMEDY_IMG_") || JSON.stringify(blocks).includes("data:image/")) throw new Error("Protected pictures leaked into the AI request");

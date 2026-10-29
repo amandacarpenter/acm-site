@@ -1,5 +1,20 @@
 # Trial pricing-card change: flow inventory
 
+## October 28 PDF image-fidelity fix
+- No UI, account, pricing, credit-allocation or database schema changes.
+- Public homepage, pricing, free checker, simulator and tool information remain reachable.
+- PDF vision path: retain large cover photographs alongside smaller images.
+- Interpret DeviceN/Separation, ICC and Decode color semantics before HTML embedding.
+- Preserve real inline images, repeated placements, source proportions and displayed size.
+- Vector figures: source screenshot crop when a valid bounding box is supplied.
+- Unknown IDs/bad crops/corrupt image files: fail rather than insert a transparent pixel.
+- Model-omitted raster images: restore pixels and mark alt text/reading order for review.
+- Verify final PDF image pixels and occurrence counts, not just tags or resource existence.
+- Test original SCC pages 1–15 plus synthetic color/mask/scan/corruption fixtures.
+- Run actual isolated job routes with mocked AI/auth: PDF, Word, refunds, retrieval and ownership.
+- These are local pipeline/regression checks, not a live AI run or screen-reader certification.
+- User approval required before production deployment. No production Credits used.
+
 ## October 27 optional-trial revision
 - Get Started leads to pricing without activating a trial; Free Trial is separate.
 - Pricing shows matching Free Trial / Individual / Team cards; FAQ unchanged.

@@ -67,7 +67,7 @@ class ComplexPdfExtractTests(unittest.TestCase):
             self.assertEqual(result["diagnostics"]["candidate_images"], 1)
             candidates = result["pages"][0]["images"]
             self.assertEqual(len(candidates), 1)
-            self.assertEqual(candidates[0]["format"], "jpeg")
+            self.assertIn(candidates[0]["format"], {"jpeg", "png"})
             self.assertLess(candidates[0]["page_coverage"], 0.25)
             self.assertTrue(os.path.exists(candidates[0]["vision_path"]))
             with Image.open(candidates[0]["vision_path"]) as model_image:
