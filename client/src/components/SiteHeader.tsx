@@ -5,7 +5,6 @@ import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
 import logoUrl from "@/assets/logo.png";
 import IncidentBanner from "@/components/IncidentBanner";
 import { SITE_NAV_LINKS } from "@/lib/site-navigation";
-import TrialNavLink from "@/components/TrialNavLink";
 
 function Logo() {
   return (
@@ -34,13 +33,13 @@ export default function SiteHeader() {
 
         {/* Desktop nav */}
         <nav className="hidden min-[1440px]:flex items-center ml-auto" aria-label="Main navigation">
-          <ul className="flex items-center gap-3.5 list-none p-0 m-0 whitespace-nowrap">
+          <ul className="flex items-center gap-5 list-none p-0 m-0 whitespace-nowrap">
             {SITE_NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   aria-current={location === link.href ? "page" : undefined}
-                  className={`relative inline-block py-1.5 text-xs font-bold uppercase tracking-[.06em] transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
+                  className={`relative inline-block py-1.5 text-[15px] font-bold tracking-normal transition-colors cursor-pointer after:content-[''] after:absolute after:left-0 after:right-full after:bottom-0 after:h-0.5 after:bg-[#0f766e] after:transition-[right] after:duration-300 hover:after:right-0 motion-reduce:after:transition-none ${
                     location === link.href ? "text-[#0f766e]" : "text-gray-900 hover:text-[#0f766e]"
                   }`}
                 >
@@ -54,17 +53,13 @@ export default function SiteHeader() {
         {/* Account actions: same sizes and spacing as the homepage header */}
         <div className="hidden min-[1440px]:flex items-center gap-3.5 whitespace-nowrap">
           <SignedOut>
-            <Link href="/login">
-              <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
-                Log in
-              </span>
+            <Link href="/login" className="inline-flex items-center justify-center min-h-11 px-4 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 hover:border-[#0f766e] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#0f766e] transition-colors">
+              Log in
             </Link>
-            <Link href="/pricing" className="inline-flex items-center justify-center h-[46px] px-4 rounded-full bg-[#0f766e] text-white text-sm font-bold hover:bg-[#0b5c5a]">Get Started</Link>
           </SignedOut>
-          <TrialNavLink className="inline-flex items-center gap-2 h-[46px] px-4 rounded-full border border-[#0f766e] text-[#0f766e] text-sm font-bold hover:bg-teal-50 transition-colors" />
           <SignedIn>
             <Link href="/dashboard">
-              <span className="text-[13px] font-bold uppercase tracking-[.09em] text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
+              <span className="text-[15px] font-bold text-[#0f766e] hover:text-[#0b5c5a] cursor-pointer">
                 Dashboard
               </span>
             </Link>
@@ -93,7 +88,7 @@ export default function SiteHeader() {
               <Link key={link.href} href={link.href} className="font-bold" aria-current={location === link.href ? "page" : undefined}>
                 <span
                   onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
+                  className="block px-3 py-2 rounded-lg text-[15px] font-bold text-gray-900 hover:bg-gray-50 cursor-pointer"
                 >
                   {link.label}
                 </span>
@@ -101,16 +96,14 @@ export default function SiteHeader() {
             ))}
             <SignedOut>
               <Link href="/login">
-                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/5 cursor-pointer">
                   Log in
                 </span>
               </Link>
-              <Link href="/pricing" onClick={() => setMobileOpen(false)} className="block mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center">Get Started</Link>
             </SignedOut>
-            <TrialNavLink onClick={() => setMobileOpen(false)} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center" />
             <SignedIn>
               <Link href="/dashboard">
-                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                <span onClick={() => setMobileOpen(false)} className="block mt-3 px-3 py-2.5 rounded-lg text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 cursor-pointer">
                   Dashboard
                 </span>
               </Link>

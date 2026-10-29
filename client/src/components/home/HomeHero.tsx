@@ -5,7 +5,6 @@ import { ArrowRight, Menu, Volume2, X } from "lucide-react";
 import logoWhite from "@/assets/logo-white-header.png";
 import heroListener from "@/assets/hero-listener-headphones.webp";
 import "./home-hero.css";
-import TrialNavLink from "@/components/TrialNavLink";
 
 export type HomeNavLink = { href: string; label: string };
 
@@ -90,10 +89,8 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
 
         <div className="hh-right">
           <SignedOut>
-            <Link href="/login" className="hh-login">Log in</Link>
-            <Link href="/pricing" className="hh-pill">Get Started</Link>
+            <Link href="/login" className="hh-login hh-login-button">Log in</Link>
           </SignedOut>
-          <TrialNavLink className="hh-pill hh-pill-outline" />
           <SignedIn>
             <Link href="/dashboard" className="hh-login">Dashboard</Link>
             <UserButton afterSignOutUrl="/" />
@@ -123,7 +120,7 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
                 <span
                   onClick={close}
                   aria-current={location === link.href ? "page" : undefined}
-                  className="block px-3 py-2 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
+                  className="block px-3 py-2 rounded-lg text-[15px] font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   {link.label}
                 </span>
@@ -131,16 +128,14 @@ export function HomeHeader({ links }: { links: HomeNavLink[] }) {
             ))}
             <SignedOut>
               <Link href="/login">
-                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e]/40 text-[15px] font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/5 cursor-pointer">
                   Log in
                 </span>
               </Link>
-              <Link href="/pricing" onClick={close} className="block mt-2 px-3 py-3 rounded-lg text-sm font-bold bg-[#0f766e] text-white text-center">Get Started</Link>
             </SignedOut>
-            <TrialNavLink onClick={close} className="flex items-center justify-center gap-2 mt-2 px-3 py-3 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center" />
             <SignedIn>
               <Link href="/dashboard">
-                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg border border-[#0f766e] text-sm font-bold text-[#0f766e] text-center hover:bg-[#0f766e]/10 cursor-pointer">
+                <span onClick={close} className="block mt-3 px-3 py-2.5 rounded-lg text-[15px] font-bold text-[#0f766e] hover:bg-[#0f766e]/5 cursor-pointer">
                   Dashboard
                 </span>
               </Link>

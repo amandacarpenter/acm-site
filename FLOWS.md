@@ -1,5 +1,14 @@
 # Trial pricing-card change: flow inventory
 
+## October 29 cleaner header preview
+- Shorten shared navigation only; keep URLs and full page headings unchanged.
+- Use 15px bold title-case labels and a restrained outlined Log in link.
+- Signed-in state shows Dashboard and profile; signed-out state shows Log in.
+- Remove header-only Get Started/Free Trial clutter; retain page-level plan/trial choices.
+- Preserve existing logo sizes, header heights, themes and responsive breakpoints.
+- Check home and interior headers, signed-in/out, all nav routes, mobile menu close and no overflow.
+- Preview only until production deployment is approved.
+
 ## October 29 output-selector alignment
 - Change only the Large document output selector, not Standard or processing.
 - Match Standard's legend, compact radio buttons, icons, selected border and guidance.

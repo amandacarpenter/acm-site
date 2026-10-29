@@ -2,7 +2,7 @@ import { useSyncExternalStore } from "react";
 
 // The embedded review viewer owns its URL. Do not read or mutate its history.
 // This hook is used ONLY by the isolated preview build.
-let currentPath = "/pricing";
+let currentPath = "/";
 const listeners = new Set<() => void>();
 function subscribe(listener: () => void) {
   listeners.add(listener);

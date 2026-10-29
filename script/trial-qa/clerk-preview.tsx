@@ -13,7 +13,7 @@ export function useAuth() { const a=useContext(Auth); return {isLoaded:true,isSi
 export function useUser() { const a=useContext(Auth); return {isLoaded:true,isSignedIn:a.signed,user:a.signed?a.user:null}; }
 export function SignedIn({children}:{children:ReactNode}) {return useAuth().isSignedIn?<>{children}</>:null;}
 export function SignedOut({children}:{children:ReactNode}) {return !useAuth().isSignedIn?<>{children}</>:null;}
-export function UserButton() {const a=useContext(Auth);return <button aria-label="Sign out of preview" className="rounded-full bg-gray-200 text-gray-800 h-9 w-9 text-sm" onClick={()=>a.setSigned(false)}>P</button>;}
+export function UserButton() {const a=useContext(Auth);return <button aria-label="Sign out of preview" style={{borderRadius:"50%",background:"#ccfbf1",color:"#115e59",border:"1px solid #5eead4",height:32,width:32,fontSize:13,fontWeight:700,cursor:"pointer"}} onClick={()=>a.setSigned(false)}>P</button>;}
 export function SignUp() {const a=useContext(Auth);return <div className="bg-white border p-8 rounded-xl max-w-sm"><h2 className="text-xl font-bold mb-3">Preview account</h2><p className="mb-5">This is a design preview. No account is created and no email is collected.</p><button className="bg-[#0f766e] text-white rounded-lg px-5 py-3" onClick={()=>a.setSigned(true)}>Continue with sample account</button></div>;}
 export const SignIn=SignUp;
 export function RedirectToSignIn() {return <p className="p-8">Sign in using the preview account to see this page.</p>;}
