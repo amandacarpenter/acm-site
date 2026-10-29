@@ -1,5 +1,15 @@
 # Trial pricing-card change: flow inventory
 
+## Large-document explicit opt-in
+- Standard remains the default; existing processing handlers remain unchanged.
+- Optional size selector reads "Standard (up to 50 pages)" and "Large document (over 50 pages)".
+- Selecting Large reveals longer-processing guidance and a required acknowledgment.
+- Starting a fresh job requires file, output selection and acknowledgment; file replacement clears acknowledgment.
+- Previously accepted saved jobs remain downloadable/resumable without re-upload or acknowledgment.
+- Switching modes preserves selected files and results; switching is disabled during active work.
+- Production feature flag remains off pending authenticated worker/billing integration and deployment approval.
+- Preview must clearly distinguish functional large-document tests from disabled standard processing.
+
 ## Large-document isolated test version
 - Live site and main branch remain unchanged. This branch starts from c72ecc97.
 - Upload one PDF (test ceiling: 400 pages, 25 MB), select PDF or Word, receive one file.

@@ -5,8 +5,8 @@ import docsIcon from "@/assets/icon-document.png";
 import type { LargeDocumentJob } from "@shared/largeDocuments";
 import "./large-document-test.css";
 
-type Props = { apiBase?: string; getToken?: () => Promise<string | null> };
-export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
+type Props = { apiBase?: string; getToken?: () => Promise<string | null>; embedded?: boolean; onActiveChange?: (active: boolean) => void };
+export default function LargeDocumentTest({ apiBase = "", getToken, embedded = false, onActiveChange }: Props) {
   const [config, setConfig] = useState<any>();
   const [file, setFile] = useState<File>();
   const [mode, setMode] = useState<"pdf" | "docx">("pdf");
@@ -16,8 +16,10 @@ export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
   const [error, setError] = useState("");
   const [removeConfirm, setRemoveConfirm] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [timeAcknowledged, setTimeAcknowledged] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const active = Boolean(job && ["queued", "processing"].includes(job.state));
+  useEffect(() => { onActiveChange?.(active || busy); }, [active, busy, onActiveChange]);
   async function request(endpoint: string, options: RequestInit = {}) {
     const headers = new Headers(options.headers);
     const token = await getToken?.();
@@ -66,12 +68,14 @@ export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
       setError("Please choose a PDF no larger than 25 MB."); return;
     }
     setFile(value);
+    setTimeAcknowledged(false);
   }
   async function run() {
-    if (!file) return;
+    if (!file || !timeAcknowledged) return;
     setBusy(true); setError("");
     try {
       const form = new FormData(); form.append("file", file); form.append("mode", mode);
+      form.append("longProcessingAcknowledged", "true");
       const data = await (await request("/jobs", { method: "POST", body: form })).json();
       setJob(data.job); await refresh();
     } catch (e: any) { setError(e.message); }
@@ -107,15 +111,22 @@ export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
     } catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
   }
-  return <div className="large-docs">
-    <header className="ld-header"><img src={logo} alt="Remedy508" /><span className="ld-badge">PRIVATE TEST VERSION</span></header>
-    <main className="ld-main">
-      <div className="ld-title"><img src={docsIcon} alt="" /><div><h1>Remedy Docs</h1><p>One upload. One finished document.</p></div></div>
-      <p className="ld-intro">Upload a PDF up to 400 pages. Choose your output, and let Remedy Docs handle the rest.</p>
-      <aside className="ld-note">Separate test environment. Your live site, accounts and Remedy508 Credits are unchanged.
+  return <div className={`large-docs ${embedded ? "ld-embedded" : ""}`}>
+    {!embedded && <header className="ld-header"><img src={logo} alt="Remedy508" /><span className="ld-badge">PRIVATE TEST VERSION</span></header>}
+    <div className="ld-main">
+      {!embedded && <><div className="ld-title"><img src={docsIcon} alt="" /><div><h1>Remedy Docs</h1><p>One upload. One finished document.</p></div></div>
+      <p className="ld-intro">Upload a PDF up to 400 pages. Choose your output, and let Remedy Docs handle the rest.</p></>}
+      {!embedded && <aside className="ld-note">Separate test environment. Your live site, accounts and Remedy508 Credits are unchanged.
         {config?.workflowTest && <strong> Workflow testing only: AI remediation is disabled and downloads are not accessible deliverables.</strong>}</aside>
+      }
+      {embedded && config?.workflowTest && <aside className="ld-note"><strong>Workflow testing only: AI remediation is disabled and downloads are not accessible deliverables.</strong></aside>}
       {error && <div className="ld-error" role="alert"><AlertCircle size={20}/><span>{error}</span></div>}
       {!job && <section className="ld-card" aria-label="Upload and output">
+        <aside className="ld-time-notice" aria-label="Large document processing time">
+          <h2>Large documents take longer</h2>
+          <p>Allow extra time, especially for hundreds of pages or complex layouts. We process the document in sections and combine everything into one PDF or Word file.</p>
+          <p>Your progress is saved. Return here to check it instead of uploading the file again.</p>
+        </aside>
         <label className={`ld-upload ${dragging ? "ld-dragging" : ""}`}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -134,7 +145,12 @@ export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
           </div>
           <p>Not sure? Choose PDF for a ready-to-share reading copy, or Word if you need to make edits.</p>
         </div>
-        <button className="ld-primary" disabled={!file || busy || !config} onClick={run}>
+        <label className="ld-time-consent">
+          <input type="checkbox" checked={timeAcknowledged} disabled={busy}
+            onChange={e => setTimeAcknowledged(e.target.checked)} />
+          <span>I understand that large documents take longer to process.</span>
+        </label>
+        <button className="ld-primary" disabled={!file || busy || !config || !timeAcknowledged} onClick={run}>
           {busy ? "Starting your test…" : config?.workflowTest ? "Run workflow test" : "Make accessible"}
         </button>
       </section>}
@@ -162,6 +178,6 @@ export default function LargeDocumentTest({ apiBase = "", getToken }: Props) {
         <button key={j.id} onClick={() => { setJob(j); setFile(undefined); setError(""); setRemoveConfirm(false); }}><span>{j.filename}</span><small>{j.mode.toUpperCase()} · {j.state}</small></button>)}</details>}
       <footer className="ld-footer"><p>Always review alternative text, reading order, headings and tables before sharing. A test output is not an accessibility certification.</p>
         <p>Test files are retained for 24 hours after processing. The original layout and page count may change.</p></footer>
-    </main>
+    </div>
   </div>;
 }

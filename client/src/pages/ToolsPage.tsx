@@ -24,6 +24,8 @@ import { useDocumentTitle } from "@/hooks/use-document-title";
 import { documentRequest, readDocumentJob, waitForDocument } from "@/lib/documentJobs";
 import type { DocumentTaskStatus } from "@shared/schema";
 import { useFreeTrial } from "@/hooks/use-free-trial";
+import DocumentSizeChoice, { type DocumentSize } from "@/components/DocumentSizeChoice";
+import LargeDocumentTest from "@/components/LargeDocumentTest";
 
 // ── Shared helpers ───────────────────────────────────────────────────────────
 
@@ -276,7 +278,27 @@ function ErrorAlert({ message, actionLabel, onAction, reportContext, showCreditN
 type DocsOutputMode = "pdf" | "docx";
 
 function RemedyDocsTab() {
+  const [size, setSize] = useState<DocumentSize>("standard");
+  const [standardBusy, setStandardBusy] = useState(false);
+  const [largeBusy, setLargeBusy] = useState(false);
+  const [largeOpened, setLargeOpened] = useState(false);
+  const { getToken } = useAuth();
+  // Opt-in build flag only. Remains off until authenticated worker + billing
+  // integration is approved and verified. Never point production at the preview.
+  const enabled = import.meta.env.VITE_LARGE_DOCS_ENABLED === "true";
+  if (!enabled) return <StandardRemedyDocsTab />;
+  return <div>
+    <DocumentSizeChoice value={size} disabled={standardBusy || largeBusy} onChange={value => {
+      setSize(value); if (value === "large") setLargeOpened(true);
+    }}/>
+    <div hidden={size !== "standard"}><StandardRemedyDocsTab onBusyChange={setStandardBusy}/></div>
+    {largeOpened && <div hidden={size !== "large"}><LargeDocumentTest embedded getToken={getToken} onActiveChange={setLargeBusy}/></div>}
+  </div>;
+}
+
+function StandardRemedyDocsTab({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) {
   const [loading, setLoading] = useState(false);
+  useEffect(() => { onBusyChange?.(loading); }, [loading, onBusyChange]);
   const [file, setFile] = useState<File | null>(null);
   const [fastResult, setFastResult] = useState<any>(null);
   const [visionResult, setVisionResult] = useState<{ blob: Blob; filename: string; pages: number; fixes: string[] } | null>(null);
