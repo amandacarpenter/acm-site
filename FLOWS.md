@@ -1,5 +1,13 @@
 # Trial pricing-card change: flow inventory
 
+## October 29 output-selector alignment
+- Change only the Large document output selector, not Standard or processing.
+- Match Standard's legend, compact radio buttons, icons, selected border and guidance.
+- PDF is selected initially; mouse and keyboard can select Word and back.
+- Busy state disables the radio group. Consent is still required before starting.
+- Check mobile and desktop, invalid uploads, mode switching and saved-result controls.
+- Preview is separate from production; ask before deploying this UI-only change.
+
 ## Large-document credit integration
 - Authenticate every large-document request; never accept a client-supplied owner.
 - Require explicit longer-processing consent and 51–400 actual PDF source pages.

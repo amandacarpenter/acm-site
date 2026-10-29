@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { FileText, Upload, Download, X, Pause, RotateCcw, CheckCircle2, AlertCircle } from "lucide-react";
 import logo from "@/assets/logo.png";
 import docsIcon from "@/assets/icon-document.png";
@@ -7,6 +7,7 @@ import "./large-document-test.css";
 
 type Props = { apiBase?: string; getToken?: () => Promise<string | null>; embedded?: boolean; onActiveChange?: (active: boolean) => void };
 export default function LargeDocumentTest({ apiBase = "", getToken, embedded = false, onActiveChange }: Props) {
+  const outputId = useId();
   const [config, setConfig] = useState<any>();
   const [file, setFile] = useState<File>();
   const [mode, setMode] = useState<"pdf" | "docx">("pdf");
@@ -139,13 +140,33 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
         </label>
         {file && <div className="ld-file"><FileText size={22}/><span>{file.name}<small>{(file.size / 1024 / 1024).toFixed(1)} MB</small></span>
           <button type="button" className="ld-icon-button" aria-label="Remove file" disabled={busy} onClick={() => { setFile(undefined); if (input.current) input.current.value = ""; }}><X size={20}/></button></div>}
-        <div className="ld-output"><h2>Select an output</h2>
-          <div role="group" aria-label="Output format" className="ld-options">
-            <button type="button" aria-pressed={mode === "pdf"} disabled={busy} onClick={() => setMode("pdf")}>PDF <small>One complete PDF</small></button>
-            <button type="button" aria-pressed={mode === "docx"} disabled={busy} onClick={() => setMode("docx")}>Word <small>One editable document</small></button>
+        <fieldset disabled={busy} className="my-6 space-y-2.5 p-3 rounded-xl border border-[#0f766e]/30 bg-[#0f766e]/5" data-testid="large-doc-output-mode">
+          <legend className="text-sm font-semibold text-foreground px-1">Please select an output <span className="text-[#0f766e]">*</span></legend>
+          <div className="grid grid-cols-2 gap-2 w-full max-w-xs" role="radiogroup" aria-label="Output format" aria-describedby={`${outputId}-guidance`}>
+            {([
+              { value: "pdf", label: "PDF" },
+              { value: "docx", label: "Word" },
+            ] as const).map(({ value, label }) => (
+              <label key={value} htmlFor={`${outputId}-${value}`}
+                className={`flex min-h-11 items-center justify-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition-colors ${
+                  mode === value
+                    ? "border-[#0f766e] bg-white dark:bg-background ring-1 ring-[#0f766e]"
+                    : "border-border bg-white/60 dark:bg-background/60 hover:border-[#0f766e]/50"
+                }`}>
+                <input type="radio" id={`${outputId}-${value}`} name={`${outputId}-mode`} value={value}
+                  checked={mode === value} onChange={() => setMode(value)}
+                  className="w-4 h-4 shrink-0 accent-[#0f766e]" />
+                <div className="flex items-center gap-1.5">
+                  <FileText aria-hidden="true" className={`w-3.5 h-3.5 shrink-0 ${mode === value ? "text-[#0f766e]" : "text-muted-foreground"}`} />
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                </div>
+              </label>
+            ))}
           </div>
-          <p>Not sure? Choose PDF for a ready-to-share reading copy, or Word if you need to make edits.</p>
-        </div>
+          <p id={`${outputId}-guidance`} className="text-xs text-muted-foreground leading-relaxed">
+            <strong className="font-semibold text-foreground">Not sure which output to choose?</strong> If your document's images are purely decorative (backgrounds, borders, logos with no real context), Word usually gives the cleanest accessible text. Choose PDF if any image conveys information a reader needs.
+          </p>
+        </fieldset>
         <label className="ld-time-consent">
           <input type="checkbox" checked={timeAcknowledged} disabled={busy}
             onChange={e => setTimeAcknowledged(e.target.checked)} />
