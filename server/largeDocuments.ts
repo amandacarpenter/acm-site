@@ -160,7 +160,14 @@ export class LargeDocuments {
     return withCreditLock(`large-job:${id}`, async () => {
       const job = this.jobs.get(id); if (job?.owner !== owner) return false;
       if (["processing", "queued"].includes(job.state)) throw new Error("Pause this document before removing its files.");
-      if (this.config.billing && job.state !== "ready") await this.refund(job);
+      if (job.state !== "ready") {
+        if (this.config.billing) await this.refund(job);
+        // Persist a terminal reporting state before deleting the checkpoint.
+        // A failed refund must leave the job available for reconciliation.
+        job.state = "failed"; job.stage = "Cancelled";
+        job.error = "Document removed before completion";
+        this.save(job);
+      }
       return this.remove(id, owner);
     });
   }

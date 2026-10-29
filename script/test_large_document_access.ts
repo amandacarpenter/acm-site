@@ -101,7 +101,20 @@ try {
   assert.equal(balances.get("alice"),122);
   await failed.resumeAuthorized(job.id,"alice"); await refunded(2);
   assert.equal(balances.get("alice"),122);
-  await failed.removeAuthorized(job.id,"alice");
+  failed.close();
+  // Rehydrate a saved paused job, as after a process restart.
+  const savedPath=path.join(failureRoot,job.id,"job.json");
+  const saved=JSON.parse(fs.readFileSync(savedPath,"utf8"));
+  saved.state="paused"; fs.writeFileSync(savedPath,JSON.stringify(saved));
+  let lastSaved: any;
+  const paused=new LargeDocuments({...config,root:failureRoot,onSave: j=>{lastSaved=j;}});
+  try {
+    assert.equal(paused.status(job.id,"alice")!.state,"paused");
+    await paused.removeAuthorized(job.id,"alice");
+    assert.equal(lastSaved.state,"failed","Removal must not leave reporting pending");
+    assert.equal(lastSaved.error,"Document removed before completion");
+    assert.equal(paused.status(job.id,"alice"),null);
+  } finally { paused.close(); }
   assert.equal(refunds,2);
-  console.log("PASS: processing failure refund, fresh reservation on refunded retry, repeated failure, no extra refund on deletion.");
+  console.log("PASS: failure refunds, retry reservation, terminal reporting on paused deletion, no extra refund on deletion.");
 } finally { failed.close(); fs.rmSync(failureRoot,{recursive:true,force:true}); }
