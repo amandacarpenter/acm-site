@@ -8,6 +8,8 @@ COPY . .
 # Railway auto-populates any declared ARG with a matching-name service variable.
 ARG VITE_CLERK_PUBLISHABLE_KEY
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_LARGE_DOCS_ENABLED=false
+ENV VITE_LARGE_DOCS_ENABLED=$VITE_LARGE_DOCS_ENABLED
 RUN npm run build
 
 # ── Stage 2: Runtime (Node + Python) ─────────────────────────────────────────

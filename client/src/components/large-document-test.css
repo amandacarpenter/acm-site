@@ -2,6 +2,8 @@
 .large-docs.ld-embedded{min-height:0;background:transparent;font-family:inherit}
 .ld-embedded .ld-main{padding:0;max-width:none}
 .ld-embedded .ld-card{padding:0;border:0;box-shadow:none;background:transparent}
+.large-docs.ld-embedded h2{font-family:inherit}
+.ld-credit-notice{font-size:.875rem;margin:0 0 1.25rem;color:var(--ld-ink)}
 .ld-time-notice{padding:1rem 1.25rem;margin:0 0 1.25rem;background:#edf7f6;border-left:3px solid #0f766e;border-radius:8px}
 .large-docs .ld-time-notice h2{font-size:1rem;font-family:inherit;margin:0 0 .5rem}
 .ld-time-notice p{font-size:.875rem;margin:.5rem 0 0;color:#345452}

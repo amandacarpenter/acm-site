@@ -1,5 +1,18 @@
 # Trial pricing-card change: flow inventory
 
+## Large-document credit integration
+- Authenticate every large-document request; never accept a client-supplied owner.
+- Require explicit longer-processing consent and 51–400 actual PDF source pages.
+- Verify all source-page credits before AI starts; debit monthly first, then top-ups.
+- Duplicate upload, refresh and charged pause/resume do not charge again.
+- Failed/abandoned jobs receive idempotent refunds. Refunded retries reserve anew.
+- Ambiguous external credit responses stop new spending until receipt verification.
+- Cross-account read, download, pause, resume and delete return not found.
+- Restart recovers source and checkpoints; zero-credit users can fetch paid results.
+- Report large documents once under existing document usage, without counting refunds.
+- Missing worker configuration disables only Large Docs, never the other tools.
+- Local mocks/offline assembly are not fresh production AI/accessibility validation.
+
 ## Large-document explicit opt-in
 - Standard remains the default; existing processing handlers remain unchanged.
 - Optional size selector reads "Standard (up to 50 pages)" and "Large document (over 50 pages)".
@@ -19,8 +32,9 @@
 - Persist page responses and completed sections; resume without rerunning completed AI pages.
 - Pause, resume, recover after refresh/restart, retry failures, and clear test files.
 - Preview uses a separate filesystem store, no production accounts/database/credits.
-- Production routes are not integrated at all. Any later integration requires verified
-  user ownership, an explicit tester allowlist, credit rules and separate deployment approval.
+- The original prototype was unconnected to production. The current candidate adds
+  authenticated ownership and credit rules behind disabled flags; live deployment still
+  requires runtime verification and separate approval.
 - Both actual AI and deterministic workflow tests must be identified accurately.
 - Test 374-page catalog assembly in both formats; bounded actual-AI sample separately.
 - Test invalid/encrypted/oversized inputs, owner isolation, duplicate submit, recovery, expiry,

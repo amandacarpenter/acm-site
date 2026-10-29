@@ -8,6 +8,9 @@ window.fetch=async (input,init) => {
   if (!url.startsWith("/api/")) return realFetch(input,init);
   const json=(value:any,status=200)=>Promise.resolve(new Response(JSON.stringify(value),{status,headers:{"Content-Type":"application/json"}}));
   if (url==="/api/incident-status") return json({active:false});
+  if (url==="/api/large-docs/config") return json({minPages:51,maxPages:400,maxMegabytes:25,retentionHours:24,creditsPerPage:1,production:true});
+  if (url==="/api/large-docs/jobs" && (!init?.method || init.method==="GET")) return json({jobs:[]});
+  if (url==="/api/large-docs/jobs") return json({error:"Preview only: this document needs 61 credits; the sample account has 30. No processing or charge was made."},402);
   if (url.startsWith("/api/free-trial")) {
     if (state==="error") return json({error:"Preview of a temporary service problem. Please try again."},503);
     if (url.endsWith("/start")) state="active";

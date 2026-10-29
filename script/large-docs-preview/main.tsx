@@ -25,7 +25,10 @@ function Preview() {
           <p className="ld-intro" style={{fontSize:".875rem"}}>Your existing standard Remedy Docs flow stays as it is. Choose Large document above to open the working test and its saved results.</p>
           <button className="ld-primary" disabled>Standard processing is disabled in this preview</button>
         </div>
-        {opened && <div hidden={size !== "large"}><LargeDocumentTest embedded apiBase={import.meta.env.VITE_LARGE_DOCS_API || ""} onActiveChange={setActive}/></div>}
+        {opened && <div hidden={size !== "large"}>
+          <p className="ld-intro" style={{fontSize:".875rem"}}>Live-site rate: 1 credit per source page, with enough credits required for the whole document before starting. This private preview does not use your Remedy508 Credits.</p>
+          <LargeDocumentTest embedded apiBase={import.meta.env.VITE_LARGE_DOCS_API || ""} onActiveChange={setActive}/>
+        </div>}
       </section>
     </main>
   </div>;

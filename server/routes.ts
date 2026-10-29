@@ -28,6 +28,10 @@ import { registerFreeTrialRoutes } from "./freeTrial";
 import { startNewAccountAlerts, trialStartedAlert, paymentAlert } from "./adminAlerts";
 import { canUsePublicTrial, TRIAL_EXPIRED } from "./trialCredits";
 import { FREE_TRIAL_CREDITS } from "../shared/trial";
+import { withCreditLock } from "./creditLock";
+import { LargeDocumentBilling, LargeBillingError } from "./largeDocumentBilling";
+import { registerLargeDocuments } from "./largeDocuments";
+let largeBilling: LargeDocumentBilling | undefined;
 
 // Upload size limits are enforced here to match what the Knowledge Base documents to users
 // (see server/kb.ts "uploading-your-first-file" and "what-file-types-accepted" articles):
@@ -136,6 +140,14 @@ function getMonthlyCreditLimit(meta: any): number {
 // Reads current credit balance (monthly pool + purchased top-up pool) without mutating anything.
 // Also resets the monthly pool if the reset date has passed.
 async function getCreditBalance(clerkUserId: string): Promise<{
+  monthlyUsed: number; monthlyLimit: number; purchasedCredits: number; meta: any;
+}> {
+  return withCreditLock(clerkUserId, async () => {
+    await largeBilling?.reconcile(clerkUserId);
+    return getCreditBalanceUnlocked(clerkUserId);
+  });
+}
+async function getCreditBalanceUnlocked(clerkUserId: string): Promise<{
   monthlyUsed: number;
   monthlyLimit: number;
   purchasedCredits: number;
@@ -298,6 +310,12 @@ function checkPageCap(totalPages: number): { allowed: boolean; reason?: string }
 // This is the step that makes the credit system tamper-proof: cost is always tied to the
 // actual number of pages Claude processed, never to a flat "1 document" assumption.
 async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ creditsRemaining: number }> {
+  return withCreditLock(clerkUserId, async () => {
+    await largeBilling?.reconcile(clerkUserId);
+    return deductCreditsUnlocked(clerkUserId, pagesUsed);
+  });
+}
+async function deductCreditsUnlocked(clerkUserId: string, pagesUsed: number): Promise<{ creditsRemaining: number }> {
   const reserved = trialDeduction(clerkUserId, pagesUsed);
   if (reserved) return reserved;
   const { monthlyUsed, monthlyLimit, purchasedCredits, meta } = await getCreditBalance(clerkUserId);
@@ -330,6 +348,12 @@ async function deductCredits(clerkUserId: string, pagesUsed: number): Promise<{ 
 // deductCredits spends monthly credits before purchased ones), mirroring the deduction
 // order so a refund exactly undoes the matching charge.
 async function refundCredits(clerkUserId: string, pagesToRefund: number, jobId?: number): Promise<{ creditsRemaining: number }> {
+  return withCreditLock(clerkUserId, async () => {
+    await largeBilling?.reconcile(clerkUserId);
+    return refundCreditsUnlocked(clerkUserId, pagesToRefund, jobId);
+  });
+}
+async function refundCreditsUnlocked(clerkUserId: string, pagesToRefund: number, jobId?: number): Promise<{ creditsRemaining: number }> {
   const isTrialRefund = jobId !== undefined
     ? trialLedger.refundJob(clerkUserId, jobId)
     : refundTrialRequest(clerkUserId);
@@ -3961,6 +3985,56 @@ print('ok')
       res.status(401).json({ error: "Please sign in again to check your document." });
     }
   };
+  largeBilling = new LargeDocumentBilling(alertsDb, {
+    trial: trialLedger,
+    balance: getCreditBalanceUnlocked,
+    user: id => clerkClient.users.getUser(id),
+    update: (id, metadata) => clerkClient.users.updateUserMetadata(id, metadata),
+    authorize: async (id, balance) => {
+      const user = await clerkClient.users.getUser(id);
+      if (user.primaryEmailAddress?.emailAddress === "amandathecarpenter@gmail.com") return;
+      if (balance.meta.plan === "trial") {
+        if (balance.meta.trialExpiresAt && Date.now() >= balance.meta.trialExpiresAt) throw new LargeBillingError(TRIAL_EXPIRED);
+        if (!trialLedger.activation(id) && user.publicMetadata.subscribed !== true) throw new LargeBillingError("Your trial is no longer active.", 403);
+      } else if (user.publicMetadata.subscribed !== true) throw new LargeBillingError("Choose a paid plan to process this document.", 403);
+      if (balance.meta.plan === "team" && balance.meta.orgId) {
+        // Unlike the old small-document preflight, fail closed on lookup errors.
+        const org = await clerkClient.organizations.getOrganization({ organizationId: balance.meta.orgId });
+        if ((org.publicMetadata as any)?.billingRestricted) throw new LargeBillingError("Your team's billing must be updated before starting a new document.", 403);
+      }
+    },
+  });
+  let largeDocsAvailable = false;
+  if (process.env.LARGE_DOCS_ENABLED === "true") {
+    try {
+    const root = process.env.LARGE_DOCS_DATA_DIR || "/data/large-documents";
+    if (!process.env.LARGE_DOCS_MODEL) throw new Error("LARGE_DOCS_MODEL must name an explicitly verified production model.");
+    if (process.env.NODE_ENV === "production") {
+      if (!root.startsWith("/data/") || !fs.existsSync("/data")) throw new Error("Large documents require the durable /data volume.");
+      const memoryFile = "/sys/fs/cgroup/memory.max";
+      const limit = fs.existsSync(memoryFile) ? Number(fs.readFileSync(memoryFile, "utf8").trim()) : os.totalmem();
+      if (Number.isFinite(limit) && limit < 3 * 1024 ** 3) throw new Error("Large documents require at least 3 GiB container memory; keep the feature off until capacity is configured.");
+      if (process.env.LARGE_DOCS_SINGLE_INSTANCE !== "true") throw new Error("Large document billing requires a single application instance and durable volume.");
+    }
+    const manager = registerLargeDocuments(app, {
+      root, pipeline: process.env.NODE_ENV === "production" ? path.resolve("dist/pdf_pipelines") : path.resolve("server/pdf_pipelines"),
+      model: process.env.LARGE_DOCS_MODEL, production: true, minPages: 51, chunkSize: 20, billing: largeBilling,
+      onSave: (job, owner, reference) => largeBilling!.report(job, owner, reference),
+    }, (req, res, next) => documentTaskAuth(req, res, () => {
+      res.locals.largeDocumentOwner = res.locals.creditUserId;
+      next();
+    }));
+    process.once("SIGTERM", () => manager.close());
+    largeDocsAvailable = true;
+    } catch (error: any) {
+      console.error("[Large documents] Feature remains disabled:", error.message);
+    }
+  }
+  if (!largeDocsAvailable) {
+    app.use("/api/large-docs", documentTaskAuth, (_req, res) => {
+      res.status(503).json({ error: "Large-document processing is not enabled yet. Standard Remedy Docs remains available." });
+    });
+  }
   app.get("/api/remedy-docs/jobs/latest", documentTaskAuth, (_req, res) => {
     res.json({ job: documentTaskStore.latest(res.locals.creditUserId) || null });
   });
@@ -4651,7 +4725,7 @@ Rules:
 
   // ── Stripe Webhook ───────────────────────────────────────────
   // Must be registered BEFORE express.json() parses the body
-  app.post("/api/stripe/webhook", (req, res, next) => {
+  app.post("/api/stripe/webhook", async (req, res, next) => {
     // Express may have already parsed; use raw body if available
     const rawBody = (req as any).rawBody || req.body;
     const sig = req.headers["stripe-signature"] as string;
@@ -4688,7 +4762,8 @@ Rules:
     }
 
     if (event.type === "checkout.session.completed" || event.type === "customer.subscription.created") {
-      (async () => {
+      let creditVerificationDeferred = false;
+      await (async () => {
         try {
           const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
           let clerkUserId: string | undefined;
@@ -4698,22 +4773,32 @@ Rules:
             clerkUserId = session.client_reference_id || (session.metadata as any)?.clerkUserId || undefined;
             // Also store Stripe customer ID for future lookups
             if (clerkUserId) {
+              const checkoutUserId = clerkUserId;
+              await withCreditLock(checkoutUserId, async () => {
+              const clerkUserId = checkoutUserId;
+              // Before any purchase fulfillment, wait for uncertain debits.
+              // Return a retryable HTTP response rather than acknowledge a
+              // purchased credit pack that could not yet be delivered.
+              await largeBilling?.reconcile(clerkUserId!);
               const plan = (session.metadata as any)?.plan || "individual";
               const seats = parseInt((session.metadata as any)?.seats || "1");
 
               // ── Credit pack purchase ──────────────────────────────────────
               if (plan === "credits") {
                 const qty = parseInt((session.metadata as any)?.quantity || "0");
-                const existing = await clerkClient.users.getUser(clerkUserId);
+                await withCreditLock(clerkUserId, async () => {
+                await largeBilling?.reconcile(clerkUserId!);
+                const existing = await clerkClient.users.getUser(clerkUserId!);
                 const existingMeta = (existing.publicMetadata || {}) as any;
                 const currentCredits = existingMeta.purchasedCredits || 0;
-                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                await clerkClient.users.updateUserMetadata(clerkUserId!, {
                   publicMetadata: {
                     ...existingMeta,
                     purchasedCredits: currentCredits + qty,
                   },
                 });
                 console.log(`[WEBHOOK] Added ${qty} credits to user ${clerkUserId} (total: ${currentCredits + qty})`);
+                });
                 return; // Done — no subscription to handle
               }
 
@@ -4758,7 +4843,9 @@ Rules:
                 // whatever their prior plan had already scheduled.
                 const purchaseDate = new Date();
                 const freshAnniversaryDay = purchaseDate.getUTCDate();
-                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                await withCreditLock(clerkUserId, async () => {
+                await largeBilling?.reconcile(clerkUserId!);
+                await clerkClient.users.updateUserMetadata(clerkUserId!, {
                   publicMetadata: {
                     subscribed: true,
                     plan: "team",
@@ -4771,10 +4858,13 @@ Rules:
                     usageResetDate: getFirstResetDate(purchaseDate),
                   },
                 });
+                });
                 console.log(`[WEBHOOK] Team checkout: created org ${org.id} for user ${clerkUserId} with ${seats} seats, credits reset to today's cycle`);
               } else {
                 const purchaseDate = new Date();
-                await clerkClient.users.updateUserMetadata(clerkUserId, {
+                await withCreditLock(clerkUserId, async () => {
+                await largeBilling?.reconcile(clerkUserId!);
+                await clerkClient.users.updateUserMetadata(clerkUserId!, {
                   publicMetadata: {
                     subscribed: true,
                     plan: "individual",
@@ -4785,16 +4875,20 @@ Rules:
                     usageResetDate: getFirstResetDate(purchaseDate),
                   },
                 });
+                });
                 console.log(`[WEBHOOK] Marked user ${clerkUserId} as subscribed (individual), credits reset to today's cycle`);
               }
+              });
             }
           }
 
           // Also handle subscription cancellation
         } catch (err: any) {
+          if (err instanceof LargeBillingError && err.status === 503) creditVerificationDeferred = true;
           console.error("[WEBHOOK] Failed to update Clerk metadata:", err.message);
         }
       })();
+      if (creditVerificationDeferred) return void res.status(503).json({ error: "Credit verification pending; retry this event." });
     }
 
     // Handle subscription updates (e.g. plan/price switched via the Stripe
@@ -4884,7 +4978,6 @@ Rules:
           const isActive = subscription.status === "active" || subscription.status === "trialing";
           await clerkClient.users.updateUserMetadata(user.id, {
             publicMetadata: {
-              ...meta,
               subscribed: isActive,
               plan: "individual",
             },
@@ -5114,7 +5207,6 @@ Rules:
           if (existingMeta.plan !== "team") {
             await clerkClient.users.updateUserMetadata(clerkUserId, {
               publicMetadata: {
-                ...existingMeta,
                 pendingTeamInvoice: {
                   institutionName,
                   seats: parseInt(seats) || 2,

@@ -56,7 +56,7 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
         const data = await (await request("/jobs/" + job.id)).json();
         if (!gone) { setJob(data.job); setError(""); }
         if (!["queued", "processing"].includes(data.job.state)) await refresh();
-      } catch { if (!gone) setError("Connection interrupted. Your test is saved; check again without uploading twice."); }
+      } catch { if (!gone) setError("Connection interrupted. Your document is saved; check again without uploading twice."); }
       finally { polling = false; }
     }, 2000);
     return () => { gone = true; clearInterval(timer); };
@@ -97,7 +97,7 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
       const blob = await (await request(`/jobs/${job.id}/result`)).blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url;
-      a.download = job.filename.replace(/\.pdf$/i, "") + (config.workflowTest ? "-WORKFLOW-TEST." : "-accessible-test.") + job.mode;
+      a.download = job.filename.replace(/\.pdf$/i, "") + (config.workflowTest ? "-WORKFLOW-TEST." : config.production ? "-accessible." : "-accessible-test.") + job.mode;
       a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e: any) { setError(e.message); }
     finally { setBusy(false); }
@@ -127,6 +127,7 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
           <p>Allow extra time, especially for hundreds of pages or complex layouts. We process the document in sections and combine everything into one PDF or Word file.</p>
           <p>Your progress is saved. Return here to check it instead of uploading the file again.</p>
         </aside>
+        {config?.creditsPerPage === 1 && <p className="ld-credit-notice">1 credit per source page. The full amount is required before starting. Failed attempts are refunded.</p>}
         <label className={`ld-upload ${dragging ? "ld-dragging" : ""}`}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -134,7 +135,7 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
           <input ref={input} type="file" accept=".pdf,application/pdf" aria-label="Upload a PDF" disabled={busy || !config}
             onChange={e => select(e.target.files?.[0])} />
           <Upload size={30}/><strong>{file ? "Choose a different PDF" : "Choose a PDF or drop it here"}</strong>
-          <span>Up to 400 pages · 25 MB maximum</span>
+          <span>{config?.minPages === 51 ? "51–400 pages" : "Up to 400 pages"} · 25 MB maximum</span>
         </label>
         {file && <div className="ld-file"><FileText size={22}/><span>{file.name}<small>{(file.size / 1024 / 1024).toFixed(1)} MB</small></span>
           <button type="button" className="ld-icon-button" aria-label="Remove file" disabled={busy} onClick={() => { setFile(undefined); if (input.current) input.current.value = ""; }}><X size={20}/></button></div>}
@@ -151,7 +152,7 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
           <span>I understand that large documents take longer to process.</span>
         </label>
         <button className="ld-primary" disabled={!file || busy || !config || !timeAcknowledged} onClick={run}>
-          {busy ? "Starting your test…" : config?.workflowTest ? "Run workflow test" : "Make accessible"}
+          {busy ? "Checking and starting…" : config?.workflowTest ? "Run workflow test" : "Make accessible"}
         </button>
       </section>}
       {job && <section className="ld-card ld-result" aria-label="Document status">
@@ -160,24 +161,25 @@ export default function LargeDocumentTest({ apiBase = "", getToken, embedded = f
         <progress max={100} value={job.progress} aria-label="Document processing progress"/>
         <div className="ld-status" aria-live="polite">
           {job.state === "ready" ? <p><CheckCircle2 size={19}/> One complete file, with the content in source-page order.</p>
-            : <p>Progress is saved. You can return to this test page without starting over.</p>}
+            : <p>Progress is saved. You can return to this page without starting over.</p>}
           {job.error && <p className="ld-failure">{job.error}</p>}
         </div>
         <div className="ld-actions">
           {active && <button className="ld-secondary" disabled={busy || job.stage.startsWith("Pausing")} onClick={() => action("pause")}><Pause size={17}/> Pause</button>}
+          {job.state === "failed" && config?.creditsPerPage === 1 && <p className="ld-credit-notice">If this attempt was refunded, resuming requires {job.totalPages} credits again.</p>}
           {["paused", "failed", "interrupted"].includes(job.state) && <button className="ld-primary" disabled={busy} onClick={() => action("resume")}><RotateCcw size={18}/> Resume saved progress</button>}
           {job.state === "ready" && <button className="ld-primary" disabled={busy} onClick={download}><Download size={18}/> Download {job.mode === "pdf" ? "PDF" : "Word document"}</button>}
-          {!active && <button className="ld-secondary" disabled={busy} onClick={() => { setJob(undefined); setFile(undefined); setError(""); setRemoveConfirm(false); refresh().catch(e => setError(e.message)); }}>Start another test</button>}
+          {!active && <button className="ld-secondary" disabled={busy} onClick={() => { setJob(undefined); setFile(undefined); setError(""); setRemoveConfirm(false); refresh().catch(e => setError(e.message)); }}>Start another document</button>}
         </div>
         {!active && <div className="ld-delete">{removeConfirm ? <>
-          <p>Remove this test and its uploaded file, saved progress and download?</p>
-          <button disabled={busy} onClick={remove}>Remove test files</button><button onClick={() => setRemoveConfirm(false)}>Keep files</button>
-        </> : <button onClick={() => setRemoveConfirm(true)}>Remove test files</button>}</div>}
+          <p>Remove this document and its uploaded file, saved progress and download?</p>
+          <button disabled={busy} onClick={remove}>Remove document files</button><button onClick={() => setRemoveConfirm(false)}>Keep files</button>
+        </> : <button onClick={() => setRemoveConfirm(true)}>Remove document files</button>}</div>}
       </section>}
-      {jobs.length > 0 && <details className="ld-history"><summary>Recent tests</summary>{jobs.map(j =>
+      {jobs.length > 0 && <details className="ld-history"><summary>Recent large documents</summary>{jobs.map(j =>
         <button key={j.id} onClick={() => { setJob(j); setFile(undefined); setError(""); setRemoveConfirm(false); }}><span>{j.filename}</span><small>{j.mode.toUpperCase()} · {j.state}</small></button>)}</details>}
-      <footer className="ld-footer"><p>Always review alternative text, reading order, headings and tables before sharing. A test output is not an accessibility certification.</p>
-        <p>Test files are retained for 24 hours after processing. The original layout and page count may change.</p></footer>
+      <footer className="ld-footer"><p>Always review alternative text, reading order, headings and tables before sharing. Automated output is not an accessibility certification.</p>
+        <p>Files are retained for 24 hours after processing. The original layout and page count may change.</p></footer>
     </div>
   </div>;
 }
