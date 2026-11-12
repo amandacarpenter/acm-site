@@ -1,7 +1,9 @@
 """Regression checks for preserved PDF artwork and fail-closed image output."""
 import base64
 import io
+import json
 import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -127,6 +129,123 @@ class ImageFidelityTests(unittest.TestCase):
             os.unlink(images[0]["path"])
             with self.assertRaises(OSError):
                 embed_page_images(BeautifulSoup("<p>Text</p>", "html.parser"), images)
+
+    def test_duplicate_model_reference_is_repaired_without_losing_source_caption(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, _ = self.extract(directory)
+            images = result["pages"][0]["images"]
+            image_id = images[0]["id"]
+            soup = BeautifulSoup(
+                f'<section><figure><img src="cid:{image_id}" alt="Original gradient"></figure>'
+                f'<figure data-bbox="0,0,1000,1000"><img src="cid:{image_id}" alt="Repeated gradient">'
+                '<figcaption>Source caption.</figcaption></figure><p>Body text.</p></section>',
+                "html.parser",
+            )
+            embed_page_images(soup, images)
+            normalize_figures(soup, "Source caption. Body text.")
+            self.assertEqual(len(soup.find_all("img")), 1)
+            self.assertEqual(soup.img["alt"], "Original gradient")
+            self.assertEqual(soup.img["data-remedy-image-review"], "true")
+            self.assertIn("Source caption.", soup.get_text())
+            self.assertIn("Body text.", soup.get_text())
+            self.assertTrue(all(f.find("img") for f in soup.find_all("figure")))
+            output = str(Path(directory) / "deduplicated.pdf")
+            HTML(string=str(soup)).write_pdf(output)
+            validate_rendered_images(str(soup), output)
+            with fitz.open(output) as pdf:
+                self.assertEqual(sum(len(p.get_image_info()) for p in pdf), 1)
+
+    def test_repair_keeps_real_repeat_and_recovers_omitted_id(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, _ = self.extract(directory, "repeat")
+            images = result["pages"][0]["images"]
+            image_id = images[0]["id"]
+            for same_figure in (True, False):
+                duplicate = f'<img src="cid:{image_id}" alt="Generated description">'
+                html = (f'<figure><img src="cid:{image_id}" alt="Logo">{duplicate}</figure>'
+                        if same_figure else
+                        f'<figure><img src="cid:{image_id}" alt="Logo"></figure>'
+                        f'<figure>{duplicate}<figcaption>Generated description</figcaption></figure>')
+                soup = BeautifulSoup(html, "html.parser")
+                recovered = embed_page_images(soup, images)
+                normalize_figures(soup, "")
+                self.assertEqual(recovered, [images[1]["id"]])
+                self.assertEqual([img["data-remedy-image-id"] for img in soup.find_all("img")],
+                                 [image["id"] for image in images])
+                self.assertEqual(soup.get_text(strip=True), "")
+                output = str(Path(directory) / "repeated.pdf")
+                HTML(string=str(soup)).write_pdf(output)
+                validate_rendered_images(str(soup), output)
+                with fitz.open(output) as pdf:
+                    self.assertEqual(sum(len(p.get_image_info()) for p in pdf), 2)
+
+    def test_corrupt_inventory_and_forged_repair_marker_still_fail(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result, _ = self.extract(directory)
+            images = result["pages"][0]["images"]
+            with self.assertRaisesRegex(ValueError, "duplicate source image IDs"):
+                embed_page_images(BeautifulSoup("", "html.parser"), images + images)
+            with self.assertRaisesRegex(ValueError, "Image-preservation"):
+                embed_page_images(BeautifulSoup(
+                    '<figure data-remedy-duplicate-image="true">Missing image</figure>',
+                    "html.parser"), images)
+
+    def test_actual_standard_and_large_renderers_accept_repaired_duplicates(self):
+        # Execute the exact standard route's Python template, not a copied
+        # approximation, and the shared large-document PDF/Word preparation.
+        import pikepdf
+        from docx import Document
+        from large_document_word import render_word
+        with tempfile.TemporaryDirectory() as directory:
+            result, _ = self.extract(directory, "repeat")
+            page = result["pages"][0]
+            image_id = page["images"][0]["id"]
+            payload = {
+                "title": "Duplicate-reference regression fixture",
+                "pages": [{
+                    "html": '<section><h1>Regression fixture</h1><p>Body text.</p>'
+                            f'<figure><img src="cid:{image_id}" alt="Gradient"></figure>'
+                            f'<figure><img src="cid:{image_id}" alt="Repeated gradient">'
+                            '<figcaption>Source caption.</figcaption></figure></section>',
+                    "images": page["images"], "sourceText": "Body text. Source caption.",
+                    "screenshot": page["screenshot"], "pageWidth": 300, "pageHeight": 300,
+                    "pageNum": 1,
+                }],
+            }
+            template = subprocess.run(["node", "-e", """
+const fs = require('fs');
+const source = fs.readFileSync('server/routes.ts', 'utf8');
+const start = source.indexOf('const pyPdf = `');
+if (start < 0) throw Error('Standard renderer template not found');
+const valueStart = source.indexOf('`', start);
+const end = source.indexOf('\\n`;', valueStart);
+if (end < 0) throw Error('Standard renderer template end not found');
+process.stdout.write(JSON.stringify(new Function('return ' + source.slice(valueStart, end + 2))()));
+"""], cwd=ROOT, capture_output=True, text=True, check=True)
+            standard = Path(directory) / "standard.py"
+            standard.write_text(json.loads(template.stdout))
+            pipeline = ROOT / "server/pdf_pipelines"
+            for label, script in (("standard", standard),
+                                  ("large", pipeline / "large_document_render.py")):
+                output = Path(directory) / f"{label}.pdf"
+                rendered = subprocess.run([sys.executable, str(script), str(output), str(pipeline)],
+                    input=json.dumps(payload), text=True, capture_output=True, timeout=60)
+                self.assertEqual(rendered.returncode, 0, rendered.stderr)
+                with fitz.open(output) as pdf:
+                    self.assertEqual(sum(len(p.get_image_info()) for p in pdf), 2)
+                    self.assertIn("Body text.", "".join(p.get_text() for p in pdf))
+                    self.assertIn("Source caption.", "".join(p.get_text() for p in pdf))
+                with pikepdf.open(output) as pdf:
+                    self.assertIn("/StructTreeRoot", pdf.Root)
+            prepared = Path(directory) / "prepared.html"
+            payload["prepareOnly"] = True
+            preparation = subprocess.run([sys.executable, str(pipeline / "large_document_render.py"),
+                str(prepared), str(pipeline)], input=json.dumps(payload), text=True,
+                capture_output=True, timeout=60)
+            self.assertEqual(preparation.returncode, 0, preparation.stderr)
+            word = Path(directory) / "large.docx"
+            render_word(prepared.read_text(), word, payload["title"])
+            self.assertEqual(len(Document(word).inline_shapes), 2)
 
     def test_vector_figure_uses_real_crop_not_placeholder(self):
         with tempfile.TemporaryDirectory() as directory:

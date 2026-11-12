@@ -90,6 +90,18 @@ def normalize_figures(
 
         figure.clear()
         if not images:
+            if figure.get("data-remedy-duplicate-image"):
+                # The image binder removed an extra reference, not a source
+                # image. Retain a source-verified caption in reading order,
+                # but never crop this wrapper into a second image or print
+                # model-generated descriptions as body text.
+                if verified_caption:
+                    figure.name = "p"
+                    figure.attrs.clear()
+                    figure.string = verified_caption
+                else:
+                    figure.decompose()
+                continue
             raise ValueError(
                 "Image-preservation check failed: figure has no actual image"
             )
@@ -108,3 +120,4 @@ def normalize_figures(
 
         figure.attrs.pop("data-alt", None)
         figure.attrs.pop("data-extracted", None)
+        figure.attrs.pop("data-remedy-duplicate-image", None)

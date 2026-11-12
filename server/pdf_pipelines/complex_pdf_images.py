@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import io
 import math
+import sys
 from collections import Counter
 
 import pymupdf as fitz
@@ -71,7 +72,11 @@ def embed_page_images(soup, images, screenshot=None, page_width=612, page_height
     by_id = {image["id"]: image for image in images}
     if len(by_id) != len(images):
         raise ValueError("Image-preservation check failed: duplicate source image IDs")
-    matched = set()
+    # Only this function may mark an empty wrapper as a repaired duplicate.
+    # Never let AI markup bypass the missing-figure safeguard with this marker.
+    for figure in soup.find_all("figure"):
+        figure.attrs.pop("data-remedy-duplicate-image", None)
+    matched = {}
     for tag in list(soup.find_all("img")):
         source = str(tag.get("src", ""))
         image_id = source[4:] if source.startswith("cid:") else None
@@ -83,16 +88,27 @@ def embed_page_images(soup, images, screenshot=None, page_width=612, page_height
             tag.replace_with(_crop_figure(soup, figure, screenshot, page_width, page_height))
             continue
         if image_id in matched:
-            raise ValueError("Image-preservation check failed: duplicate image reference")
+            # IDs identify source placements, not pixel hashes: two actual
+            # placements of the same logo have different IDs and both survive.
+            # A repeated model ID is only an extra reference to one placement.
+            matched[image_id]["data-remedy-image-review"] = "true"
+            figure = tag.find_parent("figure")
+            tag.decompose()
+            if figure is not None:
+                figure["data-remedy-duplicate-image"] = "true"
+            print(f"Image review required: removed duplicate model reference {image_id}",
+                  file=sys.stderr)
+            continue
         with open(info["path"], "rb") as image_file:
             _embed(tag, image_file.read(), info["format"], info["bbox"])
         tag["data-remedy-image-id"] = image_id
         tag["alt"] = tag.get("alt") or "Source image; alternative text requires review"
-        matched.add(image_id)
+        matched[image_id] = tag
 
     for figure in soup.find_all("figure"):
         if not figure.find("img"):
-            figure.insert(0, _crop_figure(soup, figure, screenshot, page_width, page_height))
+            if not figure.get("data-remedy-duplicate-image"):
+                figure.insert(0, _crop_figure(soup, figure, screenshot, page_width, page_height))
         figure.attrs.pop("data-bbox", None)
 
     recovered = []

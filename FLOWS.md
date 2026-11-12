@@ -1,5 +1,14 @@
 # Trial pricing-card change: flow inventory
 
+## November 12 PDF duplicate-reference repair
+- Production admin identifies The-Parent-Post-October-2026.pdf failing with duplicate image reference.
+- Repeated model references to one extractor ID must not abort or duplicate that source occurrence.
+- Distinct extractor IDs, including identical logos placed twice, must all remain present.
+- Preserve verified source captions without printing generated alt descriptions or creating blank figures.
+- Unknown IDs, corrupt source inventory, missing source files and changed image pixels still fail closed.
+- Test standard renderer and shared large-document renderer without live uploads or billing changes.
+- Exact original PDF rerun remains outstanding unless supplied; do not claim it passed.
+
 ## Simplify signed-out header actions
 - Home and interior headers: signed-out users see a white Free Trial button and outlined Log in on desktop and mobile; no header Get Started.
 - Free Trial opens /pricing?trial=1 without activating an account or trial. Page-level Get Started and pricing options remain untouched.
